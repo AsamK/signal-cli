@@ -71,6 +71,9 @@ Make request via user dbus.
 *--dbus-system*::
 Make request via system dbus.
 
+*--bus-name*::
+Connect to another D-Bus bus name than the default.
+
 *-o* OUTPUT-MODE, *--output* OUTPUT-MODE::
 Specify if you want commands to output in either "plain-text" mode or in "json".
 Defaults to "plain-text"
@@ -745,6 +748,9 @@ See **signal-cli-dbus**(5) for info on the dbus interface.
 *--dbus-system*::
 Export DBus interface on system bus. +
 See **signal-cli-dbus**(5) for info on the dbus interface.
+
+*--bus-name*::
+Claim another D-Bus bus name than the default.
 
 *--ignore-attachments*::
 Don’t download attachments of received messages.

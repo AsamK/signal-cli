@@ -2,7 +2,6 @@ package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
 import org.asamk.SignalControl;
-import org.asamk.signal.DbusConfig;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.ProvisioningManager;
@@ -32,10 +31,14 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
     // TODO add listeners for added/removed accounts
     private final Set<Consumer<Manager>> onManagerAddedHandlers = new HashSet<>();
     private final Set<Consumer<Manager>> onManagerRemovedHandlers = new HashSet<>();
+    private final String busname;
 
-    public DbusMultiAccountManagerImpl(final SignalControl signalControl, DBusConnection connection) {
+    public DbusMultiAccountManagerImpl(
+            final SignalControl signalControl, DBusConnection connection, final String busname
+    ) {
         this.signalControl = signalControl;
         this.connection = connection;
+        this.busname = busname;
     }
 
     @Override
@@ -50,7 +53,7 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
     public List<Manager> getManagers() {
         return signalControl.listAccounts()
                 .stream()
-                .map(a -> (Manager) new DbusManagerImpl(getRemoteObject(a, Signal.class), connection))
+                .map(a -> (Manager) new DbusManagerImpl(getRemoteObject(a, Signal.class), connection, busname))
                 .toList();
     }
 
@@ -70,7 +73,9 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
 
     @Override
     public Manager getManager(final String phoneNumber) {
-        return new DbusManagerImpl(getRemoteObject(signalControl.getAccount(phoneNumber), Signal.class), connection);
+        return new DbusManagerImpl(getRemoteObject(signalControl.getAccount(phoneNumber), Signal.class),
+                connection,
+                busname);
     }
 
     @Override
@@ -98,7 +103,7 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
 
     private <T extends DBusInterface> T getRemoteObject(final DBusPath path, final Class<T> type) {
         try {
-            return connection.getRemoteObject(DbusConfig.getBusname(), path.getPath(), type);
+            return connection.getRemoteObject(busname, path.getPath(), type);
         } catch (DBusException e) {
             throw new AssertionError(e);
         }

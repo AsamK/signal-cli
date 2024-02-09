@@ -13,6 +13,7 @@
   Sending to the self number (+XXXX) now behaves the same as the `--note-to-self` parameter. To get the previous
   behavior, the `--notify-self` parameter can be added
 - New `--unrestricted-unidentified-sender` parameter for `updateAccount command`
+- New `--bus-name` parameter for `daemon` command to use another D-Bus bus name
 
 ### Improved
 
@@ -23,6 +24,7 @@
 ## [0.12.8] - 2024-02-06
 
 ### Fixes
+
 - Update user agent
 
 ## [0.12.7] - 2023-12-15

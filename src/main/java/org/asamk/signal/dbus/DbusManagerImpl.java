@@ -1,7 +1,6 @@
 package org.asamk.signal.dbus;
 
 import org.asamk.Signal;
-import org.asamk.signal.DbusConfig;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
@@ -90,14 +89,16 @@ public class DbusManagerImpl implements Manager {
     private final Set<ReceiveMessageHandler> weakHandlers = new HashSet<>();
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
     private final List<Runnable> closedListeners = new ArrayList<>();
+    private final String busname;
     private DBusSigHandler<Signal.MessageReceivedV2> dbusMsgHandler;
     private DBusSigHandler<Signal.EditMessageReceived> dbusEditMsgHandler;
     private DBusSigHandler<Signal.ReceiptReceivedV2> dbusRcptHandler;
     private DBusSigHandler<Signal.SyncMessageReceivedV2> dbusSyncHandler;
 
-    public DbusManagerImpl(final Signal signal, DBusConnection connection) {
+    public DbusManagerImpl(final Signal signal, DBusConnection connection, final String busname) {
         this.signal = signal;
         this.connection = connection;
+        this.busname = busname;
     }
 
     @Override
@@ -820,7 +821,7 @@ public class DbusManagerImpl implements Manager {
 
     private <T extends DBusInterface> T getRemoteObject(final DBusPath path, final Class<T> type) {
         try {
-            return connection.getRemoteObject(DbusConfig.getBusname(), path.getPath(), type);
+            return connection.getRemoteObject(busname, path.getPath(), type);
         } catch (DBusException e) {
             throw new AssertionError(e);
         }

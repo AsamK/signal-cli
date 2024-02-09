@@ -4,6 +4,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.DbusConfig;
 import org.asamk.signal.OutputType;
 import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.Shutdown;
@@ -50,6 +51,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         subparser.addArgument("--dbus-system", "--system")
                 .action(Arguments.storeTrue())
                 .help("Expose a DBus interface on the system bus.");
+        subparser.addArgument("--bus-name")
+                .setDefault(DbusConfig.getBusname())
+                .help("Specify the D-Bus bus name to connect to.");
         subparser.addArgument("--socket")
                 .nargs("?")
                 .type(File.class)
@@ -177,20 +181,25 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
         final var isDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
         if (isDbusSystem) {
-            daemonHandler.runDbus(true);
+            final var busName = ns.getString("bus-name");
+            daemonHandler.runDbus(true, busName);
         }
 
         final var isDbusSession = Boolean.TRUE.equals(ns.getBoolean("dbus"));
-        if (isDbusSession || (
-                !isDbusSystem
-                        && socketFile == null
-                        && tcpAddress == null
-                        && httpAddress == null
-                        && inheritedChannel == null
-        )) {
+        if (isDbusSession) {
+            final var busName = ns.getString("bus-name");
+            daemonHandler.runDbus(false, busName);
+        }
+
+        if (!isDbusSystem
+                && !isDbusSession
+                && socketFile == null
+                && tcpAddress == null
+                && httpAddress == null
+                && inheritedChannel == null) {
             logger.warn(
                     "Running daemon command without explicit mode is deprecated. Use --dbus to use the dbus interface.");
-            daemonHandler.runDbus(false);
+            daemonHandler.runDbus(false, DbusConfig.getBusname());
         }
     }
 
@@ -214,7 +223,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
         public abstract void runSocket(ServerSocketChannel serverChannel) throws CommandException;
 
-        public abstract void runDbus(boolean isDbusSystem) throws CommandException;
+        public abstract void runDbus(boolean isDbusSystem, final String busname) throws CommandException;
 
         public abstract void runHttp(InetSocketAddress address) throws CommandException;
 
@@ -267,8 +276,8 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         }
 
         @Override
-        public void runDbus(final boolean isDbusSystem) throws CommandException {
-            runDbus(new DbusHandler(isDbusSystem, m, receiveMode != ReceiveMode.ON_START));
+        public void runDbus(final boolean isDbusSystem, final String busname) throws CommandException {
+            runDbus(new DbusHandler(isDbusSystem, busname, m, receiveMode != ReceiveMode.ON_START));
         }
 
         @Override
@@ -292,8 +301,8 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         }
 
         @Override
-        public void runDbus(final boolean isDbusSystem) throws CommandException {
-            runDbus(new DbusHandler(isDbusSystem, c, receiveMode != ReceiveMode.ON_START));
+        public void runDbus(final boolean isDbusSystem, final String busname) throws CommandException {
+            runDbus(new DbusHandler(isDbusSystem, busname, c, receiveMode != ReceiveMode.ON_START));
         }
 
         @Override

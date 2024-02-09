@@ -24,12 +24,16 @@ import java.io.IOException;
 public class DbusCommandHandler {
 
     public static void initDbusClient(
-            final Command command, final String account, final boolean systemBus, final CommandHandler commandHandler
+            final Command command,
+            final String account,
+            final boolean systemBus,
+            final String busname,
+            final CommandHandler commandHandler
     ) throws CommandException {
         try {
             final var busType = systemBus ? DBusConnection.DBusBusType.SYSTEM : DBusConnection.DBusBusType.SESSION;
             try (var dBusConn = DBusConnectionBuilder.forType(busType).build()) {
-                handleCommand(command, account, dBusConn, commandHandler);
+                handleCommand(command, account, dBusConn, busname, commandHandler);
             }
         } catch (ServiceUnknown e) {
             throw new UserErrorException("signal-cli DBus daemon not running on "
@@ -45,6 +49,7 @@ public class DbusCommandHandler {
             final Command command,
             final String account,
             final DBusConnection dBusConn,
+            final String busname,
             final CommandHandler commandHandler
     ) throws CommandException, DBusException {
         try {
@@ -53,27 +58,27 @@ public class DbusCommandHandler {
                     throw new UserErrorException("You cannot specify a account (phone number) when linking");
                 }
 
-                handleProvisioningCommand(c, dBusConn, commandHandler);
+                handleProvisioningCommand(c, dBusConn, busname, commandHandler);
                 return;
             }
 
             if (account == null && command instanceof MultiLocalCommand c) {
-                handleMultiLocalCommand(c, dBusConn, commandHandler);
+                handleMultiLocalCommand(c, dBusConn, busname, commandHandler);
                 return;
             }
             if (account != null && command instanceof RegistrationCommand c) {
-                handleRegistrationCommand(c, account, dBusConn, commandHandler);
+                handleRegistrationCommand(c, account, dBusConn, busname, commandHandler);
                 return;
             }
             if (!(command instanceof LocalCommand localCommand)) {
                 throw new UserErrorException("Command only works in multi-account mode");
             }
 
-            var accountObjectPath = account == null ? tryGetSingleAccountObjectPath(dBusConn) : null;
+            var accountObjectPath = account == null ? tryGetSingleAccountObjectPath(dBusConn, busname) : null;
             if (accountObjectPath == null) {
                 accountObjectPath = DbusConfig.getObjectPath(account);
             }
-            handleLocalCommand(localCommand, accountObjectPath, dBusConn, commandHandler);
+            handleLocalCommand(localCommand, accountObjectPath, dBusConn, busname, commandHandler);
         } catch (UnsupportedOperationException e) {
             throw new UserErrorException("Command is not yet implemented via dbus", e);
         } catch (DBusExecutionException e) {
@@ -81,10 +86,10 @@ public class DbusCommandHandler {
         }
     }
 
-    private static String tryGetSingleAccountObjectPath(final DBusConnection dBusConn) throws DBusException, CommandException {
-        var control = dBusConn.getRemoteObject(DbusConfig.getBusname(),
-                DbusConfig.getObjectPath(),
-                SignalControl.class);
+    private static String tryGetSingleAccountObjectPath(
+            final DBusConnection dBusConn, final String busname
+    ) throws DBusException, CommandException {
+        var control = dBusConn.getRemoteObject(busname, DbusConfig.getObjectPath(), SignalControl.class);
         try {
             final var accounts = control.listAccounts();
             if (accounts.isEmpty()) {
@@ -102,12 +107,13 @@ public class DbusCommandHandler {
     }
 
     private static void handleMultiLocalCommand(
-            final MultiLocalCommand c, final DBusConnection dBusConn, final CommandHandler commandHandler
+            final MultiLocalCommand c,
+            final DBusConnection dBusConn,
+            final String busname,
+            final CommandHandler commandHandler
     ) throws CommandException, DBusException {
-        final var signalControl = dBusConn.getRemoteObject(DbusConfig.getBusname(),
-                DbusConfig.getObjectPath(),
-                SignalControl.class);
-        try (final var multiAccountManager = new DbusMultiAccountManagerImpl(signalControl, dBusConn)) {
+        final var signalControl = dBusConn.getRemoteObject(busname, DbusConfig.getObjectPath(), SignalControl.class);
+        try (final var multiAccountManager = new DbusMultiAccountManagerImpl(signalControl, dBusConn, busname)) {
             commandHandler.handleMultiLocalCommand(c, multiAccountManager);
         }
     }
@@ -116,10 +122,11 @@ public class DbusCommandHandler {
             final LocalCommand c,
             String accountObjectPath,
             final DBusConnection dBusConn,
+            final String busname,
             final CommandHandler commandHandler
     ) throws CommandException, DBusException {
-        var signal = dBusConn.getRemoteObject(DbusConfig.getBusname(), accountObjectPath, Signal.class);
-        try (final var manager = new DbusManagerImpl(signal, dBusConn)) {
+        var signal = dBusConn.getRemoteObject(busname, accountObjectPath, Signal.class);
+        try (final var manager = new DbusManagerImpl(signal, dBusConn, busname)) {
             commandHandler.handleLocalCommand(c, manager);
         }
     }
@@ -128,24 +135,24 @@ public class DbusCommandHandler {
             final RegistrationCommand c,
             String account,
             final DBusConnection dBusConn,
+            final String busname,
             final CommandHandler commandHandler
 
     ) throws CommandException, DBusException {
-        final var signalControl = dBusConn.getRemoteObject(DbusConfig.getBusname(),
-                DbusConfig.getObjectPath(),
-                SignalControl.class);
+        final var signalControl = dBusConn.getRemoteObject(busname, DbusConfig.getObjectPath(), SignalControl.class);
         try (final var registrationManager = new DbusRegistrationManagerImpl(account, signalControl, dBusConn)) {
             commandHandler.handleRegistrationCommand(c, registrationManager);
         }
     }
 
     private static void handleProvisioningCommand(
-            final ProvisioningCommand c, final DBusConnection dBusConn, final CommandHandler commandHandler
+            final ProvisioningCommand c,
+            final DBusConnection dBusConn,
+            final String busname,
+            final CommandHandler commandHandler
 
     ) throws CommandException, DBusException {
-        final var signalControl = dBusConn.getRemoteObject(DbusConfig.getBusname(),
-                DbusConfig.getObjectPath(),
-                SignalControl.class);
+        final var signalControl = dBusConn.getRemoteObject(busname, DbusConfig.getObjectPath(), SignalControl.class);
         final var provisioningManager = new DbusProvisioningManagerImpl(signalControl, dBusConn);
         commandHandler.handleProvisioningCommand(c, provisioningManager);
     }

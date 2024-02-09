@@ -21,12 +21,15 @@ public class DbusHandler implements AutoCloseable {
 
     private final boolean isDbusSystem;
     private DBusConnection dBusConnection;
+    private final String busname;
 
     private final List<AutoCloseable> closeables = new ArrayList<>();
     private final DbusRunner dbusRunner;
     private final boolean noReceiveOnStart;
 
-    public DbusHandler(final boolean isDbusSystem, final Manager m, final boolean noReceiveOnStart) {
+    public DbusHandler(
+            final boolean isDbusSystem, final String busname, final Manager m, final boolean noReceiveOnStart
+    ) {
         this.isDbusSystem = isDbusSystem;
         this.dbusRunner = (connection) -> {
             try {
@@ -35,9 +38,15 @@ public class DbusHandler implements AutoCloseable {
             }
         };
         this.noReceiveOnStart = noReceiveOnStart;
+        this.busname = busname;
     }
 
-    public DbusHandler(final boolean isDbusSystem, final MultiAccountManager c, final boolean noReceiveOnStart) {
+    public DbusHandler(
+            final boolean isDbusSystem,
+            final String busname,
+            final MultiAccountManager c,
+            final boolean noReceiveOnStart
+    ) {
         this.isDbusSystem = isDbusSystem;
         this.dbusRunner = (connection) -> {
             final var signalControl = new DbusSignalControlImpl(c, DbusConfig.getObjectPath());
@@ -72,6 +81,7 @@ public class DbusHandler implements AutoCloseable {
             }
         };
         this.noReceiveOnStart = noReceiveOnStart;
+        this.busname = busname;
     }
 
     public void init() throws CommandException {
@@ -79,7 +89,7 @@ public class DbusHandler implements AutoCloseable {
             throw new AssertionError("DbusHandler already initialized");
         }
         final var busType = isDbusSystem ? DBusConnection.DBusBusType.SYSTEM : DBusConnection.DBusBusType.SESSION;
-        logger.debug("Starting DBus server on {} bus: {}", busType, DbusConfig.getBusname());
+        logger.debug("Starting DBus server on {} bus: {}", busType, busname);
         try {
             dBusConnection = DBusConnectionBuilder.forType(busType).build();
             dbusRunner.run(dBusConnection);
@@ -90,13 +100,13 @@ public class DbusHandler implements AutoCloseable {
         }
 
         try {
-            dBusConnection.requestBusName(DbusConfig.getBusname());
+            dBusConnection.requestBusName(busname);
         } catch (DBusException e) {
             throw new UnexpectedErrorException("Dbus command failed, maybe signal-cli dbus daemon is already running: "
                     + e.getMessage(), e);
         }
 
-        logger.info("Started DBus server on {} bus: {}", busType, DbusConfig.getBusname());
+        logger.info("Started DBus server on {} bus: {}", busType, busname);
     }
 
     @Override

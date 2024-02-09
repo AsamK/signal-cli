@@ -76,6 +76,10 @@ public class App {
                 .dest("global-dbus-system")
                 .help("Make request via system dbus.")
                 .action(Arguments.storeTrue());
+        parser.addArgument("--bus-name")
+                .dest("global-bus-name")
+                .setDefault(DbusConfig.getBusname())
+                .help("Specify the D-Bus bus name to connect to.");
 
         parser.addArgument("-o", "--output")
                 .help("Choose to output in plain text or JSON")
@@ -125,8 +129,9 @@ public class App {
         final var useDbus = Boolean.TRUE.equals(ns.getBoolean("global-dbus"));
         final var useDbusSystem = Boolean.TRUE.equals(ns.getBoolean("global-dbus-system"));
         if (useDbus || useDbusSystem) {
+            final var busName = ns.getString("global-bus-name");
             // If account is null, it will connect to the default object path
-            initDbusClient(command, account, useDbusSystem, commandHandler);
+            initDbusClient(command, account, useDbusSystem, busName, commandHandler);
             return;
         }
 
