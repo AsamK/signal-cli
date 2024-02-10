@@ -891,13 +891,12 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 UPDATE %s
-                SET unregistered_timestamp = ?
+                SET unregistered_timestamp = NULL
                 WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
-            statement.setNull(1, Types.INTEGER);
-            statement.setLong(2, recipientId.id());
+            statement.setLong(1, recipientId.id());
             statement.executeUpdate();
         }
     }
