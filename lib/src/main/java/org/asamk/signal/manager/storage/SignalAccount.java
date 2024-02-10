@@ -102,6 +102,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -499,7 +500,10 @@ public class SignalAccount implements Closeable {
                             e);
                 }
             }
-
+            if (storage.usernameLinkEntropy != null && storage.usernameLinkServerId != null) {
+                usernameLink = new UsernameLinkComponents(base64.decode(storage.usernameLinkEntropy),
+                        UUID.fromString(storage.usernameLinkServerId));
+            }
         }
 
         if (migratedLegacyConfig) {
@@ -964,7 +968,9 @@ public class SignalAccount implements Closeable {
                     registrationLockPin,
                     pinMasterKey == null ? null : base64.encodeToString(pinMasterKey.serialize()),
                     storageKey == null ? null : base64.encodeToString(storageKey.serialize()),
-                    profileKey == null ? null : base64.encodeToString(profileKey.serialize()));
+                    profileKey == null ? null : base64.encodeToString(profileKey.serialize()),
+                    usernameLink == null ? null : base64.encodeToString(usernameLink.getEntropy()),
+                    usernameLink == null ? null : usernameLink.getServerId().toString());
             try {
                 try (var output = new ByteArrayOutputStream()) {
                     // Write to memory first to prevent corrupting the file in case of serialization errors
@@ -1853,7 +1859,9 @@ public class SignalAccount implements Closeable {
             String registrationLockPin,
             String pinMasterKey,
             String storageKey,
-            String profileKey
+            String profileKey,
+            String usernameLinkEntropy,
+            String usernameLinkServerId
     ) {
 
         public record AccountData(
