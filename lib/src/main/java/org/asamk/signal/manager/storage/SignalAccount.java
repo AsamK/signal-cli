@@ -1351,7 +1351,7 @@ public class SignalAccount implements Closeable {
                 getAccountCapabilities(),
                 encryptedDeviceName,
                 pniAccountData.getLocalRegistrationId(),
-                null); // TODO recoveryPassword?
+                getRecoveryPassword());
     }
 
     public AccountAttributes.Capabilities getAccountCapabilities() {
@@ -1531,6 +1531,14 @@ public class SignalAccount implements Closeable {
         }
         this.storageKey = storageKey;
         save();
+    }
+
+    public String getRecoveryPassword() {
+        final var masterKey = getPinBackedMasterKey();
+        if (masterKey == null) {
+            return null;
+        }
+        return masterKey.deriveRegistrationRecoveryPassword();
     }
 
     public long getStorageManifestVersion() {

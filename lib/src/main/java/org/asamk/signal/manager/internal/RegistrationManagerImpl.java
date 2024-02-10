@@ -39,6 +39,7 @@ import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.account.PreKeyCollection;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
+import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
@@ -111,6 +112,11 @@ public class RegistrationManagerImpl implements RegistrationManager {
         }
 
         try {
+            final var recoveryPassword = account.getRecoveryPassword();
+            if (recoveryPassword != null && account.isPrimaryDevice() && attemptReregisterAccount(recoveryPassword)) {
+                return;
+            }
+
             if (account.getAci() != null && attemptReactivateAccount()) {
                 return;
             }
@@ -156,43 +162,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
             pin = null;
         }
 
-        //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
-        final var aci = ACI.parseOrThrow(response.getUuid());
-        final var pni = PNI.parseOrThrow(response.getPni());
-        account.finishRegistration(aci, pni, masterKey, pin, aciPreKeys, pniPreKeys);
-        accountFileUpdater.updateAccountIdentifiers(account.getNumber(), aci);
-
-        ManagerImpl m = null;
-        try {
-            m = new ManagerImpl(account, pathConfig, accountFileUpdater, serviceEnvironmentConfig, userAgent);
-            account = null;
-
-            m.refreshPreKeys();
-            if (response.isStorageCapable()) {
-                m.syncRemoteStorage();
-            }
-            // Set an initial empty profile so user can be added to groups
-            try {
-                m.updateProfile(UpdateProfile.newBuilder().build());
-            } catch (NoClassDefFoundError e) {
-                logger.warn("Failed to set default profile: {}", e.getMessage());
-            }
-
-            try {
-                m.refreshCurrentUsername();
-            } catch (IOException | BaseUsernameException e) {
-                logger.warn("Failed to refresh current username", e);
-            }
-
-            if (newManagerListener != null) {
-                newManagerListener.accept(m);
-                m = null;
-            }
-        } finally {
-            if (m != null) {
-                m.close();
-            }
-        }
+        finishAccountRegistration(response, pin, masterKey, aciPreKeys, pniPreKeys);
     }
 
     @Override
@@ -205,6 +175,34 @@ public class RegistrationManagerImpl implements RegistrationManager {
     @Override
     public boolean isRegistered() {
         return account.isRegistered();
+    }
+
+    private boolean attemptReregisterAccount(final String recoveryPassword) {
+        try {
+            if (account.getPniIdentityKeyPair() == null) {
+                account.setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
+            }
+
+            final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
+            final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
+            final var response = Utils.handleResponseException(accountManager.registerAccount(null,
+                    recoveryPassword,
+                    account.getAccountAttributes(null),
+                    aciPreKeys,
+                    pniPreKeys,
+                    null,
+                    true));
+            finishAccountRegistration(response,
+                    account.getRegistrationLockPin(),
+                    account.getPinBackedMasterKey(),
+                    aciPreKeys,
+                    pniPreKeys);
+            logger.info("Reregistered existing account, verify is not necessary.");
+            return true;
+        } catch (IOException e) {
+            logger.debug("Failed to reregister account with recovery password", e);
+        }
+        return false;
     }
 
     private boolean attemptReactivateAccount() {
@@ -252,6 +250,52 @@ public class RegistrationManagerImpl implements RegistrationManager {
                 pniPreKeys,
                 null,
                 true));
+    }
+
+    private void finishAccountRegistration(
+            final VerifyAccountResponse response,
+            final String pin,
+            final MasterKey masterKey,
+            final PreKeyCollection aciPreKeys,
+            final PreKeyCollection pniPreKeys
+    ) throws IOException {
+        //accountManager.setGcmId(Optional.of(GoogleCloudMessaging.getInstance(this).register(REGISTRATION_ID)));
+        final var aci = ACI.parseOrThrow(response.getUuid());
+        final var pni = PNI.parseOrThrow(response.getPni());
+        account.finishRegistration(aci, pni, masterKey, pin, aciPreKeys, pniPreKeys);
+        accountFileUpdater.updateAccountIdentifiers(account.getNumber(), aci);
+
+        ManagerImpl m = null;
+        try {
+            m = new ManagerImpl(account, pathConfig, accountFileUpdater, serviceEnvironmentConfig, userAgent);
+            account = null;
+
+            m.refreshPreKeys();
+            if (response.isStorageCapable()) {
+                m.syncRemoteStorage();
+            }
+            // Set an initial empty profile so user can be added to groups
+            try {
+                m.updateProfile(UpdateProfile.newBuilder().build());
+            } catch (NoClassDefFoundError e) {
+                logger.warn("Failed to set default profile: {}", e.getMessage());
+            }
+
+            try {
+                m.refreshCurrentUsername();
+            } catch (IOException | BaseUsernameException e) {
+                logger.warn("Failed to refresh current username", e);
+            }
+
+            if (newManagerListener != null) {
+                newManagerListener.accept(m);
+                m = null;
+            }
+        } finally {
+            if (m != null) {
+                m.close();
+            }
+        }
     }
 
     @Override
