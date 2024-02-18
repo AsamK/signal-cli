@@ -127,10 +127,10 @@ public class SendHelper {
     ) {
         final var messageSendLogStore = account.getMessageSendLogStore();
         final var result = handleSendMessage(recipientId,
-                (messageSender, address, unidentifiedAccess) -> messageSender.sendReceipt(address,
+                (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendReceipt(address,
                         unidentifiedAccess,
                         receiptMessage,
-                        false));
+                        includePniSignature));
         messageSendLogStore.insertIfPossible(receiptMessage.getWhen(), result, ContentHint.IMPLICIT, false);
         handleSendMessageResult(result);
         return result;
@@ -144,13 +144,14 @@ public class SendHelper {
                 .withProfileKey(profileKey)
                 .build();
         return handleSendMessage(recipientId,
-                (messageSender, address, unidentifiedAccess) -> messageSender.sendDataMessage(address,
+                (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendDataMessage(
+                        address,
                         unidentifiedAccess,
                         ContentHint.IMPLICIT,
                         message,
                         SignalServiceMessageSender.IndividualSendEvents.EMPTY,
                         false,
-                        false));
+                        includePniSignature));
     }
 
     public SendMessageResult sendRetryReceipt(
@@ -161,7 +162,8 @@ public class SendHelper {
                 recipientId,
                 errorMessage.getDeviceId());
         final var result = handleSendMessage(recipientId,
-                (messageSender, address, unidentifiedAccess) -> messageSender.sendRetryReceipt(address,
+                (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendRetryReceipt(
+                        address,
                         unidentifiedAccess,
                         groupId.map(GroupId::serialize),
                         errorMessage));
@@ -170,7 +172,10 @@ public class SendHelper {
     }
 
     public SendMessageResult sendNullMessage(RecipientId recipientId) {
-        final var result = handleSendMessage(recipientId, SignalServiceMessageSender::sendNullMessage);
+        final var result = handleSendMessage(recipientId,
+                (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendNullMessage(
+                        address,
+                        unidentifiedAccess));
         handleSendMessageResult(result);
         return result;
     }
@@ -220,10 +225,8 @@ public class SendHelper {
             SignalServiceTypingMessage message, RecipientId recipientId
     ) {
         final var result = handleSendMessage(recipientId,
-                (messageSender, address, unidentifiedAccess) -> messageSender.sendTyping(List.of(address),
-                        List.of(unidentifiedAccess),
-                        message,
-                        null).getFirst());
+                (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendTyping(List.of(
+                        address), List.of(unidentifiedAccess), message, null).getFirst());
         handleSendMessageResult(result);
         return result;
     }
@@ -247,7 +250,8 @@ public class SendHelper {
         logger.trace("Resending message {} to {}", timestamp, recipientId);
         if (messageSendLogEntry.groupId().isEmpty()) {
             return handleSendMessage(recipientId,
-                    (messageSender, address, unidentifiedAccess) -> messageSender.resendContent(address,
+                    (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.resendContent(
+                            address,
                             unidentifiedAccess,
                             timestamp,
                             messageSendLogEntry.content(),
@@ -277,7 +281,7 @@ public class SendHelper {
                 .build();
 
         final var result = handleSendMessage(recipientId,
-                (messageSender, address, unidentifiedAccess) -> messageSender.resendContent(address,
+                (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.resendContent(address,
                         unidentifiedAccess,
                         timestamp,
                         contentToSend,
@@ -660,17 +664,18 @@ public class SendHelper {
     ) {
         final var messageSendLogStore = account.getMessageSendLogStore();
         final var urgent = true;
-        final var includePniSignature = false;
         final var result = handleSendMessage(recipientId,
                 editTargetTimestamp.isEmpty()
-                        ? (messageSender, address, unidentifiedAccess) -> messageSender.sendDataMessage(address,
+                        ? (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendDataMessage(
+                        address,
                         unidentifiedAccess,
                         ContentHint.RESENDABLE,
                         message,
                         SignalServiceMessageSender.IndividualSendEvents.EMPTY,
                         urgent,
                         includePniSignature)
-                        : (messageSender, address, unidentifiedAccess) -> messageSender.sendEditMessage(address,
+                        : (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendEditMessage(
+                                address,
                                 unidentifiedAccess,
                                 ContentHint.RESENDABLE,
                                 message,
@@ -687,8 +692,12 @@ public class SendHelper {
 
         var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
         try {
+            final boolean includePniSignature = account.getRecipientStore().needsPniSignature(recipientId);
             try {
-                return s.send(messageSender, address, context.getUnidentifiedAccessHelper().getAccessFor(recipientId));
+                return s.send(messageSender,
+                        address,
+                        context.getUnidentifiedAccessHelper().getAccessFor(recipientId),
+                        includePniSignature);
             } catch (UnregisteredUserException e) {
                 final RecipientId newRecipientId;
                 try {
@@ -699,7 +708,8 @@ public class SendHelper {
                 address = context.getRecipientHelper().resolveSignalServiceAddress(newRecipientId);
                 return s.send(messageSender,
                         address,
-                        context.getUnidentifiedAccessHelper().getAccessFor(newRecipientId));
+                        context.getUnidentifiedAccessHelper().getAccessFor(newRecipientId),
+                        includePniSignature);
             }
         } catch (UnregisteredUserException e) {
             return SendMessageResult.unregisteredFailure(address);
@@ -774,7 +784,8 @@ public class SendHelper {
         SendMessageResult send(
                 SignalServiceMessageSender messageSender,
                 SignalServiceAddress address,
-                Optional<UnidentifiedAccessPair> unidentifiedAccess
+                Optional<UnidentifiedAccessPair> unidentifiedAccess,
+                boolean includePniSignature
         ) throws IOException, UnregisteredUserException, ProofRequiredException, RateLimitException, org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
     }
 

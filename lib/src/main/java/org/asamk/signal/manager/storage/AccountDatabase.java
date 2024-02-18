@@ -33,7 +33,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 23;
+    private static final long DATABASE_VERSION = 24;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -570,6 +570,14 @@ public class AccountDatabase extends Database {
             try (final var statement = connection.createStatement()) {
                 statement.executeUpdate("""
                                         ALTER TABLE group_v2 ADD profile_sharing INTEGER NOT NULL DEFAULT TRUE;
+                                        """);
+            }
+        }
+        if (oldVersion < 24) {
+            logger.debug("Updating database: Create needs_pni_signature column");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE recipient ADD needs_pni_signature INTEGER NOT NULL DEFAULT FALSE;
                                         """);
             }
         }

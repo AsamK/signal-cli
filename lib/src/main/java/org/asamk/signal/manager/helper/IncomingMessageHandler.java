@@ -299,6 +299,12 @@ public final class IncomingMessageHandler {
         final var senderDeviceId = senderDeviceAddress.deviceId();
         final var destination = getDestination(envelope);
 
+        if (account.getPni().equals(destination.serviceId)) {
+            account.getRecipientStore().markNeedsPniSignature(destination.recipientId, true);
+        } else if (account.getAci().equals(destination.serviceId)) {
+            account.getRecipientStore().markNeedsPniSignature(destination.recipientId, false);
+        }
+
         if (content.getReceiptMessage().isPresent()) {
             final var message = content.getReceiptMessage().get();
             if (message.isDeliveryReceipt()) {

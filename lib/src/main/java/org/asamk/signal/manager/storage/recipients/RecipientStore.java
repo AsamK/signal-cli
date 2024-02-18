@@ -66,6 +66,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       unregistered_timestamp INTEGER,
                                       profile_key BLOB,
                                       profile_key_credential BLOB,
+                                      needs_pni_signature INTEGER NOT NULL DEFAULT FALSE,
 
                                       given_name TEXT,
                                       family_name TEXT,
@@ -854,6 +855,44 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             }
         }
         return count;
+    }
+
+    public void markNeedsPniSignature(final RecipientId recipientId, final boolean value) {
+        logger.debug("Marking {} numbers as need pni signature = {}", recipientId, value);
+        try (final var connection = database.getConnection()) {
+            final var sql = (
+                    """
+                    UPDATE %s
+                    SET needs_pni_signature = ?
+                    WHERE _id = ?
+                    """
+            ).formatted(TABLE_RECIPIENT);
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setBoolean(1, value);
+                statement.setLong(2, recipientId.id());
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update recipient store", e);
+        }
+    }
+
+    public boolean needsPniSignature(final RecipientId recipientId) {
+        try (final var connection = database.getConnection()) {
+            final var sql = (
+                    """
+                    SELECT needs_pni_signature
+                    FROM %s
+                    WHERE _id = ?
+                    """
+            ).formatted(TABLE_RECIPIENT);
+            try (final var statement = connection.prepareStatement(sql)) {
+                statement.setLong(1, recipientId.id());
+                return Utils.executeQuerySingleRow(statement, resultSet -> resultSet.getBoolean("needs_pni_signature"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed read recipient store", e);
+        }
     }
 
     public void markUnregistered(final Set<String> unregisteredUsers) {
