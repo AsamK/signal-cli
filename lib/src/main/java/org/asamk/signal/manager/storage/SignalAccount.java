@@ -114,7 +114,7 @@ public class SignalAccount implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
-    private static final int CURRENT_STORAGE_VERSION = 8;
+    private static final int CURRENT_STORAGE_VERSION = 9;
 
     private final Object LOCK = new Object();
 
@@ -1111,7 +1111,7 @@ public class SignalAccount implements Closeable {
                 serviceIdType,
                 preKeyMetadata.nextKyberPreKeyId);
         accountData.getSignalServiceAccountDataStore()
-                .markAllOneTimeEcPreKeysStaleIfNecessary(System.currentTimeMillis());
+                .markAllOneTimeKyberPreKeysStaleIfNecessary(System.currentTimeMillis());
         for (var record : records) {
             if (preKeyMetadata.nextKyberPreKeyId != record.getId()) {
                 logger.error("Invalid kyber pre key id {}, expected {}",

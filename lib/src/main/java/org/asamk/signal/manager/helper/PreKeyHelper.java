@@ -41,6 +41,11 @@ public class PreKeyHelper {
         refreshPreKeysIfNecessary(ServiceIdType.PNI);
     }
 
+    public void forceRefreshPreKeys() throws IOException {
+        forceRefreshPreKeys(ServiceIdType.ACI);
+        forceRefreshPreKeys(ServiceIdType.PNI);
+    }
+
     public void refreshPreKeysIfNecessary(ServiceIdType serviceIdType) throws IOException {
         final var identityKeyPair = account.getIdentityKeyPair(serviceIdType);
         if (identityKeyPair == null) {
@@ -56,6 +61,22 @@ public class PreKeyHelper {
         }
     }
 
+    public void forceRefreshPreKeys(ServiceIdType serviceIdType) throws IOException {
+        final var identityKeyPair = account.getIdentityKeyPair(serviceIdType);
+        if (identityKeyPair == null) {
+            return;
+        }
+        final var accountId = account.getAccountId(serviceIdType);
+        if (accountId == null) {
+            return;
+        }
+
+        final var counts = new OneTimePreKeyCounts(0, 0);
+        if (refreshPreKeysIfNecessary(serviceIdType, identityKeyPair, counts, true)) {
+            refreshPreKeysIfNecessary(serviceIdType, identityKeyPair, counts, true);
+        }
+    }
+
     private boolean refreshPreKeysIfNecessary(
             final ServiceIdType serviceIdType, final IdentityKeyPair identityKeyPair
     ) throws IOException {
@@ -67,8 +88,17 @@ public class PreKeyHelper {
             preKeyCounts = new OneTimePreKeyCounts(0, 0);
         }
 
+        return refreshPreKeysIfNecessary(serviceIdType, identityKeyPair, preKeyCounts, false);
+    }
+
+    private boolean refreshPreKeysIfNecessary(
+            final ServiceIdType serviceIdType,
+            final IdentityKeyPair identityKeyPair,
+            final OneTimePreKeyCounts preKeyCounts,
+            final boolean force
+    ) throws IOException {
         List<PreKeyRecord> preKeyRecords = null;
-        if (preKeyCounts.getEcCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+        if (force || preKeyCounts.getEcCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             logger.debug("Refreshing {} ec pre keys, because only {} of min {} pre keys remain",
                     serviceIdType,
                     preKeyCounts.getEcCount(),
@@ -77,13 +107,13 @@ public class PreKeyHelper {
         }
 
         SignedPreKeyRecord signedPreKeyRecord = null;
-        if (signedPreKeyNeedsRefresh(serviceIdType)) {
+        if (force || signedPreKeyNeedsRefresh(serviceIdType)) {
             logger.debug("Refreshing {} signed pre key.", serviceIdType);
             signedPreKeyRecord = generateSignedPreKey(serviceIdType, identityKeyPair);
         }
 
         List<KyberPreKeyRecord> kyberPreKeyRecords = null;
-        if (preKeyCounts.getKyberCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+        if (force || preKeyCounts.getKyberCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             logger.debug("Refreshing {} kyber pre keys, because only {} of min {} pre keys remain",
                     serviceIdType,
                     preKeyCounts.getKyberCount(),
@@ -92,9 +122,11 @@ public class PreKeyHelper {
         }
 
         KyberPreKeyRecord lastResortKyberPreKeyRecord = null;
-        if (lastResortKyberPreKeyNeedsRefresh(serviceIdType)) {
+        if (force || lastResortKyberPreKeyNeedsRefresh(serviceIdType)) {
             logger.debug("Refreshing {} last resort kyber pre key.", serviceIdType);
-            lastResortKyberPreKeyRecord = generateLastResortKyberPreKey(serviceIdType, identityKeyPair);
+            lastResortKyberPreKeyRecord = generateLastResortKyberPreKey(serviceIdType,
+                    identityKeyPair,
+                    kyberPreKeyRecords == null ? 0 : kyberPreKeyRecords.size());
         }
 
         if (signedPreKeyRecord == null
@@ -157,9 +189,7 @@ public class PreKeyHelper {
         final var accountData = account.getAccountData(serviceIdType);
         final var offset = accountData.getPreKeyMetadata().getNextPreKeyId();
 
-        var records = KeyUtils.generatePreKeyRecords(offset);
-
-        return records;
+        return KeyUtils.generatePreKeyRecords(offset);
     }
 
     private boolean signedPreKeyNeedsRefresh(ServiceIdType serviceIdType) {
@@ -210,10 +240,10 @@ public class PreKeyHelper {
     }
 
     private KyberPreKeyRecord generateLastResortKyberPreKey(
-            ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair
+            ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair, final int offset
     ) {
         final var accountData = account.getAccountData(serviceIdType);
-        final var signedPreKeyId = accountData.getPreKeyMetadata().getNextKyberPreKeyId();
+        final var signedPreKeyId = accountData.getPreKeyMetadata().getNextKyberPreKeyId() + offset;
 
         return KeyUtils.generateKyberPreKeyRecord(signedPreKeyId, identityKeyPair.getPrivateKey());
     }

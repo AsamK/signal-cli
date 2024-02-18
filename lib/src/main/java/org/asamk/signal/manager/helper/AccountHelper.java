@@ -90,7 +90,11 @@ public class AccountHelper {
         }
         try {
             updateAccountAttributes();
-            context.getPreKeyHelper().refreshPreKeysIfNecessary();
+            if (account.getPreviousStorageVersion() < 9) {
+                context.getPreKeyHelper().forceRefreshPreKeys();
+            } else {
+                context.getPreKeyHelper().refreshPreKeysIfNecessary();
+            }
             if (account.getAci() == null || account.getPni() == null) {
                 checkWhoAmiI();
             }
