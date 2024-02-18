@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2024-02-18
+
 **Attention**: Now requires Java 21 and libsignal-client version 0.39.2
 
 ### Breaking changes
