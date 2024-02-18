@@ -158,7 +158,7 @@ public class RecipientHelper {
     private Map<String, RegisteredUser> getRegisteredUsers(
             final Set<String> numbers, final boolean isPartialRefresh
     ) throws IOException {
-        Map<String, RegisteredUser> registeredUsers = getRegisteredUsersV2(numbers, isPartialRefresh, true);
+        Map<String, RegisteredUser> registeredUsers = getRegisteredUsersV2(numbers, isPartialRefresh);
 
         // Store numbers as recipients, so we have the number/uuid association
         registeredUsers.forEach((number, u) -> account.getRecipientTrustedResolver()
@@ -186,7 +186,7 @@ public class RecipientHelper {
     }
 
     private Map<String, RegisteredUser> getRegisteredUsersV2(
-            final Set<String> numbers, boolean isPartialRefresh, boolean useCompat
+            final Set<String> numbers, boolean isPartialRefresh
     ) throws IOException {
         final var previousNumbers = isPartialRefresh ? Set.<String>of() : account.getCdsiStore().getAllNumbers();
         final var newNumbers = new HashSet<>(numbers) {{
@@ -210,7 +210,6 @@ public class RecipientHelper {
                     .getRegisteredUsersWithCdsi(previousNumbers,
                             newNumbers,
                             account.getRecipientStore().getServiceIdToProfileKeyMap(),
-                            useCompat,
                             token,
                             serviceEnvironmentConfig.cdsiMrenclave(),
                             null,

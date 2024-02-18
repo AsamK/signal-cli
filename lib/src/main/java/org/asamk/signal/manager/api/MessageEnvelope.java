@@ -481,7 +481,7 @@ public record MessageEnvelope(
             ) {
 
                 static Address from(org.whispersystems.signalservice.api.messages.shared.SharedContact.PostalAddress address) {
-                    return new Address(Address.Type.from(address.getType()),
+                    return new Address(Type.from(address.getType()),
                             address.getLabel(),
                             address.getStreet(),
                             address.getPobox(),
@@ -690,7 +690,9 @@ public record MessageEnvelope(
                 DELETE,
                 BLOCK,
                 BLOCK_AND_DELETE,
-                UNBLOCK_AND_ACCEPT;
+                UNBLOCK_AND_ACCEPT,
+                SPAM,
+                BLOCK_AND_SPAM;
 
                 static Type from(MessageRequestResponseMessage.Type type) {
                     return switch (type) {
@@ -700,6 +702,8 @@ public record MessageEnvelope(
                         case BLOCK -> BLOCK;
                         case BLOCK_AND_DELETE -> BLOCK_AND_DELETE;
                         case UNBLOCK_AND_ACCEPT -> UNBLOCK_AND_ACCEPT;
+                        case SPAM -> SPAM;
+                        case BLOCK_AND_SPAM -> BLOCK_AND_SPAM;
                     };
                 }
             }

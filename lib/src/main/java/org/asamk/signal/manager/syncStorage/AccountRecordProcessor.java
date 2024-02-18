@@ -102,10 +102,8 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var storiesDisabled = remote.isStoriesDisabled();
         final var hasSeenGroupStoryEducation = remote.hasSeenGroupStoryEducationSheet()
                 || local.hasSeenGroupStoryEducationSheet();
-        final var username = remote.getUsername() != null && !remote.getUsername().isEmpty()
-                ? remote.getUsername()
-                : local.getUsername();
-        final var usernameLink = remote.getUsernameLink() != null ? remote.getUsernameLink() : local.getUsernameLink();
+        final var username = remote.getUsername();
+        final var usernameLink = remote.getUsernameLink();
 
         final var mergedBuilder = new SignalAccountRecord.Builder(remote.getId().getRaw(), unknownFields).setGivenName(
                         givenName)
