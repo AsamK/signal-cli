@@ -275,9 +275,17 @@ async fn handle_command(
         CliCommands::UpdateAccount {
             device_name,
             unrestricted_unidentified_sender,
+            discoverable_by_number,
+            number_sharing,
         } => {
             client
-                .update_account(cli.account, device_name, unrestricted_unidentified_sender)
+                .update_account(
+                    cli.account,
+                    device_name,
+                    unrestricted_unidentified_sender,
+                    discoverable_by_number,
+                    number_sharing,
+                )
                 .await
         }
         CliCommands::UpdateConfiguration {

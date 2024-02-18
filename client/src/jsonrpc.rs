@@ -301,6 +301,8 @@ pub trait Rpc {
         account: Option<String>,
         deviceName: Option<String>,
         unrestrictedUnidentifiedSender: Option<bool>,
+        discoverableByNumber: Option<bool>,
+        numberSharing: Option<bool>,
     ) -> Result<Value, ErrorObjectOwned>;
 
     #[method(name = "updateConfiguration", param_kind = map)]

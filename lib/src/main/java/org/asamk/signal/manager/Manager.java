@@ -90,7 +90,12 @@ public interface Manager extends Closeable {
      */
     Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException, RateLimitException;
 
-    void updateAccountAttributes(String deviceName, Boolean unrestrictedUnidentifiedSender) throws IOException;
+    void updateAccountAttributes(
+            String deviceName,
+            Boolean unrestrictedUnidentifiedSender,
+            final Boolean discoverableByNumber,
+            final Boolean numberSharing
+    ) throws IOException;
 
     Configuration getConfiguration();
 

@@ -154,6 +154,12 @@ Set a new device name for the primary or linked device
 *--unrestricted-unidentified-sender* {true,false}::
 Enable if anyone should be able to send you unidentified sender messages.
 
+*--discoverable-by-number* {true,false}::
+Enable/disable if the account should be discoverable by phone number
+
+*--number-sharing* {true,false}::
+Indicates if Signal should share its phone number when sending a message.
+
 === startChangeNumber
 
 Change an account to a new phone number with SMS or voice verification.

@@ -43,6 +43,7 @@ import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
+import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.RateLimitException;
@@ -277,12 +278,26 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void updateAccountAttributes(String deviceName, Boolean unrestrictedUnidentifiedSender) throws IOException {
+    public void updateAccountAttributes(
+            String deviceName,
+            Boolean unrestrictedUnidentifiedSender,
+            final Boolean discoverableByNumber,
+            final Boolean numberSharing
+    ) throws IOException {
         if (deviceName != null) {
             context.getAccountHelper().setDeviceName(deviceName);
         }
         if (unrestrictedUnidentifiedSender != null) {
             account.setUnrestrictedUnidentifiedAccess(unrestrictedUnidentifiedSender);
+        }
+        if (discoverableByNumber != null) {
+            account.getConfigurationStore().setPhoneNumberUnlisted(!discoverableByNumber);
+        }
+        if (numberSharing != null) {
+            account.getConfigurationStore()
+                    .setPhoneNumberSharingMode(numberSharing
+                            ? PhoneNumberSharingMode.EVERYBODY
+                            : PhoneNumberSharingMode.NOBODY);
         }
         context.getAccountHelper().updateAccountAttributes();
         context.getAccountHelper().checkWhoAmiI();

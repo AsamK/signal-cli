@@ -118,7 +118,6 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .setLinkPreviewsEnabled(linkPreviews)
                 .setUnlistedPhoneNumber(unlisted)
                 .setPhoneNumberSharingMode(phoneNumberSharingMode)
-                .setUnlistedPhoneNumber(unlisted)
                 .setPinnedConversations(pinnedConversations)
                 .setPreferContactAvatars(preferContactAvatars)
                 .setPayments(payments.isEnabled(), payments.getEntropy().orElse(null))

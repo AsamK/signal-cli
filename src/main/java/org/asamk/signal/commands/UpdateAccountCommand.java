@@ -31,6 +31,12 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--unrestricted-unidentified-sender")
                 .type(Boolean.class)
                 .help("Enable if anyone should be able to send you unidentified sender messages.");
+        subparser.addArgument("--discoverable-by-number")
+                .type(Boolean.class)
+                .help("Enable/disable if the account should be discoverable by phone number");
+        subparser.addArgument("--number-sharing")
+                .type(Boolean.class)
+                .help("Indicates if Signal should share its phone number when sending a message.");
 
         var mut = subparser.addMutuallyExclusiveGroup();
         mut.addArgument("-u", "--username").help("Specify a username that can then be used to contact this account.");
@@ -45,8 +51,10 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var deviceName = ns.getString("device-name");
         final var unrestrictedUnidentifiedSender = ns.getBoolean("unrestricted-unidentified-sender");
+        final var discoverableByNumber = ns.getBoolean("discoverable-by-number");
+        final var numberSharing = ns.getBoolean("number-sharing");
         try {
-            m.updateAccountAttributes(deviceName, unrestrictedUnidentifiedSender);
+            m.updateAccountAttributes(deviceName, unrestrictedUnidentifiedSender, discoverableByNumber, numberSharing);
         } catch (IOException e) {
             throw new IOErrorException("UpdateAccount error: " + e.getMessage(), e);
         }

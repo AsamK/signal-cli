@@ -316,6 +316,10 @@ pub enum CliCommands {
         device_name: Option<String>,
         #[arg(long = "unrestricted-unidentified-sender")]
         unrestricted_unidentified_sender: Option<bool>,
+        #[arg(long = "discoverable-by-number")]
+        discoverable_by_number: Option<bool>,
+        #[arg(long = "number-sharing")]
+        number_sharing: Option<bool>,
     },
     UpdateConfiguration {
         #[arg(long = "read-receipts")]

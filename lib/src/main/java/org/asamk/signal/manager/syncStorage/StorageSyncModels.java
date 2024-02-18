@@ -62,7 +62,7 @@ public final class StorageSyncModels {
                 .setSealedSenderIndicatorsEnabled(Optional.ofNullable(configStore.getUnidentifiedDeliveryIndicators())
                         .orElse(true))
                 .setLinkPreviewsEnabled(Optional.ofNullable(configStore.getLinkPreviews()).orElse(true))
-                .setUnlistedPhoneNumber(Optional.ofNullable(configStore.getPhoneNumberUnlisted()).orElse(true))
+                .setUnlistedPhoneNumber(Optional.ofNullable(configStore.getPhoneNumberUnlisted()).orElse(false))
                 .setPhoneNumberSharingMode(localToRemote(Optional.ofNullable(configStore.getPhoneNumberSharingMode())
                         .orElse(PhoneNumberSharingMode.EVERYBODY)))
                 .setE164(self.getAddress().number().orElse(""))
