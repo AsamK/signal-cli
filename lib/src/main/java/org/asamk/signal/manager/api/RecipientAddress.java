@@ -19,7 +19,7 @@ public record RecipientAddress(Optional<UUID> uuid, Optional<String> number, Opt
     public RecipientAddress {
         uuid = uuid.isPresent() && uuid.get().equals(UNKNOWN_UUID) ? Optional.empty() : uuid;
         if (uuid.isEmpty() && number.isEmpty() && username.isEmpty()) {
-            throw new AssertionError("Must have either a UUID or E164 number!");
+            throw new AssertionError("Must have either a UUID, username or E164 number!");
         }
     }
 

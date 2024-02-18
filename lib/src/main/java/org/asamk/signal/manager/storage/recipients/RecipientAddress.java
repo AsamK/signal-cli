@@ -26,8 +26,8 @@ public record RecipientAddress(
         if (pni.isPresent() && pni.get().isUnknown()) {
             pni = Optional.empty();
         }
-        if (aci.isEmpty() && pni.isEmpty() && number.isEmpty()) {
-            throw new AssertionError("Must have either a ServiceId or E164 number!");
+        if (aci.isEmpty() && pni.isEmpty() && number.isEmpty() && username.isEmpty()) {
+            throw new AssertionError("Must have either a ServiceId, username or E164 number!");
         }
     }
 

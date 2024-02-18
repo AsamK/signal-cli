@@ -2426,6 +2426,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.GetUsernameFromLinkResponseBody",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }, {"name":"<init>","parameterTypes":["java.lang.String","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.GroupMismatchedDevices",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
