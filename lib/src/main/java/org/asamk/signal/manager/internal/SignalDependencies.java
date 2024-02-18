@@ -14,6 +14,7 @@ import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
+import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.services.ProfileService;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
@@ -53,7 +54,6 @@ public class SignalDependencies {
 
     private List<SecureValueRecovery> secureValueRecoveryV2;
     private ProfileService profileService;
-    private SignalServiceCipher cipher;
 
     SignalDependencies(
             final ServiceEnvironmentConfig serviceEnvironmentConfig,
@@ -77,7 +77,6 @@ public class SignalDependencies {
             this.pushServiceSocket = null;
         }
         this.messageSender = null;
-        this.cipher = null;
         getSignalWebSocket().forceNewWebSockets();
     }
 
@@ -208,13 +207,15 @@ public class SignalDependencies {
                         getSignalWebSocket()));
     }
 
-    public SignalServiceCipher getCipher() {
-        return getOrCreate(() -> cipher, () -> {
-            final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.unidentifiedSenderTrustRoot());
-            final var address = new SignalServiceAddress(credentialsProvider.getAci(), credentialsProvider.getE164());
-            final var deviceId = credentialsProvider.getDeviceId();
-            cipher = new SignalServiceCipher(address, deviceId, dataStore.aci(), sessionLock, certificateValidator);
-        });
+    public SignalServiceCipher getCipher(ServiceIdType serviceIdType) {
+        final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.unidentifiedSenderTrustRoot());
+        final var address = new SignalServiceAddress(credentialsProvider.getAci(), credentialsProvider.getE164());
+        final var deviceId = credentialsProvider.getDeviceId();
+        return new SignalServiceCipher(address,
+                deviceId,
+                serviceIdType == ServiceIdType.ACI ? dataStore.aci() : dataStore.pni(),
+                sessionLock,
+                certificateValidator);
     }
 
     private <T> T getOrCreate(Supplier<T> supplier, Callable creator) {

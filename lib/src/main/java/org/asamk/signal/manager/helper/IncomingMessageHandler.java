@@ -64,6 +64,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSy
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
+import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.push.Envelope;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
@@ -100,8 +101,10 @@ public final class IncomingMessageHandler {
         SignalServiceContent content = null;
         if (!envelope.isReceipt()) {
             account.getIdentityKeyStore().setRetryingDecryption(true);
+            final var destination = getDestination(envelope).serviceId();
             try {
-                final var cipherResult = dependencies.getCipher()
+                final var cipherResult = dependencies.getCipher(destination == null
+                                || destination.equals(account.getAci()) ? ServiceIdType.ACI : ServiceIdType.PNI)
                         .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
                 content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
                 if (content == null) {
@@ -136,8 +139,10 @@ public final class IncomingMessageHandler {
                 // uuid in envelope is sent by server
                 .ifPresent(serviceId -> account.getRecipientResolver().resolveRecipient(serviceId));
         if (!envelope.isReceipt()) {
+            final var destination = getDestination(envelope).serviceId();
             try {
-                final var cipherResult = dependencies.getCipher()
+                final var cipherResult = dependencies.getCipher(destination == null
+                                || destination.equals(account.getAci()) ? ServiceIdType.ACI : ServiceIdType.PNI)
                         .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
                 content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
                 if (content == null) {
@@ -173,7 +178,6 @@ public final class IncomingMessageHandler {
                                 .contains(Profile.Capability.senderKey);
                         final var isSelfSenderKeyCapable = selfProfile != null && selfProfile.getCapabilities()
                                 .contains(Profile.Capability.senderKey);
-                        final var destination = getDestination(envelope).serviceId();
                         if (!isSelf && isSenderSenderKeyCapable && isSelfSenderKeyCapable) {
                             logger.debug("Received invalid message, requesting message resend.");
                             actions.add(new SendRetryMessageRequestAction(sender, serviceId, e, envelope, destination));
@@ -953,16 +957,12 @@ public final class IncomingMessageHandler {
     }
 
     private DeviceAddress getDestination(SignalServiceEnvelope envelope) {
-        if (!envelope.hasDestinationUuid()) {
+        final var destination = envelope.getDestinationServiceId();
+        if (destination == null) {
             return new DeviceAddress(account.getSelfRecipientId(), account.getAci(), account.getDeviceId());
         }
-        final var addressOptional = SignalServiceAddress.fromRaw(envelope.getDestinationServiceId(), null);
-        if (addressOptional.isEmpty()) {
-            return new DeviceAddress(account.getSelfRecipientId(), account.getAci(), account.getDeviceId());
-        }
-        final var address = addressOptional.get();
-        return new DeviceAddress(account.getRecipientResolver().resolveRecipient(address),
-                address.getServiceId(),
+        return new DeviceAddress(account.getRecipientResolver().resolveRecipient(destination),
+                destination,
                 account.getDeviceId());
     }
 
