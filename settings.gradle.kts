@@ -13,7 +13,7 @@ dependencyResolutionManagement {
             version("slf4j", "2.0.12")
             library("slf4j.api", "org.slf4j", "slf4j-api").versionRef("slf4j")
             library("slf4j.jul", "org.slf4j", "jul-to-slf4j").versionRef("slf4j")
-            library("logback", "ch.qos.logback", "logback-classic").version("1.4.14")
+            library("logback", "ch.qos.logback", "logback-classic").version("1.5.0")
 
             library("signalservice", "com.github.turasa", "signal-service-java").version("2.15.3_unofficial_96")
             library("sqlite", "org.xerial", "sqlite-jdbc").version("3.45.1.0")
