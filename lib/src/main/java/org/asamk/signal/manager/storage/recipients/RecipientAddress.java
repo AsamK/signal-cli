@@ -165,11 +165,11 @@ public record RecipientAddress(
     }
 
     public SignalServiceAddress toSignalServiceAddress() {
-        return new SignalServiceAddress(aci.orElse(ACI.UNKNOWN), number);
+        return new SignalServiceAddress(serviceId().orElse(ACI.UNKNOWN), number);
     }
 
     public org.asamk.signal.manager.api.RecipientAddress toApiRecipientAddress() {
-        return new org.asamk.signal.manager.api.RecipientAddress(aci().map(ServiceId::getRawUuid),
+        return new org.asamk.signal.manager.api.RecipientAddress(serviceId().map(ServiceId::getRawUuid),
                 number(),
                 username());
     }
