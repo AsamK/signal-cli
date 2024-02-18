@@ -35,8 +35,8 @@ public class TrustCommand implements JsonRpcLocalCommand {
     public void handleCommand(
             final Namespace ns, final Manager m, final OutputWriter outputWriter
     ) throws CommandException {
-        var recipentString = ns.getString("recipient");
-        var recipient = CommandUtil.getSingleRecipientIdentifier(recipentString, m.getSelfNumber());
+        var recipientString = ns.getString("recipient");
+        var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getSelfNumber());
         if (Boolean.TRUE.equals(ns.getBoolean("trust-all-known-keys"))) {
             try {
                 final var res = m.trustIdentityAllKeys(recipient);
