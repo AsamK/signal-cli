@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UnknownStorageIdStore {
@@ -26,7 +27,7 @@ public class UnknownStorageIdStore {
         }
     }
 
-    public Collection<StorageId> getUnknownStorageIds(Connection connection) throws SQLException {
+    public Set<StorageId> getUnknownStorageIds(Connection connection) throws SQLException {
         final var sql = (
                 """
                 SELECT s.type, s.storage_id
@@ -35,7 +36,7 @@ public class UnknownStorageIdStore {
         ).formatted(TABLE_STORAGE_ID);
         try (final var statement = connection.prepareStatement(sql)) {
             try (var result = Utils.executeQueryForStream(statement, this::getStorageIdFromResultSet)) {
-                return result.toList();
+                return result.collect(Collectors.toSet());
             }
         }
     }

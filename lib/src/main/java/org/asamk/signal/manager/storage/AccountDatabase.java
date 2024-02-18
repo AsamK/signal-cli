@@ -495,7 +495,7 @@ public class AccountDatabase extends Database {
                                         CREATE TABLE storage_id (
                                           _id INTEGER PRIMARY KEY,
                                           type INTEGER NOT NULL,
-                                          storage_id BLOB NOT NULL
+                                          storage_id BLOB UNIQUE NOT NULL
                                         ) STRICT;
                                         ALTER TABLE group_v1 ADD COLUMN storage_id BLOB;
                                         ALTER TABLE group_v1 ADD COLUMN storage_record BLOB;
