@@ -151,6 +151,13 @@ Can fix problems with receiving messages.
 *-n* NAME, *--device-name* NAME::
 Set a new device name for the primary or linked device
 
+*--username* NAME::
+Specify a username that can then be used to contact this account.
+Returns the new username with discriminator and the username link.
+
+*--delete-username*::
+Delete the username associated with this account.
+
 *--unrestricted-unidentified-sender* {true,false}::
 Enable if anyone should be able to send you unidentified sender messages.
 
@@ -275,6 +282,9 @@ Send the message to self without notification.
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
 *-m* MESSAGE, *--message* MESSAGE::
 Specify the message.
 
@@ -356,6 +366,9 @@ Specify the recipients’ phone number.
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
 
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
 *--type* TYPE::
 Type of message request response (accept, delete)
 
@@ -381,6 +394,9 @@ Specify the recipients’ phone number.
 
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
 
 *-e* EMOJI, *--emoji* EMOJI::
 Specify the emoji, should be a single unicode grapheme cluster.
@@ -433,6 +449,9 @@ Specify the recipients’ phone number.
 
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
 
 *-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
 Specify the timestamp of the message to delete.
