@@ -204,6 +204,10 @@ public interface Manager extends Closeable {
 
     SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException;
 
+    SendMessageResults sendMessageRequestResponse(
+            MessageEnvelope.Sync.MessageRequestResponse.Type type, Set<RecipientIdentifier> recipientIdentifiers
+    );
+
     void hideRecipient(RecipientIdentifier.Single recipient);
 
     void deleteRecipient(RecipientIdentifier.Single recipient);

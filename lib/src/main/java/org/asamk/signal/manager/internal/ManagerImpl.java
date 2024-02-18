@@ -38,6 +38,7 @@ import org.asamk.signal.manager.api.InvalidUsernameException;
 import org.asamk.signal.manager.api.LastGroupAdminException;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.api.MessageEnvelope.Sync.MessageRequestResponse;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
@@ -875,6 +876,41 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public SendMessageResults sendMessageRequestResponse(
+            final MessageRequestResponse.Type type, final Set<RecipientIdentifier> recipients
+    ) {
+        var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
+        for (final var recipient : recipients) {
+            if (recipient instanceof RecipientIdentifier.NoteToSelf || (
+                    recipient instanceof RecipientIdentifier.Single single
+                            && new RecipientAddress(single.toPartialRecipientAddress()).matches(account.getSelfRecipientAddress())
+            )) {
+                final var result = context.getSyncHelper()
+                        .sendMessageRequestResponse(type, account.getSelfRecipientId());
+                if (result != null) {
+                    results.put(recipient, List.of(toSendMessageResult(result)));
+                }
+                results.put(recipient, List.of(toSendMessageResult(result)));
+            } else if (recipient instanceof RecipientIdentifier.Single single) {
+                try {
+                    final var recipientId = context.getRecipientHelper().resolveRecipient(single);
+                    final var result = context.getSyncHelper().sendMessageRequestResponse(type, recipientId);
+                    if (result != null) {
+                        results.put(recipient, List.of(toSendMessageResult(result)));
+                    }
+                } catch (UnregisteredRecipientException e) {
+                    results.put(recipient,
+                            List.of(SendMessageResult.unregisteredFailure(single.toPartialRecipientAddress())));
+                }
+            } else if (recipient instanceof RecipientIdentifier.Group group) {
+                final var result = context.getSyncHelper().sendMessageRequestResponse(type, group.groupId());
+                results.put(recipient, List.of(toSendMessageResult(result)));
+            }
+        }
+        return new SendMessageResults(0, results);
+    }
+
+    @Override
     public void hideRecipient(final RecipientIdentifier.Single recipient) {
         final var recipientIdOptional = context.getRecipientHelper().resolveRecipientOptional(recipient);
         if (recipientIdOptional.isPresent()) {
@@ -929,6 +965,10 @@ public class ManagerImpl implements Manager {
                 continue;
             }
             context.getContactHelper().setContactBlocked(recipientId, blocked);
+            context.getSyncHelper()
+                    .sendMessageRequestResponse(blocked
+                            ? MessageRequestResponse.Type.BLOCK
+                            : MessageRequestResponse.Type.UNBLOCK_AND_ACCEPT, recipientId);
             // if we don't have a common group with the blocked contact we need to rotate the profile key
             shouldRotateProfileKey = blocked && (
                     shouldRotateProfileKey || account.getGroupStore()
@@ -957,6 +997,10 @@ public class ManagerImpl implements Manager {
                 continue;
             }
             context.getGroupHelper().setGroupBlocked(groupId, blocked);
+            context.getSyncHelper()
+                    .sendMessageRequestResponse(blocked
+                            ? MessageRequestResponse.Type.BLOCK
+                            : MessageRequestResponse.Type.UNBLOCK_AND_ACCEPT, groupId);
             shouldRotateProfileKey = blocked;
         }
         if (shouldRotateProfileKey) {

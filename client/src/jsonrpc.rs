@@ -247,6 +247,15 @@ pub trait Rpc {
         stop: bool,
     ) -> Result<Value, ErrorObjectOwned>;
 
+    #[method(name = "sendMessageRequestResponse", param_kind = map)]
+    fn send_message_request_response(
+        &self,
+        account: Option<String>,
+        recipients: Vec<String>,
+        #[allow(non_snake_case)] groupIds: Vec<String>,
+        r#type: String,
+    ) -> Result<Value, ErrorObjectOwned>;
+
     #[method(name = "setPin", param_kind = map)]
     fn set_pin(&self, account: Option<String>, pin: String) -> Result<Value, ErrorObjectOwned>;
 

@@ -2,6 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.GroupId;
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
@@ -28,6 +29,7 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.MessageRequestResponseMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
@@ -365,6 +367,25 @@ public class SyncHelper {
         }
     }
 
+    public SendMessageResult sendMessageRequestResponse(
+            final MessageEnvelope.Sync.MessageRequestResponse.Type type, final GroupId groupId
+    ) {
+        final var response = MessageRequestResponseMessage.forGroup(groupId.serialize(), localToRemoteType(type));
+        return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forMessageRequestResponse(response));
+    }
+
+    public SendMessageResult sendMessageRequestResponse(
+            final MessageEnvelope.Sync.MessageRequestResponse.Type type, final RecipientId recipientId
+    ) {
+        final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
+        if (address.serviceId().isEmpty()) {
+            return null;
+        }
+        final var response = MessageRequestResponseMessage.forIndividual(address.serviceId().get(),
+                localToRemoteType(type));
+        return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forMessageRequestResponse(response));
+    }
+
     private SendMessageResult requestSyncData(final SyncMessage.Request.Type type) {
         var r = new SyncMessage.Request.Builder().type(type).build();
         var message = SignalServiceSyncMessage.forRequest(new RequestMessage(r));
@@ -388,5 +409,18 @@ public class SyncHelper {
         } catch (IOException e) {
             logger.warn("Failed to download avatar for contact {}, ignoring: {}", address, e.getMessage());
         }
+    }
+
+    private MessageRequestResponseMessage.Type localToRemoteType(final MessageEnvelope.Sync.MessageRequestResponse.Type type) {
+        return switch (type) {
+            case UNKNOWN -> MessageRequestResponseMessage.Type.UNKNOWN;
+            case ACCEPT -> MessageRequestResponseMessage.Type.ACCEPT;
+            case DELETE -> MessageRequestResponseMessage.Type.DELETE;
+            case BLOCK -> MessageRequestResponseMessage.Type.BLOCK;
+            case BLOCK_AND_DELETE -> MessageRequestResponseMessage.Type.BLOCK_AND_DELETE;
+            case UNBLOCK_AND_ACCEPT -> MessageRequestResponseMessage.Type.UNBLOCK_AND_ACCEPT;
+            case SPAM -> MessageRequestResponseMessage.Type.SPAM;
+            case BLOCK_AND_SPAM -> MessageRequestResponseMessage.Type.BLOCK_AND_SPAM;
+        };
     }
 }

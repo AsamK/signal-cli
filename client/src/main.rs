@@ -437,6 +437,23 @@ async fn handle_command(
                 .start_change_number(cli.account, number, voice, captcha)
                 .await
         }
+        CliCommands::SendMessageRequestResponse {
+            recipient,
+            group_id,
+            r#type,
+        } => {
+            client
+                .send_message_request_response(
+                    cli.account,
+                    recipient,
+                    group_id,
+                    match r#type {
+                        cli::MessageRequestResponseType::Accept => "accept".to_owned(),
+                        cli::MessageRequestResponseType::Delete => "delete".to_owned(),
+                    },
+                )
+                .await
+        }
     }
 }
 

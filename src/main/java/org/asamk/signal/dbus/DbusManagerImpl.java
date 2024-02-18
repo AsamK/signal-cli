@@ -472,6 +472,14 @@ public class DbusManagerImpl implements Manager {
         return new SendMessageResults(0, Map.of());
     }
 
+    @Override
+    public SendMessageResults sendMessageRequestResponse(
+            final MessageEnvelope.Sync.MessageRequestResponse.Type type,
+            final Set<RecipientIdentifier> recipientIdentifiers
+    ) {
+        throw new UnsupportedOperationException();
+    }
+
     public void hideRecipient(final RecipientIdentifier.Single recipient) {
         throw new UnsupportedOperationException();
     }

@@ -277,6 +277,14 @@ pub enum CliCommands {
         #[arg(short = 's', long)]
         stop: bool,
     },
+    SendMessageRequestResponse {
+        recipient: Vec<String>,
+
+        #[arg(short = 'g', long = "group-id")]
+        group_id: Vec<String>,
+
+        r#type: MessageRequestResponseType,
+    },
     SetPin {
         pin: String,
     },
@@ -446,4 +454,11 @@ pub enum LinkState {
 pub enum GroupPermission {
     EveryMember,
     OnlyAdmins,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
+#[value(rename_all = "kebab-case")]
+pub enum MessageRequestResponseType {
+    Accept,
+    Delete,
 }
