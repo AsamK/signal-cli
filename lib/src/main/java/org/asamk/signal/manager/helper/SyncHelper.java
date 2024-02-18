@@ -2,7 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.GroupId;
-import org.asamk.signal.manager.api.MessageEnvelope;
+import org.asamk.signal.manager.api.MessageEnvelope.Sync.MessageRequestResponse;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
@@ -368,19 +368,23 @@ public class SyncHelper {
     }
 
     public SendMessageResult sendMessageRequestResponse(
-            final MessageEnvelope.Sync.MessageRequestResponse.Type type, final GroupId groupId
+            final MessageRequestResponse.Type type, final GroupId groupId
     ) {
         final var response = MessageRequestResponseMessage.forGroup(groupId.serialize(), localToRemoteType(type));
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forMessageRequestResponse(response));
     }
 
     public SendMessageResult sendMessageRequestResponse(
-            final MessageEnvelope.Sync.MessageRequestResponse.Type type, final RecipientId recipientId
+            final MessageRequestResponse.Type type, final RecipientId recipientId
     ) {
         final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
         if (address.serviceId().isEmpty()) {
             return null;
         }
+        context.getContactHelper()
+                .setContactProfileSharing(recipientId,
+                        type == MessageRequestResponse.Type.ACCEPT
+                                || type == MessageRequestResponse.Type.UNBLOCK_AND_ACCEPT);
         final var response = MessageRequestResponseMessage.forIndividual(address.serviceId().get(),
                 localToRemoteType(type));
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forMessageRequestResponse(response));
@@ -411,7 +415,7 @@ public class SyncHelper {
         }
     }
 
-    private MessageRequestResponseMessage.Type localToRemoteType(final MessageEnvelope.Sync.MessageRequestResponse.Type type) {
+    private MessageRequestResponseMessage.Type localToRemoteType(final MessageRequestResponse.Type type) {
         return switch (type) {
             case UNKNOWN -> MessageRequestResponseMessage.Type.UNKNOWN;
             case ACCEPT -> MessageRequestResponseMessage.Type.ACCEPT;

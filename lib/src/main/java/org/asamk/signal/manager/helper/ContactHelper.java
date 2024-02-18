@@ -49,6 +49,13 @@ public class ContactHelper {
         account.getContactStore().storeContact(recipientId, builder.withIsBlocked(blocked).build());
     }
 
+    public void setContactProfileSharing(RecipientId recipientId, boolean profileSharing) {
+        var contact = account.getContactStore().getContact(recipientId);
+        final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
+        builder.withIsProfileSharingEnabled(profileSharing);
+        account.getContactStore().storeContact(recipientId, builder.build());
+    }
+
     public void setContactHidden(RecipientId recipientId, boolean hidden) {
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
