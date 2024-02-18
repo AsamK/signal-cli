@@ -5,6 +5,7 @@
 **Attention**: Now requires Java 21 and libsignal-client version 0.39.2
 
 ### Breaking changes
+
 - Sending to the self number (+XXXX) now behaves the same as the `--note-to-self` parameter. To get the previous
   behavior with notification, the `--notify-self` parameter can be added.
 
@@ -13,15 +14,22 @@
 - New `--hidden` parameter for `removeContact` command
 - New `--notify-self` parameter for `send` command, for sending a non-sync message when self is part of the recipients
   or groups.
-- New `--unrestricted-unidentified-sender` parameter for `updateAccount command`
+- New `--unrestricted-unidentified-sender`, `--discoverable-by-number`, `--number-sharing`, `--username`
+  and `--delete-username` parameter for `updateAccount` command
 - New `--bus-name` parameter for `daemon` command to use another D-Bus bus name
 - New `getAvatar` and `getSticker` commands to get avatar and sticker images
+- New `sendMessageRequestResponse` command to accept/delete message requests
+
+### Fixed
+
+- Improve issue with stale prekeys and receiving messages to PNI address
 
 ### Improved
 
 - Better shutdown handling after Ctrl+C and SIGTERM
 - Implemented full remote storage sync.
   Provides better contact and settings sync for linked devices.
+- `listContacts` doesn't list unregistered users anymore
 
 ## [0.12.8] - 2024-02-06
 
