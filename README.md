@@ -127,7 +127,7 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
 It is possible to build a native binary with [GraalVM](https://www.graalvm.org). This is still experimental and will not
 work in all situations.
 
-1. [Install GraalVM and setup the enviroment](https://www.graalvm.org/docs/getting-started/#install-graalvm)
+1. [Install GraalVM and setup the environment](https://www.graalvm.org/docs/getting-started/#install-graalvm)
 2. Execute Gradle:
 
        ./gradlew nativeCompile

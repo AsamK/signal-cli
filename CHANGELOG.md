@@ -471,7 +471,7 @@
 - Improve exit code for message sending.
   Exit with 0 status code if the message was sent successfully to at least
   one recipient, otherwise exit with status code 2 or 4 (for untrusted).
-- Download profiles in parallel for improved perfomance
+- Download profiles in parallel for improved performance
 - `--verbose` flag can be specified multiple times for additional log output
 - Enable more security options for systemd service file
 - Rename sandbox to staging environment, to match the upstream name.
