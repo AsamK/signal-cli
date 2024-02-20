@@ -15,6 +15,7 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.util.CommandUtil;
 
@@ -79,6 +80,12 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
         } catch (IOException e) {
             throw new IOErrorException("Failed to register: %s (%s)".formatted(e.getMessage(),
                     e.getClass().getSimpleName()), e);
+        } catch (VerificationMethoNotAvailableException e) {
+            throw new UserErrorException("Failed to register: " + e.getMessage() + (
+                    voiceVerification
+                            ? ": Before requesting voice verification you need to request SMS verification and wait a minute."
+                            : ""
+            ), e);
         }
     }
 

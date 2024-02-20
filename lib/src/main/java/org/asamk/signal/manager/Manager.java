@@ -43,6 +43,7 @@ import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
+import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -125,7 +126,7 @@ public interface Manager extends Closeable {
 
     void startChangeNumber(
             String newNumber, boolean voiceVerification, String captcha
-    ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException;
+    ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException, VerificationMethoNotAvailableException;
 
     void finishChangeNumber(
             String newNumber, String verificationCode, String pin

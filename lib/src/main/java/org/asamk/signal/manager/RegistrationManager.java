@@ -5,6 +5,7 @@ import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -13,7 +14,7 @@ public interface RegistrationManager extends Closeable {
 
     void register(
             boolean voiceVerification, String captcha
-    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException;
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethoNotAvailableException;
 
     void verifyAccount(
             String verificationCode, String pin

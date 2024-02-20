@@ -24,6 +24,7 @@ import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UpdateProfile;
+import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
@@ -104,7 +105,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
     @Override
     public void register(
             boolean voiceVerification, String captcha
-    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException {
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethoNotAvailableException {
         if (account.isRegistered()
                 && account.getServiceEnvironment() != null
                 && account.getServiceEnvironment() != serviceEnvironmentConfig.type()) {

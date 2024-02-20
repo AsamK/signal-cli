@@ -13,6 +13,7 @@ import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UserAlreadyExistsException;
+import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
 import org.freedesktop.dbus.DBusPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +74,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
             throw new Error.InvalidNumber(e.getMessage());
         } catch (OverlappingFileLockException e) {
             throw new SignalControl.Error.Failure("Account is already in use");
-        } catch (IOException e) {
+        } catch (IOException | VerificationMethoNotAvailableException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
     }

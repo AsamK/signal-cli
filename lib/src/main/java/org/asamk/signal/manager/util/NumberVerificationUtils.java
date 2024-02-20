@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ public class NumberVerificationUtils {
             Consumer<String> sessionIdSaver,
             boolean voiceVerification,
             String captcha
-    ) throws CaptchaRequiredException, IOException, RateLimitException {
+    ) throws CaptchaRequiredException, IOException, RateLimitException, VerificationMethoNotAvailableException {
         RegistrationSessionMetadataResponse sessionResponse;
         try {
             sessionResponse = getValidSession(accountManager, sessionId);
@@ -61,7 +62,9 @@ public class NumberVerificationUtils {
         final var nextAttempt = voiceVerification
                 ? sessionResponse.getBody().getNextCall()
                 : sessionResponse.getBody().getNextSms();
-        if (nextAttempt != null && nextAttempt > 0) {
+        if (nextAttempt == null) {
+            throw new VerificationMethoNotAvailableException();
+        } else if (nextAttempt > 0) {
             final var timestamp = sessionResponse.getHeaders().getTimestamp() + nextAttempt * 1000;
             throw new RateLimitException(timestamp);
         }

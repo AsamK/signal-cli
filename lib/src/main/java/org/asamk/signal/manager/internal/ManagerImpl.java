@@ -64,6 +64,7 @@ import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
+import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
@@ -374,7 +375,7 @@ public class ManagerImpl implements Manager {
     @Override
     public void startChangeNumber(
             String newNumber, boolean voiceVerification, String captcha
-    ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException {
+    ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException, VerificationMethoNotAvailableException {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
         }
