@@ -166,6 +166,10 @@
   "name":"org.signal.libsignal.protocol.state.SignedPreKeyStore"
 },
 {
+  "name":"org.signal.libsignal.usernames.BadDiscriminatorCharacterException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.signal.libsignal.usernames.BadNicknameCharacterException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },

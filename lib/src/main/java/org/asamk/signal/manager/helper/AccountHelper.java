@@ -321,21 +321,42 @@ public class AccountHelper {
     public static final int USERNAME_MIN_LENGTH = 3;
     public static final int USERNAME_MAX_LENGTH = 32;
 
-    public void reserveUsername(String nickname) throws IOException, BaseUsernameException {
+    public void reserveUsernameFromNickname(String nickname) throws IOException, BaseUsernameException {
         final var currentUsername = account.getUsername();
         if (currentUsername != null) {
             final var currentNickname = currentUsername.substring(0, currentUsername.indexOf('.'));
             if (currentNickname.equals(nickname)) {
                 try {
                     refreshCurrentUsername();
+                    return;
                 } catch (IOException | BaseUsernameException e) {
                     logger.warn("[reserveUsername] Failed to refresh current username, trying to claim new username");
                 }
-                return;
             }
         }
 
         final var candidates = Username.candidatesFrom(nickname, USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+        reserveUsername(candidates);
+    }
+
+    public void reserveExactUsername(String username) throws IOException, BaseUsernameException {
+        final var currentUsername = account.getUsername();
+        if (currentUsername != null) {
+            if (currentUsername.equals(username)) {
+                try {
+                    refreshCurrentUsername();
+                    return;
+                } catch (IOException | BaseUsernameException e) {
+                    logger.warn("[reserveUsername] Failed to refresh current username, trying to claim new username");
+                }
+            }
+        }
+
+        final var candidates = List.of(new Username(username));
+        reserveUsername(candidates);
+    }
+
+    private void reserveUsername(final List<Username> candidates) throws IOException {
         final var candidateHashes = new ArrayList<String>();
         for (final var candidate : candidates) {
             candidateHashes.add(Base64.encodeUrlSafeWithoutPadding(candidate.getHash()));

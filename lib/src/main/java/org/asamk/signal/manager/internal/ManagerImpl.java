@@ -361,7 +361,11 @@ public class ManagerImpl implements Manager {
     @Override
     public void setUsername(final String username) throws IOException, InvalidUsernameException {
         try {
-            context.getAccountHelper().reserveUsername(username);
+            if (username.contains(".")) {
+                context.getAccountHelper().reserveExactUsername(username);
+            } else {
+                context.getAccountHelper().reserveUsernameFromNickname(username);
+            }
         } catch (BaseUsernameException e) {
             throw new InvalidUsernameException(e.getMessage() + " (" + e.getClass().getSimpleName() + ")", e);
         }
