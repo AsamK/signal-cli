@@ -102,6 +102,8 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var storiesDisabled = remote.isStoriesDisabled();
         final var hasSeenGroupStoryEducation = remote.hasSeenGroupStoryEducationSheet()
                 || local.hasSeenGroupStoryEducationSheet();
+        boolean hasSeenUsernameOnboarding = remote.hasCompletedUsernameOnboarding()
+                || local.hasCompletedUsernameOnboarding();
         final var username = remote.getUsername();
         final var usernameLink = remote.getUsernameLink();
 
@@ -131,6 +133,7 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .setHasViewedOnboardingStory(hasViewedOnboardingStory)
                 .setStoriesDisabled(storiesDisabled)
                 .setHasSeenGroupStoryEducationSheet(hasSeenGroupStoryEducation)
+                .setHasCompletedUsernameOnboarding(hasSeenUsernameOnboarding)
                 .setStoryViewReceiptsState(storyViewReceiptsState)
                 .setUsername(username)
                 .setUsernameLink(usernameLink)
