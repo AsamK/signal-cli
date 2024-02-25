@@ -151,8 +151,9 @@ Can fix problems with receiving messages.
 *-n* NAME, *--device-name* NAME::
 Set a new device name for the primary or linked device
 
-*--username* NAME::
+*-u* NAME *--username* NAME::
 Specify a username that can then be used to contact this account.
+This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.000).
 Returns the new username with discriminator and the username link.
 
 *--delete-username*::
