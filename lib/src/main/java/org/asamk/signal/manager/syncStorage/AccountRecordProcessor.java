@@ -90,7 +90,7 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var phoneNumberSharingMode = remote.getPhoneNumberSharingMode();
         final var preferContactAvatars = remote.isPreferContactAvatars();
         final var universalExpireTimer = remote.getUniversalExpireTimer();
-        final var e164 = local.getE164();
+        final var e164 = account.isPrimaryDevice() ? local.getE164() : remote.getE164();
         final var defaultReactions = !remote.getDefaultReactions().isEmpty()
                 ? remote.getDefaultReactions()
                 : local.getDefaultReactions();
