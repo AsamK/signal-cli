@@ -436,7 +436,10 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void removeLinkedDevices(int deviceId) throws IOException {
+    public void removeLinkedDevices(int deviceId) throws IOException, NotPrimaryDeviceException {
+        if (!account.isPrimaryDevice()) {
+            throw new NotPrimaryDeviceException();
+        }
         context.getAccountHelper().removeLinkedDevices(deviceId);
     }
 

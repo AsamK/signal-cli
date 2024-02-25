@@ -1177,6 +1177,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
             try {
                 m.removeLinkedDevices(device.id());
                 updateDevices();
+            } catch (NotPrimaryDeviceException e) {
+                throw new Error.Failure("This command doesn't work on linked devices.");
             } catch (IOException e) {
                 throw new Error.Failure(e.getMessage());
             }

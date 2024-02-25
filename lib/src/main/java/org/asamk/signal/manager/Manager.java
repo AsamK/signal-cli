@@ -140,7 +140,7 @@ public interface Manager extends Closeable {
 
     List<Device> getLinkedDevices() throws IOException;
 
-    void removeLinkedDevices(int deviceId) throws IOException;
+    void removeLinkedDevices(int deviceId) throws IOException, NotPrimaryDeviceException;
 
     void addDeviceLink(DeviceLinkUrl linkUri) throws IOException, InvalidDeviceLinkException, NotPrimaryDeviceException;
 
