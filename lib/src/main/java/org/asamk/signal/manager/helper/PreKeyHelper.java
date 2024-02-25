@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.account.PreKeyUpload;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
+import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 import org.whispersystems.signalservice.internal.push.OneTimePreKeyCounts;
 
 import java.io.IOException;
@@ -171,6 +172,11 @@ public class PreKeyHelper {
         } catch (AuthorizationFailedException e) {
             // This can happen when the primary device has changed phone number
             logger.warn("Failed to updated pre keys: {}", e.getMessage());
+        } catch (NonSuccessfulResponseCodeException e) {
+            if (serviceIdType != ServiceIdType.PNI || e.getCode() != 422) {
+                throw e;
+            }
+            logger.warn("Failed to update PNI pre keys, ignoring.");
         }
         return needsReset;
     }
