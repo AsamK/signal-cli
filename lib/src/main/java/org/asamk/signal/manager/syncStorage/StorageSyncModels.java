@@ -16,7 +16,6 @@ import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.storage.protos.AccountRecord;
 import org.whispersystems.signalservice.internal.storage.protos.AccountRecord.UsernameLink;
-import org.whispersystems.signalservice.internal.storage.protos.ContactRecord;
 import org.whispersystems.signalservice.internal.storage.protos.ContactRecord.IdentityState;
 
 import java.util.Optional;
@@ -38,7 +37,8 @@ public final class StorageSyncModels {
     public static PhoneNumberSharingMode remoteToLocal(AccountRecord.PhoneNumberSharingMode phoneNumberPhoneNumberSharingMode) {
         return switch (phoneNumberPhoneNumberSharingMode) {
             case EVERYBODY -> PhoneNumberSharingMode.EVERYBODY;
-            case UNKNOWN, NOBODY -> PhoneNumberSharingMode.NOBODY;
+            case NOBODY -> PhoneNumberSharingMode.NOBODY;
+            case UNKNOWN -> null;
         };
     }
 
@@ -63,8 +63,9 @@ public final class StorageSyncModels {
                         .orElse(true))
                 .setLinkPreviewsEnabled(Optional.ofNullable(configStore.getLinkPreviews()).orElse(true))
                 .setUnlistedPhoneNumber(Optional.ofNullable(configStore.getPhoneNumberUnlisted()).orElse(false))
-                .setPhoneNumberSharingMode(localToRemote(Optional.ofNullable(configStore.getPhoneNumberSharingMode())
-                        .orElse(PhoneNumberSharingMode.EVERYBODY)))
+                .setPhoneNumberSharingMode(Optional.ofNullable(configStore.getPhoneNumberSharingMode())
+                        .map(StorageSyncModels::localToRemote)
+                        .orElse(AccountRecord.PhoneNumberSharingMode.UNKNOWN))
                 .setE164(self.getAddress().number().orElse(""))
                 .setUsername(self.getAddress().username().orElse(null));
         if (usernameLinkComponents != null) {
@@ -136,7 +137,7 @@ public final class StorageSyncModels {
         return SignalStorageRecord.forGroupV2(builder.build());
     }
 
-    public static TrustLevel remoteToLocal(ContactRecord.IdentityState identityState) {
+    public static TrustLevel remoteToLocal(IdentityState identityState) {
         return switch (identityState) {
             case DEFAULT -> TrustLevel.TRUSTED_UNVERIFIED;
             case UNVERIFIED -> TrustLevel.UNTRUSTED;

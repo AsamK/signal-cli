@@ -437,6 +437,10 @@
   "fields":[{"name":"base"}, {"name":"cellsBusy"}]
 },
 {
+  "name":"java.util.concurrent.atomic.Striped64$Cell",
+  "fields":[{"name":"value"}]
+},
+{
   "name":"javax.security.auth.x500.X500Principal",
   "methods":[{"name":"<init>","parameterTypes":["sun.security.x509.X500Name"] }]
 },
