@@ -15,7 +15,7 @@ dependencyResolutionManagement {
             library("slf4j.jul", "org.slf4j", "jul-to-slf4j").versionRef("slf4j")
             library("logback", "ch.qos.logback", "logback-classic").version("1.5.0")
 
-            library("signalservice", "com.github.turasa", "signal-service-java").version("2.15.3_unofficial_96")
+            library("signalservice", "com.github.turasa", "signal-service-java").version("2.15.3_unofficial_97")
             library("sqlite", "org.xerial", "sqlite-jdbc").version("3.45.1.0")
             library("hikari", "com.zaxxer", "HikariCP").version("5.1.0")
             library("junit.jupiter", "org.junit.jupiter", "junit-jupiter").version("5.10.2")
