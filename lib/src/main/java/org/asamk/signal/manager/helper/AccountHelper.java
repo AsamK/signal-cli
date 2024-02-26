@@ -500,6 +500,7 @@ public class AccountHelper {
         dependencies.getAccountManager().enableRegistrationLock(masterKey);
 
         account.setRegistrationLockPin(pin);
+        updateAccountAttributes();
     }
 
     public void removeRegistrationPin() throws IOException {
