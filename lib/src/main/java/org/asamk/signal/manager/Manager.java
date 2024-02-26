@@ -2,6 +2,7 @@ package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
+import org.asamk.signal.manager.api.CaptchaRejectedException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
@@ -136,7 +137,10 @@ public interface Manager extends Closeable {
 
     void deleteAccount() throws IOException;
 
-    void submitRateLimitRecaptchaChallenge(String challenge, String captcha) throws IOException;
+    void submitRateLimitRecaptchaChallenge(
+            String challenge,
+            String captcha
+    ) throws IOException, CaptchaRejectedException;
 
     List<Device> getLinkedDevices() throws IOException;
 

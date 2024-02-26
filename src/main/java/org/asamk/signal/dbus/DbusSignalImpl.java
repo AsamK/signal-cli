@@ -4,6 +4,7 @@ import org.asamk.Signal;
 import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
+import org.asamk.signal.manager.api.CaptchaRejectedException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
@@ -159,8 +160,10 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
             m.submitRateLimitRecaptchaChallenge(challenge, captcha);
         } catch (IOException e) {
             throw new Error.Failure("Submit challenge error: " + e.getMessage());
+        } catch (CaptchaRejectedException e) {
+            throw new Error.Failure(
+                    "Captcha rejected, it may be outdated, already used or solved from a different IP address.");
         }
-
     }
 
     @Override

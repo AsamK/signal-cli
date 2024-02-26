@@ -19,6 +19,7 @@ package org.asamk.signal.manager.internal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
+import org.asamk.signal.manager.api.CaptchaRejectedException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
@@ -407,10 +408,17 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void submitRateLimitRecaptchaChallenge(String challenge, String captcha) throws IOException {
+    public void submitRateLimitRecaptchaChallenge(
+            String challenge,
+            String captcha
+    ) throws IOException, CaptchaRejectedException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
 
-        dependencies.getAccountManager().submitRateLimitRecaptchaChallenge(challenge, captcha);
+        try {
+            dependencies.getAccountManager().submitRateLimitRecaptchaChallenge(challenge, captcha);
+        } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRejectedException ignored) {
+            throw new CaptchaRejectedException();
+        }
     }
 
     @Override
