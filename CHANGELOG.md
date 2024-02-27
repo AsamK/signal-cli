@@ -1,6 +1,26 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.1] - 2024-02-27
+
+### Added
+
+- Add `--reregister` parameter to force registration of an already registered account
+
+### Fixed
+
+- Fixed rare issue with duplicate PNIs during migration
+
+### Improved
+
+- Show information when requesting voice verification without prior SMS verification
+- Username can now be set with an explicit discriminator (e.g. testname.000)
+- Improve behavior when PNI prekeys upload fails
+- Improve `submitRateLimitChallenge` error message if captcha is rejected by server
+- Only retry messages after an identity was trusted
+
+### Changed
+
+- Default number sharing to NOBODY, to match the official apps behavior.
 
 ## [0.13.0] - 2024-02-18
 
