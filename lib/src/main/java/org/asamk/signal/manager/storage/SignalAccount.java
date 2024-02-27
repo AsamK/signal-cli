@@ -149,6 +149,9 @@ public class SignalAccount implements Closeable {
     private final KeyValueEntry<Long> lastReceiveTimestamp = new KeyValueEntry<>("last-receive-timestamp",
             long.class,
             0L);
+    private final KeyValueEntry<Boolean> needsToRetryFailedMessages = new KeyValueEntry<>("retry-failed-messages",
+            Boolean.class,
+            true);
     private final KeyValueEntry<byte[]> cdsiToken = new KeyValueEntry<>("cdsi-token", byte[].class);
     private final KeyValueEntry<Long> lastRecipientsRefresh = new KeyValueEntry<>("last-recipients-refresh",
             long.class);
@@ -297,7 +300,7 @@ public class SignalAccount implements Closeable {
         this.pniAccountData.setIdentityKeyPair(pniIdentity);
         this.registered = false;
         this.isMultiDevice = true;
-        getKeyValueStore().storeEntry(lastReceiveTimestamp, 0L);
+        setLastReceiveTimestamp(0L);
         this.pinMasterKey = masterKey;
         getKeyValueStore().storeEntry(storageManifestVersion, -1L);
         this.setStorageManifest(null);
@@ -342,7 +345,7 @@ public class SignalAccount implements Closeable {
         this.pniAccountData.setServiceId(pni);
         init();
         this.registrationLockPin = pin;
-        getKeyValueStore().storeEntry(lastReceiveTimestamp, 0L);
+        setLastReceiveTimestamp(0L);
         save();
 
         setPreKeys(ServiceIdType.ACI, aciPreKeys);
@@ -590,7 +593,7 @@ public class SignalAccount implements Closeable {
             isMultiDevice = rootNode.get("isMultiDevice").asBoolean();
         }
         if (rootNode.hasNonNull("lastReceiveTimestamp")) {
-            getKeyValueStore().storeEntry(lastReceiveTimestamp, rootNode.get("lastReceiveTimestamp").asLong());
+            setLastReceiveTimestamp(rootNode.get("lastReceiveTimestamp").asLong());
         }
         int registrationId = 0;
         if (rootNode.hasNonNull("registrationId")) {
@@ -1648,6 +1651,14 @@ public class SignalAccount implements Closeable {
 
     public void setLastReceiveTimestamp(final long value) {
         getKeyValueStore().storeEntry(lastReceiveTimestamp, value);
+    }
+
+    public void setNeedsToRetryFailedMessages(final boolean value) {
+        getKeyValueStore().storeEntry(needsToRetryFailedMessages, value);
+    }
+
+    public boolean getNeedsToRetryFailedMessages() {
+        return getKeyValueStore().getEntry(needsToRetryFailedMessages);
     }
 
     public boolean isUnrestrictedUnidentifiedAccess() {

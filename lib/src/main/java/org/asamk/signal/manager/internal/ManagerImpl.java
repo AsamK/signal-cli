@@ -409,8 +409,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void submitRateLimitRecaptchaChallenge(
-            String challenge,
-            String captcha
+            String challenge, String captcha
     ) throws IOException, CaptchaRejectedException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
 
@@ -1389,7 +1388,7 @@ public class ManagerImpl implements Manager {
         final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
         final var updated = trustMethod.apply(recipientId);
         if (updated && this.isReceiving()) {
-            context.getReceiveHelper().setNeedsToRetryFailedMessages(true);
+            account.setNeedsToRetryFailedMessages(true);
         }
         return updated;
     }

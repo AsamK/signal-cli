@@ -41,7 +41,6 @@ public class ReceiveHelper {
     private final Context context;
 
     private ReceiveConfig receiveConfig = new ReceiveConfig(false, false, false);
-    private boolean needsToRetryFailedMessages = false;
     private boolean hasCaughtUpWithOldMessages = false;
     private boolean isWaitingForMessage = false;
     private boolean shouldStop = false;
@@ -57,10 +56,6 @@ public class ReceiveHelper {
     public void setReceiveConfig(final ReceiveConfig receiveConfig) {
         this.receiveConfig = receiveConfig;
         dependencies.setAllowStories(!receiveConfig.ignoreStories());
-    }
-
-    public void setNeedsToRetryFailedMessages(final boolean needsToRetryFailedMessages) {
-        this.needsToRetryFailedMessages = needsToRetryFailedMessages;
     }
 
     public void setAuthenticationFailureListener(final Callable authenticationFailureListener) {
@@ -90,7 +85,7 @@ public class ReceiveHelper {
     public void receiveMessages(
             Duration timeout, boolean returnOnTimeout, Integer maxMessages, Manager.ReceiveMessageHandler handler
     ) throws IOException {
-        needsToRetryFailedMessages = true;
+        account.setNeedsToRetryFailedMessages(true);
         hasCaughtUpWithOldMessages = false;
 
         // Use a Map here because java Set doesn't have a get method ...
@@ -130,9 +125,8 @@ public class ReceiveHelper {
         isWaitingForMessage = false;
 
         while (!shouldStop && remainingMessages != 0) {
-            if (needsToRetryFailedMessages) {
+            if (account.getNeedsToRetryFailedMessages()) {
                 retryFailedReceivedMessages(handler);
-                needsToRetryFailedMessages = false;
             }
             SignalServiceEnvelope envelope;
             final CachedMessage[] cachedMessage = {null};
@@ -266,6 +260,7 @@ public class ReceiveHelper {
             }
         }
         handleQueuedActions(queuedActions);
+        account.setNeedsToRetryFailedMessages(false);
     }
 
     private List<HandleAction> retryFailedReceivedMessage(
@@ -282,8 +277,8 @@ public class ReceiveHelper {
         final var exception = result.second();
 
         if (exception instanceof UntrustedIdentityException) {
-            if (System.currentTimeMillis() - envelope.getServerDeliveredTimestamp() > 1000L * 60 * 60 * 24 * 30) {
-                // Envelope is more than a month old, cleaning up.
+            if (System.currentTimeMillis() - envelope.getServerDeliveredTimestamp() > 1000L * 60 * 60 * 24 * 14) {
+                // Envelope is more than two weeks old, cleaning up.
                 cachedMessage.delete();
                 return null;
             }
