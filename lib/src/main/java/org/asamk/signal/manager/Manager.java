@@ -44,7 +44,7 @@ import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
-import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
+import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -127,7 +127,7 @@ public interface Manager extends Closeable {
 
     void startChangeNumber(
             String newNumber, boolean voiceVerification, String captcha
-    ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException, VerificationMethoNotAvailableException;
+    ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException, VerificationMethodNotAvailableException;
 
     void finishChangeNumber(
             String newNumber, String verificationCode, String pin
@@ -138,8 +138,7 @@ public interface Manager extends Closeable {
     void deleteAccount() throws IOException;
 
     void submitRateLimitRecaptchaChallenge(
-            String challenge,
-            String captcha
+            String challenge, String captcha
     ) throws IOException, CaptchaRejectedException;
 
     List<Device> getLinkedDevices() throws IOException;

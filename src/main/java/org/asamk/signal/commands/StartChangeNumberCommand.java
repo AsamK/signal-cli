@@ -13,7 +13,7 @@ import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.RateLimitException;
-import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
+import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.CommandUtil;
 
@@ -60,7 +60,7 @@ public class StartChangeNumberCommand implements JsonRpcLocalCommand {
         } catch (IOException e) {
             throw new IOErrorException("Failed to change number: %s (%s)".formatted(e.getMessage(),
                     e.getClass().getSimpleName()), e);
-        } catch (VerificationMethoNotAvailableException e) {
+        } catch (VerificationMethodNotAvailableException e) {
             throw new UserErrorException("Failed to register: " + e.getMessage() + (
                     voiceVerification
                             ? ": Before requesting voice verification you need to request SMS verification and wait a minute."

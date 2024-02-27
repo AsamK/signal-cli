@@ -7,7 +7,7 @@ import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
-import org.asamk.signal.manager.api.VerificationMethoNotAvailableException;
+import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.jobs.SyncStorageJob;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -165,7 +165,7 @@ public class AccountHelper {
 
     public void startChangeNumber(
             String newNumber, boolean voiceVerification, String captcha
-    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethoNotAvailableException {
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethodNotAvailableException {
         final var accountManager = dependencies.createUnauthenticatedAccountManager(newNumber, account.getPassword());
         String sessionId = NumberVerificationUtils.handleVerificationSession(accountManager,
                 account.getSessionId(newNumber),
