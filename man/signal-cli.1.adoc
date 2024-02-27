@@ -102,11 +102,14 @@ If the account was deleted (with --delete-account) it cannot be reactivated.
 The verification should be done over voice, not SMS.
 Voice verification only works if an SMS verification has been attempted before.
 
-*--captcha*::
+*--captcha* CAPTCHA::
 The captcha token, required if registration failed with a captcha required error.
 To get the token, go to https://signalcaptchas.org/registration/generate.html
 For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html
 After solving the captcha, right-click on the "Open Signal" link and copy the link.
+
+*--reregister*::
+Register even if account is already registered.
 
 === verify
 

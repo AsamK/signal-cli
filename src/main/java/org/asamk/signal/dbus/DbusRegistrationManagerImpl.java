@@ -27,8 +27,11 @@ public class DbusRegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void register(
-            final boolean voiceVerification, final String captcha
+            final boolean voiceVerification, final String captcha, final boolean forceRegister
     ) throws IOException, CaptchaRequiredException {
+        if (forceRegister) {
+            throw new UnsupportedOperationException();
+        }
         if (captcha == null) {
             signalControl.register(number, voiceVerification);
         } else {

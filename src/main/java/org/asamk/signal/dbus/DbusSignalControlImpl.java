@@ -63,7 +63,7 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
                     "Invalid account (phone number), make sure you include the country code.");
         }
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
-            registrationManager.register(voiceVerification, captcha);
+            registrationManager.register(voiceVerification, captcha, false);
         } catch (RateLimitException e) {
             String message = "Rate limit reached";
             throw new SignalControl.Error.Failure(message);

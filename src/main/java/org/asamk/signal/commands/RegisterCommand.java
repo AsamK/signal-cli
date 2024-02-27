@@ -37,14 +37,18 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
                 .action(Arguments.storeTrue());
         subparser.addArgument("--captcha")
                 .help("The captcha token, required if registration failed with a captcha required error.");
+        subparser.addArgument("--reregister")
+                .action(Arguments.storeTrue())
+                .help("Register even if account is already registered");
     }
 
     @Override
     public void handleCommand(final Namespace ns, final RegistrationManager m) throws CommandException {
         final boolean voiceVerification = Boolean.TRUE.equals(ns.getBoolean("voice"));
         final var captcha = ns.getString("captcha");
+        final var reregister = Boolean.TRUE.equals(ns.getBoolean("reregister"));
 
-        register(m, voiceVerification, captcha);
+        register(m, voiceVerification, captcha, reregister);
     }
 
     @Override
@@ -61,14 +65,14 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
     public void handleCommand(
             final RegistrationParams request, final RegistrationManager m, final JsonWriter jsonWriter
     ) throws CommandException {
-        register(m, Boolean.TRUE.equals(request.voice()), request.captcha());
+        register(m, Boolean.TRUE.equals(request.voice()), request.captcha(), Boolean.TRUE.equals(request.reregister()));
     }
 
     private void register(
-            final RegistrationManager m, final boolean voiceVerification, final String captcha
+            final RegistrationManager m, final boolean voiceVerification, final String captcha, final boolean reregister
     ) throws CommandException {
         try {
-            m.register(voiceVerification, captcha);
+            m.register(voiceVerification, captcha, reregister);
         } catch (RateLimitException e) {
             final var message = CommandUtil.getRateLimitMessage(e);
             throw new RateLimitErrorException(message, e);
@@ -89,5 +93,5 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
         }
     }
 
-    public record RegistrationParams(Boolean voice, String captcha) {}
+    public record RegistrationParams(Boolean voice, String captcha, Boolean reregister) {}
 }

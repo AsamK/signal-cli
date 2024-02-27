@@ -104,7 +104,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void register(
-            boolean voiceVerification, String captcha
+            boolean voiceVerification, String captcha, final boolean forceRegister
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethoNotAvailableException {
         if (account.isRegistered()
                 && account.getServiceEnvironment() != null
@@ -113,12 +113,18 @@ public class RegistrationManagerImpl implements RegistrationManager {
         }
 
         try {
-            final var recoveryPassword = account.getRecoveryPassword();
-            if (recoveryPassword != null && account.isPrimaryDevice() && attemptReregisterAccount(recoveryPassword)) {
-                return;
+            if (!forceRegister) {
+                if (account.isRegistered()) {
+                    throw new IOException("Account is already registered");
+                }
+
+                if (account.getAci() != null && attemptReactivateAccount()) {
+                    return;
+                }
             }
 
-            if (account.getAci() != null && attemptReactivateAccount()) {
+            final var recoveryPassword = account.getRecoveryPassword();
+            if (recoveryPassword != null && account.isPrimaryDevice() && attemptReregisterAccount(recoveryPassword)) {
                 return;
             }
 
@@ -128,6 +134,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
                     voiceVerification,
                     captcha);
             NumberVerificationUtils.requestVerificationCode(accountManager, sessionId, voiceVerification);
+            account.setRegistered(false);
         } catch (DeprecatedVersionException e) {
             logger.debug("Signal-Server returned deprecated version exception", e);
             throw e;
