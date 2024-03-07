@@ -76,17 +76,8 @@ public class ProfileUtils {
 
     public static HashSet<Profile.Capability> getCapabilities(final SignalServiceProfile encryptedProfile) {
         final var capabilities = new HashSet<Profile.Capability>();
-        if (encryptedProfile.getCapabilities().isGv1Migration()) {
-            capabilities.add(Profile.Capability.gv1Migration);
-        }
         if (encryptedProfile.getCapabilities().isStorage()) {
             capabilities.add(Profile.Capability.storage);
-        }
-        if (encryptedProfile.getCapabilities().isSenderKey()) {
-            capabilities.add(Profile.Capability.senderKey);
-        }
-        if (encryptedProfile.getCapabilities().isAnnouncementGroup()) {
-            capabilities.add(Profile.Capability.announcementGroup);
         }
 
         return capabilities;

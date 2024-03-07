@@ -213,6 +213,7 @@ public class RecipientHelper {
                             token,
                             serviceEnvironmentConfig.cdsiMrenclave(),
                             null,
+                            dependencies.getServiceEnvironmentConfig().netEnvironment(),
                             newToken -> {
                                 if (isPartialRefresh) {
                                     account.getCdsiStore().updateAfterPartialCdsQuery(newNumbers);

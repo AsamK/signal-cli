@@ -22,7 +22,6 @@ import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
-import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.TrustLevel;
@@ -161,24 +160,11 @@ public final class IncomingMessageHandler {
                 if (context.getContactHelper().isContactBlocked(sender)) {
                     logger.debug("Received invalid message from blocked contact, ignoring.");
                 } else {
-                    final var senderProfile = context.getProfileHelper().getRecipientProfile(sender);
-                    final var selfProfile = context.getProfileHelper().getSelfProfile();
                     var serviceId = ServiceId.parseOrNull(e.getSender());
-                    if (serviceId == null) {
-                        // Workaround for libsignal-client issue #492
-                        serviceId = account.getRecipientAddressResolver()
-                                .resolveRecipientAddress(sender)
-                                .serviceId()
-                                .orElse(null);
-                    }
                     if (serviceId != null) {
                         final var isSelf = sender.equals(account.getSelfRecipientId())
                                 && e.getSenderDevice() == account.getDeviceId();
-                        final var isSenderSenderKeyCapable = senderProfile != null && senderProfile.getCapabilities()
-                                .contains(Profile.Capability.senderKey);
-                        final var isSelfSenderKeyCapable = selfProfile != null && selfProfile.getCapabilities()
-                                .contains(Profile.Capability.senderKey);
-                        if (!isSelf && isSenderSenderKeyCapable && isSelfSenderKeyCapable) {
+                        if (!isSelf) {
                             logger.debug("Received invalid message, requesting message resend.");
                             actions.add(new SendRetryMessageRequestAction(sender, serviceId, e, envelope, destination));
                         } else {

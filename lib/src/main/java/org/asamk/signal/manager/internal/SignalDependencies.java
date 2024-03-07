@@ -189,7 +189,8 @@ public class SignalDependencies {
                         Optional.empty(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
-                        pushServiceSocket));
+                        pushServiceSocket,
+                        false));
     }
 
     public List<SecureValueRecovery> getSecureValueRecoveryV2() {

@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.config;
 
+import org.signal.libsignal.net.Network.Environment;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.ecc.Curve;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
@@ -28,7 +29,6 @@ class LiveConfig {
             .decode("BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF");
     private static final String CDSI_MRENCLAVE = "0f6fd79cdfdaa5b2e6337f534d3baf999318b0c462a7ac1f41297a3e4b424a57";
     private static final String SVR2_MRENCLAVE = "a6622ad4656e1abcd0bc0ff17c229477747d2ded0495c4ebee7ed35c1789fa97";
-    private static final String SVR2_MRENCLAVE_DEPRECATED = "6ee1042f9e20f880326686dd4ba50c25359f01e9f733eeba4382bca001d45094";
 
     private static final String URL = "https://chat.signal.org";
     private static final String CDN_URL = "https://cdn.signal.org";
@@ -48,6 +48,8 @@ class LiveConfig {
 
     private static final byte[] backupServerPublicParams = Base64.getDecoder()
             .decode("AJwNSU55fsFCbgaxGRD11wO1juAs8Yr5GF8FPlGzzvdJJIKH5/4CC7ZJSOe3yL2vturVaRU2Cx0n751Vt8wkj1bozK3CBV1UokxV09GWf+hdVImLGjXGYLLhnI1J2TWEe7iWHyb553EEnRb5oxr9n3lUbNAJuRmFM7hrr0Al0F0wrDD4S8lo2mGaXe0MJCOM166F8oYRQqpFeEHfiLnxA1O8ZLh7vMdv4g9jI5phpRBTsJ5IjiJrWeP0zdIGHEssUeprDZ9OUJ14m0v61eYJMKsf59Bn+mAT2a7YfB+Don9O");
+
+    private static Environment LIBSIGNAL_NET_ENV = Environment.PRODUCTION;
 
     static SignalServiceConfiguration createDefaultServiceConfiguration(
             final List<Interceptor> interceptors
@@ -78,10 +80,11 @@ class LiveConfig {
 
     static ServiceEnvironmentConfig getServiceEnvironmentConfig(List<Interceptor> interceptors) {
         return new ServiceEnvironmentConfig(LIVE,
+                LIBSIGNAL_NET_ENV,
                 createDefaultServiceConfiguration(interceptors),
                 getUnidentifiedSenderTrustRoot(),
                 CDSI_MRENCLAVE,
-                List.of(SVR2_MRENCLAVE, SVR2_MRENCLAVE_DEPRECATED));
+                List.of(SVR2_MRENCLAVE));
     }
 
     private LiveConfig() {

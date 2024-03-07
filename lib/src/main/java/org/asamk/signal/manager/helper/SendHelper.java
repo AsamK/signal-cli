@@ -523,21 +523,9 @@ public class SendHelper {
     }
 
     private Set<RecipientId> getSenderKeyCapableRecipientIds(final Set<RecipientId> recipientIds) {
-        final var selfProfile = context.getProfileHelper().getSelfProfile();
-        if (selfProfile == null || !selfProfile.getCapabilities().contains(Profile.Capability.senderKey)) {
-            logger.debug("Not all of our devices support sender key. Using legacy.");
-            return Set.of();
-        }
-
         final var senderKeyTargets = new HashSet<RecipientId>();
         final var recipientList = new ArrayList<>(recipientIds);
-        final var profiles = context.getProfileHelper().getRecipientProfiles(recipientList).iterator();
         for (final var recipientId : recipientList) {
-            final var profile = profiles.next();
-            if (profile == null || !profile.getCapabilities().contains(Profile.Capability.senderKey)) {
-                continue;
-            }
-
             final var access = context.getUnidentifiedAccessHelper().getAccessFor(recipientId);
             if (access.isEmpty() || access.get().getTargetUnidentifiedAccess().isEmpty()) {
                 continue;

@@ -94,7 +94,7 @@ public class LegacySignalProfile {
         @JsonProperty
         public boolean storage;
 
-        @JsonProperty
+        @JsonIgnore
         public boolean gv1Migration;
     }
 }

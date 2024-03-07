@@ -895,9 +895,6 @@ public class SignalAccount implements Closeable {
                 if (profile != null) {
                     final var capabilities = new HashSet<Profile.Capability>();
                     if (profile.getCapabilities() != null) {
-                        if (profile.getCapabilities().gv1Migration) {
-                            capabilities.add(Profile.Capability.gv1Migration);
-                        }
                         if (profile.getCapabilities().storage) {
                             capabilities.add(Profile.Capability.storage);
                         }
