@@ -19,12 +19,22 @@
   "methods":[{"name":"getPlatformClassLoader","parameterTypes":[] }, {"name":"loadClass","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"java.lang.ClassNotFoundException"
+},
+{
   "name":"java.lang.IllegalArgumentException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"java.lang.IllegalStateException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.lang.Long",
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"java.lang.NoClassDefFoundError"
 },
 {
   "name":"java.lang.NoSuchMethodError"
@@ -39,6 +49,14 @@
 {
   "name":"java.lang.UnsatisfiedLinkError",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.util.HashMap",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"java.util.Map",
+  "methods":[{"name":"get","parameterTypes":["java.lang.Object"] }, {"name":"put","parameterTypes":["java.lang.Object","java.lang.Object"] }, {"name":"remove","parameterTypes":["java.lang.Object"] }]
 },
 {
   "name":"java.util.UUID",
@@ -58,6 +76,18 @@
 {
   "name":"org.graalvm.jniutils.JNIExceptionWrapperEntryPoints",
   "methods":[{"name":"getClassName","parameterTypes":["java.lang.Class"] }]
+},
+{
+  "name":"org.signal.libsignal.internal.CompletableFuture",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"complete","parameterTypes":["java.lang.Object"] }]
+},
+{
+  "name":"org.signal.libsignal.net.CdsiLookupResponse",
+  "methods":[{"name":"<init>","parameterTypes":["java.util.Map","int"] }]
+},
+{
+  "name":"org.signal.libsignal.net.CdsiLookupResponse$Entry",
+  "methods":[{"name":"<init>","parameterTypes":["byte[]","byte[]"] }]
 },
 {
   "name":"org.signal.libsignal.protocol.DuplicateMessageException",
