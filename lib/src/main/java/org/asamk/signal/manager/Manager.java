@@ -44,6 +44,7 @@ import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
+import org.asamk.signal.manager.api.UsernameStatus;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +92,8 @@ public interface Manager extends Closeable {
      * @throws IOException if it's unable to get the contacts to check if they're registered
      */
     Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException, RateLimitException;
+
+    Map<String, UsernameStatus> getUsernameStatus(Set<String> usernames);
 
     void updateAccountAttributes(
             String deviceName,

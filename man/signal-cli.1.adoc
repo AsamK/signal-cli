@@ -266,12 +266,15 @@ Use listDevices to see the deviceIds.
 
 === getUserStatus
 
-Uses a list of phone numbers to determine the statuses of those users.
+Uses a list of phone numbers or usernames to determine the statuses of those users.
 Shows if they are registered on the Signal Servers or not.
 In json mode this is outputted as a list of objects.
 
 [NUMBER [NUMBER ...]]::
 One or more numbers to check.
+
+[--username [USERNAME ...]]::
+One or more usernames to check.
 
 === send
 

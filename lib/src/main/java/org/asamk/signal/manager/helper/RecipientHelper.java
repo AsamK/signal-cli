@@ -91,28 +91,51 @@ public class RecipientHelper {
             });
         } else if (recipient instanceof RecipientIdentifier.Username usernameRecipient) {
             var username = usernameRecipient.username();
-            try {
-                UsernameLinkUrl usernameLinkUrl = UsernameLinkUrl.fromUri(username);
-                final var components = usernameLinkUrl.getComponents();
-                final var encryptedUsername = dependencies.getAccountManager()
-                        .getEncryptedUsernameFromLinkServerId(components.getServerId());
-                final var link = new Username.UsernameLink(components.getEntropy(), encryptedUsername);
-
-                username = Username.fromLink(link).getUsername();
-            } catch (UsernameLinkUrl.InvalidUsernameLinkException e) {
-            } catch (IOException | BaseUsernameException e) {
-                throw new RuntimeException(e);
-            }
-            final String finalUsername = username;
-            return account.getRecipientStore().resolveRecipientByUsername(finalUsername, () -> {
-                try {
-                    return getRegisteredUserByUsername(finalUsername);
-                } catch (Exception e) {
-                    return null;
-                }
-            });
+            return resolveRecipientByUsernameOrLink(username, false);
         }
         throw new AssertionError("Unexpected RecipientIdentifier: " + recipient);
+    }
+
+    public RecipientId resolveRecipientByUsernameOrLink(
+            String username, boolean forceRefresh
+    ) throws UnregisteredRecipientException {
+        final Username finalUsername;
+        try {
+            finalUsername = getUsernameFromUsernameOrLink(username);
+        } catch (IOException | BaseUsernameException e) {
+            throw new RuntimeException(e);
+        }
+        if (forceRefresh) {
+            try {
+                final var aci = dependencies.getAccountManager().getAciByUsername(finalUsername);
+                return account.getRecipientStore().resolveRecipientTrusted(aci, finalUsername.getUsername());
+            } catch (IOException e) {
+                throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
+                        null,
+                        username));
+            }
+        }
+        return account.getRecipientStore().resolveRecipientByUsername(finalUsername.getUsername(), () -> {
+            try {
+                return dependencies.getAccountManager().getAciByUsername(finalUsername);
+            } catch (Exception e) {
+                return null;
+            }
+        });
+    }
+
+    private Username getUsernameFromUsernameOrLink(String username) throws BaseUsernameException, IOException {
+        try {
+            final var usernameLinkUrl = UsernameLinkUrl.fromUri(username);
+            final var components = usernameLinkUrl.getComponents();
+            final var encryptedUsername = dependencies.getAccountManager()
+                    .getEncryptedUsernameFromLinkServerId(components.getServerId());
+            final var link = new Username.UsernameLink(components.getEntropy(), encryptedUsername);
+
+            return Username.fromLink(link);
+        } catch (UsernameLinkUrl.InvalidUsernameLinkException e) {
+            return new Username(username);
+        }
     }
 
     public Optional<RecipientId> resolveRecipientOptional(final RecipientIdentifier.Single recipient) {
@@ -244,10 +267,6 @@ public class RecipientHelper {
                 .forEach((key, value) -> registeredUsers.put(key,
                         new RegisteredUser(value.getAci(), Optional.of(value.getPni()))));
         return registeredUsers;
-    }
-
-    private ACI getRegisteredUserByUsername(String username) throws IOException, BaseUsernameException {
-        return dependencies.getAccountManager().getAciByUsername(new Username(username));
     }
 
     public record RegisteredUser(Optional<ACI> aci, Optional<PNI> pni) {

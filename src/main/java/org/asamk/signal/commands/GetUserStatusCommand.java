@@ -1,5 +1,7 @@
 package org.asamk.signal.commands;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
@@ -9,6 +11,7 @@ import org.asamk.signal.commands.exceptions.RateLimitErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UserStatus;
+import org.asamk.signal.manager.api.UsernameStatus;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
@@ -19,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
@@ -32,7 +36,8 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
     @Override
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Check if the specified phone number/s have been registered");
-        subparser.addArgument("recipient").help("Phone number").nargs("+");
+        subparser.addArgument("recipient").help("Phone number").nargs("*");
+        subparser.addArgument("--username").help("Specify the recipient username or username link.").nargs("*");
     }
 
     @Override
@@ -54,17 +59,31 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
                     + ")", e);
         }
 
+        final var usernames = ns.<String>getList("username");
+        final var registeredUsernames = usernames == null
+                ? Map.<String, UsernameStatus>of()
+                : m.getUsernameStatus(new HashSet<>(usernames));
+
         // Output
         switch (outputWriter) {
             case JsonWriter writer -> {
-                var jsonUserStatuses = registered.entrySet().stream().map(entry -> {
+                var jsonUserStatuses = Stream.concat(registered.entrySet().stream().map(entry -> {
                     final var number = entry.getValue().number();
                     final var uuid = entry.getValue().uuid();
                     return new JsonUserStatus(entry.getKey(),
                             number,
+                            null,
                             uuid == null ? null : uuid.toString(),
                             uuid != null);
-                }).toList();
+                }), registeredUsernames.entrySet().stream().map(entry -> {
+                    final var username = entry.getValue().username();
+                    final var uuid = entry.getValue().uuid();
+                    return new JsonUserStatus(entry.getKey(),
+                            null,
+                            username,
+                            uuid == null ? null : uuid.toString(),
+                            uuid != null);
+                })).toList();
                 writer.write(jsonUserStatuses);
             }
             case PlainTextWriter writer -> {
@@ -75,9 +94,22 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
                             userStatus.uuid() != null,
                             userStatus.unrestrictedUnidentifiedAccess() ? " (unrestricted sealed sender)" : "");
                 }
+                for (var entry : registeredUsernames.entrySet()) {
+                    final var userStatus = entry.getValue();
+                    writer.println("{}: {}{}",
+                            entry.getKey(),
+                            userStatus.uuid() != null,
+                            userStatus.unrestrictedUnidentifiedAccess() ? " (unrestricted sealed sender)" : "");
+                }
             }
         }
     }
 
-    private record JsonUserStatus(String recipient, String number, String uuid, boolean isRegistered) {}
+    private record JsonUserStatus(
+            String recipient,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String number,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String username,
+            String uuid,
+            boolean isRegistered
+    ) {}
 }

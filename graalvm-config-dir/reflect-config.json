@@ -693,7 +693,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"isRegistered","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"recipient","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
+  "methods":[{"name":"isRegistered","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"recipient","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.commands.ListAccountsCommand$JsonAccount",

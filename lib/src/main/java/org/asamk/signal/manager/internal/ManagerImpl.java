@@ -65,6 +65,7 @@ import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
+import org.asamk.signal.manager.api.UsernameStatus;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
@@ -274,6 +275,33 @@ public class ManagerImpl implements Manager {
                     : context.getProfileHelper()
                             .getRecipientProfile(account.getRecipientResolver().resolveRecipient(serviceId));
             return new UserStatus(number.isEmpty() ? null : number,
+                    serviceId == null ? null : serviceId.getRawUuid(),
+                    profile != null
+                            && profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED);
+        }));
+    }
+
+    @Override
+    public Map<String, UsernameStatus> getUsernameStatus(Set<String> usernames) {
+        final var registeredUsers = new HashMap<String, RecipientAddress>();
+        for (final var username : usernames) {
+            try {
+                final var recipientId = context.getRecipientHelper().resolveRecipientByUsernameOrLink(username, true);
+                final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
+                registeredUsers.put(username, address);
+            } catch (UnregisteredRecipientException e) {
+                // ignore
+            }
+        }
+
+        return usernames.stream().collect(Collectors.toMap(n -> n, username -> {
+            final var user = registeredUsers.get(username);
+            final var serviceId = user == null ? null : user.serviceId().orElse(null);
+            final var profile = serviceId == null
+                    ? null
+                    : context.getProfileHelper()
+                            .getRecipientProfile(account.getRecipientResolver().resolveRecipient(serviceId));
+            return new UsernameStatus(username,
                     serviceId == null ? null : serviceId.getRawUuid(),
                     profile != null
                             && profile.getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNRESTRICTED);

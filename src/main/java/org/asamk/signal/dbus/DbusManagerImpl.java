@@ -47,6 +47,7 @@ import org.asamk.signal.manager.api.UpdateGroup;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
+import org.asamk.signal.manager.api.UsernameStatus;
 import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -120,6 +121,11 @@ public class DbusManagerImpl implements Manager {
                             false));
         }
         return result;
+    }
+
+    @Override
+    public Map<String, UsernameStatus> getUsernameStatus(final Set<String> usernames) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
