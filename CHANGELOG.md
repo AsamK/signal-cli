@@ -1,6 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.2] - 2024-03-23
+
+### Added
+
+- Add `--username` parameter to `getUserStatus` command
+
+### Fixed
+
+- Fixed setting and retrieving PIN after server changes
 
 ## [0.13.1] - 2024-02-27
 
