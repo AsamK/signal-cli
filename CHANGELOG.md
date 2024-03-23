@@ -4,6 +4,8 @@
 
 ## [0.13.2] - 2024-03-23
 
+**Attention**: Now requires libsignal-client version 0.40.1
+
 ### Added
 
 - Add `--username` parameter to `getUserStatus` command
