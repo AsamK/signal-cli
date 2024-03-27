@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+**Attention**: Now requires libsignal-client version 0.42.0
+
 ## [0.13.2] - 2024-03-23
 
 **Attention**: Now requires libsignal-client version 0.40.1

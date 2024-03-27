@@ -201,7 +201,6 @@ public class SyncHelper {
                 Optional.ofNullable(contact == null ? null : contact.color()),
                 Optional.ofNullable(verifiedMessage),
                 Optional.ofNullable(profileKey),
-                contact != null && contact.isBlocked(),
                 Optional.ofNullable(contact == null ? null : contact.messageExpirationTime()),
                 Optional.empty(),
                 contact != null && contact.isArchived());
@@ -357,7 +356,6 @@ public class SyncHelper {
             if (c.getExpirationTimer().isPresent()) {
                 builder.withMessageExpirationTime(c.getExpirationTimer().get());
             }
-            builder.withIsBlocked(c.isBlocked());
             builder.withIsArchived(c.isArchived());
             account.getContactStore().storeContact(recipientId, builder.build());
 

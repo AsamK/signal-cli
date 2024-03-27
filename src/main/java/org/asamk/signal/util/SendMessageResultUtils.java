@@ -91,7 +91,7 @@ public class SendMessageResultUtils {
             return String.format(
                     "CAPTCHA proof required for sending to \"%s\", available options \"%s\" with challenge token \"%s\", or wait \"%d\" seconds.\n"
                             + (
-                            failure.getOptions().contains(ProofRequiredException.Option.RECAPTCHA)
+                            failure.getOptions().contains(ProofRequiredException.Option.CAPTCHA)
                                     ? """
                                       To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html
                                       After solving the captcha, right-click on the "Open Signal" link and copy the link.

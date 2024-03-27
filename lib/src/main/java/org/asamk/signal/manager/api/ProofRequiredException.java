@@ -31,12 +31,13 @@ public class ProofRequiredException extends Exception {
     }
 
     public enum Option {
-        RECAPTCHA,
+        CAPTCHA,
         PUSH_CHALLENGE;
 
         static Option from(org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException.Option option) {
             return switch (option) {
-                case RECAPTCHA -> RECAPTCHA;
+                case RECAPTCHA -> CAPTCHA;
+                case CAPTCHA -> CAPTCHA;
                 case PUSH_CHALLENGE -> PUSH_CHALLENGE;
             };
         }

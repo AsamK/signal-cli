@@ -443,7 +443,7 @@ public class ManagerImpl implements Manager {
 
         try {
             dependencies.getAccountManager().submitRateLimitRecaptchaChallenge(challenge, captcha);
-        } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRejectedException ignored) {
+        } catch (org.whispersystems.signalservice.internal.push.exceptions.CaptchaRejectedException ignored) {
             throw new CaptchaRejectedException();
         }
     }

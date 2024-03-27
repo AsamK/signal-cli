@@ -104,6 +104,23 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             profileFamilyName = local.getProfileFamilyName().orElse("");
         }
 
+        String nicknameGivenName;
+        String nicknameFamilyName;
+        if (remote.getNicknameGivenName().isPresent()) {
+            nicknameGivenName = remote.getNicknameGivenName().orElse("");
+            nicknameFamilyName = remote.getNicknameFamilyName().orElse("");
+        } else {
+            nicknameGivenName = local.getNicknameGivenName().orElse("");
+            nicknameFamilyName = local.getNicknameFamilyName().orElse("");
+        }
+
+        if (nicknameGivenName.isBlank() && !nicknameFamilyName.isBlank()) {
+            logger.debug("Processed invalid nickname. Missing given name.");
+
+            nicknameGivenName = "";
+            nicknameFamilyName = "";
+        }
+
         IdentityState identityState;
         byte[] identityKey;
         if (remote.getIdentityKey().isPresent() && (
@@ -181,6 +198,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 : remote.getSystemFamilyName().orElse("");
         final var systemNickname = remote.getSystemNickname().orElse("");
         final var pniSignatureVerified = remote.isPniSignatureVerified() || local.isPniSignatureVerified();
+        final var note = remote.getNote().or(local::getNote).orElse("");
 
         final var mergedBuilder = new SignalContactRecord.Builder(remote.getId().getRaw(), aci, unknownFields).setE164(
                         e164)
@@ -202,7 +220,10 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .setHideStory(hideStory)
                 .setUnregisteredTimestamp(unregisteredTimestamp)
                 .setHidden(hidden)
-                .setPniSignatureVerified(pniSignatureVerified);
+                .setPniSignatureVerified(pniSignatureVerified)
+                .setNicknameGivenName(nicknameGivenName)
+                .setNicknameFamilyName(nicknameFamilyName)
+                .setNote(note);
         final var merged = mergedBuilder.build();
 
         final var matchesRemote = doProtosMatch(merged, remote);
