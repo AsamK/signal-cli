@@ -160,6 +160,7 @@ wait
 fi
 
 run_main -a "$NUMBER_1" setPin "$TEST_PIN_1"
+run_main -a "$NUMBER_1" register --reregister
 run_main -a "$NUMBER_2" removePin
 
 ## Contacts
