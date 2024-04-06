@@ -3,7 +3,6 @@ package org.asamk.signal.manager.helper;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
-import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
@@ -34,12 +33,10 @@ public class RecipientHelper {
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
-    private final ServiceEnvironmentConfig serviceEnvironmentConfig;
 
     public RecipientHelper(final Context context) {
         this.account = context.getAccount();
         this.dependencies = context.getDependencies();
-        this.serviceEnvironmentConfig = dependencies.getServiceEnvironmentConfig();
     }
 
     public SignalServiceAddress resolveSignalServiceAddress(RecipientId recipientId) {
@@ -234,7 +231,7 @@ public class RecipientHelper {
                             newNumbers,
                             account.getRecipientStore().getServiceIdToProfileKeyMap(),
                             token,
-                            serviceEnvironmentConfig.cdsiMrenclave(),
+                            dependencies.getServiceEnvironmentConfig().cdsiMrenclave(),
                             null,
                             dependencies.getServiceEnvironmentConfig().netEnvironment(),
                             newToken -> {
