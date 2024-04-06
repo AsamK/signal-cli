@@ -104,23 +104,6 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             profileFamilyName = local.getProfileFamilyName().orElse("");
         }
 
-        String nicknameGivenName;
-        String nicknameFamilyName;
-        if (remote.getNicknameGivenName().isPresent()) {
-            nicknameGivenName = remote.getNicknameGivenName().orElse("");
-            nicknameFamilyName = remote.getNicknameFamilyName().orElse("");
-        } else {
-            nicknameGivenName = local.getNicknameGivenName().orElse("");
-            nicknameFamilyName = local.getNicknameFamilyName().orElse("");
-        }
-
-        if (nicknameGivenName.isBlank() && !nicknameFamilyName.isBlank()) {
-            logger.debug("Processed invalid nickname. Missing given name.");
-
-            nicknameGivenName = "";
-            nicknameFamilyName = "";
-        }
-
         IdentityState identityState;
         byte[] identityKey;
         if (remote.getIdentityKey().isPresent() && (
@@ -197,6 +180,8 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 ? local.getSystemFamilyName().orElse("")
                 : remote.getSystemFamilyName().orElse("");
         final var systemNickname = remote.getSystemNickname().orElse("");
+        final var nicknameGivenName = remote.getNicknameGivenName().orElse("");
+        final var nicknameFamilyName = remote.getNicknameFamilyName().orElse("");
         final var pniSignatureVerified = remote.isPniSignatureVerified() || local.isPniSignatureVerified();
         final var note = remote.getNote().or(local::getNote).orElse("");
 

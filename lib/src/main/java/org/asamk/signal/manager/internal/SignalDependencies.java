@@ -3,6 +3,7 @@ package org.asamk.signal.manager.internal;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
+import org.signal.libsignal.net.Network;
 import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceDataStore;
@@ -48,6 +49,7 @@ public class SignalDependencies {
     private ClientZkOperations clientZkOperations;
 
     private PushServiceSocket pushServiceSocket;
+    private Network libSignalNetwork;
     private SignalWebSocket signalWebSocket;
     private SignalServiceMessageReceiver messageReceiver;
     private SignalServiceMessageSender messageSender;
@@ -102,6 +104,11 @@ public class SignalDependencies {
                         userAgent,
                         getClientZkProfileOperations(),
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
+    }
+
+    public Network getLibSignalNetwork() {
+        return getOrCreate(() -> libSignalNetwork,
+                () -> libSignalNetwork = new Network(serviceEnvironmentConfig.netEnvironment()));
     }
 
     public SignalServiceAccountManager getAccountManager() {

@@ -233,7 +233,7 @@ public class RecipientHelper {
                             token,
                             dependencies.getServiceEnvironmentConfig().cdsiMrenclave(),
                             null,
-                            dependencies.getServiceEnvironmentConfig().netEnvironment(),
+                            dependencies.getLibSignalNetwork(),
                             newToken -> {
                                 if (isPartialRefresh) {
                                     account.getCdsiStore().updateAfterPartialCdsQuery(newNumbers);

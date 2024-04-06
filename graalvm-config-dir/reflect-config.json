@@ -1385,6 +1385,10 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.bouncycastle.jcajce.provider.asymmetric.CompositeSignatures$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"org.bouncycastle.jcajce.provider.asymmetric.DH$Mappings",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -2746,6 +2750,10 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
+  "allDeclaredFields":true
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$Name",
   "allDeclaredFields":true
 },
 {
