@@ -271,6 +271,9 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                     .withGivenName(contactRecord.getSystemGivenName().orElse(null))
                     .withFamilyName(contactRecord.getSystemFamilyName().orElse(null))
                     .withNickName(contactRecord.getSystemNickname().orElse(null))
+                    .withNickNameGivenName(contactRecord.getNicknameGivenName().orElse(null))
+                    .withNickNameFamilyName(contactRecord.getNicknameFamilyName().orElse(null))
+                    .withNote(contactRecord.getNote().orElse(null))
                     .withUnregisteredTimestamp(contactRecord.getUnregisteredTimestamp() == 0
                             ? null
                             : contactRecord.getUnregisteredTimestamp());

@@ -6,6 +6,9 @@ public record Contact(
         String givenName,
         String familyName,
         String nickName,
+        String nickNameGivenName,
+        String nickNameFamilyName,
+        String note,
         String color,
         int messageExpirationTime,
         long muteUntil,
@@ -21,6 +24,9 @@ public record Contact(
         this(builder.givenName,
                 builder.familyName,
                 builder.nickName,
+                builder.nickNameGivenName,
+                builder.nickNameFamilyName,
+                builder.note,
                 builder.color,
                 builder.messageExpirationTime,
                 builder.muteUntil,
@@ -73,6 +79,9 @@ public record Contact(
         private String givenName;
         private String familyName;
         private String nickName;
+        private String nickNameGivenName;
+        private String nickNameFamilyName;
+        private String note;
         private String color;
         private int messageExpirationTime;
         private long muteUntil;
@@ -102,6 +111,21 @@ public record Contact(
 
         public Builder withNickName(final String val) {
             nickName = val;
+            return this;
+        }
+
+        public Builder withNickNameGivenName(final String val) {
+            nickNameGivenName = val;
+            return this;
+        }
+
+        public Builder withNickNameFamilyName(final String val) {
+            nickNameFamilyName = val;
+            return this;
+        }
+
+        public Builder withNote(final String val) {
+            note = val;
             return this;
         }
 
