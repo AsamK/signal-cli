@@ -312,10 +312,11 @@ e.g.: `--sticker 00abac3bc18d7f599bff2325dc306d43:2`
 
 *--mention*::
 Mention another group member (syntax: start:length:recipientNumber) In the apps the mention replaces part of the message text, which is specified by the start and length values.
+The units of start and length should be UTF-16 code units, NOT Unicode code points. For more information, see https://github.com/AsamK/signal-cli/wiki/FAQ#string-indexing-units
 e.g.: `-m "Hi X!" --mention "3:1:+123456789"`
 
 *--text-style*::
-Style parts of the message text (syntax: start:length:STYLE).
+Style parts of the message text (syntax: start:length:STYLE). Like `--mention`, the units are UTF-16 code units.
 Where STYLE is one of: BOLD, ITALIC, SPOILER, STRIKETHROUGH, MONOSPACE
 
 e.g.: `-m "Something BIG!" --text-style "10:3:BOLD"` or for a mixed text style `-m "Something BIG!" --text-style "0:9:ITALIC" "10:3:BOLD"`

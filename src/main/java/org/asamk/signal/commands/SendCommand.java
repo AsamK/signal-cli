@@ -71,10 +71,12 @@ public class SendCommand implements JsonRpcLocalCommand {
                 .action(Arguments.storeTrue());
         subparser.addArgument("--mention")
                 .nargs("*")
-                .help("Mention another group member (syntax: start:length:recipientNumber)");
+                .help("Mention another group member (syntax: start:length:recipientNumber). "
+                        + "Unit of start and length is UTF-16 code units, NOT Unicode code points.");
         subparser.addArgument("--text-style")
                 .nargs("*")
-                .help("Style parts of the message text (syntax: start:length:STYLE)");
+                .help("Style parts of the message text (syntax: start:length:STYLE). "
+                        + "Unit of start and length is UTF-16 code units, NOT Unicode code points.");
         subparser.addArgument("--quote-timestamp")
                 .type(long.class)
                 .help("Specify the timestamp of a previous message with the recipient or group to add a quote to the new message.");
