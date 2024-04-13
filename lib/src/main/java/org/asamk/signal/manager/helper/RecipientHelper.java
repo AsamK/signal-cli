@@ -109,6 +109,7 @@ public class RecipientHelper {
             } catch (IOException e) {
                 throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
                         null,
+                        null,
                         username));
             }
         }
@@ -196,11 +197,11 @@ public class RecipientHelper {
         try {
             aciMap = getRegisteredUsers(Set.of(number), true);
         } catch (NumberFormatException e) {
-            throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
+            throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(number));
         }
         final var user = aciMap.get(number);
         if (user == null) {
-            throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null, number));
+            throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(number));
         }
         return user.getServiceId();
     }

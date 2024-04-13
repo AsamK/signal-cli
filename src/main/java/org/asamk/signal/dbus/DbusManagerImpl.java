@@ -690,7 +690,7 @@ public class DbusManagerImpl implements Manager {
                 return null;
             }
             return Recipient.newBuilder()
-                    .withAddress(new RecipientAddress(null, n))
+                    .withAddress(new RecipientAddress(n))
                     .withContact(new Contact(contactName,
                             null,
                             null,
@@ -731,19 +731,19 @@ public class DbusManagerImpl implements Manager {
                     (String) group.get("Description").getValue(),
                     GroupInviteLinkUrl.fromUri((String) group.get("GroupInviteLink").getValue()),
                     ((List<String>) group.get("Members").getValue()).stream()
-                            .map(m -> new RecipientAddress(null, m))
+                            .map(m -> new RecipientAddress(m))
                             .collect(Collectors.toSet()),
                     ((List<String>) group.get("PendingMembers").getValue()).stream()
-                            .map(m -> new RecipientAddress(null, m))
+                            .map(m -> new RecipientAddress(m))
                             .collect(Collectors.toSet()),
                     ((List<String>) group.get("RequestingMembers").getValue()).stream()
-                            .map(m -> new RecipientAddress(null, m))
+                            .map(m -> new RecipientAddress(m))
                             .collect(Collectors.toSet()),
                     ((List<String>) group.get("Admins").getValue()).stream()
-                            .map(m -> new RecipientAddress(null, m))
+                            .map(m -> new RecipientAddress(m))
                             .collect(Collectors.toSet()),
                     ((List<String>) group.get("Banned").getValue()).stream()
-                            .map(m -> new RecipientAddress(null, m))
+                            .map(m -> new RecipientAddress(m))
                             .collect(Collectors.toSet()),
                     (boolean) group.get("IsBlocked").getValue(),
                     (int) group.get("MessageExpirationTimer").getValue(),
@@ -854,8 +854,7 @@ public class DbusManagerImpl implements Manager {
         try {
             this.dbusMsgHandler = messageReceived -> {
                 final var extras = messageReceived.getExtras();
-                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(null,
-                        messageReceived.getSender())),
+                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(messageReceived.getSender())),
                         0,
                         messageReceived.getTimestamp(),
                         0,
@@ -896,8 +895,7 @@ public class DbusManagerImpl implements Manager {
             connection.addSigHandler(Signal.MessageReceivedV2.class, signal, this.dbusMsgHandler);
             this.dbusEditMsgHandler = messageReceived -> {
                 final var extras = messageReceived.getExtras();
-                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(null,
-                        messageReceived.getSender())),
+                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(messageReceived.getSender())),
                         0,
                         messageReceived.getTimestamp(),
                         0,
@@ -945,8 +943,7 @@ public class DbusManagerImpl implements Manager {
                     case "delivery" -> MessageEnvelope.Receipt.Type.DELIVERY;
                     default -> MessageEnvelope.Receipt.Type.UNKNOWN;
                 };
-                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(null,
-                        receiptReceived.getSender())),
+                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(receiptReceived.getSender())),
                         0,
                         receiptReceived.getTimestamp(),
                         0,
@@ -967,8 +964,7 @@ public class DbusManagerImpl implements Manager {
 
             this.dbusSyncHandler = syncReceived -> {
                 final var extras = syncReceived.getExtras();
-                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(null,
-                        syncReceived.getSource())),
+                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(syncReceived.getSource())),
                         0,
                         syncReceived.getTimestamp(),
                         0,
@@ -982,7 +978,7 @@ public class DbusManagerImpl implements Manager {
                                 syncReceived.getTimestamp(),
                                 syncReceived.getDestination().isEmpty()
                                         ? Optional.empty()
-                                        : Optional.of(new RecipientAddress(null, syncReceived.getDestination())),
+                                        : Optional.of(new RecipientAddress(syncReceived.getDestination())),
                                 Set.of(),
                                 Optional.of(new MessageEnvelope.Data(syncReceived.getTimestamp(),
                                         syncReceived.getGroupId().length > 0
@@ -1081,7 +1077,7 @@ public class DbusManagerImpl implements Manager {
 
         final List<DBusMap<String, Variant<?>>> mentions = getValue(extras, "mentions");
         return mentions.stream()
-                .map(a -> new MessageEnvelope.Data.Mention(new RecipientAddress(null, getValue(a, "recipient")),
+                .map(a -> new MessageEnvelope.Data.Mention(new RecipientAddress(this.<String>getValue(a, "recipient")),
                         getValue(a, "start"),
                         getValue(a, "length")))
                 .toList();

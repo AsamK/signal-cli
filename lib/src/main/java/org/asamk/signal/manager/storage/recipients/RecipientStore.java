@@ -215,8 +215,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         if (byNumber.isEmpty() || byNumber.get().address().serviceId().isEmpty()) {
             final var serviceId = serviceIdSupplier.get();
             if (serviceId == null) {
-                throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
-                        number));
+                throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(number));
             }
 
             return resolveRecipient(serviceId);
@@ -247,6 +246,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             final var aci = aciSupplier.get();
             if (aci == null) {
                 throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
+                        null,
                         null,
                         username));
             }

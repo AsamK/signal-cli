@@ -69,7 +69,10 @@ public record RecipientAddress(
     }
 
     public RecipientAddress(org.asamk.signal.manager.api.RecipientAddress address) {
-        this(address.uuid().map(ACI::from), Optional.empty(), address.number(), address.username());
+        this(address.aci().map(ACI::parseOrNull),
+                address.pni().map(PNI::parseOrNull),
+                address.number(),
+                address.username());
     }
 
     public RecipientAddress(ServiceId serviceId) {
@@ -169,7 +172,8 @@ public record RecipientAddress(
     }
 
     public org.asamk.signal.manager.api.RecipientAddress toApiRecipientAddress() {
-        return new org.asamk.signal.manager.api.RecipientAddress(serviceId().map(ServiceId::getRawUuid),
+        return new org.asamk.signal.manager.api.RecipientAddress(aci().map(ServiceId::toString),
+                pni().map(ServiceId::toString),
                 number(),
                 username());
     }

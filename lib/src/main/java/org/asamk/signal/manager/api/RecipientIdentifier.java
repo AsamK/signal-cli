@@ -47,8 +47,8 @@ public sealed interface RecipientIdentifier {
         static Single fromAddress(RecipientAddress address) {
             if (address.number().isPresent()) {
                 return new Number(address.number().get());
-            } else if (address.uuid().isPresent()) {
-                return new Uuid(address.uuid().get());
+            } else if (address.aci().isPresent()) {
+                return new Uuid(UUID.fromString(address.aci().get()));
             } else if (address.username().isPresent()) {
                 return new Username(address.username().get());
             }
@@ -80,7 +80,7 @@ public sealed interface RecipientIdentifier {
 
         @Override
         public RecipientAddress toPartialRecipientAddress() {
-            return new RecipientAddress(null, number);
+            return new RecipientAddress(number);
         }
     }
 
@@ -93,7 +93,7 @@ public sealed interface RecipientIdentifier {
 
         @Override
         public RecipientAddress toPartialRecipientAddress() {
-            return new RecipientAddress(null, null, username);
+            return new RecipientAddress(null, null, null, username);
         }
     }
 

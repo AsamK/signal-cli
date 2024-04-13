@@ -229,9 +229,9 @@ public class ReceiveHelper {
                     if (exception instanceof UntrustedIdentityException) {
                         logger.debug("Keeping message with untrusted identity in message cache");
                         final var address = ((UntrustedIdentityException) exception).getSender();
-                        if (envelope.getSourceServiceId().isEmpty() && address.uuid().isPresent()) {
+                        if (envelope.getSourceServiceId().isEmpty() && address.aci().isPresent()) {
                             final var recipientId = account.getRecipientResolver()
-                                    .resolveRecipient(ACI.from(address.uuid().get()));
+                                    .resolveRecipient(ACI.parseOrThrow(address.aci().get()));
                             try {
                                 cachedMessage[0] = account.getMessageCache()
                                         .replaceSender(cachedMessage[0], recipientId);
