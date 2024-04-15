@@ -59,8 +59,11 @@ public class SessionStore implements SignalServiceSessionStore {
     public SessionRecord loadSession(SignalProtocolAddress address) {
         final var key = getKey(address);
         try (final var connection = database.getConnection()) {
-            final var session = loadSession(connection, key);
-            return Objects.requireNonNullElseGet(session, SessionRecord::new);
+            final var sessionRecord = Objects.requireNonNullElseGet(loadSession(connection, key), SessionRecord::new);
+            synchronized (cachedSessions) {
+                cachedSessions.put(key, sessionRecord);
+            }
+            return sessionRecord;
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from session store", e);
         }
@@ -148,7 +151,9 @@ public class SessionStore implements SignalServiceSessionStore {
 
         try (final var connection = database.getConnection()) {
             final var session = loadSession(connection, key);
-            return isActive(session);
+            final var active = isActive(session);
+            logger.trace("Contains session {}: {} (active: {})", address, session != null, active);
+            return active;
         } catch (SQLException e) {
             throw new RuntimeException("Failed read from session store", e);
         }
