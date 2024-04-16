@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.util;
 
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.Profile;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
@@ -16,6 +17,7 @@ import org.whispersystems.signalservice.internal.push.PaymentAddress;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.Optional;
 
 public class ProfileUtils {
 
@@ -33,11 +35,14 @@ public class ProfileUtils {
         }
 
         try {
-            var name = decrypt(encryptedProfile.getName(), profileCipher);
-            var about = trimZeros(decrypt(encryptedProfile.getAbout(), profileCipher));
-            var aboutEmoji = trimZeros(decrypt(encryptedProfile.getAboutEmoji(), profileCipher));
+            var name = decryptString(encryptedProfile.getName(), profileCipher);
+            var about = decryptString(encryptedProfile.getAbout(), profileCipher);
+            var aboutEmoji = decryptString(encryptedProfile.getAboutEmoji(), profileCipher);
 
             final var nameParts = splitName(name);
+            final var remotePhoneNumberSharing = decryptBoolean(encryptedProfile.getPhoneNumberSharing(),
+                    profileCipher).map(v -> v ? PhoneNumberSharingMode.EVERYBODY : PhoneNumberSharingMode.NOBODY)
+                    .orElse(null);
             return new Profile(System.currentTimeMillis(),
                     nameParts.first(),
                     nameParts.second(),
@@ -50,7 +55,8 @@ public class ProfileUtils {
                                     profileCipher,
                                     identityKey.getPublicKey()),
                     getUnidentifiedAccessMode(encryptedProfile, profileCipher),
-                    getCapabilities(encryptedProfile));
+                    getCapabilities(encryptedProfile),
+                    remotePhoneNumberSharing);
         } catch (InvalidCiphertextException e) {
             logger.debug("Failed to decrypt profile for {}", encryptedProfile.getServiceId(), e);
             return null;
@@ -83,15 +89,25 @@ public class ProfileUtils {
         return capabilities;
     }
 
-    private static String decrypt(
-            final String encryptedName, final ProfileCipher profileCipher
+    private static String decryptString(
+            final String encrypted, final ProfileCipher profileCipher
     ) throws InvalidCiphertextException {
         try {
-            return encryptedName == null
-                    ? null
-                    : new String(profileCipher.decrypt(Base64.getDecoder().decode(encryptedName)));
+            return encrypted == null ? null : profileCipher.decryptString(Base64.getDecoder().decode(encrypted));
         } catch (IllegalArgumentException e) {
             return null;
+        }
+    }
+
+    private static Optional<Boolean> decryptBoolean(
+            final String encrypted, final ProfileCipher profileCipher
+    ) throws InvalidCiphertextException {
+        try {
+            return encrypted == null
+                    ? Optional.empty()
+                    : profileCipher.decryptBoolean(Base64.getDecoder().decode(encrypted));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
         }
     }
 
@@ -128,14 +144,5 @@ public class ProfileUtils {
             case 1 -> new Pair<>(parts[0], null);
             default -> new Pair<>(parts[0], parts[1]);
         };
-    }
-
-    static String trimZeros(String str) {
-        if (str == null) {
-            return null;
-        }
-
-        int pos = str.indexOf(0);
-        return pos == -1 ? str : str.substring(0, pos);
     }
 }

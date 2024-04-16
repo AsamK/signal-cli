@@ -1310,7 +1310,8 @@ public class ManagerImpl implements Manager {
                         s.getContact(),
                         s.getProfileKey(),
                         s.getExpiringProfileKeyCredential(),
-                        s.getProfile()))
+                        s.getProfile(),
+                        s.getDiscoverable()))
                 .toList();
     }
 

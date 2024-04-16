@@ -363,6 +363,7 @@ public final class ProfileHelper {
 
             logger.trace("Storing profile");
             account.getProfileStore().storeProfile(recipientId, newProfile);
+            account.getRecipientStore().markRegistered(recipientId, true);
 
             logger.trace("Done handling retrieved profile");
         }).doOnError(e -> {
@@ -374,6 +375,10 @@ public final class ProfileHelper {
                     .withUnidentifiedAccessMode(Profile.UnidentifiedAccessMode.UNKNOWN)
                     .withCapabilities(Set.of())
                     .build();
+            if (e instanceof NotFoundException) {
+                logger.debug("Marking recipient {} as unregistered after 404 profile fetch.", recipientId);
+                account.getRecipientStore().markRegistered(recipientId, false);
+            }
 
             account.getProfileStore().storeProfile(recipientId, newProfile);
         });

@@ -187,7 +187,8 @@ public class RecipientHelper {
 
         final var unregisteredUsers = new HashSet<>(numbers);
         unregisteredUsers.removeAll(registeredUsers.keySet());
-        account.getRecipientStore().markUnregistered(unregisteredUsers);
+        account.getRecipientStore().markUndiscoverablePossiblyUnregistered(unregisteredUsers);
+        account.getRecipientStore().markDiscoverable(registeredUsers.keySet());
 
         return registeredUsers;
     }

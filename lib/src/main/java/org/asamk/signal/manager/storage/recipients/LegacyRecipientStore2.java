@@ -87,7 +87,8 @@ public class LegacyRecipientStore2 {
                             r.profile.capabilities.stream()
                                     .map(Profile.Capability::valueOfOrNull)
                                     .filter(Objects::nonNull)
-                                    .collect(Collectors.toSet()));
+                                    .collect(Collectors.toSet()),
+                            null);
                 }
 
                 return new Recipient(recipientId,
@@ -96,6 +97,7 @@ public class LegacyRecipientStore2 {
                         profileKey,
                         expiringProfileKeyCredential,
                         profile,
+                        null,
                         null);
             }).collect(Collectors.toMap(Recipient::getRecipientId, r -> r));
 

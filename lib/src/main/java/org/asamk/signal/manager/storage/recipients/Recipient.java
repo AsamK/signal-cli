@@ -21,6 +21,8 @@ public class Recipient {
 
     private final Profile profile;
 
+    private final Boolean discoverable;
+
     private final byte[] storageRecord;
 
     public Recipient(
@@ -30,6 +32,7 @@ public class Recipient {
             final ProfileKey profileKey,
             final ExpiringProfileKeyCredential expiringProfileKeyCredential,
             final Profile profile,
+            final Boolean discoverable,
             final byte[] storageRecord
     ) {
         this.recipientId = recipientId;
@@ -38,6 +41,7 @@ public class Recipient {
         this.profileKey = profileKey;
         this.expiringProfileKeyCredential = expiringProfileKeyCredential;
         this.profile = profile;
+        this.discoverable = discoverable;
         this.storageRecord = storageRecord;
     }
 
@@ -48,6 +52,7 @@ public class Recipient {
         profileKey = builder.profileKey;
         expiringProfileKeyCredential = builder.expiringProfileKeyCredential;
         profile = builder.profile;
+        discoverable = builder.discoverable;
         storageRecord = builder.storageRecord;
     }
 
@@ -91,6 +96,10 @@ public class Recipient {
         return profile;
     }
 
+    public Boolean getDiscoverable() {
+        return discoverable;
+    }
+
     public byte[] getStorageRecord() {
         return storageRecord;
     }
@@ -121,6 +130,7 @@ public class Recipient {
         private ProfileKey profileKey;
         private ExpiringProfileKeyCredential expiringProfileKeyCredential;
         private Profile profile;
+        private Boolean discoverable;
         private byte[] storageRecord;
 
         private Builder() {
@@ -153,6 +163,11 @@ public class Recipient {
 
         public Builder withProfile(final Profile val) {
             profile = val;
+            return this;
+        }
+
+        public Builder withDiscoverable(final Boolean val) {
+            discoverable = val;
             return this;
         }
 

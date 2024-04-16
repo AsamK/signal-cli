@@ -26,6 +26,8 @@ public class Profile {
 
     private final Set<Capability> capabilities;
 
+    private final PhoneNumberSharingMode phoneNumberSharingMode;
+
     public Profile(
             final long lastUpdateTimestamp,
             final String givenName,
@@ -35,7 +37,8 @@ public class Profile {
             final String avatarUrlPath,
             final byte[] mobileCoinAddress,
             final UnidentifiedAccessMode unidentifiedAccessMode,
-            final Set<Capability> capabilities
+            final Set<Capability> capabilities,
+            final PhoneNumberSharingMode phoneNumberSharingMode
     ) {
         this.lastUpdateTimestamp = lastUpdateTimestamp;
         this.givenName = givenName;
@@ -46,6 +49,7 @@ public class Profile {
         this.mobileCoinAddress = mobileCoinAddress;
         this.unidentifiedAccessMode = unidentifiedAccessMode;
         this.capabilities = capabilities;
+        this.phoneNumberSharingMode = phoneNumberSharingMode;
     }
 
     private Profile(final Builder builder) {
@@ -58,6 +62,7 @@ public class Profile {
         mobileCoinAddress = builder.mobileCoinAddress;
         unidentifiedAccessMode = builder.unidentifiedAccessMode;
         capabilities = builder.capabilities;
+        phoneNumberSharingMode = builder.phoneNumberSharingMode;
     }
 
     public static Builder newBuilder() {
@@ -136,6 +141,10 @@ public class Profile {
         return capabilities;
     }
 
+    public PhoneNumberSharingMode getPhoneNumberSharingMode() {
+        return phoneNumberSharingMode;
+    }
+
     public enum UnidentifiedAccessMode {
         UNKNOWN,
         DISABLED,
@@ -200,6 +209,7 @@ public class Profile {
         private byte[] mobileCoinAddress;
         private UnidentifiedAccessMode unidentifiedAccessMode = UnidentifiedAccessMode.UNKNOWN;
         private Set<Capability> capabilities = Collections.emptySet();
+        private PhoneNumberSharingMode phoneNumberSharingMode;
         private long lastUpdateTimestamp = 0;
 
         private Builder() {
@@ -237,6 +247,11 @@ public class Profile {
 
         public Builder withCapabilities(final Set<Capability> val) {
             capabilities = val;
+            return this;
+        }
+
+        public Builder withPhoneNumberSharingMode(final PhoneNumberSharingMode val) {
+            phoneNumberSharingMode = val;
             return this;
         }
 

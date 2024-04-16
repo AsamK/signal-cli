@@ -2,6 +2,7 @@ package org.asamk.signal.manager.storage.recipients;
 
 import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.storage.Database;
@@ -64,6 +65,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       aci TEXT UNIQUE,
                                       pni TEXT UNIQUE,
                                       unregistered_timestamp INTEGER,
+                                      discoverable INTEGER,
                                       profile_key BLOB,
                                       profile_key_credential BLOB,
                                       needs_pni_signature INTEGER NOT NULL DEFAULT FALSE,
@@ -92,7 +94,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       profile_avatar_url_path TEXT,
                                       profile_mobile_coin_address BLOB,
                                       profile_unidentified_access_mode TEXT,
-                                      profile_capabilities TEXT
+                                      profile_capabilities TEXT,
+                                      profile_phone_number_sharing TEXT
                                     ) STRICT;
                                     """);
         }
@@ -354,7 +357,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                        r.number, r.aci, r.pni, r.username,
                        r.profile_key, r.profile_key_credential,
                        r.given_name, r.family_name, r.nick_name, r.expiration_time, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
-                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities,
+                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
+                       r.discoverable,
                        r.storage_record
                 FROM %s r
                 WHERE r._id = ?
@@ -373,7 +377,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                        r.number, r.aci, r.pni, r.username,
                        r.profile_key, r.profile_key_credential,
                        r.given_name, r.family_name, r.nick_name, r.expiration_time, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
-                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities,
+                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
+                       r.discoverable,
                        r.storage_record
                 FROM %s r
                 WHERE r.storage_id = ?
@@ -409,7 +414,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                        r.number, r.aci, r.pni, r.username,
                        r.profile_key, r.profile_key_credential,
                        r.given_name, r.family_name, r.nick_name, r.expiration_time, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
-                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities,
+                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
+                       r.discoverable,
                        r.storage_record
                 FROM %s r
                 WHERE (r.number IS NOT NULL OR r.aci IS NOT NULL) AND %s
@@ -898,16 +904,52 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         }
     }
 
-    public void markUnregistered(final Set<String> unregisteredUsers) {
-        logger.debug("Marking {} numbers as unregistered", unregisteredUsers.size());
+    public void markUndiscoverablePossiblyUnregistered(final Set<String> numbers) {
+        logger.debug("Marking {} numbers as unregistered", numbers.size());
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
-            for (final var number : unregisteredUsers) {
-                final var recipient = findByNumber(connection, number);
-                if (recipient.isPresent()) {
-                    final var recipientId = recipient.get().id();
-                    markUnregisteredAndSplitIfNecessary(connection, recipientId);
+            for (final var number : numbers) {
+                final var recipientAddress = findByNumber(connection, number);
+                if (recipientAddress.isPresent()) {
+                    final var recipientId = recipientAddress.get().id();
+                    markDiscoverable(connection, recipientId, false);
+                    final var contact = getContact(connection, recipientId);
+                    if (recipientAddress.get().address().aci().isEmpty() || contact.unregisteredTimestamp() != null) {
+                        markUnregisteredAndSplitIfNecessary(connection, recipientId);
+                    }
                 }
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update recipient store", e);
+        }
+    }
+
+    public void markDiscoverable(final Set<String> numbers) {
+        logger.debug("Marking {} numbers as discoverable", numbers.size());
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            for (final var number : numbers) {
+                final var recipientAddress = findByNumber(connection, number);
+                if (recipientAddress.isPresent()) {
+                    final var recipientId = recipientAddress.get().id();
+                    markDiscoverable(connection, recipientId, true);
+                }
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update recipient store", e);
+        }
+    }
+
+    public void markRegistered(final RecipientId recipientId, final boolean registered) {
+        logger.debug("Marking {} as registered={}", recipientId, registered);
+        try (final var connection = database.getConnection()) {
+            connection.setAutoCommit(false);
+            if (registered) {
+                markRegistered(connection, recipientId);
+            } else {
+                markUnregistered(connection, recipientId);
             }
             connection.commit();
         } catch (SQLException e) {
@@ -924,6 +966,23 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             final var numberAddress = new RecipientAddress(address.pni().get(), address.number().orElse(null));
             updateRecipientAddress(connection, recipientId, address.removeIdentifiersFrom(numberAddress));
             addNewRecipient(connection, numberAddress);
+        }
+    }
+
+    private void markDiscoverable(
+            final Connection connection, final RecipientId recipientId, final boolean discoverable
+    ) throws SQLException {
+        final var sql = (
+                """
+                UPDATE %s
+                SET discoverable = ?
+                WHERE _id = ?
+                """
+        ).formatted(TABLE_RECIPIENT);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setBoolean(1, discoverable);
+            statement.setLong(2, recipientId.id());
+            statement.executeUpdate();
         }
     }
 
@@ -949,8 +1008,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 UPDATE %s
-                SET unregistered_timestamp = ?
-                WHERE _id = ? AND unregistered_timestamp IS NULL
+                SET unregistered_timestamp = ?, discoverable = FALSE
+                WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
@@ -985,7 +1044,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 UPDATE %s
-                SET profile_last_update_timestamp = ?, profile_given_name = ?, profile_family_name = ?, profile_about = ?, profile_about_emoji = ?, profile_avatar_url_path = ?, profile_mobile_coin_address = ?, profile_unidentified_access_mode = ?, profile_capabilities = ?
+                SET profile_last_update_timestamp = ?, profile_given_name = ?, profile_family_name = ?, profile_about = ?, profile_about_emoji = ?, profile_avatar_url_path = ?, profile_mobile_coin_address = ?, profile_unidentified_access_mode = ?, profile_capabilities = ?, profile_phone_number_sharing = ?
                 WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
@@ -1002,7 +1061,11 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                     profile == null
                             ? null
                             : profile.getCapabilities().stream().map(Enum::name).collect(Collectors.joining(",")));
-            statement.setLong(10, recipientId.id());
+            statement.setString(10,
+                    profile == null || profile.getPhoneNumberSharingMode() == null
+                            ? null
+                            : profile.getPhoneNumberSharingMode().name());
+            statement.setLong(11, recipientId.id());
             statement.executeUpdate();
         }
         rotateStorageId(connection, recipientId);
@@ -1396,7 +1459,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     public Profile getProfile(final Connection connection, final RecipientId recipientId) throws SQLException {
         final var sql = (
                 """
-                SELECT r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities
+                SELECT r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing
                 FROM %s r
                 WHERE r._id = ? AND r.profile_capabilities IS NOT NULL
                 """
@@ -1431,6 +1494,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 getProfileKeyFromResultSet(resultSet),
                 getExpiringProfileKeyCredentialFromResultSet(resultSet),
                 getProfileFromResultSet(resultSet),
+                getDiscoverableFromResultSet(resultSet),
                 getStorageRecordFromResultSet(resultSet));
     }
 
@@ -1453,6 +1517,14 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 unregisteredTimestamp == 0 ? null : unregisteredTimestamp);
     }
 
+    private static Boolean getDiscoverableFromResultSet(final ResultSet resultSet) throws SQLException {
+        final var discoverable = resultSet.getBoolean("discoverable");
+        if (resultSet.wasNull()) {
+            return null;
+        }
+        return discoverable;
+    }
+
     private Profile getProfileFromResultSet(ResultSet resultSet) throws SQLException {
         final var profileCapabilities = resultSet.getString("profile_capabilities");
         final var profileUnidentifiedAccessMode = resultSet.getString("profile_unidentified_access_mode");
@@ -1471,7 +1543,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                         : Arrays.stream(profileCapabilities.split(","))
                                 .map(Profile.Capability::valueOfOrNull)
                                 .filter(Objects::nonNull)
-                                .collect(Collectors.toSet()));
+                                .collect(Collectors.toSet()),
+                PhoneNumberSharingMode.valueOfOrNull(resultSet.getString("profile_phone_number_sharing")));
     }
 
     private ProfileKey getProfileKeyFromResultSet(ResultSet resultSet) throws SQLException {
