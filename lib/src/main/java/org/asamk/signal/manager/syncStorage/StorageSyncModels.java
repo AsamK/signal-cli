@@ -97,8 +97,12 @@ public final class StorageSyncModels {
             builder.setSystemGivenName(recipient.getContact().givenName())
                     .setSystemFamilyName(recipient.getContact().familyName())
                     .setSystemNickname(recipient.getContact().nickName())
-                    .setNicknameGivenName(recipient.getContact().nickNameGivenName())
-                    .setNicknameFamilyName(recipient.getContact().nickNameFamilyName())
+                    .setNicknameGivenName(recipient.getContact().nickNameGivenName() == null
+                            ? ""
+                            : recipient.getContact().nickNameGivenName())
+                    .setNicknameFamilyName(recipient.getContact().nickNameFamilyName() == null
+                            ? ""
+                            : recipient.getContact().nickNameFamilyName())
                     .setNote(recipient.getContact().note())
                     .setBlocked(recipient.getContact().isBlocked())
                     .setProfileSharingEnabled(recipient.getContact().isProfileSharingEnabled())

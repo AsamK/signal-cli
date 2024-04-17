@@ -250,6 +250,9 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var contactGivenName = contact == null ? null : contact.givenName();
         final var contactFamilyName = contact == null ? null : contact.familyName();
         final var contactNickName = contact == null ? null : contact.nickName();
+        final var contactNickGivenName = contact == null ? null : contact.nickNameGivenName();
+        final var contactNickFamilyName = contact == null ? null : contact.nickNameFamilyName();
+        final var contactNote = contact == null ? null : contact.note();
         if (blocked != contactRecord.isBlocked()
                 || profileShared != contactRecord.isProfileSharingEnabled()
                 || archived != contactRecord.isArchived()
@@ -259,7 +262,10 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 || unregisteredTimestamp != contactRecord.getUnregisteredTimestamp()
                 || !Objects.equals(contactRecord.getSystemGivenName().orElse(null), contactGivenName)
                 || !Objects.equals(contactRecord.getSystemFamilyName().orElse(null), contactFamilyName)
-                || !Objects.equals(contactRecord.getSystemNickname().orElse(null), contactNickName)) {
+                || !Objects.equals(contactRecord.getSystemNickname().orElse(null), contactNickName)
+                || !Objects.equals(contactRecord.getNicknameGivenName().orElse(null), contactNickGivenName)
+                || !Objects.equals(contactRecord.getNicknameFamilyName().orElse(null), contactNickFamilyName)
+                || !Objects.equals(contactRecord.getNote().orElse(null), contactNote)) {
             logger.debug("Storing new or updated contact {}", recipientId);
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             final var newContact = contactBuilder.withIsBlocked(contactRecord.isBlocked())
