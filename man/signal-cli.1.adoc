@@ -590,6 +590,12 @@ Specify if only blocked or unblocked contacts should be shown (default: all cont
 *--name*::
 Find contacts with the given contact or profile name.
 
+*--detailed*::
+List the contacts with more details. If output=json, then this is always set
+
+*--internal*::
+Include internal information that's normally not user visible
+
 === listIdentities
 
 List all known identity keys and their trust status, fingerprint and safety number.

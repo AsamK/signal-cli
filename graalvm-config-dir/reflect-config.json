@@ -850,6 +850,24 @@
   "methods":[{"name":"id","parameterTypes":[] }, {"name":"opaque","parameterTypes":[] }, {"name":"sdp","parameterTypes":[] }, {"name":"type","parameterTypes":[] }]
 },
 {
+  "name":"org.asamk.signal.json.JsonContact",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"color","parameterTypes":[] }, {"name":"familyName","parameterTypes":[] }, {"name":"givenName","parameterTypes":[] }, {"name":"internal","parameterTypes":[] }, {"name":"isBlocked","parameterTypes":[] }, {"name":"isHidden","parameterTypes":[] }, {"name":"messageExpirationTime","parameterTypes":[] }, {"name":"name","parameterTypes":[] }, {"name":"nickFamilyName","parameterTypes":[] }, {"name":"nickGivenName","parameterTypes":[] }, {"name":"nickName","parameterTypes":[] }, {"name":"note","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"profile","parameterTypes":[] }, {"name":"profileSharing","parameterTypes":[] }, {"name":"unregistered","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.json.JsonContact$JsonInternal",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"capabilities","parameterTypes":[] }, {"name":"discoverableByPhonenumber","parameterTypes":[] }, {"name":"sharesPhoneNumber","parameterTypes":[] }, {"name":"unidentifiedAccessMode","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.json.JsonContact$JsonProfile",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"about","parameterTypes":[] }, {"name":"aboutEmoji","parameterTypes":[] }, {"name":"familyName","parameterTypes":[] }, {"name":"givenName","parameterTypes":[] }, {"name":"hasAvatar","parameterTypes":[] }, {"name":"lastUpdateTimestamp","parameterTypes":[] }, {"name":"mobileCoinAddress","parameterTypes":[] }]
+},
+{
   "name":"org.asamk.signal.json.JsonContactAddress",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
