@@ -572,7 +572,7 @@
   "name":"org.asamk.Signal",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true,
-  "methods":[{"name":"getContactName","parameterTypes":["java.lang.String"] }, {"name":"getDevice","parameterTypes":["long"] }, {"name":"getGroup","parameterTypes":["byte[]"] }, {"name":"getSelfNumber","parameterTypes":[] }, {"name":"getThisDevice","parameterTypes":[] }, {"name":"listDevices","parameterTypes":[] }, {"name":"sendGroupMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","byte[]"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.lang.String"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.util.List"] }, {"name":"sendMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","java.util.List"] }, {"name":"subscribeReceive","parameterTypes":[] }, {"name":"unsubscribeReceive","parameterTypes":[] }, {"name":"version","parameterTypes":[] }]
+  "methods":[{"name":"getContactName","parameterTypes":["java.lang.String"] }, {"name":"getDevice","parameterTypes":["long"] }, {"name":"getGroup","parameterTypes":["byte[]"] }, {"name":"getSelfNumber","parameterTypes":[] }, {"name":"getThisDevice","parameterTypes":[] }, {"name":"listDevices","parameterTypes":[] }, {"name":"listIdentities","parameterTypes":[] }, {"name":"sendGroupMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","byte[]"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.lang.String"] }, {"name":"sendMessage","parameterTypes":["java.lang.String","java.util.List","java.util.List"] }, {"name":"sendMessageReaction","parameterTypes":["java.lang.String","boolean","java.lang.String","long","java.util.List"] }, {"name":"subscribeReceive","parameterTypes":[] }, {"name":"unsubscribeReceive","parameterTypes":[] }, {"name":"version","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.Signal$Configuration",
@@ -651,7 +651,9 @@
 },
 {
   "name":"org.asamk.Signal$StructIdentity",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["org.freedesktop.dbus.DBusPath","java.lang.String","java.lang.String"] }]
 },
 {
   "name":"org.asamk.Signal$SyncMessageReceived",

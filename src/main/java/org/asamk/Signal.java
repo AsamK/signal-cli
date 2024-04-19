@@ -642,7 +642,7 @@ public interface Signal extends DBusInterface {
     @DBusProperty(name = "Fingerprint", type = Byte[].class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "SafetyNumber", type = String.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "TrustLevel", type = String.class, access = DBusProperty.Access.READ)
-    @DBusProperty(name = "AddedDate", type = Integer.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "AddedDate", type = Long.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "ScannableSafetyNumber", type = Byte[].class, access = DBusProperty.Access.READ)
     interface Identity extends DBusInterface, Properties {
 

@@ -15,6 +15,9 @@
     "interfaces":["org.asamk.Signal$Group"]
   },
   {
+    "interfaces":["org.asamk.Signal$Identity"]
+  },
+  {
     "interfaces":["org.asamk.SignalControl"]
   },
   {

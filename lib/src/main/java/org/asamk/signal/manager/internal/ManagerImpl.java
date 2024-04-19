@@ -1366,7 +1366,7 @@ public class ManagerImpl implements Manager {
         final var scannableFingerprint = context.getIdentityHelper()
                 .computeSafetyNumberForScanning(identityInfo.getServiceId(), identityInfo.getIdentityKey());
         return new Identity(address.toApiRecipientAddress(),
-                identityInfo.getIdentityKey(),
+                identityInfo.getIdentityKey().getPublicKey().serialize(),
                 context.getIdentityHelper()
                         .computeSafetyNumber(identityInfo.getServiceId(), identityInfo.getIdentityKey()),
                 scannableFingerprint == null ? null : scannableFingerprint.getSerialized(),

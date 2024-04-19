@@ -41,6 +41,7 @@ import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
+import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -759,12 +760,26 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public List<Identity> getIdentities() {
-        throw new UnsupportedOperationException();
+        final var identities = signal.listIdentities();
+        return identities.stream().map(Signal.StructIdentity::getObjectPath).map(this::getIdentity).toList();
     }
 
     @Override
     public List<Identity> getIdentities(final RecipientIdentifier.Single recipient) {
-        throw new UnsupportedOperationException();
+        final var path = signal.getIdentity(recipient.getIdentifier());
+        return List.of(getIdentity(path));
+    }
+
+    private Identity getIdentity(final DBusPath identityPath) {
+        final var group = getRemoteObject(identityPath, Signal.Identity.class).GetAll("org.asamk.Signal.Identity");
+        final var aci = (String) group.get("Uuid").getValue();
+        final var number = (String) group.get("Number").getValue();
+        return new Identity(new RecipientAddress(aci, null, number, null),
+                (byte[]) group.get("Fingerprint").getValue(),
+                (String) group.get("SafetyNumber").getValue(),
+                (byte[]) group.get("ScannableSafetyNumber").getValue(),
+                TrustLevel.valueOf((String) group.get("TrustLevel").getValue()),
+                (Long) group.get("AddedDate").getValue());
     }
 
     @Override

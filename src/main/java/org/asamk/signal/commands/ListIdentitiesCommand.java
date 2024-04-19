@@ -34,7 +34,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
                 theirId.recipient().getLegacyIdentifier(),
                 theirId.trustLevel(),
                 DateUtils.formatTimestamp(theirId.dateAddedTimestamp()),
-                Hex.toString(theirId.getFingerprint()),
+                Hex.toString(theirId.fingerprint()),
                 Util.formatSafetyNumber(theirId.safetyNumber()));
     }
 
@@ -70,7 +70,7 @@ public class ListIdentitiesCommand implements JsonRpcLocalCommand {
                     var scannableSafetyNumber = id.scannableSafetyNumber();
                     return new JsonIdentity(address.number().orElse(null),
                             address.uuid().map(UUID::toString).orElse(null),
-                            Hex.toString(id.getFingerprint()),
+                            Hex.toString(id.fingerprint()),
                             safetyNumber,
                             scannableSafetyNumber == null
                                     ? null

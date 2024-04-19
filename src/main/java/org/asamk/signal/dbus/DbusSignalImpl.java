@@ -1105,7 +1105,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                     List.of(new DbusProperty<>("Number", () -> identity.recipient().number().orElse("")),
                             new DbusProperty<>("Uuid",
                                     () -> identity.recipient().uuid().map(UUID::toString).orElse("")),
-                            new DbusProperty<>("Fingerprint", identity::getFingerprint),
+                            new DbusProperty<>("Fingerprint", identity::fingerprint),
                             new DbusProperty<>("SafetyNumber", identity::safetyNumber),
                             new DbusProperty<>("ScannableSafetyNumber", identity::scannableSafetyNumber),
                             new DbusProperty<>("TrustLevel", identity::trustLevel),
