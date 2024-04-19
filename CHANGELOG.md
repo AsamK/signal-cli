@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.13.3] - 2024-04-19
 
 **Attention**: Now requires libsignal-client version 0.44.0
