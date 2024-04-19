@@ -90,6 +90,18 @@
   "methods":[{"name":"<init>","parameterTypes":["byte[]","byte[]"] }]
 },
 {
+  "name":"org.signal.libsignal.net.ChatService"
+},
+{
+  "name":"org.signal.libsignal.net.ChatService$DebugInfo"
+},
+{
+  "name":"org.signal.libsignal.net.ChatService$Response"
+},
+{
+  "name":"org.signal.libsignal.net.ChatService$ResponseAndDebugInfo"
+},
+{
   "name":"org.signal.libsignal.protocol.DuplicateMessageException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
