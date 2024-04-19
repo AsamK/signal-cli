@@ -1,8 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.3] - 2024-04-19
 
-**Attention**: Now requires libsignal-client version 0.42.0
+**Attention**: Now requires libsignal-client version 0.44.0
+
+### Added
+- Support for reading contact nickname and notes
+- Add `--internal` and `--detailed` parameters to `listContacts` command
+
+### Fixed
+- Fix issue with sending messages when a new session is created
 
 ## [0.13.2] - 2024-03-23
 
