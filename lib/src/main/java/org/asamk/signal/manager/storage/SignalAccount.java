@@ -959,6 +959,7 @@ public class SignalAccount implements Closeable {
         synchronized (fileChannel) {
             final var base64 = Base64.getEncoder();
             final var storage = new Storage(CURRENT_STORAGE_VERSION,
+                    System.currentTimeMillis(),
                     serviceEnvironment.name(),
                     registered,
                     number,
@@ -1858,6 +1859,7 @@ public class SignalAccount implements Closeable {
 
     public record Storage(
             int version,
+            long timestamp,
             String serviceEnvironment,
             boolean registered,
             String number,
