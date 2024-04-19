@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.13.19] - 2025-09-15
 
 Requires libsignal-client version 0.80.2.
