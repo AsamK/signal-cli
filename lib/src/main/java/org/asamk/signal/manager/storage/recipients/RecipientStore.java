@@ -917,7 +917,10 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                     final var recipientId = recipientAddress.get().id();
                     markDiscoverable(connection, recipientId, false);
                     final var contact = getContact(connection, recipientId);
-                    if (recipientAddress.get().address().aci().isEmpty() || contact.unregisteredTimestamp() != null) {
+                    if (recipientAddress.get().address().aci().isEmpty() || (
+                            contact != null
+                                    && contact.unregisteredTimestamp() != null
+                    )) {
                         markUnregisteredAndSplitIfNecessary(connection, recipientId);
                     }
                 }
