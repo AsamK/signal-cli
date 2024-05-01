@@ -1338,6 +1338,7 @@ public class SignalAccount implements Closeable {
 
     public void setUsernameLink(final UsernameLinkComponents usernameLink) {
         this.usernameLink = usernameLink;
+        save();
     }
 
     public ServiceEnvironment getServiceEnvironment() {
