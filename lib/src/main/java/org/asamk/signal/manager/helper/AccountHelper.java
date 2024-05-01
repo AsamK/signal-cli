@@ -376,6 +376,7 @@ public class AccountHelper {
         account.setUsername(username.getUsername());
         account.setUsernameLink(linkComponents);
         account.getRecipientStore().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
+        account.getRecipientStore().rotateSelfStorageId();
         logger.debug("[confirmUsername] Successfully confirmed username.");
     }
 
@@ -409,6 +410,7 @@ public class AccountHelper {
                         e.getClass().getSimpleName());
                 account.setUsername(null);
                 account.setUsernameLink(null);
+                account.getRecipientStore().rotateSelfStorageId();
                 throw e;
             }
         } else {
@@ -431,6 +433,7 @@ public class AccountHelper {
             account.setUsernameLink(linkComponents);
             logger.debug("[confirmUsername] Successfully reclaimed existing username and link.");
         }
+        account.getRecipientStore().rotateSelfStorageId();
     }
 
     private void tryToSetUsernameLink(Username username) {
