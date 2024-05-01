@@ -446,6 +446,8 @@ public class AccountHelper {
     }
 
     public void deleteUsername() throws IOException {
+        dependencies.getAccountManager().deleteUsernameLink();
+        account.setUsernameLink(null);
         dependencies.getAccountManager().deleteUsername();
         account.setUsername(null);
         logger.debug("[deleteUsername] Successfully deleted the username.");
