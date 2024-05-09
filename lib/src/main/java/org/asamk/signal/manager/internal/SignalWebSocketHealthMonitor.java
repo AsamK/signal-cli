@@ -7,7 +7,7 @@ import org.whispersystems.signalservice.api.util.Preconditions;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.websocket.HealthMonitor;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
-import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
+import org.whispersystems.signalservice.internal.websocket.OkHttpWebSocketConnection;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +25,7 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(SignalWebSocketHealthMonitor.class);
 
-    private static final long KEEP_ALIVE_SEND_CADENCE = TimeUnit.SECONDS.toMillis(WebSocketConnection.KEEPALIVE_FREQUENCY_SECONDS);
+    private static final long KEEP_ALIVE_SEND_CADENCE = TimeUnit.SECONDS.toMillis(OkHttpWebSocketConnection.KEEPALIVE_FREQUENCY_SECONDS);
     private static final long MAX_TIME_SINCE_SUCCESSFUL_KEEP_ALIVE = KEEP_ALIVE_SEND_CADENCE * 3;
 
     private SignalWebSocket signalWebSocket;

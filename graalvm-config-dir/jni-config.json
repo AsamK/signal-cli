@@ -12,7 +12,7 @@
 },
 {
   "name":"java.lang.Class",
-  "methods":[{"name":"getCanonicalName","parameterTypes":[] }]
+  "methods":[{"name":"getCanonicalName","parameterTypes":[] }, {"name":"getClassLoader","parameterTypes":[] }]
 },
 {
   "name":"java.lang.ClassLoader",
@@ -61,6 +61,9 @@
 {
   "name":"java.util.UUID",
   "methods":[{"name":"<init>","parameterTypes":["long","long"] }, {"name":"getLeastSignificantBits","parameterTypes":[] }, {"name":"getMostSignificantBits","parameterTypes":[] }]
+},
+{
+  "name":"jdk.internal.loader.ClassLoaders$AppClassLoader"
 },
 {
   "name":"jdk.internal.loader.ClassLoaders$PlatformClassLoader"
