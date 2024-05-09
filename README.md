@@ -3,7 +3,7 @@
 signal-cli is a commandline interface for the [Signal messenger](https://signal.org/).
 It supports registering, verifying, sending and receiving messages.
 signal-cli uses a [patched libsignal-service-java](https://github.com/Turasa/libsignal-service-java),
-extracted from the [Signal-Android source code](https://github.com/signalapp/Signal-Android/tree/main/libsignal/service).
+extracted from the [Signal-Android source code](https://github.com/signalapp/Signal-Android/tree/main/libsignal-service).
 For registering you need a phone number where you can receive SMS or incoming calls.
 
 signal-cli is primarily intended to be used on servers to notify admins of important events.
