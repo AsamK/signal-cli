@@ -77,6 +77,8 @@ public class RecipientHelper {
     public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
         if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
             return account.getRecipientResolver().resolveRecipient(ACI.from(uuidRecipient.uuid()));
+        } else if (recipient instanceof RecipientIdentifier.Pni pniRecipient) {
+            return account.getRecipientResolver().resolveRecipient(PNI.parseOrThrow(pniRecipient.pni()));
         } else if (recipient instanceof RecipientIdentifier.Number numberRecipient) {
             final var number = numberRecipient.number();
             return account.getRecipientStore().resolveRecipientByNumber(number, () -> {

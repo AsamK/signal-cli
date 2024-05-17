@@ -49,6 +49,8 @@ public sealed interface RecipientIdentifier {
                 return new Number(address.number().get());
             } else if (address.aci().isPresent()) {
                 return new Uuid(UUID.fromString(address.aci().get()));
+            } else if (address.pni().isPresent()) {
+                return new Pni(address.pni().get());
             } else if (address.username().isPresent()) {
                 return new Username(address.username().get());
             }
@@ -68,6 +70,19 @@ public sealed interface RecipientIdentifier {
         @Override
         public RecipientAddress toPartialRecipientAddress() {
             return new RecipientAddress(uuid);
+        }
+    }
+
+    record Pni(String pni) implements Single {
+
+        @Override
+        public String getIdentifier() {
+            return pni;
+        }
+
+        @Override
+        public RecipientAddress toPartialRecipientAddress() {
+            return new RecipientAddress(null, pni, null, null);
         }
     }
 
