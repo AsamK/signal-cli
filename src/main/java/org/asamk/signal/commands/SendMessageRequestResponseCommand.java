@@ -36,7 +36,10 @@ public class SendMessageRequestResponseCommand implements JsonRpcLocalCommand {
         final var recipientStrings = ns.<String>getList("recipient");
         final var groupIdStrings = ns.<String>getList("group-id");
         final var usernameStrings = ns.<String>getList("username");
-        final var type = ns.<MessageRequestResponseType>get("type");
+        final var typeObj = ns.get("type");
+        final var type = typeObj instanceof MessageRequestResponseType t
+                ? t
+                : MessageRequestResponseType.valueOf(((String) typeObj).toUpperCase());
 
         final var recipientIdentifiers = CommandUtil.getRecipientIdentifiers(m,
                 false,
