@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class GetUserStatusCommand implements JsonRpcLocalCommand {
@@ -47,7 +48,8 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         // Get a map of registration statuses
         Map<String, UserStatus> registered;
         try {
-            registered = m.getUserStatus(new HashSet<>(ns.getList("recipient")));
+            final var recipient = ns.<String>getList("recipient");
+            registered = m.getUserStatus(recipient == null ? Set.of() : new HashSet<>(recipient));
         } catch (RateLimitException e) {
             final var message = CommandUtil.getRateLimitMessage(e);
             throw new RateLimitErrorException(message, e);
