@@ -101,6 +101,8 @@ import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
+import org.whispersystems.signalservice.api.push.exceptions.UsernameMalformedException;
+import org.whispersystems.signalservice.api.push.exceptions.UsernameTakenException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -396,6 +398,10 @@ public class ManagerImpl implements Manager {
             } else {
                 context.getAccountHelper().reserveUsernameFromNickname(username);
             }
+        } catch (UsernameMalformedException e) {
+            throw new InvalidUsernameException("Username is malformed", e);
+        } catch (UsernameTakenException e) {
+            throw new InvalidUsernameException("Username is already registered", e);
         } catch (BaseUsernameException e) {
             throw new InvalidUsernameException(e.getMessage() + " (" + e.getClass().getSimpleName() + ")", e);
         }
