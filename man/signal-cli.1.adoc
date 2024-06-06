@@ -270,7 +270,7 @@ Uses a list of phone numbers or usernames to determine the statuses of those use
 Shows if they are registered on the Signal Servers or not.
 In json mode this is outputted as a list of objects.
 
-[NUMBER [NUMBER ...]]::
+[RECIPIENT [RECIPIENT ...]]::
 One or more numbers to check.
 
 [--username [USERNAME ...]]::
