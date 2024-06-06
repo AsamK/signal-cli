@@ -79,6 +79,12 @@ public class GroupHelper {
         return getGroup(groupId, false);
     }
 
+    public List<GroupInfo> getGroups() {
+        final var groups = account.getGroupStore().getGroups();
+        groups.forEach(group -> fillOrUpdateGroup(group, false));
+        return groups;
+    }
+
     public boolean isGroupBlocked(final GroupId groupId) {
         var group = getGroup(groupId);
         return group != null && group.isBlocked();
@@ -382,32 +388,44 @@ public class GroupHelper {
 
     private GroupInfo getGroup(GroupId groupId, boolean forceUpdate) {
         final var group = account.getGroupStore().getGroup(groupId);
-        if (group instanceof GroupInfoV2 groupInfoV2) {
-            if (forceUpdate || (!groupInfoV2.isPermissionDenied() && groupInfoV2.getGroup() == null)) {
-                final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
-                DecryptedGroup decryptedGroup;
-                try {
-                    decryptedGroup = context.getGroupV2Helper().getDecryptedGroup(groupSecretParams);
-                } catch (NotAGroupMemberException e) {
-                    groupInfoV2.setPermissionDenied(true);
-                    decryptedGroup = null;
-                }
-                if (decryptedGroup != null) {
-                    try {
-                        storeProfileKeysFromHistory(groupSecretParams, groupInfoV2, decryptedGroup);
-                    } catch (NotAGroupMemberException ignored) {
-                    }
-                    storeProfileKeysFromMembers(decryptedGroup);
-                    final var avatar = decryptedGroup.avatar;
-                    if (!avatar.isEmpty()) {
-                        downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar);
-                    }
-                }
-                groupInfoV2.setGroup(decryptedGroup);
-                account.getGroupStore().updateGroup(group);
-            }
-        }
+        fillOrUpdateGroup(group, forceUpdate);
         return group;
+    }
+
+    private void fillOrUpdateGroup(final GroupInfo group, final boolean forceUpdate) {
+        if (!(group instanceof GroupInfoV2 groupInfoV2)) {
+            return;
+        }
+
+        if (!forceUpdate && (groupInfoV2.isPermissionDenied() || groupInfoV2.getGroup() != null)) {
+            return;
+        }
+
+        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
+        DecryptedGroup decryptedGroup;
+        try {
+            decryptedGroup = context.getGroupV2Helper().getDecryptedGroup(groupSecretParams);
+        } catch (NotAGroupMemberException e) {
+            groupInfoV2.setPermissionDenied(true);
+            account.getGroupStore().updateGroup(group);
+            return;
+        }
+
+        if (decryptedGroup == null) {
+            return;
+        }
+
+        try {
+            storeProfileKeysFromHistory(groupSecretParams, groupInfoV2, decryptedGroup);
+        } catch (NotAGroupMemberException ignored) {
+        }
+        storeProfileKeysFromMembers(decryptedGroup);
+        final var avatar = decryptedGroup.avatar;
+        if (!avatar.isEmpty()) {
+            downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar);
+        }
+        groupInfoV2.setGroup(decryptedGroup);
+        account.getGroupStore().updateGroup(group);
     }
 
     private void downloadGroupAvatar(GroupIdV2 groupId, GroupSecretParams groupSecretParams, String cdnKey) {

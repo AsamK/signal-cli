@@ -261,7 +261,7 @@ public class SendHelper {
         }
 
         final var groupId = messageSendLogEntry.groupId().get();
-        final var group = account.getGroupStore().getGroup(groupId);
+        final var group = context.getGroupHelper().getGroup(groupId);
 
         if (group == null) {
             logger.debug("Could not find a matching group for the groupId {}! Skipping message send.",

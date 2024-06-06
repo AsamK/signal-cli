@@ -511,7 +511,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public List<Group> getGroups() {
-        return account.getGroupStore().getGroups().stream().map(this::toGroup).toList();
+        return context.getGroupHelper().getGroups().stream().map(this::toGroup).toList();
     }
 
     private Group toGroup(final GroupInfo groupInfo) {
