@@ -12,8 +12,10 @@ java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+    if (!JavaVersion.current().isCompatibleWith(targetCompatibility)) {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(targetCompatibility.majorVersion))
+        }
     }
 }
 
