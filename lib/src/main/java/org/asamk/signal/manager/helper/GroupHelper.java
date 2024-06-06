@@ -38,7 +38,7 @@ import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupHistoryEntry;
+import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupChangeLog;
 import org.whispersystems.signalservice.api.groupsv2.GroupLinkNotActiveException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
@@ -482,11 +482,10 @@ public class GroupHelper {
         final var newProfileKeys = new HashMap<RecipientId, ProfileKey>();
         while (true) {
             final var page = context.getGroupV2Helper().getDecryptedGroupHistoryPage(groupSecretParams, fromRevision);
-            page.getResults()
+            page.getChangeLogs()
                     .stream()
-                    .map(DecryptedGroupHistoryEntry::getChange)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .map(DecryptedGroupChangeLog::getChange)
+                    .filter(Objects::nonNull)
                     .map(context.getGroupV2Helper()::getAuthoritativeProfileKeyFromChange)
                     .filter(Objects::nonNull)
                     .forEach(p -> {
@@ -495,7 +494,7 @@ public class GroupHelper {
                         final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
                         newProfileKeys.put(recipientId, profileKey);
                     });
-            if (!page.getPagingData().hasMorePages()) {
+            if (!page.getPagingData().getHasMorePages()) {
                 break;
             }
             fromRevision = page.getPagingData().getNextPageRevision();

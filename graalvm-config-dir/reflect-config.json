@@ -204,6 +204,9 @@
   "methods":[{"name":"getPermittedSubclasses","parameterTypes":[] }, {"name":"getRecordComponents","parameterTypes":[] }, {"name":"isRecord","parameterTypes":[] }, {"name":"isSealed","parameterTypes":[] }]
 },
 {
+  "name":"java.lang.ClassValue"
+},
+{
   "name":"java.lang.Comparable",
   "allDeclaredMethods":true
 },

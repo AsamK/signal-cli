@@ -23,7 +23,6 @@ import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
 import org.whispersystems.signalservice.internal.push.PushServiceSocket;
-import org.whispersystems.signalservice.internal.websocket.LibSignalNetwork;
 import org.whispersystems.signalservice.internal.websocket.OkHttpWebSocketConnection;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
 
@@ -51,7 +50,7 @@ public class SignalDependencies {
     private ClientZkOperations clientZkOperations;
 
     private PushServiceSocket pushServiceSocket;
-    private LibSignalNetwork libSignalNetwork;
+    private Network libSignalNetwork;
     private SignalWebSocket signalWebSocket;
     private SignalServiceMessageReceiver messageReceiver;
     private SignalServiceMessageSender messageSender;
@@ -108,10 +107,9 @@ public class SignalDependencies {
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
     }
 
-    public LibSignalNetwork getLibSignalNetwork() {
+    public Network getLibSignalNetwork() {
         return getOrCreate(() -> libSignalNetwork,
-                () -> libSignalNetwork = new LibSignalNetwork(new Network(serviceEnvironmentConfig.netEnvironment(),
-                        userAgent), serviceEnvironmentConfig.signalServiceConfiguration()));
+                () -> libSignalNetwork = new Network(serviceEnvironmentConfig.netEnvironment(), userAgent));
     }
 
     public SignalServiceAccountManager getAccountManager() {
