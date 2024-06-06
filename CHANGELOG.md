@@ -1,16 +1,32 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.4] - 2024-06-06
+
+**Attention**: Now requires libsignal-client version 0.47.0
+
+### Improved
+
+- Improve username update error message
+- Update groups when using listGroups command
+
+### Fixed
+
+- Update libsignal to fix graalvm native startup
+- Fix issue with saving username link
+- Fix sendMessageRequestResponse type parameter parsing in JSON RPC mode
+- Fix getUserStatus command with only username parameter
 
 ## [0.13.3] - 2024-04-19
 
 **Attention**: Now requires libsignal-client version 0.44.0
 
 ### Added
+
 - Support for reading contact nickname and notes
 - Add `--internal` and `--detailed` parameters to `listContacts` command
 
 ### Fixed
+
 - Fix issue with sending messages when a new session is created
 
 ## [0.13.2] - 2024-03-23
