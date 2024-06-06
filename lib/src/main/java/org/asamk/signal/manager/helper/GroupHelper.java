@@ -500,7 +500,10 @@ public class GroupHelper {
             fromRevision = page.getPagingData().getNextPageRevision();
         }
 
-        newProfileKeys.forEach(account.getProfileStore()::storeProfileKey);
+        newProfileKeys.entrySet()
+                .stream()
+                .filter(entry -> account.getProfileStore().getProfileKey(entry.getKey()) == null)
+                .forEach(entry -> account.getProfileStore().storeProfileKey(entry.getKey(), entry.getValue()));
     }
 
     private GroupInfo getGroupForUpdating(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
