@@ -2142,7 +2142,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"getAnnouncementGroup","parameterTypes":[] }, {"name":"getChangeNumber","parameterTypes":[] }, {"name":"getGiftBadges","parameterTypes":[] }, {"name":"getPaymentActivation","parameterTypes":[] }, {"name":"getPni","parameterTypes":[] }, {"name":"getSenderKey","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getStories","parameterTypes":[] }]
+  "methods":[{"name":"getAnnouncementGroup","parameterTypes":[] }, {"name":"getChangeNumber","parameterTypes":[] }, {"name":"getDeleteSync","parameterTypes":[] }, {"name":"getGiftBadges","parameterTypes":[] }, {"name":"getPaymentActivation","parameterTypes":[] }, {"name":"getPni","parameterTypes":[] }, {"name":"getSenderKey","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getStories","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest",

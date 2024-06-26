@@ -92,6 +92,7 @@ import org.signal.libsignal.usernames.BaseUsernameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalSessionLock;
+import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
@@ -738,17 +739,23 @@ public class ManagerImpl implements Manager {
     private void applyMessage(
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
     ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException, InvalidStickerException {
+        final var additionalAttachments = new ArrayList<SignalServiceAttachment>();
         if (message.messageText().length() > 2000) {
             final var messageBytes = message.messageText().getBytes(StandardCharsets.UTF_8);
             final var textAttachment = AttachmentUtils.createAttachmentStream(new StreamDetails(new ByteArrayInputStream(
                     messageBytes), MimeUtils.LONG_TEXT, messageBytes.length), Optional.empty());
             messageBuilder.withBody(message.messageText().substring(0, 2000));
-            messageBuilder.withAttachment(context.getAttachmentHelper().uploadAttachment(textAttachment));
+            additionalAttachments.add(context.getAttachmentHelper().uploadAttachment(textAttachment));
         } else {
             messageBuilder.withBody(message.messageText());
         }
         if (!message.attachments().isEmpty()) {
-            messageBuilder.withAttachments(context.getAttachmentHelper().uploadAttachments(message.attachments()));
+            if (!additionalAttachments.isEmpty()) {
+                additionalAttachments.addAll(context.getAttachmentHelper().uploadAttachments(message.attachments()));
+                messageBuilder.withAttachments(additionalAttachments);
+            } else {
+                messageBuilder.withAttachments(context.getAttachmentHelper().uploadAttachments(message.attachments()));
+            }
         }
         if (!message.mentions().isEmpty()) {
             messageBuilder.withMentions(resolveMentions(message.mentions()));

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public class AttachmentUtils {
 
@@ -58,6 +59,7 @@ public class AttachmentUtils {
                 blurHash,
                 null,
                 null,
-                resumableUploadSpec);
+                resumableUploadSpec,
+                UUID.randomUUID());
     }
 }
