@@ -1,0 +1,930 @@
+/////
+vim:set ts=4 sw=4 tw=82 noet:
+/////
+
+:quotes.~:
+
+= signal-cli (1)
+:doctype: manpage
+
+== Name
+
+signal-cli - A commandline interface for the Signal messenger
+
+== Synopsis
+
+*signal-cli* [--config CONFIG] [-h | -v | -a ACCOUNT | --dbus | --dbus-system] command [command-options]
+
+== Description
+
+signal-cli is a commandline interface for libsignal-service-java.
+It supports registering, verifying, sending and receiving messages.
+For registering you need a phone number where you can receive SMS or incoming calls.
+signal-cli was primarily developed to be used on servers to notify admins of important events.
+For this use-case, it has a dbus and a JSON-RPC interface, that can be used to send messages from other programs.
+
+For some functionality the Signal protocol requires that all messages have been received from the server.
+The `receive` command should be regularly executed.
+In daemon mode messages are by default continuously received.
+
+== Options
+
+*-h*, *--help*::
+Show help message and quit.
+
+*--version*::
+Print the version and quit.
+
+*-v*, *--verbose*::
+Raise log level and include lib signal logs.
+
+*--log-file* LOG_FILE::
+Write log output to the given file.
+If `--verbose` is also given, the detailed logs will only be written to the log file.
+
+*--scrub-log*::
+Scrub possibly sensitive information from the log, like phone numbers and UUIDs.
+Doesn't work reliably on dbus logs with very verbose logging (`-vvv`)
+
+*--config* CONFIG::
+Set the path, where to store the config.
+Make sure you have full read/write access to the given directory.
+(Default: `$XDG_DATA_HOME/signal-cli` (`$HOME/.local/share/signal-cli`))
+
+*-a* ACCOUNT, *--account* ACCOUNT::
+Specify your phone number, that will be your identifier.
+The phone number must include the country calling code, i.e. the number must start with a "+" sign.
+
+This flag must not be given for the `link` command.
+It is optional for the `daemon` command.
+For all other commands it is only optional if there is exactly one local user in the config directory.
+
+*--service-environment* ENVIRONMENT::
+Choose the server environment to use:
+
+- `live` (default)
+- `staging`
+
+*--dbus*::
+Make request via user dbus.
+
+*--dbus-system*::
+Make request via system dbus.
+
+*--bus-name*::
+Connect to another D-Bus bus name than the default.
+
+*-o* OUTPUT-MODE, *--output* OUTPUT-MODE::
+Specify if you want commands to output in either "plain-text" mode or in "json".
+Defaults to "plain-text"
+
+*--trust-new-identities* TRUST-MODE::
+Choose when to trust new identities:
+- `on-first-use` (default): Trust the first seen identity key from new users, changed keys must be verified manually
+- `always`: Trust any new identity key without verification
+- `never`: Don't trust any unknown identity key, every key must be verified manually
+
+*--disable-send-log*::
+Disable message send log (for resending messages that recipient couldn't decrypt).
+
+== Commands
+
+=== register
+
+Register a phone number with SMS or voice verification.
+Use the verify command to complete the verification.
+
+If the account is just deactivated, the register command will just reactivate account, without requiring an SMS verification.
+By default the unregister command just deactivates the account, in which case it can be reactivated without sms verification if the local data is still available.
+If the account was deleted (with --delete-account) it cannot be reactivated.
+
+*-v*, *--voice*::
+The verification should be done over voice, not SMS.
+Voice verification only works if an SMS verification has been attempted before.
+
+*--captcha* CAPTCHA::
+The captcha token, required if registration failed with a captcha required error.
+To get the token, go to https://signalcaptchas.org/registration/generate.html
+For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html
+After solving the captcha, right-click on the "Open Signal" link and copy the link.
+
+*--reregister*::
+Register even if account is already registered.
+
+=== verify
+
+Verify the number using the code received via SMS or voice.
+
+VERIFICATIONCODE::
+The verification code.
+
+*-p* PIN, *--pin* PIN::
+The registration lock PIN, that was set by the user.
+Only required if a PIN was set.
+
+=== unregister
+
+Disable push support for this device, i.e. this device won't receive any more messages.
+If this is the primary device, other users can't send messages to this number anymore.
+Use "updateAccount" to undo this.
+To remove a linked device, use "removeDevice" from the primary device.
+
+*--delete-account*::
+Delete account completely from server.
+Cannot be undone without loss.
+You will have to be readded to each group.
+
+CAUTION: Only delete your account if you won't use this number again!
+
+=== deleteLocalAccountData
+
+Delete all local data for this account.
+Data should only be deleted if the account is unregistered.
+
+CAUTION: This cannot be undone.
+
+*--ignore-registered*::
+Delete the account data even though the account is still registered on the Signal servers.
+
+=== updateAccount
+
+Update the account attributes on the signal server.
+Can fix problems with receiving messages.
+
+*-n* NAME, *--device-name* NAME::
+Set a new device name for the primary or linked device
+
+*-u* NAME *--username* NAME::
+Specify a username that can then be used to contact this account.
+This can either be just the nickname (e.g. test) or the complete username with discriminator (e.g. test.000).
+Returns the new username with discriminator and the username link.
+
+*--delete-username*::
+Delete the username associated with this account.
+
+*--unrestricted-unidentified-sender* {true,false}::
+Enable if anyone should be able to send you unidentified sender messages.
+
+*--discoverable-by-number* {true,false}::
+Enable/disable if the account should be discoverable by phone number
+
+*--number-sharing* {true,false}::
+Indicates if Signal should share its phone number when sending a message.
+
+=== startChangeNumber
+
+Change an account to a new phone number with SMS or voice verification.
+Use the finishChangeNumber command to complete the verification.
+
+NUMBER::
+The new phone number.
+
+*-v*, *--voice*::
+The verification should be done over voice, not SMS.
+Voice verification only works if an SMS verification has been attempted before.
+
+*--captcha*::
+The captcha token, required if registration failed with a captcha required error.
+To get the token, go to https://signalcaptchas.org/registration/generate.html
+For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html
+After solving the captcha, right-click on the "Open Signal" link and copy the link.
+
+=== finishChangeNumber
+
+Verify the number using the code received via SMS or voice.
+
+NUMBER::
+The new phone number.
+
+*-v*, *--verification-code*::
+The verification code.
+
+*-p* PIN, *--pin* PIN::
+The registration lock PIN, that was set by the user.
+Only required if a PIN was set.
+
+=== updateConfiguration
+
+Update signal configs and sync them to linked devices.
+This command only works on the primary devices.
+
+*--read-receipts* {true,false}::
+Indicates if Signal should send read receipts.
+
+*--unidentified-delivery-indicators* {true,false}::
+Indicates if Signal should show unidentified delivery indicators.
+
+*--typing-indicators* {true,false}::
+Indicates if Signal should send/show typing indicators.
+
+*--link-previews* {true,false}::
+Indicates if Signal should generate link previews.
+
+=== setPin
+
+Set a registration lock pin, to prevent others from registering this number.
+
+REGISTRATION_LOCK_PIN::
+The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)
+
+=== removePin
+
+Remove the registration lock pin.
+
+=== link
+
+Link to an existing device, instead of registering a new number.
+This shows a "sgnl://linkdevice?uuid=..." URI.
+If you want to connect to another signal-cli instance, you can just use this URI.
+If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
+
+*-n* NAME, *--name* NAME::
+Optionally specify a name to describe this new device.
+By default "cli" will be used.
+
+=== addDevice
+
+Link another device to this device.
+Only works, if this is the primary device.
+
+*--uri* URI::
+Specify the uri contained in the QR code shown by the new device.
+You will need the full URI such as "sgnl://linkdevice?uuid=..." (formerly "tsdevice:/?uuid=...") Make sure to enclose it in quotation marks for shells.
+
+=== listDevices
+
+Show a list of linked devices.
+
+=== removeDevice
+
+Remove a linked device.
+Only works, if this is the primary device.
+
+*-d* DEVICE_ID, *--device-id* DEVICE_ID::
+Specify the device you want to remove.
+Use listDevices to see the deviceIds.
+
+=== getUserStatus
+
+Uses a list of phone numbers or usernames to determine the statuses of those users.
+Shows if they are registered on the Signal Servers or not.
+In json mode this is outputted as a list of objects.
+
+[RECIPIENT [RECIPIENT ...]]::
+One or more numbers to check.
+
+[--username [USERNAME ...]]::
+One or more usernames to check.
+
+=== send
+
+Send a message to another user or group.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*--note-to-self*::
+Send the message to self without notification.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
+*-m* MESSAGE, *--message* MESSAGE::
+Specify the message.
+
+*--message-from-stdin*::
+Read the message from standard input.
+
+*-a* [ATTACHMENT [ATTACHMENT ...]], *--attachment* [ATTACHMENT [ATTACHMENT ...]]::
+Add one or more files as attachment.
+Can be either a file path or a data URI.
+Data URI encoded attachments must follow the RFC 2397.
+Additionally a file name can be added:
+e.g.: `data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>`
+
+*--sticker* STICKER::
+Send a sticker of a locally known sticker pack (syntax: stickerPackId:stickerId).
+Shouldn't be used together with `-m` as the official clients don't support this.
+e.g.: `--sticker 00abac3bc18d7f599bff2325dc306d43:2`
+
+*--mention*::
+Mention another group member (syntax: start:length:recipientNumber) In the apps the mention replaces part of the message text, which is specified by the start and length values.
+The units of start and length should be UTF-16 code units, NOT Unicode code points. For more information, see https://github.com/AsamK/signal-cli/wiki/FAQ#string-indexing-units
+e.g.: `-m "Hi X!" --mention "3:1:+123456789"`
+
+*--text-style*::
+Style parts of the message text (syntax: start:length:STYLE). Like `--mention`, the units are UTF-16 code units.
+Where STYLE is one of: BOLD, ITALIC, SPOILER, STRIKETHROUGH, MONOSPACE
+
+e.g.: `-m "Something BIG!" --text-style "10:3:BOLD"` or for a mixed text style `-m "Something BIG!" --text-style "0:9:ITALIC" "10:3:BOLD"`
+
+*--quote-timestamp*::
+Specify the timestamp of a previous message with the recipient or group to add a quote to the new message.
+
+*--quote-author*::
+Specify the number of the author of the original message.
+
+*--quote-message*::
+Specify the message of the original message.
+
+*--quote-mention*::
+Specify the mentions of the original message (same format as `--mention`).
+
+*--quote-text-style*::
+Style parts of the original message text (same format as `--text-style`).
+
+*--quote-attachment*::
+Specify the attachments of the original message (syntax: contentType[:filename[:previewFile]]), e.g. 'audio/aac' or 'image/png:test.png:/tmp/preview.jpg'.
+
+*--preview-url*::
+Specify the url for the link preview.
+The same url must also appear in the message body, otherwise the preview won't be displayed by the apps.
+
+*--preview-title*::
+Specify the title for the link preview (mandatory).
+
+*--preview-description*::
+Specify the description for the link preview (optional).
+
+*--preview-image*::
+Specify the image file for the link preview (optional).
+
+*--story-timestamp*::
+Specify the timestamp of a story to reply to.
+
+*--story-author*::
+Specify the number of the author of the story.
+
+*-e*, *--end-session*::
+Clear session state and send end session message.
+
+*--edit-timestamp*::
+Specify the timestamp of a previous message with the recipient or group to send an edited message.
+
+=== sendMessageRequestResponse
+
+Send response to a message request to linked devices.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
+*--type* TYPE::
+Type of message request response (accept, delete)
+
+=== sendPaymentNotification
+
+Send a payment notification.
+
+RECIPIENT::
+Specify the recipient’s phone number.
+
+*--receipt* RECEIPT::
+The base64 encoded receipt blob.
+
+*--note* NOTE::
+Specify a note for the payment notification.
+
+=== sendReaction
+
+Send reaction to a previously received or sent message.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
+*-e* EMOJI, *--emoji* EMOJI::
+Specify the emoji, should be a single unicode grapheme cluster.
+
+*-a* NUMBER, *--target-author* NUMBER::
+Specify the number of the author of the message to which to react.
+
+*-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
+Specify the timestamp of the message to which to react.
+
+*-r*, *--remove*::
+Remove a reaction.
+
+*--story*::
+React to a story instead of a normal message
+
+=== sendReceipt
+
+Send a read or viewed receipt to a previously received message.
+
+RECIPIENT::
+Specify the sender’s phone number.
+
+*-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
+Specify the timestamp of the message to which to react.
+
+*--type* TYPE::
+Specify the receipt type, either `read` (the default) or `viewed`.
+
+=== sendTyping
+
+Send typing message to trigger a typing indicator for the recipient.
+Indicator will be shown for 15seconds unless a typing STOP message is sent first.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-s*, *--stop*::
+Send a typing STOP message.
+
+=== remoteDelete
+
+Remotely delete a previously sent message.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
+*-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
+Specify the timestamp of the message to delete.
+
+=== receive
+
+Query the server for new messages.
+New messages are printed on standard output and attachments are downloaded to the config directory.
+In json mode this is outputted as one json object per line.
+
+*-t* TIMEOUT, *--timeout* TIMEOUT::
+Number of seconds to wait for new messages (negative values disable timeout).
+Default is 5 seconds.
+
+*--max-messages*::
+Maximum number of messages to receive, before returning.
+
+*--ignore-attachments*::
+Don’t download attachments of received messages.
+
+*--ignore-stories*::
+Don’t receive story messages from the server.
+
+
+*--send-read-receipts*::
+Send read receipts for all incoming data messages (in addition to the default delivery receipts)
+
+=== joinGroup
+
+Join a group via an invitation link.
+
+*--uri*::
+The invitation link URI (starts with `https://signal.group/#`)
+
+=== updateGroup
+
+Create or update a group.
+If the user is a pending member, this command will accept the group invitation.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+If not specified, a new group with a new random ID is generated.
+
+*-n* NAME, *--name* NAME::
+Specify the new group name.
+
+*-d* DESCRIPTION, *--description* DESCRIPTION::
+Specify the new group description.
+
+*-a* AVATAR, *--avatar* AVATAR::
+Specify a new group avatar image file.
+
+*-m* [MEMBER [MEMBER ...]], *--member* [MEMBER [MEMBER ...]]::
+Specify one or more members to add to the group.
+
+*-r* [MEMBER [MEMBER ...]], *--remove-member* [MEMBER [MEMBER ...]]::
+Specify one or more members to remove from the group
+
+*--admin* [MEMBER [MEMBER ...]]::
+Specify one or more members to make a group admin
+
+*--remove-admin* [MEMBER [MEMBER ...]]::
+Specify one or more members to remove group admin privileges
+
+*--ban* [MEMBER [MEMBER ...]]::
+Specify one or more members to ban from joining the group.
+Banned members cannot join or request to join via a group link.
+
+*--unban* [MEMBER [MEMBER ...]]::
+Specify one or more members to remove from the ban list
+
+*--reset-link*::
+Reset group link and create new link password
+
+*--link* LINK_STATE::
+Set group link state: `enabled`, `enabled-with-approval`, `disabled`
+
+*--set-permission-add-member* PERMISSION::
+Set permission to add new group members: `every-member`, `only-admins`
+
+*--set-permission-edit-details* PERMISSION::
+Set permission to edit group details: `every-member`, `only-admins`
+
+*--set-permission-send-messages* PERMISSION::
+Set permission to send messages in group: `every-member`, `only-admins`
+Groups where only admins can send messages are also called announcement groups
+
+*-e* EXPIRATION_SECONDS, *--expiration* EXPIRATION_SECONDS::
+Set expiration time of messages (seconds).
+To disable expiration set expiration time to 0.
+
+=== quitGroup
+
+Send a quit group message to all group members and remove self from member list.
+If the user is a pending member, this command will decline the group invitation.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*--delete*::
+Delete local group data completely after quitting group.
+
+=== listGroups
+
+Show a list of known groups and related information.
+In json mode this is outputted as an list of objects and is always in detailed mode.
+
+*-d*, *--detailed*::
+Include the list of members of each group and the group invite link.
+
+*-g*, *--group-id*::
+Filter the group list by one or more group IDs.
+
+=== listContacts
+
+Show a list of known contacts with names and profiles.
+When a specific recipient is given, its profile will be refreshed.
+
+RECIPIENT::
+Specify the recipients’ phone number.
+
+*-a*, *--all-recipients*::
+Include all known recipients, not only contacts.
+
+*--blocked*::
+Specify if only blocked or unblocked contacts should be shown (default: all contacts)
+
+*--name*::
+Find contacts with the given contact or profile name.
+
+*--detailed*::
+List the contacts with more details. If output=json, then this is always set
+
+*--internal*::
+Include internal information that's normally not user visible
+
+=== listIdentities
+
+List all known identity keys and their trust status, fingerprint and safety number.
+
+*-n* NUMBER, *--number* NUMBER::
+Only show identity keys for the given phone number.
+
+=== trust
+
+Set the trust level of a given number.
+The first time a key for a number is seen, it is trusted by default (TOFU).
+If the key changes, the new key must be trusted manually.
+
+number::
+Specify the phone number, for which to set the trust.
+
+*-a*, *--trust-all-known-keys*::
+Trust all known keys of this user, only use this for testing.
+
+*-v* VERIFIED_SAFETY_NUMBER, *--verified-safety-number* VERIFIED_SAFETY_NUMBER::
+Specify the safety number of the key, only use this option if you have verified the safety number.
+Can be either the plain text numbers shown in the app or the bytes from the QR-code, encoded as base64.
+
+=== updateProfile
+
+Update the profile information shown to message recipients.
+The profile is stored encrypted on the Signal servers.
+The decryption key is sent with every outgoing messages to contacts and included in every group.
+
+*--given-name* NAME, *--name* NAME::
+New (given) name.
+
+*--family-name* FAMILY_NAME::
+New family name.
+
+*--about* ABOUT_TEXT::
+New profile status text.
+
+*--about-emoji* EMOJI::
+New profile status emoji.
+
+*--avatar* AVATAR_FILE::
+Path to the new avatar image file.
+
+*--remove-avatar*::
+Remove the avatar
+
+*--mobile-coin-address*::
+New MobileCoin address (Base64 encoded public address)
+
+=== updateContact
+
+Update the info associated to a number on our contact list.
+This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
+If the contact doesn't exist yet, it will be added.
+
+NUMBER::
+Specify the contact phone number.
+
+*--given-name* NAME, *--name* NAME::
+New (given) name.
+
+*--family-name* FAMILY_NAME::
+New family name.
+
+*-e*, *--expiration* EXPIRATION_SECONDS::
+Set expiration time of messages (seconds).
+To disable expiration set expiration time to 0.
+
+=== removeContact
+
+Remove the info of a given contact
+
+NUMBER::
+Specify the contact phone number.
+
+*--hide*::
+Hide the contact in the contact list, but keep the data.
+
+*--forget*::
+Delete all data associated with this contact, including identity keys and sessions.
+
+=== block
+
+Block the given contacts or groups (no messages will be received).
+This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
+
+[CONTACT [CONTACT ...]]::
+Specify the phone numbers of contacts that should be blocked.
+
+*-g* [GROUP [GROUP ...]], *--group-id* [GROUP [GROUP ...]]::
+Specify the group IDs that should be blocked in base64 encoding.
+
+=== unblock
+
+Unblock the given contacts or groups (messages will be received again).
+This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
+
+[CONTACT [CONTACT ...]]::
+Specify the phone numbers of contacts that should be unblocked.
+
+*-g* [GROUP [GROUP ...]], *--group-id* [GROUP [GROUP ...]]::
+Specify the group IDs that should be unblocked in base64 encoding.
+
+=== sendContacts
+
+Send a synchronization message with the local contacts list to all linked devices.
+This command should only be used if this is the primary device.
+
+=== sendSyncRequest
+
+Send a synchronization request message to the primary device (for group, contacts, ...).
+The primary device will respond with synchronization messages with full contact and group lists.
+
+=== uploadStickerPack
+
+Upload a new sticker pack, consisting of a manifest file and the sticker images. +
+Images must conform to the following specification: (see https://support.signal.org/hc/en-us/articles/360031836512-Stickers#sticker_reqs )
+
+- Static stickers in PNG or WebP format
+- Animated stickers in APNG format,
+- Maximum file size for a sticker file is 300KiB
+- Image resolution of 512 x 512 px
+
+The required manifest.json has the following format:
+
+[source,json]
+----
+{
+  "title": "<STICKER_PACK_TITLE>",
+  "author": "<STICKER_PACK_AUTHOR>",
+  "cover": { // Optional cover, by default the first sticker is used as cover
+    "file": "<name of image file, mandatory>",
+    "contentType": "<optional>",
+    "emoji": "<optional>"
+  },
+  "stickers": [
+    {
+      "file": "<name of image file, mandatory>",
+      "contentType": "<optional>",
+      "emoji": "<optional>"
+    }
+    ...
+  ]
+}
+----
+
+PATH::
+The path of the manifest.json or a zip file containing the sticker pack you wish to upload.
+
+=== listStickerPacks
+
+Show a list of known sticker packs.
+
+=== addStickerPack
+
+Install a sticker pack for this account.
+
+*--uri* [URI]::
+Specify the uri of the sticker pack.
+e.g. https://signal.art/addstickers/#pack_id=XXX&pack_key=XXX
+
+=== getAttachment
+
+Gets the raw data for a specified attachment.
+This is done using the ID of the attachment the recipient or group ID.
+The attachment data is returned as a Base64 String.
+
+*--id* [ID]::
+The ID of the attachment as given in the attachment list of the message.
+
+*--recipient* [RECIPIENT]::
+Specify the number which sent the attachment.
+Referred to generally as recipient.
+
+*-g* [GROUP], *--group-id* [GROUP]::
+Alternatively, specify the group IDs for which to get the attachment.
+
+=== getAvatar
+
+Gets the raw data for a specified contact, contact's profile or group avatar.
+The attachment data is returned as a Base64 String.
+
+*--contact* [RECIPIENT]::
+Specify the number of a recipient.
+
+*--profile* [RECIPIENT]::
+Specify the number of a recipient.
+
+*-g* [GROUP], *--group-id* [GROUP]::
+Alternatively, specify the group ID for which to get the avatar.
+
+=== getSticker
+
+Gets the raw data for a specified sticker.
+The attachment data is returned as a Base64 String.
+
+*--pack-id* [PACK_ID]::
+Specify the id of a sticker pack (hex encoded).
+
+*--sticker-id* [STICKER_ID]::
+Specify the index of a sticker in the sticker pack.
+
+=== daemon
+
+signal-cli can run in daemon mode and provides JSON-RPC or an experimental dbus interface.
+If no `-a` account is given, all local accounts will be loaded.
+Multiple interfaces can be used at the same time, e.g. `daemon --socket --dbus`
+
+*--socket [SOCKET]*::
+Export a JSON-RPC interface on a UNIX socket (default $XDG_RUNTIME_DIR/signal-cli/socket). +
+See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
+
+*--tcp [HOST:PORT]*::
+Export a JSON-RPC interface on a TCP socket (default localhost:7583). +
+See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
+
+*--http [HOST:PORT]*::
+Expose a JSON-RPC interface as http endpoint (default localhost:8080).
+The JSON-RPC endpoint is `/api/v1/rpc`. +
+See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
+
+*--dbus*::
+Export DBus interface on user bus. +
+See **signal-cli-dbus**(5) for info on the dbus interface.
+
+*--dbus-system*::
+Export DBus interface on system bus. +
+See **signal-cli-dbus**(5) for info on the dbus interface.
+
+*--bus-name*::
+Claim another D-Bus bus name than the default.
+
+*--ignore-attachments*::
+Don’t download attachments of received messages.
+
+*--ignore-stories*::
+Don’t receive story messages from the server.
+
+*--send-read-receipts*::
+Send read receipts for all incoming data messages (in addition to the default delivery receipts)
+
+*--no-receive-stdout*::
+Don’t print received messages to stdout.
+
+*--receive-mode*::
+Specify when to start receiving messages (on-start, on-connection, manual)
+
+=== jsonRpc
+
+Run in signal-cli in JSON-RPC mode.
+Reads JSON-RPC requests on stdin and responds on stdout.
+See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
+
+*--ignore-attachments*::
+Don’t download attachments of received messages.
+
+*--ignore-stories*::
+Don’t receive story messages from the server.
+
+*--send-read-receipts*::
+Send read receipts for all incoming data messages (in addition to the default delivery receipts)
+
+*--receive-mode*::
+Specify when to start receiving messages (on-start, manual)
+
+=== submitRateLimitChallenge
+
+When running into rate limits, sometimes the limit can be lifted, by solving a CAPTCHA.
+To get the captcha token, go to https://signalcaptchas.org/challenge/generate.html
+For the staging environment, use: https://signalcaptchas.org/staging/registration/generate.html
+
+*--challenge* CHALLENGE_TOKEN::
+The challenge token from the failed send attempt.
+
+*--captcha* CAPTCHA::
+The captcha result, starting with signalcaptcha://
+
+== Examples
+
+Register a number (with SMS verification)::
+signal-cli -a ACCOUNT register
+
+Verify the number using the code received via SMS or voice::
+signal-cli -a ACCOUNT verify CODE
+
+Send a message to one or more recipients::
+signal-cli -a ACCOUNT send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
+
+Pipe the message content from another process::
+uname -a | signal-cli -a ACCOUNT send --message-from-stdin [RECIPIENT [RECIPIENT ...]]
+
+Create a group::
+signal-cli -a ACCOUNT updateGroup -n "Group name" -m [MEMBER [MEMBER ...]]
+
+Add member to a group::
+signal-cli -a ACCOUNT updateGroup -g GROUP_ID -m "NEW_MEMBER"
+
+Accept a group invitation::
+signal-cli -a ACCOUNT updateGroup -g GROUP_ID
+
+Leave a group::
+signal-cli -a ACCOUNT quitGroup -g GROUP_ID
+
+Send a message to a group::
+signal-cli -a ACCOUNT send -m "This is a message" -g GROUP_ID
+
+Trust new key, after having verified it::
+signal-cli -a ACCOUNT trust -v SAFETY_NUMBER NUMBER
+
+Trust new key, without having verified it. Only use this if you don't care about security::
+signal-cli -a ACCOUNT trust -a NUMBER
+
+== Exit codes
+
+* *1*: Error is probably caused and fixable by the user
+* *2*: Some unexpected error
+* *3*: Server or IO error
+* *4*: Sending failed due to untrusted key
+* *5*: Server rate limiting error
+
+== Files
+
+The password and cryptographic keys are created when registering and stored in the current users home directory, the directory can be changed with *--config*:
+
+`$XDG_DATA_HOME/signal-cli/` (`$HOME/.local/share/signal-cli/`)
+
+== Authors
+
+Maintained by cultofvecna-bot <cultofvecnabot@gmail.com>, who is assisted by other open source contributors.
+For more information about signal-cli development, see
+<https://github.com/cultofvecna-bot/signal-cli>.
