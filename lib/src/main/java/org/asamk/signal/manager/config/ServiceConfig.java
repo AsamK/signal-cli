@@ -27,19 +27,8 @@ public class ServiceConfig {
     public static final long UNREGISTERED_LIFESPAN = TimeUnit.DAYS.toMillis(30);
 
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
-        final var giftBadges = !isPrimaryDevice;
-        final var pni = !isPrimaryDevice;
-        final var paymentActivation = !isPrimaryDevice;
         final var deleteSync = !isPrimaryDevice;
-        return new AccountAttributes.Capabilities(true,
-                true,
-                true,
-                true,
-                true,
-                giftBadges,
-                pni,
-                paymentActivation,
-                deleteSync);
+        return new AccountAttributes.Capabilities(true, deleteSync);
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(

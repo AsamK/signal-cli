@@ -13,6 +13,7 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogEntry;
+import org.jetbrains.annotations.Nullable;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.InvalidRegistrationIdException;
 import org.signal.libsignal.protocol.NoSessionException;
@@ -22,9 +23,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.crypto.ContentHint;
+import org.whispersystems.signalservice.api.crypto.SealedSenderAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
-import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
+import org.whispersystems.signalservice.api.groupsv2.GroupSendEndorsements;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEditMessage;
@@ -199,7 +201,7 @@ public class SendHelper {
             return SendMessageResult.success(account.getSelfAddress(), List.of(), false, false, 0, Optional.empty());
         }
         try {
-            return messageSender.sendSyncMessage(message, context.getUnidentifiedAccessHelper().getAccessForSync());
+            return messageSender.sendSyncMessage(message);
         } catch (UnregisteredUserException e) {
             var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
             return SendMessageResult.unregisteredFailure(address);
@@ -380,10 +382,11 @@ public class SendHelper {
                                 () -> false,
                                 urgent,
                                 editTargetTimestamp.get());
-        final SenderKeySenderHandler senderKeySender = (distId, recipients, unidentifiedAccess, isRecipientUpdate) -> messageSender.sendGroupDataMessage(
+        final SenderKeySenderHandler senderKeySender = (distId, recipients, unidentifiedAccess, groupSendEndorsements, isRecipientUpdate) -> messageSender.sendGroupDataMessage(
                 distId,
                 recipients,
                 unidentifiedAccess,
+                groupSendEndorsements,
                 isRecipientUpdate,
                 contentHint,
                 message,
@@ -436,9 +439,11 @@ public class SendHelper {
                         unidentifiedAccess,
                         message,
                         () -> false),
-                (distId, recipients, unidentifiedAccess, isRecipientUpdate) -> messageSender.sendGroupTyping(distId,
+                (distId, recipients, unidentifiedAccess, groupSendEndorsements, isRecipientUpdate) -> messageSender.sendGroupTyping(
+                        distId,
                         recipients,
                         unidentifiedAccess,
+                        groupSendEndorsements,
                         message),
                 recipientIds,
                 distributionId);
@@ -526,8 +531,8 @@ public class SendHelper {
         final var senderKeyTargets = new HashSet<RecipientId>();
         final var recipientList = new ArrayList<>(recipientIds);
         for (final var recipientId : recipientList) {
-            final var access = context.getUnidentifiedAccessHelper().getAccessFor(recipientId);
-            if (access.isEmpty() || access.get().getTargetUnidentifiedAccess().isEmpty()) {
+            final var access = context.getUnidentifiedAccessHelper().getSealedSenderAccessFor(recipientId);
+            if (access != null) {
                 continue;
             }
 
@@ -562,7 +567,8 @@ public class SendHelper {
         final var addresses = recipientIdList.stream()
                 .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                 .toList();
-        final var unidentifiedAccesses = context.getUnidentifiedAccessHelper().getAccessFor(recipientIdList);
+        final var unidentifiedAccesses = context.getUnidentifiedAccessHelper()
+                .getSealedSenderAccessFor(recipientIdList);
         try {
             final var results = sender.send(addresses, unidentifiedAccesses, isRecipientUpdate);
 
@@ -601,15 +607,14 @@ public class SendHelper {
         List<UnidentifiedAccess> unidentifiedAccesses = context.getUnidentifiedAccessHelper()
                 .getAccessFor(recipientIdList)
                 .stream()
-                .map(Optional::get)
-                .map(UnidentifiedAccessPair::getTargetUnidentifiedAccess)
-                .map(Optional::get)
                 .toList();
 
+        final GroupSendEndorsements groupSendEndorsements = null;//TODO
         try {
             List<SendMessageResult> results = sender.send(distributionId,
                     addresses,
                     unidentifiedAccesses,
+                    groupSendEndorsements,
                     isRecipientUpdate);
 
             final var successCount = results.stream().filter(SendMessageResult::isSuccess).count();
@@ -684,7 +689,7 @@ public class SendHelper {
             try {
                 return s.send(messageSender,
                         address,
-                        context.getUnidentifiedAccessHelper().getAccessFor(recipientId),
+                        context.getUnidentifiedAccessHelper().getSealedSenderAccessFor(recipientId),
                         includePniSignature);
             } catch (UnregisteredUserException e) {
                 final RecipientId newRecipientId;
@@ -696,7 +701,7 @@ public class SendHelper {
                 address = context.getRecipientHelper().resolveSignalServiceAddress(newRecipientId);
                 return s.send(messageSender,
                         address,
-                        context.getUnidentifiedAccessHelper().getAccessFor(newRecipientId),
+                        context.getUnidentifiedAccessHelper().getSealedSenderAccessFor(newRecipientId),
                         includePniSignature);
             }
         } catch (UnregisteredUserException e) {
@@ -772,7 +777,7 @@ public class SendHelper {
         SendMessageResult send(
                 SignalServiceMessageSender messageSender,
                 SignalServiceAddress address,
-                Optional<UnidentifiedAccessPair> unidentifiedAccess,
+                @Nullable SealedSenderAccess unidentifiedAccess,
                 boolean includePniSignature
         ) throws IOException, UnregisteredUserException, ProofRequiredException, RateLimitException, org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
     }
@@ -783,6 +788,7 @@ public class SendHelper {
                 DistributionId distributionId,
                 List<SignalServiceAddress> recipients,
                 List<UnidentifiedAccess> unidentifiedAccess,
+                GroupSendEndorsements groupSendEndorsements,
                 boolean isRecipientUpdate
         ) throws IOException, UntrustedIdentityException, NoSessionException, InvalidKeyException, InvalidRegistrationIdException;
     }
@@ -791,7 +797,7 @@ public class SendHelper {
 
         List<SendMessageResult> send(
                 List<SignalServiceAddress> recipients,
-                List<Optional<UnidentifiedAccessPair>> unidentifiedAccess,
+                List<SealedSenderAccess> unidentifiedAccess,
                 boolean isRecipientUpdate
         ) throws IOException, UntrustedIdentityException;
     }

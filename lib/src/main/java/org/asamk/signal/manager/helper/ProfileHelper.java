@@ -16,13 +16,14 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.PaymentUtils;
 import org.asamk.signal.manager.util.ProfileUtils;
 import org.asamk.signal.manager.util.Utils;
+import org.jetbrains.annotations.Nullable;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
+import org.whispersystems.signalservice.api.crypto.SealedSenderAccess;
 import org.whispersystems.signalservice.api.profiles.AvatarUploadParams;
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
@@ -387,7 +388,7 @@ public final class ProfileHelper {
     private Single<ProfileAndCredential> retrieveProfile(
             SignalServiceAddress address,
             Optional<ProfileKey> profileKey,
-            Optional<UnidentifiedAccess> unidentifiedAccess,
+            @Nullable SealedSenderAccess unidentifiedAccess,
             SignalServiceProfile.RequestType requestType
     ) {
         final var profileService = dependencies.getProfileService();
@@ -450,13 +451,7 @@ public final class ProfileHelper {
         }
     }
 
-    private Optional<UnidentifiedAccess> getUnidentifiedAccess(RecipientId recipientId) {
-        var unidentifiedAccess = context.getUnidentifiedAccessHelper().getAccessFor(recipientId, true);
-
-        if (unidentifiedAccess.isPresent()) {
-            return unidentifiedAccess.get().getTargetUnidentifiedAccess();
-        }
-
-        return Optional.empty();
+    private @Nullable SealedSenderAccess getUnidentifiedAccess(RecipientId recipientId) {
+        return context.getUnidentifiedAccessHelper().getSealedSenderAccessFor(recipientId, true);
     }
 }

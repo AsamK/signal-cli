@@ -5,17 +5,17 @@ import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
+import org.jetbrains.annotations.Nullable;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
 import org.signal.libsignal.metadata.certificate.SenderCertificate;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.crypto.SealedSenderAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
-import org.whispersystems.signalservice.api.crypto.UnidentifiedAccessPair;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class UnidentifiedAccessHelper {
@@ -42,57 +42,49 @@ public class UnidentifiedAccessHelper {
         senderCertificate = null;
     }
 
-    public List<Optional<UnidentifiedAccessPair>> getAccessFor(List<RecipientId> recipients) {
+    public List<SealedSenderAccess> getSealedSenderAccessFor(List<RecipientId> recipients) {
+        return recipients.stream().map(this::getAccessFor).map(SealedSenderAccess::forIndividual).toList();
+    }
+
+    public @Nullable SealedSenderAccess getSealedSenderAccessFor(RecipientId recipient) {
+        return getSealedSenderAccessFor(recipient, false);
+    }
+
+    public @Nullable SealedSenderAccess getSealedSenderAccessFor(RecipientId recipient, boolean noRefresh) {
+        return SealedSenderAccess.forIndividual(getAccessFor(recipient, noRefresh));
+    }
+
+    public List<UnidentifiedAccess> getAccessFor(List<RecipientId> recipients) {
         return recipients.stream().map(this::getAccessFor).toList();
     }
 
-    public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipient) {
+    private @Nullable UnidentifiedAccess getAccessFor(RecipientId recipient) {
         return getAccessFor(recipient, false);
     }
 
-    public Optional<UnidentifiedAccessPair> getAccessFor(RecipientId recipientId, boolean noRefresh) {
+    private @Nullable UnidentifiedAccess getAccessFor(RecipientId recipientId, boolean noRefresh) {
         var recipientUnidentifiedAccessKey = getTargetUnidentifiedAccessKey(recipientId, noRefresh);
         if (recipientUnidentifiedAccessKey == null) {
             logger.trace("Unidentified access not available for {}", recipientId);
-            return Optional.empty();
+            return null;
         }
 
         var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(noRefresh);
         if (selfUnidentifiedAccessKey == null) {
             logger.trace("Unidentified access not available for self");
-            return Optional.empty();
+            return null;
         }
 
         var senderCertificate = getSenderCertificateFor(recipientId);
         if (senderCertificate == null) {
             logger.trace("Unidentified access not available due to missing sender certificate");
-            return Optional.empty();
+            return null;
         }
 
         try {
-            return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(recipientUnidentifiedAccessKey,
-                    senderCertificate,
-                    false), new UnidentifiedAccess(selfUnidentifiedAccessKey, senderCertificate, false)));
+            return new UnidentifiedAccess(recipientUnidentifiedAccessKey, senderCertificate, false);
         } catch (InvalidCertificateException e) {
-            return Optional.empty();
-        }
-    }
-
-    public Optional<UnidentifiedAccessPair> getAccessForSync() {
-        var selfUnidentifiedAccessKey = getSelfUnidentifiedAccessKey(false);
-        var selfUnidentifiedAccessCertificate = getSenderCertificate();
-
-        if (selfUnidentifiedAccessKey == null || selfUnidentifiedAccessCertificate == null) {
-            return Optional.empty();
-        }
-
-        try {
-            return Optional.of(new UnidentifiedAccessPair(new UnidentifiedAccess(selfUnidentifiedAccessKey,
-                    selfUnidentifiedAccessCertificate,
-                    false),
-                    new UnidentifiedAccess(selfUnidentifiedAccessKey, selfUnidentifiedAccessCertificate, false)));
-        } catch (InvalidCertificateException e) {
-            return Optional.empty();
+            return null;
         }
     }
 
@@ -121,7 +113,7 @@ public class UnidentifiedAccessHelper {
             privacySenderCertificate = new SenderCertificate(certificate);
             return certificate;
         } catch (IOException | InvalidCertificateException e) {
-            logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
+            logger.warn("Failed to get sender certificate (pnp), ignoring: {}", e.getMessage());
             return null;
         }
     }

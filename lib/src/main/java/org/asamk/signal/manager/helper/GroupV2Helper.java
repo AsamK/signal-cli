@@ -19,6 +19,7 @@ import org.signal.libsignal.zkgroup.groups.UuidCiphertext;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.signal.storageservice.protos.groups.AccessControl;
 import org.signal.storageservice.protos.groups.GroupChange;
+import org.signal.storageservice.protos.groups.GroupChangeResponse;
 import org.signal.storageservice.protos.groups.Member;
 import org.signal.storageservice.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
@@ -27,6 +28,7 @@ import org.signal.storageservice.protos.groups.local.DecryptedMember;
 import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupResponse;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupUtil;
 import org.whispersystems.signalservice.api.groupsv2.GroupCandidate;
 import org.whispersystems.signalservice.api.groupsv2.GroupHistoryPage;
@@ -75,7 +77,7 @@ class GroupV2Helper {
         groupApiCredentials = null;
     }
 
-    DecryptedGroup getDecryptedGroup(final GroupSecretParams groupSecretParams) throws NotAGroupMemberException {
+    DecryptedGroupResponse getDecryptedGroup(final GroupSecretParams groupSecretParams) throws NotAGroupMemberException {
         try {
             final var groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
             return dependencies.getGroupsV2Api().getGroup(groupSecretParams, groupsV2AuthorizationString);
@@ -85,7 +87,7 @@ class GroupV2Helper {
             }
             logger.warn("Failed to retrieve Group V2 info, ignoring: {}", e.getMessage());
             return null;
-        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
+        } catch (IOException | VerificationFailedException | InvalidGroupStateException | InvalidInputException e) {
             logger.warn("Failed to retrieve Group V2 info, ignoring: {}", e.getMessage());
             return null;
         }
@@ -103,19 +105,23 @@ class GroupV2Helper {
     }
 
     GroupHistoryPage getDecryptedGroupHistoryPage(
-            final GroupSecretParams groupSecretParams, int fromRevision
+            final GroupSecretParams groupSecretParams, int fromRevision, long sendEndorsementsExpirationMs
     ) throws NotAGroupMemberException {
         try {
             final var groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
             return dependencies.getGroupsV2Api()
-                    .getGroupHistoryPage(groupSecretParams, fromRevision, groupsV2AuthorizationString, false);
+                    .getGroupHistoryPage(groupSecretParams,
+                            fromRevision,
+                            groupsV2AuthorizationString,
+                            false,
+                            sendEndorsementsExpirationMs);
         } catch (NonSuccessfulResponseCodeException e) {
             if (e.getCode() == 403) {
                 throw new NotAGroupMemberException(GroupUtils.getGroupIdV2(groupSecretParams), null);
             }
             logger.warn("Failed to retrieve Group V2 history, ignoring: {}", e.getMessage());
             return null;
-        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
+        } catch (IOException | VerificationFailedException | InvalidGroupStateException | InvalidInputException e) {
             logger.warn("Failed to retrieve Group V2 history, ignoring: {}", e.getMessage());
             return null;
         }
@@ -132,7 +138,7 @@ class GroupV2Helper {
         return partialDecryptedGroup.revision;
     }
 
-    Pair<GroupInfoV2, DecryptedGroup> createGroup(
+    Pair<GroupInfoV2, DecryptedGroupResponse> createGroup(
             String name, Set<RecipientId> members, byte[] avatarFile
     ) {
         final var newGroup = buildNewGroup(name, members, avatarFile);
@@ -143,16 +149,16 @@ class GroupV2Helper {
         final var groupSecretParams = newGroup.getGroupSecretParams();
 
         final GroupsV2AuthorizationString groupAuthForToday;
-        final DecryptedGroup decryptedGroup;
+        final DecryptedGroupResponse response;
         try {
             groupAuthForToday = getGroupAuthForToday(groupSecretParams);
             dependencies.getGroupsV2Api().putNewGroup(newGroup, groupAuthForToday);
-            decryptedGroup = dependencies.getGroupsV2Api().getGroup(groupSecretParams, groupAuthForToday);
-        } catch (IOException | VerificationFailedException | InvalidGroupStateException e) {
+            response = dependencies.getGroupsV2Api().getGroup(groupSecretParams, groupAuthForToday);
+        } catch (IOException | VerificationFailedException | InvalidGroupStateException | InvalidInputException e) {
             logger.warn("Failed to create V2 group: {}", e.getMessage());
             return null;
         }
-        if (decryptedGroup == null) {
+        if (response == null) {
             logger.warn("Failed to create V2 group, unknown error!");
             return null;
         }
@@ -161,7 +167,7 @@ class GroupV2Helper {
         final var masterKey = groupSecretParams.getMasterKey();
         var g = new GroupInfoV2(groupId, masterKey, context.getAccount().getRecipientResolver());
 
-        return new Pair<>(g, decryptedGroup);
+        return new Pair<>(g, response);
     }
 
     private GroupsV2Operations.NewGroup buildNewGroup(
@@ -195,7 +201,7 @@ class GroupV2Helper {
                         0);
     }
 
-    Pair<DecryptedGroup, GroupChange> updateGroup(
+    Pair<DecryptedGroup, GroupChangeResponse> updateGroup(
             GroupInfoV2 groupInfoV2, String name, String description, byte[] avatarFile
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
@@ -218,7 +224,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> addMembers(
+    Pair<DecryptedGroup, GroupChangeResponse> addMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> newMembers
     ) throws IOException {
         GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -244,7 +250,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> leaveGroup(
+    Pair<DecryptedGroup, GroupChangeResponse> leaveGroup(
             GroupInfoV2 groupInfoV2, Set<RecipientId> membersToMakeAdmin
     ) throws IOException {
         var pendingMembersList = groupInfoV2.getGroup().pendingMembers;
@@ -264,7 +270,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, groupOperations.createLeaveAndPromoteMembersToAdmin(selfAci, adminUuids));
     }
 
-    Pair<DecryptedGroup, GroupChange> removeMembers(
+    Pair<DecryptedGroup, GroupChangeResponse> removeMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> members
     ) throws IOException {
         final var memberUuids = members.stream()
@@ -276,7 +282,7 @@ class GroupV2Helper {
         return ejectMembers(groupInfoV2, memberUuids);
     }
 
-    Pair<DecryptedGroup, GroupChange> approveJoinRequestMembers(
+    Pair<DecryptedGroup, GroupChangeResponse> approveJoinRequestMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> members
     ) throws IOException {
         final var memberUuids = members.stream()
@@ -287,7 +293,7 @@ class GroupV2Helper {
         return approveJoinRequest(groupInfoV2, memberUuids);
     }
 
-    Pair<DecryptedGroup, GroupChange> refuseJoinRequestMembers(
+    Pair<DecryptedGroup, GroupChangeResponse> refuseJoinRequestMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> members
     ) throws IOException {
         final var memberUuids = members.stream()
@@ -297,7 +303,7 @@ class GroupV2Helper {
         return refuseJoinRequest(groupInfoV2, memberUuids);
     }
 
-    Pair<DecryptedGroup, GroupChange> revokeInvitedMembers(
+    Pair<DecryptedGroup, GroupChangeResponse> revokeInvitedMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> members
     ) throws IOException {
         var pendingMembersList = groupInfoV2.getGroup().pendingMembers;
@@ -311,7 +317,7 @@ class GroupV2Helper {
         return revokeInvites(groupInfoV2, memberUuids);
     }
 
-    Pair<DecryptedGroup, GroupChange> banMembers(
+    Pair<DecryptedGroup, GroupChangeResponse> banMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> block
     ) throws IOException {
         GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -329,7 +335,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> unbanMembers(
+    Pair<DecryptedGroup, GroupChangeResponse> unbanMembers(
             GroupInfoV2 groupInfoV2, Set<RecipientId> block
     ) throws IOException {
         GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -345,14 +351,14 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> resetGroupLinkPassword(GroupInfoV2 groupInfoV2) throws IOException {
+    Pair<DecryptedGroup, GroupChangeResponse> resetGroupLinkPassword(GroupInfoV2 groupInfoV2) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         final var newGroupLinkPassword = GroupLinkPassword.createNew().serialize();
         final var change = groupOperations.createModifyGroupLinkPasswordChange(newGroupLinkPassword);
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> setGroupLinkState(
+    Pair<DecryptedGroup, GroupChangeResponse> setGroupLinkState(
             GroupInfoV2 groupInfoV2, GroupLinkState state
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -367,7 +373,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> setEditDetailsPermission(
+    Pair<DecryptedGroup, GroupChangeResponse> setEditDetailsPermission(
             GroupInfoV2 groupInfoV2, GroupPermission permission
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -377,7 +383,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> setAddMemberPermission(
+    Pair<DecryptedGroup, GroupChangeResponse> setAddMemberPermission(
             GroupInfoV2 groupInfoV2, GroupPermission permission
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -387,7 +393,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> updateSelfProfileKey(GroupInfoV2 groupInfoV2) throws IOException {
+    Pair<DecryptedGroup, GroupChangeResponse> updateSelfProfileKey(GroupInfoV2 groupInfoV2) throws IOException {
         Optional<DecryptedMember> selfInGroup = groupInfoV2.getGroup() == null
                 ? Optional.empty()
                 : DecryptedGroupUtil.findMemberByAci(groupInfoV2.getGroup().members, getSelfAci());
@@ -417,7 +423,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    GroupChange joinGroup(
+    GroupChangeResponse joinGroup(
             GroupMasterKey groupMasterKey,
             GroupLinkPassword groupLinkPassword,
             DecryptedGroupJoinInfo decryptedGroupJoinInfo
@@ -444,7 +450,7 @@ class GroupV2Helper {
         return commitChange(groupSecretParams, decryptedGroupJoinInfo.revision, change, groupLinkPassword);
     }
 
-    Pair<DecryptedGroup, GroupChange> acceptInvite(GroupInfoV2 groupInfoV2) throws IOException {
+    Pair<DecryptedGroup, GroupChangeResponse> acceptInvite(GroupInfoV2 groupInfoV2) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
 
         final var selfRecipientId = context.getAccount().getSelfRecipientId();
@@ -461,7 +467,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> setMemberAdmin(
+    Pair<DecryptedGroup, GroupChangeResponse> setMemberAdmin(
             GroupInfoV2 groupInfoV2, RecipientId recipientId, boolean admin
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -475,7 +481,7 @@ class GroupV2Helper {
         }
     }
 
-    Pair<DecryptedGroup, GroupChange> setMessageExpirationTimer(
+    Pair<DecryptedGroup, GroupChangeResponse> setMessageExpirationTimer(
             GroupInfoV2 groupInfoV2, int messageExpirationTimer
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -483,7 +489,7 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
-    Pair<DecryptedGroup, GroupChange> setIsAnnouncementGroup(
+    Pair<DecryptedGroup, GroupChangeResponse> setIsAnnouncementGroup(
             GroupInfoV2 groupInfoV2, boolean isAnnouncementGroup
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -511,7 +517,7 @@ class GroupV2Helper {
         return dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
     }
 
-    private Pair<DecryptedGroup, GroupChange> revokeInvites(
+    private Pair<DecryptedGroup, GroupChangeResponse> revokeInvites(
             GroupInfoV2 groupInfoV2, Set<DecryptedPendingMember> pendingMembers
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
@@ -525,28 +531,28 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, groupOperations.createRemoveInvitationChange(uuidCipherTexts));
     }
 
-    private Pair<DecryptedGroup, GroupChange> approveJoinRequest(
+    private Pair<DecryptedGroup, GroupChangeResponse> approveJoinRequest(
             GroupInfoV2 groupInfoV2, Set<UUID> uuids
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         return commitChange(groupInfoV2, groupOperations.createApproveGroupJoinRequest(uuids));
     }
 
-    private Pair<DecryptedGroup, GroupChange> refuseJoinRequest(
+    private Pair<DecryptedGroup, GroupChangeResponse> refuseJoinRequest(
             GroupInfoV2 groupInfoV2, Set<ServiceId> serviceIds
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         return commitChange(groupInfoV2, groupOperations.createRefuseGroupJoinRequest(serviceIds, false, List.of()));
     }
 
-    private Pair<DecryptedGroup, GroupChange> ejectMembers(
+    private Pair<DecryptedGroup, GroupChangeResponse> ejectMembers(
             GroupInfoV2 groupInfoV2, Set<ACI> members
     ) throws IOException {
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         return commitChange(groupInfoV2, groupOperations.createRemoveMembersChange(members, false, List.of()));
     }
 
-    private Pair<DecryptedGroup, GroupChange> commitChange(
+    private Pair<DecryptedGroup, GroupChangeResponse> commitChange(
             GroupInfoV2 groupInfoV2, GroupChange.Actions.Builder change
     ) throws IOException {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfoV2.getMasterKey());
@@ -567,10 +573,12 @@ class GroupV2Helper {
         var signedGroupChange = dependencies.getGroupsV2Api()
                 .patchGroup(changeActions, getGroupAuthForToday(groupSecretParams), Optional.empty());
 
+        groupInfoV2.setGroup(decryptedGroupState);
+
         return new Pair<>(decryptedGroupState, signedGroupChange);
     }
 
-    private GroupChange commitChange(
+    private GroupChangeResponse commitChange(
             GroupSecretParams groupSecretParams,
             int currentRevision,
             GroupChange.Actions.Builder change,
