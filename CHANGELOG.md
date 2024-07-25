@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.5] - 2024-07-25
+
+Requires libsignal-client version 0.52.2
+
+### Fixed
+
+- Fixed device linking, due to new feature flag
 
 ## [0.13.4] - 2024-06-06
 
