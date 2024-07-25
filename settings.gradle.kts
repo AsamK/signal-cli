@@ -7,7 +7,7 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             library("bouncycastle", "org.bouncycastle", "bcprov-jdk18on").version("1.78.1")
-            library("jackson.databind", "com.fasterxml.jackson.core", "jackson-databind").version("2.17.1")
+            library("jackson.databind", "com.fasterxml.jackson.core", "jackson-databind").version("2.17.2")
             library("argparse4j", "net.sourceforge.argparse4j", "argparse4j").version("0.9.0")
             library("dbusjava", "com.github.hypfvieh", "dbus-java-transport-native-unixsocket").version("5.0.0")
             version("slf4j", "2.0.13")
