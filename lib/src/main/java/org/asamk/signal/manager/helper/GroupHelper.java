@@ -109,7 +109,8 @@ public class GroupHelper {
             return Optional.empty();
         }
 
-        return Optional.of(AttachmentUtils.createAttachmentStream(streamDetails, Optional.empty()));
+        final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec().toProto();
+        return Optional.of(AttachmentUtils.createAttachmentStream(streamDetails, Optional.empty(), uploadSpec));
     }
 
     public GroupInfoV2 getOrMigrateGroup(

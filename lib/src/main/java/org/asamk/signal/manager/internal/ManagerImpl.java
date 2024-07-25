@@ -742,8 +742,13 @@ public class ManagerImpl implements Manager {
         final var additionalAttachments = new ArrayList<SignalServiceAttachment>();
         if (message.messageText().length() > 2000) {
             final var messageBytes = message.messageText().getBytes(StandardCharsets.UTF_8);
-            final var textAttachment = AttachmentUtils.createAttachmentStream(new StreamDetails(new ByteArrayInputStream(
-                    messageBytes), MimeUtils.LONG_TEXT, messageBytes.length), Optional.empty());
+            final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec().toProto();
+            final var streamDetails = new StreamDetails(new ByteArrayInputStream(messageBytes),
+                    MimeUtils.LONG_TEXT,
+                    messageBytes.length);
+            final var textAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
+                    Optional.empty(),
+                    uploadSpec);
             messageBuilder.withBody(message.messageText().substring(0, 2000));
             additionalAttachments.add(context.getAttachmentHelper().uploadAttachment(textAttachment));
         } else {
@@ -800,11 +805,15 @@ public class ManagerImpl implements Manager {
             if (streamDetails == null) {
                 throw new InvalidStickerException("Missing local sticker file");
             }
+            final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec().toProto();
+            final var stickerAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
+                    Optional.empty(),
+                    uploadSpec);
             messageBuilder.withSticker(new SignalServiceDataMessage.Sticker(packId.serialize(),
                     stickerPack.packKey(),
                     stickerId,
                     manifestSticker.emoji(),
-                    AttachmentUtils.createAttachmentStream(streamDetails, Optional.empty())));
+                    stickerAttachment));
         }
         if (!message.previews().isEmpty()) {
             final var previews = new ArrayList<SignalServicePreview>(message.previews().size());

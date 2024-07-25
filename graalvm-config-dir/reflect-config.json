@@ -2382,6 +2382,13 @@
   "fields":[{"name":"bitField0_"}, {"name":"data_"}, {"name":"status_"}, {"name":"token_"}, {"name":"tries_"}]
 },
 {
+  "name":"org.whispersystems.signalservice.internal.push.AttachmentUploadForm",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["int","java.lang.String","java.util.Map","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","java.util.Map","java.lang.String","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
   "name":"org.whispersystems.signalservice.internal.push.AttachmentV2UploadAttributes",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
