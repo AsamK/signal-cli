@@ -23,6 +23,11 @@ For registering you need a phone number where you can receive SMS or incoming ca
 signal-cli was primarily developed to be used on servers to notify admins of important events.
 For this use-case, it has a dbus and a JSON-RPC interface, that can be used to send messages from other programs.
 
+Originally the Signal protocol only allowed sending messages to other phone numbers.
+Now with the introduction of phone number privacy, the phone number of a recipient is not always known.
+Only the recipient's ServiceId, ACI/PNI (a special UUID) is known.
+This special identifier can be used instead of the phone number in signal-cli's interface.
+
 For some functionality the Signal protocol requires that all messages have been received from the server.
 The `receive` command should be regularly executed.
 In daemon mode messages are by default continuously received.
@@ -312,11 +317,13 @@ e.g.: `--sticker 00abac3bc18d7f599bff2325dc306d43:2`
 
 *--mention*::
 Mention another group member (syntax: start:length:recipientNumber) In the apps the mention replaces part of the message text, which is specified by the start and length values.
-The units of start and length should be UTF-16 code units, NOT Unicode code points. For more information, see https://github.com/AsamK/signal-cli/wiki/FAQ#string-indexing-units
+The units of start and length should be UTF-16 code units, NOT Unicode code points.
+For more information, see https://github.com/AsamK/signal-cli/wiki/FAQ#string-indexing-units
 e.g.: `-m "Hi X!" --mention "3:1:+123456789"`
 
 *--text-style*::
-Style parts of the message text (syntax: start:length:STYLE). Like `--mention`, the units are UTF-16 code units.
+Style parts of the message text (syntax: start:length:STYLE).
+Like `--mention`, the units are UTF-16 code units.
 Where STYLE is one of: BOLD, ITALIC, SPOILER, STRIKETHROUGH, MONOSPACE
 
 e.g.: `-m "Something BIG!" --text-style "10:3:BOLD"` or for a mixed text style `-m "Something BIG!" --text-style "0:9:ITALIC" "10:3:BOLD"`
@@ -591,7 +598,8 @@ Specify if only blocked or unblocked contacts should be shown (default: all cont
 Find contacts with the given contact or profile name.
 
 *--detailed*::
-List the contacts with more details. If output=json, then this is always set
+List the contacts with more details.
+If output=json, then this is always set
 
 *--internal*::
 Include internal information that's normally not user visible
