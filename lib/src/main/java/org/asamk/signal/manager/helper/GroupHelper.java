@@ -82,6 +82,10 @@ public class GroupHelper {
         return getGroup(groupId, false);
     }
 
+    public void updateGroupSendEndorsements(GroupId groupId) {
+        getGroup(groupId, true);
+    }
+
     public List<GroupInfo> getGroups() {
         final var groups = account.getGroupStore().getGroups();
         groups.forEach(group -> fillOrUpdateGroup(group, false));
