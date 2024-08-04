@@ -254,7 +254,7 @@ Only works, if this is the primary device.
 
 *--uri* URI::
 Specify the uri contained in the QR code shown by the new device.
-You will need the full URI such as "sgnl://linkdevice?uuid=...&amp;pub_key=..." (formerly "tsdevice:/?uuid=...") Make sure to enclose it in quotation marks for shells.
+You will need the full URI such as "sgnl://linkdevice?uuid=...&pub_key=..." (formerly "tsdevice:/?uuid=...") Make sure to enclose it in quotation marks for shells.
 
 === listDevices
 
