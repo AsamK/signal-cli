@@ -532,7 +532,7 @@ public class SendHelper {
         final var recipientList = new ArrayList<>(recipientIds);
         for (final var recipientId : recipientList) {
             final var access = context.getUnidentifiedAccessHelper().getSealedSenderAccessFor(recipientId);
-            if (access != null) {
+            if (access == null) {
                 continue;
             }
 
