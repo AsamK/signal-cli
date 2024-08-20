@@ -202,24 +202,15 @@ public class SendHelper {
         }
         try {
             return messageSender.sendSyncMessage(message);
-        } catch (UnregisteredUserException e) {
+        } catch (Throwable e) {
             var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
-            return SendMessageResult.unregisteredFailure(address);
-        } catch (ProofRequiredException e) {
-            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
-            return SendMessageResult.proofRequiredFailure(address, e);
-        } catch (RateLimitException e) {
-            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
-            logger.warn("Sending failed due to rate limiting from the signal server: {}", e.getMessage());
-            return SendMessageResult.rateLimitFailure(address, e);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
-            return SendMessageResult.identityFailure(address, e.getIdentityKey());
-        } catch (IOException e) {
-            var address = context.getRecipientHelper().resolveSignalServiceAddress(account.getSelfRecipientId());
-            logger.warn("Failed to send message due to IO exception: {}", e.getMessage());
-            logger.debug("Exception", e);
-            return SendMessageResult.networkFailure(address);
+            try {
+                return SignalServiceMessageSender.mapSendErrorToSendResult(e, System.currentTimeMillis(), address);
+            } catch (IOException ex) {
+                logger.warn("Failed to send message due to IO exception: {}", e.getMessage());
+                logger.debug("Exception", e);
+                return SendMessageResult.networkFailure(address);
+            }
         }
     }
 
@@ -704,19 +695,14 @@ public class SendHelper {
                         context.getUnidentifiedAccessHelper().getSealedSenderAccessFor(newRecipientId),
                         includePniSignature);
             }
-        } catch (UnregisteredUserException e) {
-            return SendMessageResult.unregisteredFailure(address);
-        } catch (ProofRequiredException e) {
-            return SendMessageResult.proofRequiredFailure(address, e);
-        } catch (RateLimitException e) {
-            logger.warn("Sending failed due to rate limiting from the signal server: {}", e.getMessage());
-            return SendMessageResult.rateLimitFailure(address, e);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
-            return SendMessageResult.identityFailure(address, e.getIdentityKey());
-        } catch (IOException e) {
-            logger.warn("Failed to send message due to IO exception: {}", e.getMessage());
-            logger.debug("Exception", e);
-            return SendMessageResult.networkFailure(address);
+        } catch (Throwable e) {
+            try {
+                return SignalServiceMessageSender.mapSendErrorToSendResult(e, System.currentTimeMillis(), address);
+            } catch (IOException ex) {
+                logger.warn("Failed to send message due to IO exception: {}", e.getMessage());
+                logger.debug("Exception", e);
+                return SendMessageResult.networkFailure(address);
+            }
         }
     }
 

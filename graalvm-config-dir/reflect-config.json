@@ -248,7 +248,8 @@
   "allDeclaredMethods":true
 },
 {
-  "name":"java.lang.Object"
+  "name":"java.lang.Object",
+  "methods":[{"name":"equals","parameterTypes":["java.lang.Object"] }, {"name":"hashCode","parameterTypes":[] }, {"name":"toString","parameterTypes":[] }]
 },
 {
   "name":"java.lang.Record",
@@ -2236,7 +2237,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["org.signal.libsignal.protocol.ServiceId"] }]
+  "methods":[{"name":"<init>","parameterTypes":["org.signal.libsignal.protocol.ServiceId"] }, {"name":"equals","parameterTypes":["java.lang.Object"] }, {"name":"hashCode","parameterTypes":[] }, {"name":"logString","parameterTypes":[] }, {"name":"toByteArray","parameterTypes":[] }, {"name":"toByteString","parameterTypes":[] }, {"name":"toProtocolAddress","parameterTypes":["int"] }, {"name":"toString","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.push.ServiceId$ACI"
@@ -2246,7 +2247,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"fromLibSignal","parameterTypes":["org.signal.libsignal.protocol.ServiceId"] }, {"name":"parseOrNull","parameterTypes":["java.lang.String"] }, {"name":"parseOrNull","parameterTypes":["okio.ByteString"] }, {"name":"parseOrNull","parameterTypes":["byte[]"] }, {"name":"parseOrThrow","parameterTypes":["java.lang.String"] }, {"name":"parseOrThrow","parameterTypes":["okio.ByteString"] }, {"name":"parseOrThrow","parameterTypes":["byte[]"] }]
+  "methods":[{"name":"equals","parameterTypes":["java.lang.Object"] }, {"name":"fromLibSignal","parameterTypes":["org.signal.libsignal.protocol.ServiceId"] }, {"name":"hashCode","parameterTypes":[] }, {"name":"parseOrNull","parameterTypes":["java.lang.String"] }, {"name":"parseOrNull","parameterTypes":["java.lang.String","boolean"] }, {"name":"parseOrNull","parameterTypes":["okio.ByteString"] }, {"name":"parseOrNull","parameterTypes":["byte[]"] }, {"name":"parseOrThrow","parameterTypes":["java.lang.String"] }, {"name":"parseOrThrow","parameterTypes":["okio.ByteString"] }, {"name":"parseOrThrow","parameterTypes":["byte[]"] }, {"name":"toString","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.push.ServiceId$PNI"

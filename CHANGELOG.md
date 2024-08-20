@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+Requires libsignal-client version 0.52.5
+
+### Fixed
+
+- Fix issue with sending to some groups
+
 ## [0.13.5] - 2024-07-25
 
 Requires libsignal-client version 0.52.2
