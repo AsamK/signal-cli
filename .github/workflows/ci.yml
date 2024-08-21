@@ -30,7 +30,7 @@ jobs:
         with:
           dependency-graph: generate-and-submit
       - name: Build with Gradle
-        run: ./gradlew --no-daemon build
+        run: gradle --daemon build
       - name: Compress archive
         run: gzip -n -9 build/distributions/signal-cli-*.tar
       - name: Archive production artifacts
@@ -52,7 +52,7 @@ jobs:
           cache: 'gradle'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build with Gradle
-        run: ./gradlew --no-daemon nativeCompile
+        run: gradle --daemon nativeCompile
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
         with:
