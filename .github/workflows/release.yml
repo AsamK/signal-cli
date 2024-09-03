@@ -35,7 +35,7 @@ jobs:
     steps:
 
       - name: Download signal-cli build from CI workflow
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
 
       - name: Get signal-cli version
         id: cli_ver
@@ -168,7 +168,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download signal-cli build from CI workflow
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
 
       - name: Get signal-cli version
         id: cli_ver
@@ -218,7 +218,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download signal-cli build from CI workflow
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
 
       - name: Get signal-cli version
         id: cli_ver
