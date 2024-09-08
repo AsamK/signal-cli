@@ -185,7 +185,7 @@ public class SignalDependencies {
 
     public SignalServiceMessageReceiver getMessageReceiver() {
         return getOrCreate(() -> messageReceiver,
-                () -> messageReceiver = new SignalServiceMessageReceiver(pushServiceSocket));
+                () -> messageReceiver = new SignalServiceMessageReceiver(getPushServiceSocket()));
     }
 
     public SignalServiceMessageSender getMessageSender() {
@@ -197,7 +197,7 @@ public class SignalDependencies {
                         Optional.empty(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
-                        pushServiceSocket));
+                        getPushServiceSocket()));
     }
 
     public List<SecureValueRecovery> getSecureValueRecoveryV2() {
