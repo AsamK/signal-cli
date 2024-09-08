@@ -7,6 +7,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
+import org.asamk.signal.manager.api.DeviceLimitExceededException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
@@ -53,8 +54,10 @@ public class AddDeviceCommand implements JsonRpcLocalCommand {
             logger.error("Add device link failed: {}", e.getMessage());
             throw new IOErrorException("Add device link failed", e);
         } catch (InvalidDeviceLinkException e) {
-            logger.error("Invalid device link");
+            logger.info("Invalid device link");
             throw new UserErrorException("Invalid device link", e);
+        } catch (DeviceLimitExceededException e) {
+            throw new UserErrorException("Account has too many linked devices already", e);
         } catch (NotPrimaryDeviceException e) {
             throw new UserErrorException("This command doesn't work on linked devices.");
         }

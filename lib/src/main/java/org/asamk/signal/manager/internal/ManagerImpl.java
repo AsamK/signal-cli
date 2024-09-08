@@ -23,6 +23,7 @@ import org.asamk.signal.manager.api.CaptchaRejectedException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.DeviceLimitExceededException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.GroupId;
@@ -487,7 +488,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public void addDeviceLink(DeviceLinkUrl linkUrl) throws IOException, InvalidDeviceLinkException, NotPrimaryDeviceException {
+    public void addDeviceLink(DeviceLinkUrl linkUrl) throws IOException, InvalidDeviceLinkException, NotPrimaryDeviceException, DeviceLimitExceededException {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
         }

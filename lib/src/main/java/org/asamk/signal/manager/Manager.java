@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.CaptchaRejectedException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Device;
+import org.asamk.signal.manager.api.DeviceLimitExceededException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.GroupId;
@@ -148,7 +149,7 @@ public interface Manager extends Closeable {
 
     void removeLinkedDevices(int deviceId) throws IOException, NotPrimaryDeviceException;
 
-    void addDeviceLink(DeviceLinkUrl linkUri) throws IOException, InvalidDeviceLinkException, NotPrimaryDeviceException;
+    void addDeviceLink(DeviceLinkUrl linkUri) throws IOException, InvalidDeviceLinkException, NotPrimaryDeviceException, DeviceLimitExceededException;
 
     void setRegistrationLockPin(Optional<String> pin) throws IOException, NotPrimaryDeviceException;
 

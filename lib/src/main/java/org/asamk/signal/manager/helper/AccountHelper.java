@@ -39,6 +39,7 @@ import org.whispersystems.signalservice.api.push.exceptions.UsernameIsNotReserve
 import org.whispersystems.signalservice.api.push.exceptions.UsernameMalformedException;
 import org.whispersystems.signalservice.api.push.exceptions.UsernameTakenException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
+import org.whispersystems.signalservice.internal.push.DeviceLimitExceededException;
 import org.whispersystems.signalservice.internal.push.KyberPreKeyEntity;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
 import org.whispersystems.signalservice.internal.push.SyncMessage;
@@ -466,8 +467,13 @@ public class AccountHelper {
         dependencies.getAccountManager().setAccountAttributes(account.getAccountAttributes(null));
     }
 
-    public void addDevice(DeviceLinkUrl deviceLinkInfo) throws IOException, InvalidDeviceLinkException {
-        var verificationCode = dependencies.getAccountManager().getNewDeviceVerificationCode();
+    public void addDevice(DeviceLinkUrl deviceLinkInfo) throws IOException, InvalidDeviceLinkException, org.asamk.signal.manager.api.DeviceLimitExceededException {
+        String verificationCode;
+        try {
+            verificationCode = dependencies.getAccountManager().getNewDeviceVerificationCode();
+        } catch (DeviceLimitExceededException e) {
+            throw new org.asamk.signal.manager.api.DeviceLimitExceededException("Too many linked devices", e);
+        }
 
         try {
             dependencies.getAccountManager()

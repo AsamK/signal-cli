@@ -5,6 +5,7 @@ import org.asamk.signal.BaseConfig;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.CaptchaRejectedException;
+import org.asamk.signal.manager.api.DeviceLimitExceededException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
@@ -189,7 +190,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
         try {
             var deviceLinkUrl = DeviceLinkUrl.parseDeviceLinkUri(new URI(uri));
             m.addDeviceLink(deviceLinkUrl);
-        } catch (IOException | InvalidDeviceLinkException e) {
+        } catch (IOException | InvalidDeviceLinkException | DeviceLimitExceededException e) {
             throw new Error.Failure(e.getClass().getSimpleName() + " Add device link failed. " + e.getMessage());
         } catch (NotPrimaryDeviceException e) {
             throw new Error.Failure("This command doesn't work on linked devices.");
