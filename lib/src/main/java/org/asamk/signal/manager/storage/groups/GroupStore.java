@@ -271,7 +271,7 @@ public class GroupStore {
     private GroupInfoV2 getGroupOrPartialMigrate(
             Connection connection, final GroupMasterKey groupMasterKey, final GroupIdV2 groupId
     ) throws SQLException {
-        switch (getGroup(groupId)) {
+        switch (getGroup(connection, (GroupId) groupId)) {
             case GroupInfoV1 groupInfoV1 -> {
                 // Received a v2 group message for a v1 group, we need to locally migrate the group
                 deleteGroup(connection, groupInfoV1.getGroupId());
