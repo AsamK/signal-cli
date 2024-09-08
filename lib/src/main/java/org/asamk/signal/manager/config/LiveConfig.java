@@ -33,6 +33,7 @@ class LiveConfig {
     private static final String URL = "https://chat.signal.org";
     private static final String CDN_URL = "https://cdn.signal.org";
     private static final String CDN2_URL = "https://cdn2.signal.org";
+    private static final String CDN3_URL = "https://cdn3.signal.org";
     private static final String STORAGE_URL = "https://storage.signal.org";
     private static final String SIGNAL_CDSI_URL = "https://cdsi.signal.org";
     private static final String SIGNAL_SVR2_URL = "https://svr2.signal.org";
@@ -58,7 +59,9 @@ class LiveConfig {
                 Map.of(0,
                         new SignalCdnUrl[]{new SignalCdnUrl(CDN_URL, TRUST_STORE)},
                         2,
-                        new SignalCdnUrl[]{new SignalCdnUrl(CDN2_URL, TRUST_STORE)}),
+                        new SignalCdnUrl[]{new SignalCdnUrl(CDN2_URL, TRUST_STORE)},
+                        3,
+                        new SignalCdnUrl[]{new SignalCdnUrl(CDN3_URL, TRUST_STORE)}),
                 new SignalStorageUrl[]{new SignalStorageUrl(STORAGE_URL, TRUST_STORE)},
                 new SignalCdsiUrl[]{new SignalCdsiUrl(SIGNAL_CDSI_URL, TRUST_STORE)},
                 new SignalSvr2Url[]{new SignalSvr2Url(SIGNAL_SVR2_URL, TRUST_STORE, null, null)},
