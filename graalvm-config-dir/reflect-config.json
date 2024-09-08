@@ -800,6 +800,34 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"pin","parameterTypes":[] }, {"name":"verificationCode","parameterTypes":[] }]
 },
 {
+  "name":"org.asamk.signal.dbus.DbusProperties",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.asamk.signal.dbus.DbusSignalControlImpl",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.asamk.signal.dbus.DbusSignalImpl",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.asamk.signal.dbus.DbusSignalImpl$DbusSignalConfigurationImpl",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.asamk.signal.dbus.DbusSignalImpl$DbusSignalDeviceImpl",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.asamk.signal.dbus.DbusSignalImpl$DbusSignalGroupImpl",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.asamk.signal.dbus.DbusSignalImpl$DbusSignalIdentityImpl",
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"org.asamk.signal.json.JsonAttachment",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -1832,6 +1860,10 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.freedesktop.dbus.connections.base.GlobalHandler",
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"org.freedesktop.dbus.errors.ServiceUnknown",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
@@ -1863,7 +1895,7 @@
   "name":"org.freedesktop.dbus.interfaces.Properties",
   "allDeclaredMethods":true,
   "allDeclaredClasses":true,
-  "methods":[{"name":"Get","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"GetAll","parameterTypes":["java.lang.String"] }]
+  "methods":[{"name":"Get","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"GetAll","parameterTypes":["java.lang.String"] }, {"name":"Set","parameterTypes":["java.lang.String","java.lang.String","java.lang.Object"] }]
 },
 {
   "name":"org.freedesktop.dbus.interfaces.Properties$PropertiesChanged",

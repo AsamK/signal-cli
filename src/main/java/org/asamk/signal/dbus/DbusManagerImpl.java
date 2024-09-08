@@ -49,7 +49,6 @@ import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.asamk.signal.manager.api.UsernameStatus;
-import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -1063,7 +1062,7 @@ public class DbusManagerImpl implements Manager {
             return List.of();
         }
 
-        final List<DBusMap<String, Variant<?>>> attachments = getValue(extras, "attachments");
+        final List<Map<String, Variant<?>>> attachments = getValue(extras, "attachments");
         return attachments.stream().map(a -> {
             final String file = a.containsKey("file") ? getValue(a, "file") : null;
             return new MessageEnvelope.Data.Attachment(a.containsKey("remoteId")
@@ -1090,7 +1089,7 @@ public class DbusManagerImpl implements Manager {
             return List.of();
         }
 
-        final List<DBusMap<String, Variant<?>>> mentions = getValue(extras, "mentions");
+        final List<Map<String, Variant<?>>> mentions = getValue(extras, "mentions");
         return mentions.stream()
                 .map(a -> new MessageEnvelope.Data.Mention(new RecipientAddress(this.<String>getValue(a, "recipient")),
                         getValue(a, "start"),
