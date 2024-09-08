@@ -229,15 +229,17 @@ public class SignalJsonRpcCommandHandler {
                 case RateLimitErrorException e -> throw new JsonRpcException(new JsonRpcResponse.Error(RATELIMIT_ERROR,
                         e.getMessage(),
                         getErrorDataNode(objectMapper, result)));
-                case UnexpectedErrorException e ->
-                        throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
-                                e.getMessage(),
-                                getErrorDataNode(objectMapper, result)));
+                case UnexpectedErrorException e -> {
+                    logger.error("Command execution failed with unexpected error", e);
+                    throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
+                            e.getMessage() + " (" + e.getClass().getSimpleName() + ")",
+                            getErrorDataNode(objectMapper, result)));
+                }
             }
         } catch (Throwable e) {
             logger.error("Command execution failed", e);
             throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INTERNAL_ERROR,
-                    e.getMessage(),
+                    e.getMessage() + " (" + e.getClass().getSimpleName() + ")",
                     getErrorDataNode(objectMapper, result)));
         }
 
