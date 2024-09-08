@@ -4,9 +4,15 @@
 
 Requires libsignal-client version 0.56.0
 
+### Improved
+
+- Send sync message to linked devices when sending read/viewed receipts
+
 ### Fixed
 
 - Fix issue with sending to some groups
+- Fix CDSI sync if no token is stored
+- Fix possible db dead lock during storage sync
 
 ## [0.13.5] - 2024-07-25
 
