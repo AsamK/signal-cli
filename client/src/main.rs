@@ -2,7 +2,7 @@ use std::{path::PathBuf, time::Duration};
 
 use clap::Parser;
 use jsonrpsee::core::client::{Error as RpcError, Subscription, SubscriptionClientT};
-use serde_json::Value;
+use serde_json::{Error, Value};
 use tokio::{select, time::sleep};
 
 use cli::Cli;
@@ -500,7 +500,7 @@ async fn connect(cli: Cli) -> Result<Value, RpcError> {
 async fn stream_next(
     timeout: f64,
     stream: &mut Subscription<Value>,
-) -> Option<Result<Value, RpcError>> {
+) -> Option<Result<Value, Error>> {
     if timeout < 0.0 {
         stream.next().await
     } else {
