@@ -198,7 +198,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 && httpAddress == null
                 && inheritedChannel == null) {
             logger.warn(
-                    "Running daemon command without explicit mode is deprecated. Use --dbus to use the dbus interface.");
+                    "Running daemon command without explicit mode is deprecated. Use 'daemon --dbus' to use the dbus interface.");
             daemonHandler.runDbus(false, DbusConfig.getBusname());
         }
     }
