@@ -231,7 +231,7 @@ public class RecipientHelper {
         final CdsiV2Service.Response response;
         try {
             response = dependencies.getAccountManager()
-                    .getRegisteredUsersWithCdsi(previousNumbers,
+                    .getRegisteredUsersWithCdsi(token.isEmpty() ? Set.of() : previousNumbers,
                             newNumbers,
                             account.getRecipientStore().getServiceIdToProfileKeyMap(),
                             token,
