@@ -34,8 +34,7 @@ public class MergeRecipientHelper {
 
             if (recipient.address().aci().isEmpty() || (
                     address.aci().isEmpty() && (
-                            address.pni().isEmpty()
-                                    || recipient.address().pni().equals(address.pni())
+                            address.pni().isEmpty() || recipient.address().pni().equals(address.pni())
                     )
             ) || recipient.address().aci().equals(address.aci())) {
                 logger.debug("Got existing recipient {}, updating with high trust address", recipient.id());
@@ -104,7 +103,7 @@ public class MergeRecipientHelper {
         }
 
         for (final var recipient : recipientsToBeStripped) {
-            store.updateRecipientAddress(recipient.id(), recipient.address().removeIdentifiersFrom(address));
+            store.updateRecipientAddress(recipient.id(), recipient.address().removeIdentifiersFrom(finalAddress));
         }
 
         // Create fixed RecipientIds that won't update its id after merged
