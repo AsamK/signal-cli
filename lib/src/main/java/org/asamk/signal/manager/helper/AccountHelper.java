@@ -220,20 +220,30 @@ public class AccountHelper {
         final var messageSender = dependencies.getMessageSender();
         for (final var deviceId : deviceIds) {
             // Signed Prekey
-            final var signedPreKeyRecord = KeyUtils.generateSignedPreKeyRecord(KeyUtils.getRandomInt(PREKEY_MAXIMUM_ID),
-                    pniIdentity.getPrivateKey());
-            final var signedPreKeyEntity = new SignedPreKeyEntity(signedPreKeyRecord.getId(),
-                    signedPreKeyRecord.getKeyPair().getPublicKey(),
-                    signedPreKeyRecord.getSignature());
-            devicePniSignedPreKeys.put(deviceId, signedPreKeyEntity);
+            final SignedPreKeyRecord signedPreKeyRecord;
+            try {
+                signedPreKeyRecord = KeyUtils.generateSignedPreKeyRecord(KeyUtils.getRandomInt(PREKEY_MAXIMUM_ID),
+                        pniIdentity.getPrivateKey());
+                final var signedPreKeyEntity = new SignedPreKeyEntity(signedPreKeyRecord.getId(),
+                        signedPreKeyRecord.getKeyPair().getPublicKey(),
+                        signedPreKeyRecord.getSignature());
+                devicePniSignedPreKeys.put(deviceId, signedPreKeyEntity);
+            } catch (InvalidKeyException e) {
+                throw new AssertionError("unexpected invalid key", e);
+            }
 
             // Last-resort kyber prekey
-            final var lastResortKyberPreKeyRecord = KeyUtils.generateKyberPreKeyRecord(KeyUtils.getRandomInt(
-                    PREKEY_MAXIMUM_ID), pniIdentity.getPrivateKey());
-            final var kyberPreKeyEntity = new KyberPreKeyEntity(lastResortKyberPreKeyRecord.getId(),
-                    lastResortKyberPreKeyRecord.getKeyPair().getPublicKey(),
-                    lastResortKyberPreKeyRecord.getSignature());
-            devicePniLastResortKyberPreKeys.put(deviceId, kyberPreKeyEntity);
+            final KyberPreKeyRecord lastResortKyberPreKeyRecord;
+            try {
+                lastResortKyberPreKeyRecord = KeyUtils.generateKyberPreKeyRecord(KeyUtils.getRandomInt(PREKEY_MAXIMUM_ID),
+                        pniIdentity.getPrivateKey());
+                final var kyberPreKeyEntity = new KyberPreKeyEntity(lastResortKyberPreKeyRecord.getId(),
+                        lastResortKyberPreKeyRecord.getKeyPair().getPublicKey(),
+                        lastResortKyberPreKeyRecord.getSignature());
+                devicePniLastResortKyberPreKeys.put(deviceId, kyberPreKeyEntity);
+            } catch (InvalidKeyException e) {
+                throw new AssertionError("unexpected invalid key", e);
+            }
 
             // Registration Id
             var pniRegistrationId = -1;

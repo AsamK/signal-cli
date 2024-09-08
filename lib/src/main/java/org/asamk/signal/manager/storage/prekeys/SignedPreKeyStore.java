@@ -93,9 +93,13 @@ public class SignedPreKeyStore implements org.signal.libsignal.protocol.state.Si
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setInt(1, accountIdType);
                 statement.setInt(2, signedPreKeyId);
-                final var keyPair = record.getKeyPair();
-                statement.setBytes(3, keyPair.getPublicKey().serialize());
-                statement.setBytes(4, keyPair.getPrivateKey().serialize());
+                try {
+                    final var keyPair = record.getKeyPair();
+                    statement.setBytes(3, keyPair.getPublicKey().serialize());
+                    statement.setBytes(4, keyPair.getPrivateKey().serialize());
+                } catch (InvalidKeyException e) {
+                    throw new AssertionError("unexpected invalid key", e);
+                }
                 statement.setBytes(5, record.getSignature());
                 statement.setLong(6, record.getTimestamp());
                 statement.executeUpdate();
@@ -193,9 +197,13 @@ public class SignedPreKeyStore implements org.signal.libsignal.protocol.state.Si
                 for (final var record : signedPreKeys) {
                     statement.setInt(1, accountIdType);
                     statement.setInt(2, record.getId());
-                    final var keyPair = record.getKeyPair();
-                    statement.setBytes(3, keyPair.getPublicKey().serialize());
-                    statement.setBytes(4, keyPair.getPrivateKey().serialize());
+                    try {
+                        final var keyPair = record.getKeyPair();
+                        statement.setBytes(3, keyPair.getPublicKey().serialize());
+                        statement.setBytes(4, keyPair.getPrivateKey().serialize());
+                    } catch (InvalidKeyException e) {
+                        throw new AssertionError("unexpected invalid key", e);
+                    }
                     statement.setBytes(5, record.getSignature());
                     statement.setLong(6, record.getTimestamp());
                     statement.executeUpdate();

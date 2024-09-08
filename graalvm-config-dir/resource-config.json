@@ -185,6 +185,8 @@
   }, {
     "pattern":"\\Qlibsignal_jni.so\\E"
   }, {
+    "pattern":"\\Qlibsignal_jni_amd64.so\\E"
+  }, {
     "pattern":"\\Qorg/asamk/signal/manager/config/ias.store\\E"
   }, {
     "pattern":"\\Qorg/asamk/signal/manager/config/whisper.store\\E"

@@ -28,7 +28,8 @@ public class ServiceConfig {
 
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
         final var deleteSync = !isPrimaryDevice;
-        return new AccountAttributes.Capabilities(true, deleteSync);
+        final var versionedExpirationTimer = !isPrimaryDevice;
+        return new AccountAttributes.Capabilities(true, deleteSync, versionedExpirationTimer);
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(

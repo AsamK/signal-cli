@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-Requires libsignal-client version 0.52.5
+Requires libsignal-client version 0.56.0
 
 ### Fixed
 
