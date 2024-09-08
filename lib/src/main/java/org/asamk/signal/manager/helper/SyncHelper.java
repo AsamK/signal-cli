@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
+import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ConfigurationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
@@ -30,10 +31,13 @@ import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInp
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
 import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.MessageRequestResponseMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.VerifiedMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.ViewedMessage;
+import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.push.SyncMessage;
 import org.whispersystems.signalservice.internal.push.http.ResumableUploadSpec;
@@ -87,6 +91,22 @@ public class SyncHelper {
     public void sendSyncFetchStorageMessage() {
         context.getSendHelper()
                 .sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.STORAGE_MANIFEST));
+    }
+
+    public void sendSyncReceiptMessage(ServiceId sender, SignalServiceReceiptMessage receiptMessage) {
+        if (receiptMessage.isReadReceipt()) {
+            final var readMessages = receiptMessage.getTimestamps()
+                    .stream()
+                    .map(t -> new ReadMessage(sender, t))
+                    .toList();
+            context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forRead(readMessages));
+        } else if (receiptMessage.isViewedReceipt()) {
+            final var viewedMessages = receiptMessage.getTimestamps()
+                    .stream()
+                    .map(t -> new ViewedMessage(sender, t))
+                    .toList();
+            context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forViewed(viewedMessages));
+        }
     }
 
     public void sendGroups() throws IOException {
