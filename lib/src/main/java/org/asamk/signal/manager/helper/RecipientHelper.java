@@ -14,6 +14,7 @@ import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.push.exceptions.CdsiInvalidArgumentException;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiInvalidTokenException;
 import org.whispersystems.signalservice.api.services.CdsiV2Service;
 
@@ -254,7 +255,7 @@ public class RecipientHelper {
                                     account.setLastRecipientsRefresh(System.currentTimeMillis());
                                 }
                             });
-        } catch (CdsiInvalidTokenException e) {
+        } catch (CdsiInvalidTokenException | CdsiInvalidArgumentException e) {
             account.setCdsiToken(null);
             account.getCdsiStore().clearAll();
             throw e;

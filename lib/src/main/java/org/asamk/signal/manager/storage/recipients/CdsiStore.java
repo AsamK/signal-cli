@@ -156,7 +156,7 @@ public class CdsiStore {
     public void clearAll() {
         final var sql = (
                 """
-                TRUNCATE %s
+                DELETE FROM %s
                 """
         ).formatted(TABLE_CDSI);
         try (final var connection = database.getConnection()) {
