@@ -60,14 +60,14 @@ public class AttachmentHelper {
         }
         final var signalServiceAttachments = new ArrayList<SignalServiceAttachmentStream>(attachments.size());
         for (var attachment : attachments) {
-            final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec().toProto();
+            final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec();
             signalServiceAttachments.add(AttachmentUtils.createAttachmentStream(attachment, uploadSpec));
         }
         return signalServiceAttachments;
     }
 
     public SignalServiceAttachmentPointer uploadAttachment(String attachment) throws IOException, AttachmentInvalidException {
-        final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec().toProto();
+        final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec();
         var attachmentStream = AttachmentUtils.createAttachmentStream(attachment, uploadSpec);
         return uploadAttachment(attachmentStream);
     }
