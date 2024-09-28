@@ -2315,6 +2315,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.whispersystems.signalservice.api.svr.Svr3Credentials",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","byte[]"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","byte[]","int","kotlin.jvm.internal.DefaultConstructorMarker"] }, {"name":"getAuthCredentials","parameterTypes":[] }]
+},
+{
   "name":"org.whispersystems.signalservice.internal.contacts.crypto.SignatureBodyEntity",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
@@ -2433,6 +2440,10 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.ByteArrayDeserializerBase64",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
