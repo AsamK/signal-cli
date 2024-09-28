@@ -22,6 +22,7 @@ import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
+import org.whispersystems.signalservice.internal.push.ProvisioningSocket;
 import org.whispersystems.signalservice.internal.push.PushServiceSocket;
 import org.whispersystems.signalservice.internal.websocket.OkHttpWebSocketConnection;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
@@ -50,6 +51,7 @@ public class SignalDependencies {
     private ClientZkOperations clientZkOperations;
 
     private PushServiceSocket pushServiceSocket;
+    private ProvisioningSocket provisioningSocket;
     private Network libSignalNetwork;
     private SignalWebSocket signalWebSocket;
     private SignalServiceMessageReceiver messageReceiver;
@@ -107,6 +109,12 @@ public class SignalDependencies {
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
     }
 
+    public ProvisioningSocket getProvisioningSocket() {
+        return getOrCreate(() -> provisioningSocket,
+                () -> provisioningSocket = new ProvisioningSocket(getServiceEnvironmentConfig().signalServiceConfiguration(),
+                        userAgent));
+    }
+
     public Network getLibSignalNetwork() {
         return getOrCreate(() -> libSignalNetwork,
                 () -> libSignalNetwork = new Network(serviceEnvironmentConfig.netEnvironment(), userAgent));
@@ -115,14 +123,12 @@ public class SignalDependencies {
     public SignalServiceAccountManager getAccountManager() {
         return getOrCreate(() -> accountManager,
                 () -> accountManager = new SignalServiceAccountManager(getPushServiceSocket(),
-                        null,
-                        serviceEnvironmentConfig.signalServiceConfiguration(),
-                        credentialsProvider,
+                        getProvisioningSocket(),
                         getGroupsV2Operations()));
     }
 
     public SignalServiceAccountManager createUnauthenticatedAccountManager(String number, String password) {
-        return new SignalServiceAccountManager(getServiceEnvironmentConfig().signalServiceConfiguration(),
+        return SignalServiceAccountManager.createWithStaticCredentials(getServiceEnvironmentConfig().signalServiceConfiguration(),
                 null,
                 null,
                 number,
@@ -190,14 +196,13 @@ public class SignalDependencies {
 
     public SignalServiceMessageSender getMessageSender() {
         return getOrCreate(() -> messageSender,
-                () -> messageSender = new SignalServiceMessageSender(credentialsProvider,
+                () -> messageSender = new SignalServiceMessageSender(getPushServiceSocket(),
                         dataStore,
                         sessionLock,
                         getSignalWebSocket(),
                         Optional.empty(),
                         executor,
-                        ServiceConfig.MAX_ENVELOPE_SIZE,
-                        getPushServiceSocket()));
+                        ServiceConfig.MAX_ENVELOPE_SIZE));
     }
 
     public List<SecureValueRecovery> getSecureValueRecoveryV2() {

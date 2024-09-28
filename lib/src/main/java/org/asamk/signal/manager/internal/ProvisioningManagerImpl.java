@@ -36,6 +36,8 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
+import org.whispersystems.signalservice.internal.push.ProvisioningSocket;
+import org.whispersystems.signalservice.internal.push.PushServiceSocket;
 import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
 import java.io.IOException;
@@ -75,13 +77,21 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
 
         tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         password = KeyUtils.createPassword();
-        GroupsV2Operations groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(
-                serviceEnvironmentConfig.signalServiceConfiguration()), ServiceConfig.GROUP_MAX_SIZE);
-        accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
-                new DynamicCredentialsProvider(null, null, null, password, SignalServiceAddress.DEFAULT_DEVICE_ID),
+        final var clientZkOperations = ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration());
+        final var groupsV2Operations = new GroupsV2Operations(clientZkOperations, ServiceConfig.GROUP_MAX_SIZE);
+        final var credentialsProvider = new DynamicCredentialsProvider(null,
+                null,
+                null,
+                password,
+                SignalServiceAddress.DEFAULT_DEVICE_ID);
+        final var pushServiceSocket = new PushServiceSocket(serviceEnvironmentConfig.signalServiceConfiguration(),
+                credentialsProvider,
                 userAgent,
-                groupsV2Operations,
+                clientZkOperations.getProfileOperations(),
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+        accountManager = new SignalServiceAccountManager(pushServiceSocket,
+                new ProvisioningSocket(serviceEnvironmentConfig.signalServiceConfiguration(), userAgent),
+                groupsV2Operations);
     }
 
     @Override

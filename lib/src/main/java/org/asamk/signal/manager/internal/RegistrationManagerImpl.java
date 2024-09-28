@@ -48,8 +48,8 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
+import org.whispersystems.signalservice.internal.push.PushServiceSocket;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
-import org.whispersystems.signalservice.internal.util.DynamicCredentialsProvider;
 
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -65,9 +65,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
     private final ServiceEnvironmentConfig serviceEnvironmentConfig;
     private final String userAgent;
     private final Consumer<Manager> newManagerListener;
-    private final GroupsV2Operations groupsV2Operations;
 
-    private final SignalServiceAccountManager accountManager;
+    private final SignalServiceAccountManager unauthenticatedAccountManager;
     private final PinHelper pinHelper;
     private final AccountFileUpdater accountFileUpdater;
 
@@ -86,15 +85,17 @@ public class RegistrationManagerImpl implements RegistrationManager {
         this.userAgent = userAgent;
         this.newManagerListener = newManagerListener;
 
-        groupsV2Operations = new GroupsV2Operations(ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration()),
-                ServiceConfig.GROUP_MAX_SIZE);
-        this.accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
-                new DynamicCredentialsProvider(
-                        // Using empty UUID, because registering doesn't work otherwise
-                        null, null, account.getNumber(), account.getPassword(), SignalServiceAddress.DEFAULT_DEVICE_ID),
+        this.unauthenticatedAccountManager = SignalServiceAccountManager.createWithStaticCredentials(
+                serviceEnvironmentConfig.signalServiceConfiguration(),
+                // Using empty UUID, because registering doesn't work otherwise
+                null,
+                null,
+                account.getNumber(),
+                SignalServiceAddress.DEFAULT_DEVICE_ID,
+                account.getPassword(),
                 userAgent,
-                groupsV2Operations,
-                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY,
+                ServiceConfig.GROUP_MAX_SIZE);
         final var secureValueRecoveryV2 = serviceEnvironmentConfig.svr2Mrenclaves()
                 .stream()
                 .map(mr -> (SecureValueRecovery) accountManager.getSecureValueRecoveryV2(mr))
@@ -128,12 +129,14 @@ public class RegistrationManagerImpl implements RegistrationManager {
                 return;
             }
 
-            String sessionId = NumberVerificationUtils.handleVerificationSession(accountManager,
+            String sessionId = NumberVerificationUtils.handleVerificationSession(unauthenticatedAccountManager,
                     account.getSessionId(account.getNumber()),
                     id -> account.setSessionId(account.getNumber(), id),
                     voiceVerification,
                     captcha);
-            NumberVerificationUtils.requestVerificationCode(accountManager, sessionId, voiceVerification);
+            NumberVerificationUtils.requestVerificationCode(unauthenticatedAccountManager,
+                    sessionId,
+                    voiceVerification);
             account.setRegistered(false);
         } catch (DeprecatedVersionException e) {
             logger.debug("Signal-Server returned deprecated version exception", e);
@@ -193,7 +196,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
             final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
             final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
-            final var response = Utils.handleResponseException(accountManager.registerAccount(null,
+            final var response = Utils.handleResponseException(unauthenticatedAccountManager.registerAccount(null,
                     recoveryPassword,
                     account.getAccountAttributes(null),
                     aciPreKeys,
@@ -215,11 +218,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     private boolean attemptReactivateAccount() {
         try {
-            final var accountManager = new SignalServiceAccountManager(serviceEnvironmentConfig.signalServiceConfiguration(),
-                    account.getCredentialsProvider(),
-                    userAgent,
-                    groupsV2Operations,
-                    ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+            final var accountManager = createAuthenticatedSignalServiceAccountManager();
             accountManager.setAccountAttributes(account.getAccountAttributes(null));
             account.setRegistered(true);
             logger.info("Reactivated existing account, verify is not necessary.");
@@ -239,6 +238,17 @@ public class RegistrationManagerImpl implements RegistrationManager {
         return false;
     }
 
+    private SignalServiceAccountManager createAuthenticatedSignalServiceAccountManager() {
+        final var clientZkOperations = ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration());
+        final var pushServiceSocket = new PushServiceSocket(serviceEnvironmentConfig.signalServiceConfiguration(),
+                account.getCredentialsProvider(),
+                userAgent,
+                clientZkOperations.getProfileOperations(),
+                ServiceConfig.AUTOMATIC_NETWORK_RETRY);
+        final var groupsV2Operations = new GroupsV2Operations(clientZkOperations, ServiceConfig.GROUP_MAX_SIZE);
+        return new SignalServiceAccountManager(pushServiceSocket, null, groupsV2Operations);
+    }
+
     private VerifyAccountResponse verifyAccountWithCode(
             final String sessionId,
             final String verificationCode,
@@ -247,11 +257,11 @@ public class RegistrationManagerImpl implements RegistrationManager {
             final PreKeyCollection pniPreKeys
     ) throws IOException {
         try {
-            Utils.handleResponseException(accountManager.verifyAccount(verificationCode, sessionId));
+            Utils.handleResponseException(unauthenticatedAccountManager.verifyAccount(verificationCode, sessionId));
         } catch (AlreadyVerifiedException e) {
             // Already verified so can continue registering
         }
-        return Utils.handleResponseException(accountManager.registerAccount(sessionId,
+        return Utils.handleResponseException(unauthenticatedAccountManager.registerAccount(sessionId,
                 null,
                 account.getAccountAttributes(registrationLock),
                 aciPreKeys,

@@ -181,6 +181,8 @@
   }, {
     "pattern":"\\Qkotlin/reflect/reflect.kotlin_builtins\\E"
   }, {
+    "pattern":"\\Qlibsignal_jni.so\\E"
+  }, {
     "pattern":"\\Qlibsignal_jni_aarch64.dylib\\E"
   }, {
     "pattern":"\\Qlibsignal_jni_amd64.dylib\\E"
@@ -194,6 +196,8 @@
     "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
   }, {
     "pattern":"\\Qorg/sqlite/native/Linux/x86_64/libsqlitejdbc.so\\E"
+  }, {
+    "pattern":"\\Qsignal_jni.dll\\E"
   }, {
     "pattern":"\\Qsignal_jni_amd64.dll\\E"
   }, {
