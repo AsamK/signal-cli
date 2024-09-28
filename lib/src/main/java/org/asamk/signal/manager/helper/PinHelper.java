@@ -32,11 +32,11 @@ public class PinHelper {
                     case SecureValueRecovery.BackupResponse.Success success -> {
                     }
                     case SecureValueRecovery.BackupResponse.ServerRejected serverRejected ->
-                            logger.warn("Backup svr2 failed: ServerRejected");
+                            logger.warn("Backup svr failed: ServerRejected");
                     case SecureValueRecovery.BackupResponse.EnclaveNotFound enclaveNotFound ->
-                            logger.warn("Backup svr2 failed: EnclaveNotFound");
+                            logger.warn("Backup svr failed: EnclaveNotFound");
                     case SecureValueRecovery.BackupResponse.ExposeFailure exposeFailure ->
-                            logger.warn("Backup svr2 failed: ExposeFailure");
+                            logger.warn("Backup svr failed: ExposeFailure");
                     case SecureValueRecovery.BackupResponse.ApplicationError error ->
                             throw new IOException(error.getException());
                     case SecureValueRecovery.BackupResponse.NetworkError error -> throw error.getException();

@@ -57,7 +57,7 @@ public class SignalDependencies {
     private SignalServiceMessageReceiver messageReceiver;
     private SignalServiceMessageSender messageSender;
 
-    private List<SecureValueRecovery> secureValueRecoveryV2;
+    private List<SecureValueRecovery> secureValueRecovery;
     private ProfileService profileService;
 
     SignalDependencies(
@@ -205,9 +205,9 @@ public class SignalDependencies {
                         ServiceConfig.MAX_ENVELOPE_SIZE));
     }
 
-    public List<SecureValueRecovery> getSecureValueRecoveryV2() {
-        return getOrCreate(() -> secureValueRecoveryV2,
-                () -> secureValueRecoveryV2 = serviceEnvironmentConfig.svr2Mrenclaves()
+    public List<SecureValueRecovery> getSecureValueRecovery() {
+        return getOrCreate(() -> secureValueRecovery,
+                () -> secureValueRecovery = serviceEnvironmentConfig.svr2Mrenclaves()
                         .stream()
                         .map(mr -> (SecureValueRecovery) getAccountManager().getSecureValueRecoveryV2(mr))
                         .toList());

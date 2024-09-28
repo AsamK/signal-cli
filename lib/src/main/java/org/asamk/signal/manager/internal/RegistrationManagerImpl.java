@@ -96,11 +96,11 @@ public class RegistrationManagerImpl implements RegistrationManager {
                 userAgent,
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY,
                 ServiceConfig.GROUP_MAX_SIZE);
-        final var secureValueRecoveryV2 = serviceEnvironmentConfig.svr2Mrenclaves()
+        final var secureValueRecovery = serviceEnvironmentConfig.svr2Mrenclaves()
                 .stream()
-                .map(mr -> (SecureValueRecovery) accountManager.getSecureValueRecoveryV2(mr))
+                .map(mr -> (SecureValueRecovery) this.unauthenticatedAccountManager.getSecureValueRecoveryV2(mr))
                 .toList();
-        this.pinHelper = new PinHelper(secureValueRecoveryV2);
+        this.pinHelper = new PinHelper(secureValueRecovery);
     }
 
     @Override

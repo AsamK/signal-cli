@@ -114,7 +114,7 @@ public class Context implements AutoCloseable {
     }
 
     PinHelper getPinHelper() {
-        return getOrCreate(() -> pinHelper, () -> pinHelper = new PinHelper(dependencies.getSecureValueRecoveryV2()));
+        return getOrCreate(() -> pinHelper, () -> pinHelper = new PinHelper(dependencies.getSecureValueRecovery()));
     }
 
     public PreKeyHelper getPreKeyHelper() {
