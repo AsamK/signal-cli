@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.7] - 2024-09-28
+
+Requires libsignal-client version 0.58.0
+
+### Fixed
+
+- Fix unnecessary log output
+- Fix issue with CDSI sync with invalid token
 
 ## [0.13.6] - 2024-09-08
 

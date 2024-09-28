@@ -45,6 +45,9 @@
     <content_attribute id="social-chat">intense</content_attribute>
   </content_rating>
   <releases>
+    <release version="0.13.7" date="2024-09-28">
+      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.7</url>
+    </release>
     <release version="0.13.6" date="2024-09-08">
       <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.6</url>
     </release>
