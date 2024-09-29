@@ -771,6 +771,8 @@ public class ManagerImpl implements Manager {
             } else {
                 messageBuilder.withAttachments(uploadedAttachments);
             }
+        } else if (!additionalAttachments.isEmpty()) {
+            messageBuilder.withAttachments(additionalAttachments);
         }
         if (!message.mentions().isEmpty()) {
             messageBuilder.withMentions(resolveMentions(message.mentions()));
