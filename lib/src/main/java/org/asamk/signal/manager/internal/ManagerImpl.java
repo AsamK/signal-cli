@@ -764,11 +764,12 @@ public class ManagerImpl implements Manager {
             messageBuilder.withBody(message.messageText());
         }
         if (!message.attachments().isEmpty()) {
+            final var uploadedAttachments = context.getAttachmentHelper().uploadAttachments(message.attachments());
             if (!additionalAttachments.isEmpty()) {
-                additionalAttachments.addAll(context.getAttachmentHelper().uploadAttachments(message.attachments()));
+                additionalAttachments.addAll(uploadedAttachments);
                 messageBuilder.withAttachments(additionalAttachments);
             } else {
-                messageBuilder.withAttachments(context.getAttachmentHelper().uploadAttachments(message.attachments()));
+                messageBuilder.withAttachments(uploadedAttachments);
             }
         }
         if (!message.mentions().isEmpty()) {
