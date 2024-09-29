@@ -68,6 +68,7 @@ import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.asamk.signal.manager.api.UsernameStatus;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
+import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
@@ -748,7 +749,7 @@ public class ManagerImpl implements Manager {
             final SignalServiceDataMessage.Builder messageBuilder, final Message message
     ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException, InvalidStickerException {
         final var additionalAttachments = new ArrayList<SignalServiceAttachment>();
-        if (message.messageText().length() > 2000) {
+        if (message.messageText().length() > ServiceConfig.MAX_MESSAGE_BODY_SIZE) {
             final var messageBytes = message.messageText().getBytes(StandardCharsets.UTF_8);
             final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec();
             final var streamDetails = new StreamDetails(new ByteArrayInputStream(messageBytes),
@@ -757,7 +758,7 @@ public class ManagerImpl implements Manager {
             final var textAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
                     Optional.empty(),
                     uploadSpec);
-            messageBuilder.withBody(message.messageText().substring(0, 2000));
+            messageBuilder.withBody(message.messageText().substring(0, ServiceConfig.MAX_MESSAGE_BODY_SIZE));
             additionalAttachments.add(context.getAttachmentHelper().uploadAttachment(textAttachment));
         } else {
             messageBuilder.withBody(message.messageText());
