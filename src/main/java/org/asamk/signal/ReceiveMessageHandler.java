@@ -448,9 +448,6 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         writer.println("Name:");
         var name = contact.name();
         writer.indent(w -> {
-            if (name.display().isPresent() && !name.display().get().isBlank()) {
-                w.println("Display name: {}", name.display().get());
-            }
             if (name.given().isPresent() && !name.given().get().isBlank()) {
                 w.println("First name: {}", name.given().get());
             }
@@ -465,6 +462,9 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             }
             if (name.suffix().isPresent() && !name.suffix().get().isBlank()) {
                 w.println("Suffix name: {}", name.suffix().get());
+            }
+            if (name.nickname().isPresent() && !name.nickname().get().isBlank()) {
+                w.println("Display name: {}", name.nickname().get());
             }
         });
 

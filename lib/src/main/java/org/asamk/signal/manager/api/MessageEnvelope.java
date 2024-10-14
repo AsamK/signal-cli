@@ -390,7 +390,7 @@ public record MessageEnvelope(
             }
 
             public record Name(
-                    Optional<String> display,
+                    Optional<String> nickname,
                     Optional<String> given,
                     Optional<String> family,
                     Optional<String> prefix,
@@ -399,7 +399,7 @@ public record MessageEnvelope(
             ) {
 
                 static Name from(org.whispersystems.signalservice.api.messages.shared.SharedContact.Name name) {
-                    return new Name(name.getDisplay(),
+                    return new Name(name.getNickname(),
                             name.getGiven(),
                             name.getFamily(),
                             name.getPrefix(),
