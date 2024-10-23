@@ -168,12 +168,13 @@ public class AccountHelper {
             String newNumber, boolean voiceVerification, String captcha
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethodNotAvailableException {
         final var accountManager = dependencies.createUnauthenticatedAccountManager(newNumber, account.getPassword());
-        String sessionId = NumberVerificationUtils.handleVerificationSession(accountManager,
+        final var registrationApi = accountManager.getRegistrationApi();
+        String sessionId = NumberVerificationUtils.handleVerificationSession(registrationApi,
                 account.getSessionId(newNumber),
                 id -> account.setSessionId(newNumber, id),
                 voiceVerification,
                 captcha);
-        NumberVerificationUtils.requestVerificationCode(accountManager, sessionId, voiceVerification);
+        NumberVerificationUtils.requestVerificationCode(registrationApi, sessionId, voiceVerification);
     }
 
     public void finishChangeNumber(
@@ -280,13 +281,13 @@ public class AccountHelper {
                 pin,
                 context.getPinHelper(),
                 (sessionId1, verificationCode1, registrationLock) -> {
-                    final var accountManager = dependencies.getAccountManager();
+                    final var registrationApi = dependencies.getRegistrationApi();
                     try {
-                        Utils.handleResponseException(accountManager.verifyAccount(verificationCode1, sessionId1));
+                        Utils.handleResponseException(registrationApi.verifyAccount(verificationCode1, sessionId1));
                     } catch (AlreadyVerifiedException e) {
                         // Already verified so can continue changing number
                     }
-                    return Utils.handleResponseException(accountManager.changeNumber(new ChangePhoneNumberRequest(
+                    return Utils.handleResponseException(registrationApi.changeNumber(new ChangePhoneNumberRequest(
                             sessionId1,
                             null,
                             newNumber,

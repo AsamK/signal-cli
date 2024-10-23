@@ -40,6 +40,24 @@
   "name":"[Ljava.sql.Statement;"
 },
 {
+  "name":"[Lorg.asamk.signal.json.JsonAttachment;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonMention;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonPreview;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonQuotedAttachment;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonTextStyle;"
+},
+{
+  "name":"[Lorg.asamk.signal.manager.storage.accounts.AccountsStorage$Account;"
+},
+{
   "name":"[Lorg.whispersystems.signalservice.api.groupsv2.TemporalCredential;"
 },
 {
@@ -372,6 +390,11 @@
   "allDeclaredMethods":true
 },
 {
+  "name":"java.util.AbstractMap",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"java.util.ArrayList",
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
@@ -384,6 +407,39 @@
   "name":"java.util.HashSet",
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true
+},
+{
+  "name":"java.util.ImmutableCollections$AbstractImmutableCollection",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.util.ImmutableCollections$AbstractImmutableList",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.util.ImmutableCollections$AbstractImmutableMap",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.util.ImmutableCollections$ListN",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"java.util.ImmutableCollections$Map1",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"java.util.ImmutableCollections$MapN",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"java.util.LinkedHashMap",
@@ -399,7 +455,8 @@
   "methods":[{"name":"getUnicodeLocaleType","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"java.util.Map"
+  "name":"java.util.Map",
+  "queryAllDeclaredMethods":true
 },
 {
   "name":"java.util.Optional",
@@ -887,18 +944,21 @@
   "name":"org.asamk.signal.json.JsonContact",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"color","parameterTypes":[] }, {"name":"familyName","parameterTypes":[] }, {"name":"givenName","parameterTypes":[] }, {"name":"internal","parameterTypes":[] }, {"name":"isBlocked","parameterTypes":[] }, {"name":"isHidden","parameterTypes":[] }, {"name":"messageExpirationTime","parameterTypes":[] }, {"name":"name","parameterTypes":[] }, {"name":"nickFamilyName","parameterTypes":[] }, {"name":"nickGivenName","parameterTypes":[] }, {"name":"nickName","parameterTypes":[] }, {"name":"note","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"profile","parameterTypes":[] }, {"name":"profileSharing","parameterTypes":[] }, {"name":"unregistered","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContact$JsonInternal",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"capabilities","parameterTypes":[] }, {"name":"discoverableByPhonenumber","parameterTypes":[] }, {"name":"sharesPhoneNumber","parameterTypes":[] }, {"name":"unidentifiedAccessMode","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContact$JsonProfile",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"about","parameterTypes":[] }, {"name":"aboutEmoji","parameterTypes":[] }, {"name":"familyName","parameterTypes":[] }, {"name":"givenName","parameterTypes":[] }, {"name":"hasAvatar","parameterTypes":[] }, {"name":"lastUpdateTimestamp","parameterTypes":[] }, {"name":"mobileCoinAddress","parameterTypes":[] }]
 },
 {
@@ -2161,6 +2221,9 @@
   "fields":[{"name":"duration_"}]
 },
 {
+  "name":"org.slf4j.Logger"
+},
+{
   "name":"org.sqlite.JDBC"
 },
 {
@@ -2557,6 +2620,7 @@
   "allDeclaredFields":true,
   "allDeclaredClasses":true,
   "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"accountAttributes","parameterTypes":[] }, {"name":"aciPqLastResortPreKey","parameterTypes":[] }, {"name":"aciSignedPreKey","parameterTypes":[] }, {"name":"pniPqLastResortPreKey","parameterTypes":[] }, {"name":"pniSignedPreKey","parameterTypes":[] }, {"name":"verificationCode","parameterTypes":[] }]
 },
 {

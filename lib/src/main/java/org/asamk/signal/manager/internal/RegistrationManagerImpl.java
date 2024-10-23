@@ -129,14 +129,13 @@ public class RegistrationManagerImpl implements RegistrationManager {
                 return;
             }
 
-            String sessionId = NumberVerificationUtils.handleVerificationSession(unauthenticatedAccountManager,
+            final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
+            String sessionId = NumberVerificationUtils.handleVerificationSession(registrationApi,
                     account.getSessionId(account.getNumber()),
                     id -> account.setSessionId(account.getNumber(), id),
                     voiceVerification,
                     captcha);
-            NumberVerificationUtils.requestVerificationCode(unauthenticatedAccountManager,
-                    sessionId,
-                    voiceVerification);
+            NumberVerificationUtils.requestVerificationCode(registrationApi, sessionId, voiceVerification);
             account.setRegistered(false);
         } catch (DeprecatedVersionException e) {
             logger.debug("Signal-Server returned deprecated version exception", e);
@@ -196,7 +195,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
             final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
             final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
-            final var response = Utils.handleResponseException(unauthenticatedAccountManager.registerAccount(null,
+            final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
+            final var response = Utils.handleResponseException(registrationApi.registerAccount(null,
                     recoveryPassword,
                     account.getAccountAttributes(null),
                     aciPreKeys,
@@ -256,12 +256,13 @@ public class RegistrationManagerImpl implements RegistrationManager {
             final PreKeyCollection aciPreKeys,
             final PreKeyCollection pniPreKeys
     ) throws IOException {
+        final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
         try {
-            Utils.handleResponseException(unauthenticatedAccountManager.verifyAccount(verificationCode, sessionId));
+            Utils.handleResponseException(registrationApi.verifyAccount(verificationCode, sessionId));
         } catch (AlreadyVerifiedException e) {
             // Already verified so can continue registering
         }
-        return Utils.handleResponseException(unauthenticatedAccountManager.registerAccount(sessionId,
+        return Utils.handleResponseException(registrationApi.registerAccount(sessionId,
                 null,
                 account.getAccountAttributes(registrationLock),
                 aciPreKeys,

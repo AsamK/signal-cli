@@ -17,6 +17,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.registration.RegistrationApi;
 import org.whispersystems.signalservice.api.services.ProfileService;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
@@ -47,6 +48,7 @@ public class SignalDependencies {
 
     private SignalServiceAccountManager accountManager;
     private GroupsV2Api groupsV2Api;
+    private RegistrationApi registrationApi;
     private GroupsV2Operations groupsV2Operations;
     private ClientZkOperations clientZkOperations;
 
@@ -80,8 +82,14 @@ public class SignalDependencies {
         if (this.pushServiceSocket != null) {
             this.pushServiceSocket.close();
             this.pushServiceSocket = null;
+            this.accountManager = null;
+            this.messageReceiver = null;
+            this.messageSender = null;
+            this.profileService = null;
+            this.groupsV2Api = null;
+            this.registrationApi = null;
+            this.secureValueRecovery = null;
         }
-        this.messageSender = null;
         getSignalWebSocket().forceNewWebSockets();
     }
 
@@ -141,6 +149,10 @@ public class SignalDependencies {
 
     public GroupsV2Api getGroupsV2Api() {
         return getOrCreate(() -> groupsV2Api, () -> groupsV2Api = getAccountManager().getGroupsV2Api());
+    }
+
+    public RegistrationApi getRegistrationApi() {
+        return getOrCreate(() -> registrationApi, () -> registrationApi = getAccountManager().getRegistrationApi());
     }
 
     public GroupsV2Operations getGroupsV2Operations() {

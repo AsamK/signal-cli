@@ -6,9 +6,9 @@ import org.signal.libsignal.protocol.fingerprint.Fingerprint;
 import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.NetworkResult;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.util.StreamDetails;
-import org.whispersystems.signalservice.internal.ServiceResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -140,15 +140,15 @@ public class Utils {
         return map;
     }
 
-    public static <T> T handleResponseException(final ServiceResponse<T> response) throws IOException {
-        final var throwableOptional = response.getExecutionError().or(response::getApplicationError);
-        if (throwableOptional.isPresent()) {
-            if (throwableOptional.get() instanceof IOException) {
-                throw (IOException) throwableOptional.get();
+    public static <T> T handleResponseException(final NetworkResult<T> response) throws IOException {
+        final var throwableOptional = response.getCause();
+        if (throwableOptional != null) {
+            if (throwableOptional instanceof IOException ioException) {
+                throw ioException;
             } else {
-                throw new IOException(throwableOptional.get());
+                throw new IOException(throwableOptional);
             }
         }
-        return response.getResult().orElse(null);
+        return response.successOrThrow();
     }
 }
