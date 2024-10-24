@@ -17,6 +17,8 @@ public record JsonMessageEnvelope(
         String sourceName,
         Integer sourceDevice,
         long timestamp,
+        long serverReceivedTimestamp,
+        long serverDeliveredTimestamp,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonDataMessage dataMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonEditMessage editMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryMessage storyMessage,
@@ -58,13 +60,21 @@ public record JsonMessageEnvelope(
             sourceName = null;
         }
         final var timestamp = envelope.timestamp();
+        final var serverReceivedTimestamp = envelope.serverReceivedTimestamp();
+        final var serverDeliveredTimestamp = envelope.serverDeliveredTimestamp();
         final var receiptMessage = envelope.receipt().map(JsonReceiptMessage::from).orElse(null);
         final var typingMessage = envelope.typing().map(JsonTypingMessage::from).orElse(null);
 
-        final var dataMessage = envelope.data().map(JsonDataMessage::from).orElse(null);
-        final var editMessage = envelope.edit().map(JsonEditMessage::from).orElse(null);
+        final var dataMessage = envelope.data()
+            .map(data -> JsonDataMessage.from(data, m))
+            .orElse(null);
+        final var editMessage = envelope.edit()
+            .map(data -> JsonEditMessage.from(data, m))
+            .orElse(null);
         final var storyMessage = envelope.story().map(JsonStoryMessage::from).orElse(null);
-        final var syncMessage = envelope.sync().map(JsonSyncMessage::from).orElse(null);
+        final var syncMessage = envelope.sync()
+            .map(data -> JsonSyncMessage.from(data, m))
+            .orElse(null);
         final var callMessage = envelope.call().map(JsonCallMessage::from).orElse(null);
 
         return new JsonMessageEnvelope(source,
@@ -73,6 +83,8 @@ public record JsonMessageEnvelope(
                 sourceName,
                 sourceDevice,
                 timestamp,
+                serverReceivedTimestamp,
+                serverDeliveredTimestamp,
                 dataMessage,
                 editMessage,
                 storyMessage,
