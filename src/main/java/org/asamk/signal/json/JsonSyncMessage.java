@@ -2,6 +2,7 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientAddress;
@@ -23,9 +24,9 @@ record JsonSyncMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSyncMessageType type
 ) {
 
-    static JsonSyncMessage from(MessageEnvelope.Sync syncMessage) {
+    static JsonSyncMessage from(MessageEnvelope.Sync syncMessage, Manager m) {
         final var sentMessage = syncMessage.sent().isPresent() && syncMessage.sent().get().story().isEmpty()
-                ? JsonSyncDataMessage.from(syncMessage.sent().get())
+                ? JsonSyncDataMessage.from(syncMessage.sent().get(), m)
                 : null;
         final var sentStoryMessage = syncMessage.sent().isPresent() && syncMessage.sent().get().story().isPresent()
                 ? JsonSyncStoryMessage.from(syncMessage.sent().get())

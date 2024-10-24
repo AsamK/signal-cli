@@ -2,6 +2,7 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
@@ -25,10 +26,10 @@ record JsonDataMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryContext storyContext
 ) {
 
-    static JsonDataMessage from(MessageEnvelope.Data dataMessage) {
+    static JsonDataMessage from(MessageEnvelope.Data dataMessage, Manager m) {
         final var timestamp = dataMessage.timestamp();
         final var groupInfo = dataMessage.groupContext().isPresent() ? JsonGroupInfo.from(dataMessage.groupContext()
-                .get()) : null;
+                .get(), m) : null;
         final var storyContext = dataMessage.storyContext().isPresent()
                 ? JsonStoryContext.from(dataMessage.storyContext().get())
                 : null;
