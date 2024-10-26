@@ -1,79 +1,82 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="console-application">
-  <id>org.asamk.SignalCli</id>
+    <id>org.asamk.SignalCli</id>
 
-  <name>signal-cli</name>
-  <summary>Use Signal messenger in terminal</summary>
-  <developer id="org.asamk">
-    <name>AsamK</name>
-  </developer>
-  <icon type="stock">org.asamk.SignalCli</icon>
-  <keywords>
-    <keyword>signal</keyword>
-    <keyword>signal-cli</keyword>
-    <keyword>messenger</keyword>
-    <keyword>messaging</keyword>
-  </keywords>
+    <name>signal-cli</name>
+    <summary>Use Signal messenger in terminal</summary>
+    <developer id="org.asamk">
+        <name>AsamK</name>
+    </developer>
+    <icon type="stock">org.asamk.SignalCli</icon>
+    <keywords>
+        <keyword>signal</keyword>
+        <keyword>signal-cli</keyword>
+        <keyword>messenger</keyword>
+        <keyword>messaging</keyword>
+    </keywords>
 
-  <url type="bugtracker">https://github.com/AsamK/signal-cli/issues</url>
-  <url type="homepage">https://github.com/AsamK/signal-cli</url>
-  <url type="donation">https://github.com/sponsors/AsamK</url>
-  <url type="faq">https://github.com/AsamK/signal-cli/discussions</url>
-  <url type="vcs-browser">https://github.com/AsamK/signal-cli</url>
+    <url type="bugtracker">https://github.com/AsamK/signal-cli/issues</url>
+    <url type="homepage">https://github.com/AsamK/signal-cli</url>
+    <url type="donation">https://github.com/sponsors/AsamK</url>
+    <url type="faq">https://github.com/AsamK/signal-cli/discussions</url>
+    <url type="vcs-browser">https://github.com/AsamK/signal-cli</url>
 
-  <metadata_license>CC0-1.0</metadata_license>
-  <project_license>GPL-3.0-only</project_license>
+    <metadata_license>CC0-1.0</metadata_license>
+    <project_license>GPL-3.0-only</project_license>
 
-  <description>
-    <p>
-	    signal-cli is an unofficial commandline interface for the Signal Messenger.
-	    It supports many Signal functions, including registering, verifying, sending and receiving messages.
-	    For registering you need a phone number where you can receive SMS or incoming calls.
-	    Alternatively signal-cli can be linked to an existing App account.
-    </p>
-  </description>
+    <description>
+        <p>
+            signal-cli is an unofficial commandline interface for the Signal Messenger.
+            It supports many Signal functions, including registering, verifying, sending and receiving messages.
+            For registering you need a phone number where you can receive SMS or incoming calls.
+            Alternatively signal-cli can be linked to an existing App account.
+        </p>
+    </description>
 
-  <categories>
-    <category>Utility</category>
-    <category>Java</category>
-  </categories>
+    <categories>
+        <category>Utility</category>
+        <category>Java</category>
+    </categories>
 
-  <provides>
-    <binary>signal-cli</binary>
-  </provides>
-  <content_rating type="oars-1.1">
-    <content_attribute id="social-chat">intense</content_attribute>
-  </content_rating>
-  <releases>
-    <release version="0.13.7" date="2024-09-28">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.7</url>
-    </release>
-    <release version="0.13.6" date="2024-09-08">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.6</url>
-    </release>
-    <release version="0.13.5" date="2024-07-25">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.5</url>
-    </release>
-    <release version="0.13.4" date="2024-06-06">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.4</url>
-    </release>
-    <release version="0.13.3" date="2024-04-19">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.3</url>
-    </release>
-    <release version="0.13.2" date="2024-03-23">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.2</url>
-    </release>
-    <release version="0.13.1" date="2024-02-27">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.1</url>
-    </release>
-    <release version="0.13.0" date="2024-02-18">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.0</url>
-    </release>
-    <release version="0.12.8" date="2024-02-08">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.12.8</url>
-    </release>
-    <release version="0.12.7" date="2023-12-15">
-      <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.12.7</url>
-    </release>
-  </releases>
+    <provides>
+        <binary>signal-cli</binary>
+    </provides>
+    <content_rating type="oars-1.1">
+        <content_attribute id="social-chat">intense</content_attribute>
+    </content_rating>
+    <releases>
+        <release version="0.13.8" date="2024-10-26">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.8</url>
+        </release>
+        <release version="0.13.7" date="2024-09-28">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.7</url>
+        </release>
+        <release version="0.13.6" date="2024-09-08">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.6</url>
+        </release>
+        <release version="0.13.5" date="2024-07-25">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.5</url>
+        </release>
+        <release version="0.13.4" date="2024-06-06">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.4</url>
+        </release>
+        <release version="0.13.3" date="2024-04-19">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.3</url>
+        </release>
+        <release version="0.13.2" date="2024-03-23">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.2</url>
+        </release>
+        <release version="0.13.1" date="2024-02-27">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.1</url>
+        </release>
+        <release version="0.13.0" date="2024-02-18">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.13.0</url>
+        </release>
+        <release version="0.12.8" date="2024-02-08">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.12.8</url>
+        </release>
+        <release version="0.12.7" date="2023-12-15">
+            <url type="details">https://github.com/AsamK/signal-cli/releases/tag/v0.12.7</url>
+        </release>
+    </releases>
 </component>

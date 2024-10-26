@@ -1,8 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.8] - 2024-10-26
 
 Requires libsignal-client version 0.58.2
+
+### Fixed
+
+- Fix sending large text messages
+- Fix setting message expiration timer with recent Signal apps
+
+### Improved
+
+- Add group name and timestamps on json message (Thanks @jailson-dias)
 
 ## [0.13.7] - 2024-09-28
 

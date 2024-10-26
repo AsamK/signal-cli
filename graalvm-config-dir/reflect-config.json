@@ -1036,7 +1036,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"callMessage","parameterTypes":[] }, {"name":"dataMessage","parameterTypes":[] }, {"name":"editMessage","parameterTypes":[] }, {"name":"receiptMessage","parameterTypes":[] }, {"name":"source","parameterTypes":[] }, {"name":"sourceDevice","parameterTypes":[] }, {"name":"sourceName","parameterTypes":[] }, {"name":"sourceNumber","parameterTypes":[] }, {"name":"sourceUuid","parameterTypes":[] }, {"name":"storyMessage","parameterTypes":[] }, {"name":"syncMessage","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"typingMessage","parameterTypes":[] }]
+  "methods":[{"name":"callMessage","parameterTypes":[] }, {"name":"dataMessage","parameterTypes":[] }, {"name":"editMessage","parameterTypes":[] }, {"name":"receiptMessage","parameterTypes":[] }, {"name":"serverDeliveredTimestamp","parameterTypes":[] }, {"name":"serverReceivedTimestamp","parameterTypes":[] }, {"name":"source","parameterTypes":[] }, {"name":"sourceDevice","parameterTypes":[] }, {"name":"sourceName","parameterTypes":[] }, {"name":"sourceNumber","parameterTypes":[] }, {"name":"sourceUuid","parameterTypes":[] }, {"name":"storyMessage","parameterTypes":[] }, {"name":"syncMessage","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"typingMessage","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonPayment",
