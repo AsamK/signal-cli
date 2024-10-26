@@ -73,16 +73,16 @@ public class AccountDatabase extends Database {
                                           uuid BLOB UNIQUE,
                                           profile_key BLOB,
                                           profile_key_credential BLOB,
-
+                                        
                                           given_name TEXT,
                                           family_name TEXT,
                                           color TEXT,
-
+                                        
                                           expiration_time INTEGER NOT NULL DEFAULT 0,
                                           blocked INTEGER NOT NULL DEFAULT FALSE,
                                           archived INTEGER NOT NULL DEFAULT FALSE,
                                           profile_sharing INTEGER NOT NULL DEFAULT FALSE,
-
+                                        
                                           profile_last_update_timestamp INTEGER NOT NULL DEFAULT 0,
                                           profile_given_name TEXT,
                                           profile_family_name TEXT,
@@ -244,7 +244,7 @@ public class AccountDatabase extends Database {
                                           WHERE uuid IS NOT NULL;
                                         DROP TABLE identity;
                                         ALTER TABLE identity2 RENAME TO identity;
-
+                                        
                                         DROP INDEX msl_recipient_index;
                                         ALTER TABLE message_send_log ADD COLUMN uuid BLOB;
                                         UPDATE message_send_log
@@ -254,7 +254,7 @@ public class AccountDatabase extends Database {
                                         DELETE FROM message_send_log WHERE uuid IS NULL;
                                         ALTER TABLE message_send_log DROP COLUMN recipient_id;
                                         CREATE INDEX msl_recipient_index ON message_send_log (uuid, device_id, content_id);
-
+                                        
                                         CREATE TABLE sender_key2 (
                                           _id INTEGER PRIMARY KEY,
                                           uuid BLOB NOT NULL,
@@ -270,7 +270,7 @@ public class AccountDatabase extends Database {
                                           WHERE uuid IS NOT NULL;
                                         DROP TABLE sender_key;
                                         ALTER TABLE sender_key2 RENAME TO sender_key;
-
+                                        
                                         CREATE TABLE sender_key_shared2 (
                                           _id INTEGER PRIMARY KEY,
                                           uuid BLOB NOT NULL,
@@ -285,7 +285,7 @@ public class AccountDatabase extends Database {
                                           WHERE uuid IS NOT NULL;
                                         DROP TABLE sender_key_shared;
                                         ALTER TABLE sender_key_shared2 RENAME TO sender_key_shared;
-
+                                        
                                         CREATE TABLE session2 (
                                           _id INTEGER PRIMARY KEY,
                                           account_id_type INTEGER NOT NULL,
@@ -378,7 +378,7 @@ public class AccountDatabase extends Database {
                                           WHERE address IS NOT NULL;
                                         DROP TABLE identity;
                                         ALTER TABLE identity2 RENAME TO identity;
-
+                                        
                                         CREATE TABLE message_send_log2 (
                                           _id INTEGER PRIMARY KEY,
                                           content_id INTEGER NOT NULL REFERENCES message_send_log_content (_id) ON DELETE CASCADE,
@@ -395,7 +395,7 @@ public class AccountDatabase extends Database {
                                         ALTER TABLE message_send_log2 RENAME TO message_send_log;
                                         CREATE INDEX msl_recipient_index ON message_send_log (address, device_id, content_id);
                                         CREATE INDEX msl_content_index ON message_send_log (content_id);
-
+                                        
                                         CREATE TABLE sender_key2 (
                                           _id INTEGER PRIMARY KEY,
                                           address TEXT NOT NULL,
@@ -411,7 +411,7 @@ public class AccountDatabase extends Database {
                                           WHERE address IS NOT NULL;
                                         DROP TABLE sender_key;
                                         ALTER TABLE sender_key2 RENAME TO sender_key;
-
+                                        
                                         CREATE TABLE sender_key_shared2 (
                                           _id INTEGER PRIMARY KEY,
                                           address TEXT NOT NULL,
@@ -426,7 +426,7 @@ public class AccountDatabase extends Database {
                                           WHERE address IS NOT NULL;
                                         DROP TABLE sender_key_shared;
                                         ALTER TABLE sender_key_shared2 RENAME TO sender_key_shared;
-
+                                        
                                         CREATE TABLE session2 (
                                           _id INTEGER PRIMARY KEY,
                                           account_id_type INTEGER NOT NULL,
@@ -441,7 +441,7 @@ public class AccountDatabase extends Database {
                                           WHERE address IS NOT NULL;
                                         DROP TABLE session;
                                         ALTER TABLE session2 RENAME TO session;
-
+                                        
                                         DROP TABLE tmp_mapping_table;
                                         """);
             }
@@ -531,12 +531,12 @@ public class AccountDatabase extends Database {
                                           unregistered_timestamp INTEGER,
                                           profile_key BLOB,
                                           profile_key_credential BLOB,
-
+                                        
                                           given_name TEXT,
                                           family_name TEXT,
                                           nick_name TEXT,
                                           color TEXT,
-
+                                        
                                           expiration_time INTEGER NOT NULL DEFAULT 0,
                                           mute_until INTEGER NOT NULL DEFAULT 0,
                                           blocked INTEGER NOT NULL DEFAULT FALSE,
@@ -544,7 +544,7 @@ public class AccountDatabase extends Database {
                                           profile_sharing INTEGER NOT NULL DEFAULT FALSE,
                                           hide_story INTEGER NOT NULL DEFAULT FALSE,
                                           hidden INTEGER NOT NULL DEFAULT FALSE,
-
+                                        
                                           profile_last_update_timestamp INTEGER NOT NULL DEFAULT 0,
                                           profile_given_name TEXT,
                                           profile_family_name TEXT,
@@ -560,7 +560,7 @@ public class AccountDatabase extends Database {
                                           FROM recipient r;
                                         DROP TABLE recipient;
                                         ALTER TABLE recipient2 RENAME TO recipient;
-
+                                        
                                         DROP TABLE tmp_mapping_table;
                                         """);
             }
@@ -592,7 +592,7 @@ public class AccountDatabase extends Database {
             }
         }
         if (oldVersion < 26) {
-            logger.debug("Updating database: Create discoverabel and profile_phone_number_sharing columns");
+            logger.debug("Updating database: Create discoverable and profile_phone_number_sharing columns");
             try (final var statement = connection.createStatement()) {
                 statement.executeUpdate("""
                                         ALTER TABLE recipient ADD discoverable INTEGER;

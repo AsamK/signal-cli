@@ -23,11 +23,7 @@ record JsonSyncDataMessage(
                 .orElse(null),
                 transcriptMessage.destination().flatMap(RecipientAddress::number).orElse(null),
                 transcriptMessage.destination().flatMap(address -> address.uuid().map(UUID::toString)).orElse(null),
-                transcriptMessage.editMessage()
-                    .map(data -> JsonEditMessage.from(data, m))
-                    .orElse(null),
-                transcriptMessage.message()
-                    .map(data -> JsonDataMessage.from(data, m))
-                    .orElse(null));
+                transcriptMessage.editMessage().map(data -> JsonEditMessage.from(data, m)).orElse(null),
+                transcriptMessage.message().map(data -> JsonDataMessage.from(data, m)).orElse(null));
     }
 }

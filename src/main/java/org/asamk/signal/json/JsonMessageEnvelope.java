@@ -65,16 +65,10 @@ public record JsonMessageEnvelope(
         final var receiptMessage = envelope.receipt().map(JsonReceiptMessage::from).orElse(null);
         final var typingMessage = envelope.typing().map(JsonTypingMessage::from).orElse(null);
 
-        final var dataMessage = envelope.data()
-            .map(data -> JsonDataMessage.from(data, m))
-            .orElse(null);
-        final var editMessage = envelope.edit()
-            .map(data -> JsonEditMessage.from(data, m))
-            .orElse(null);
+        final var dataMessage = envelope.data().map(data -> JsonDataMessage.from(data, m)).orElse(null);
+        final var editMessage = envelope.edit().map(data -> JsonEditMessage.from(data, m)).orElse(null);
         final var storyMessage = envelope.story().map(JsonStoryMessage::from).orElse(null);
-        final var syncMessage = envelope.sync()
-            .map(data -> JsonSyncMessage.from(data, m))
-            .orElse(null);
+        final var syncMessage = envelope.sync().map(data -> JsonSyncMessage.from(data, m)).orElse(null);
         final var callMessage = envelope.call().map(JsonCallMessage::from).orElse(null);
 
         return new JsonMessageEnvelope(source,

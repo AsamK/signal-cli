@@ -69,7 +69,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       profile_key BLOB,
                                       profile_key_credential BLOB,
                                       needs_pni_signature INTEGER NOT NULL DEFAULT FALSE,
-
+                                    
                                       given_name TEXT,
                                       family_name TEXT,
                                       nick_name TEXT,
@@ -77,7 +77,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       nick_name_family_name TEXT,
                                       note TEXT,
                                       color TEXT,
-
+                                    
                                       expiration_time INTEGER NOT NULL DEFAULT 0,
                                       expiration_time_version INTEGER DEFAULT 1 NOT NULL,
                                       mute_until INTEGER NOT NULL DEFAULT 0,
@@ -86,7 +86,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       profile_sharing INTEGER NOT NULL DEFAULT FALSE,
                                       hide_story INTEGER NOT NULL DEFAULT FALSE,
                                       hidden INTEGER NOT NULL DEFAULT FALSE,
-
+                                    
                                       profile_last_update_timestamp INTEGER NOT NULL DEFAULT 0,
                                       profile_given_name TEXT,
                                       profile_family_name TEXT,
