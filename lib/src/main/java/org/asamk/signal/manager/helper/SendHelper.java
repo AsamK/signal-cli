@@ -86,8 +86,8 @@ public class SendHelper {
             account.getContactStore().storeContact(recipientId, contact);
         }
 
-        final var expirationTime = contact.messageExpirationTime();
-        messageBuilder.withExpiration(expirationTime);
+        messageBuilder.withExpiration(contact.messageExpirationTime());
+        messageBuilder.withExpireTimerVersion(contact.messageExpirationTimeVersion());
 
         if (!contact.isBlocked()) {
             final var profileKey = account.getProfileKey().serialize();
@@ -187,8 +187,8 @@ public class SendHelper {
     ) {
         final var recipientId = account.getSelfRecipientId();
         final var contact = account.getContactStore().getContact(recipientId);
-        final var expirationTime = contact != null ? contact.messageExpirationTime() : 0;
-        messageBuilder.withExpiration(expirationTime);
+        messageBuilder.withExpiration(contact != null ? contact.messageExpirationTime() : 0);
+        messageBuilder.withExpireTimerVersion(contact != null ? contact.messageExpirationTimeVersion() : 1);
 
         var message = messageBuilder.build();
         return sendSelfMessage(message, editTargetTimestamp);

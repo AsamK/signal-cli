@@ -46,6 +46,7 @@ public class LegacyRecipientStore2 {
                             null,
                             r.contact.color,
                             r.contact.messageExpirationTime,
+                            1,
                             0,
                             false,
                             r.contact.blocked,

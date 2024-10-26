@@ -802,7 +802,9 @@ public final class IncomingMessageHandler {
                 }
             } else if (conversationPartnerAddress != null) {
                 context.getContactHelper()
-                        .setExpirationTimer(conversationPartnerAddress.recipientId(), message.getExpiresInSeconds());
+                        .setExpirationTimer(conversationPartnerAddress.recipientId(),
+                                message.getExpiresInSeconds(),
+                                message.getExpireTimerVersion());
             }
         }
         if (!ignoreAttachments) {

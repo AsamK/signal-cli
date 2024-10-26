@@ -11,6 +11,7 @@ public record Contact(
         String note,
         String color,
         int messageExpirationTime,
+        int messageExpirationTimeVersion,
         long muteUntil,
         boolean hideStory,
         boolean isBlocked,
@@ -29,6 +30,7 @@ public record Contact(
                 builder.note,
                 builder.color,
                 builder.messageExpirationTime,
+                builder.messageExpirationTimeVersion,
                 builder.muteUntil,
                 builder.hideStory,
                 builder.isBlocked,
@@ -84,6 +86,7 @@ public record Contact(
         private String note;
         private String color;
         private int messageExpirationTime;
+        private int messageExpirationTimeVersion = 1;
         private long muteUntil;
         private boolean hideStory;
         private boolean isBlocked;
@@ -136,6 +139,11 @@ public record Contact(
 
         public Builder withMessageExpirationTime(final int val) {
             messageExpirationTime = val;
+            return this;
+        }
+
+        public Builder withMessageExpirationTimeVersion(final int val) {
+            messageExpirationTimeVersion = val;
             return this;
         }
 

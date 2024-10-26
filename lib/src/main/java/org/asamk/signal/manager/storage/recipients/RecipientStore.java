@@ -79,6 +79,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       color TEXT,
 
                                       expiration_time INTEGER NOT NULL DEFAULT 0,
+                                      expiration_time_version INTEGER DEFAULT 1 NOT NULL,
                                       mute_until INTEGER NOT NULL DEFAULT 0,
                                       blocked INTEGER NOT NULL DEFAULT FALSE,
                                       archived INTEGER NOT NULL DEFAULT FALSE,
@@ -332,7 +333,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     public List<Pair<RecipientId, Contact>> getContacts() {
         final var sql = (
                 """
-                SELECT r._id, r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp
+                SELECT r._id, r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp
                 FROM %s r
                 WHERE (r.number IS NOT NULL OR r.aci IS NOT NULL) AND %s AND r.hidden = FALSE
                 """
@@ -356,7 +357,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 SELECT r._id,
                        r.number, r.aci, r.pni, r.username,
                        r.profile_key, r.profile_key_credential,
-                       r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
+                       r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
                        r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
                        r.discoverable,
                        r.storage_record
@@ -376,7 +377,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 SELECT r._id,
                        r.number, r.aci, r.pni, r.username,
                        r.profile_key, r.profile_key_credential,
-                       r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
+                       r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
                        r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
                        r.discoverable,
                        r.storage_record
@@ -413,7 +414,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 SELECT r._id,
                        r.number, r.aci, r.pni, r.username,
                        r.profile_key, r.profile_key_credential,
-                       r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
+                       r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp,
                        r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
                        r.discoverable,
                        r.storage_record
@@ -817,7 +818,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 UPDATE %s
-                SET given_name = ?, family_name = ?, nick_name = ?, expiration_time = ?, mute_until = ?, hide_story = ?, profile_sharing = ?, color = ?, blocked = ?, archived = ?, unregistered_timestamp = ?, nick_name_given_name = ?, nick_name_family_name = ?, note = ?
+                SET given_name = ?, family_name = ?, nick_name = ?, expiration_time = ?, expiration_time_version = ?, mute_until = ?, hide_story = ?, profile_sharing = ?, color = ?, blocked = ?, archived = ?, unregistered_timestamp = ?, nick_name_given_name = ?, nick_name_family_name = ?, note = ?
                 WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
@@ -826,21 +827,22 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             statement.setString(2, contact == null ? null : contact.familyName());
             statement.setString(3, contact == null ? null : contact.nickName());
             statement.setInt(4, contact == null ? 0 : contact.messageExpirationTime());
-            statement.setLong(5, contact == null ? 0 : contact.muteUntil());
-            statement.setBoolean(6, contact != null && contact.hideStory());
-            statement.setBoolean(7, contact != null && contact.isProfileSharingEnabled());
-            statement.setString(8, contact == null ? null : contact.color());
-            statement.setBoolean(9, contact != null && contact.isBlocked());
-            statement.setBoolean(10, contact != null && contact.isArchived());
+            statement.setInt(5, contact == null ? 0 : Math.max(1, contact.messageExpirationTimeVersion()));
+            statement.setLong(6, contact == null ? 0 : contact.muteUntil());
+            statement.setBoolean(7, contact != null && contact.hideStory());
+            statement.setBoolean(8, contact != null && contact.isProfileSharingEnabled());
+            statement.setString(9, contact == null ? null : contact.color());
+            statement.setBoolean(10, contact != null && contact.isBlocked());
+            statement.setBoolean(11, contact != null && contact.isArchived());
             if (contact == null || contact.unregisteredTimestamp() == null) {
-                statement.setNull(11, Types.INTEGER);
+                statement.setNull(12, Types.INTEGER);
             } else {
-                statement.setLong(11, contact.unregisteredTimestamp());
+                statement.setLong(12, contact.unregisteredTimestamp());
             }
-            statement.setString(12, contact == null ? null : contact.nickNameGivenName());
-            statement.setString(13, contact == null ? null : contact.nickNameFamilyName());
-            statement.setString(14, contact == null ? null : contact.note());
-            statement.setLong(15, recipientId.id());
+            statement.setString(13, contact == null ? null : contact.nickNameGivenName());
+            statement.setString(14, contact == null ? null : contact.nickNameFamilyName());
+            statement.setString(15, contact == null ? null : contact.note());
+            statement.setLong(16, recipientId.id());
             statement.executeUpdate();
         }
         if (contact != null && contact.unregisteredTimestamp() != null) {
@@ -918,8 +920,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                     markDiscoverable(connection, recipientId, false);
                     final var contact = getContact(connection, recipientId);
                     if (recipientAddress.get().address().aci().isEmpty() || (
-                            contact != null
-                                    && contact.unregisteredTimestamp() != null
+                            contact != null && contact.unregisteredTimestamp() != null
                     )) {
                         markUnregisteredAndSplitIfNecessary(connection, recipientId);
                     }
@@ -1416,7 +1417,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     private Contact getContact(final Connection connection, final RecipientId recipientId) throws SQLException {
         final var sql = (
                 """
-                SELECT r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp
+                SELECT r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp
                 FROM %s r
                 WHERE r._id = ? AND (%s)
                 """
@@ -1514,6 +1515,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 resultSet.getString("note"),
                 resultSet.getString("color"),
                 resultSet.getInt("expiration_time"),
+                resultSet.getInt("expiration_time_version"),
                 resultSet.getLong("mute_until"),
                 resultSet.getBoolean("hide_story"),
                 resultSet.getBoolean("blocked"),

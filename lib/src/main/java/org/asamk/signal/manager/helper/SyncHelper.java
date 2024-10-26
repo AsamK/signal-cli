@@ -239,7 +239,7 @@ public class SyncHelper {
                 Optional.ofNullable(verifiedMessage),
                 Optional.ofNullable(profileKey),
                 Optional.ofNullable(contact == null ? null : contact.messageExpirationTime()),
-                Optional.empty(),
+                Optional.ofNullable(contact == null ? null : contact.messageExpirationTimeVersion()),
                 Optional.empty(),
                 contact != null && contact.isArchived());
     }
@@ -392,7 +392,18 @@ public class SyncHelper {
                                 TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
             }
             if (c.getExpirationTimer().isPresent()) {
-                builder.withMessageExpirationTime(c.getExpirationTimer().get());
+                if (c.getExpirationTimerVersion().isPresent() && (
+                        contact == null || c.getExpirationTimerVersion().get() > contact.messageExpirationTimeVersion()
+                )) {
+                    builder.withMessageExpirationTime(c.getExpirationTimer().get());
+                    builder.withMessageExpirationTimeVersion(c.getExpirationTimerVersion().get());
+                } else {
+                    logger.debug(
+                            "[ContactSync] {} was synced with an old expiration timer. Ignoring. Received: {} Current: ${}",
+                            recipientId,
+                            c.getExpirationTimerVersion(),
+                            contact == null ? 1 : contact.messageExpirationTimeVersion());
+                }
             }
             builder.withIsArchived(c.isArchived());
             account.getContactStore().storeContact(recipientId, builder.build());

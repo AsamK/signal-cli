@@ -33,7 +33,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 26;
+    private static final long DATABASE_VERSION = 27;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -597,6 +597,14 @@ public class AccountDatabase extends Database {
                 statement.executeUpdate("""
                                         ALTER TABLE recipient ADD discoverable INTEGER;
                                         ALTER TABLE recipient ADD profile_phone_number_sharing TEXT;
+                                        """);
+            }
+        }
+        if (oldVersion < 27) {
+            logger.debug("Updating database: Create expiration_time_version column");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE recipient ADD expiration_time_version INTEGER DEFAULT 1 NOT NULL;
                                         """);
             }
         }

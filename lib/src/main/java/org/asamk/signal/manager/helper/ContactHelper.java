@@ -36,8 +36,34 @@ public class ContactHelper {
             return;
         }
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
+        final var version = contact == null
+                ? 1
+                : contact.messageExpirationTimeVersion() == Integer.MAX_VALUE
+                        ? Integer.MAX_VALUE
+                        : contact.messageExpirationTimeVersion() + 1;
         account.getContactStore()
-                .storeContact(recipientId, builder.withMessageExpirationTime(messageExpirationTimer).build());
+                .storeContact(recipientId,
+                        builder.withMessageExpirationTime(messageExpirationTimer)
+                                .withMessageExpirationTimeVersion(version)
+                                .build());
+    }
+
+    public void setExpirationTimer(
+            RecipientId recipientId, int messageExpirationTimer, int messageExpirationTimerVersion
+    ) {
+        var contact = account.getContactStore().getContact(recipientId);
+        if (contact != null && (
+                contact.messageExpirationTime() == messageExpirationTimer
+                        || contact.messageExpirationTimeVersion() >= messageExpirationTimerVersion
+        )) {
+            return;
+        }
+        final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
+        account.getContactStore()
+                .storeContact(recipientId,
+                        builder.withMessageExpirationTime(messageExpirationTimer)
+                                .withMessageExpirationTimeVersion(messageExpirationTimerVersion)
+                                .build());
     }
 
     public void setContactBlocked(RecipientId recipientId, boolean blocked) {

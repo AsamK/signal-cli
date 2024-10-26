@@ -864,6 +864,7 @@ public class SignalAccount implements Closeable {
                                 null,
                                 contact.color,
                                 contact.messageExpirationTime,
+                                1,
                                 0,
                                 false,
                                 contact.blocked,
@@ -939,6 +940,7 @@ public class SignalAccount implements Closeable {
                             getContactStore().storeContact(recipientId,
                                     Contact.newBuilder(contact)
                                             .withMessageExpirationTime(thread.messageExpirationTime)
+                                            .withMessageExpirationTimeVersion(1)
                                             .build());
                         }
                     } else {
