@@ -52,6 +52,9 @@
   "name":"[Lorg.asamk.signal.json.JsonQuotedAttachment;"
 },
 {
+  "name":"[Lorg.asamk.signal.json.JsonSyncReadMessage;"
+},
+{
   "name":"[Lorg.asamk.signal.json.JsonTextStyle;"
 },
 {
