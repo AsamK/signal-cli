@@ -10,7 +10,6 @@ import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.manager.helper.PinHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.NetworkResult;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
 import org.whispersystems.signalservice.api.push.exceptions.NoSuchSessionException;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
@@ -91,19 +90,11 @@ public class NumberVerificationUtils {
     public static void requestVerificationCode(
             RegistrationApi registrationApi, String sessionId, boolean voiceVerification
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
-        final NetworkResult<RegistrationSessionMetadataResponse> response;
         final var locale = Utils.getDefaultLocale(Locale.US);
-        if (voiceVerification) {
-            response = registrationApi.requestSmsVerificationCode(sessionId,
-                    locale,
-                    false,
-                    VerificationCodeTransport.VOICE);
-        } else {
-            response = registrationApi.requestSmsVerificationCode(sessionId,
-                    locale,
-                    false,
-                    VerificationCodeTransport.SMS);
-        }
+        final var response = registrationApi.requestSmsVerificationCode(sessionId,
+                locale,
+                false,
+                voiceVerification ? VerificationCodeTransport.VOICE : VerificationCodeTransport.SMS);
         try {
             Utils.handleResponseException(response);
         } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
