@@ -258,7 +258,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
     ) throws IOException {
         final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
         try {
-            Utils.handleResponseException(registrationApi.verifyAccount(verificationCode, sessionId));
+            Utils.handleResponseException(registrationApi.verifyAccount(sessionId, verificationCode));
         } catch (AlreadyVerifiedException e) {
             // Already verified so can continue registering
         }

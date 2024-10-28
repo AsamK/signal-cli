@@ -283,7 +283,7 @@ public class AccountHelper {
                 (sessionId1, verificationCode1, registrationLock) -> {
                     final var registrationApi = dependencies.getRegistrationApi();
                     try {
-                        Utils.handleResponseException(registrationApi.verifyAccount(verificationCode1, sessionId1));
+                        Utils.handleResponseException(registrationApi.verifyAccount(sessionId1, verificationCode1));
                     } catch (AlreadyVerifiedException e) {
                         // Already verified so can continue changing number
                     }
