@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.9] - 2024-10-28
+
+### Fixed
+
+- Fix verify command
 
 ## [0.13.8] - 2024-10-26
 
