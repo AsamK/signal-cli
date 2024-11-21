@@ -2,16 +2,16 @@
 slf4j = "2.0.16"
 
 [libraries]
-bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.78.1"
-jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.18.0"
+bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.79"
+jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.18.1"
 argparse4j = "net.sourceforge.argparse4j:argparse4j:0.9.0"
 dbusjava = "com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.0.0"
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
-logback = "ch.qos.logback:logback-classic:1.5.11"
+logback = "ch.qos.logback:logback-classic:1.5.12"
 
 signalservice = "com.github.turasa:signal-service-java:2.15.3_unofficial_110"
 sqlite = "org.xerial:sqlite-jdbc:3.47.0.0"
-hikari = "com.zaxxer:HikariCP:6.0.0"
+hikari = "com.zaxxer:HikariCP:6.2.1"
 junit-jupiter = "org.junit.jupiter:junit-jupiter:5.11.3"
 junit-launcher = "org.junit.platform:junit-platform-launcher:1.11.3"
