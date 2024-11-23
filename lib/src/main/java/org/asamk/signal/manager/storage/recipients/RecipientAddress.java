@@ -27,7 +27,7 @@ public record RecipientAddress(
             pni = Optional.empty();
         }
         if (aci.isEmpty() && pni.isEmpty() && number.isEmpty() && username.isEmpty()) {
-            throw new AssertionError("Must have either a ServiceId, username or E164 number!");
+            throw new InvalidAddress("Must have either a ServiceId, username or E164 number!");
         }
     }
 

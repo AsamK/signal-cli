@@ -339,7 +339,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 """
                 SELECT r._id, r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.archived, r.hidden, r.unregistered_timestamp
                 FROM %s r
-                WHERE (r.number IS NOT NULL OR r.aci IS NOT NULL) AND %s AND r.hidden = FALSE
+                WHERE (r.number IS NOT NULL OR r.pni IS NOT NULL OR r.aci IS NOT NULL) AND %s AND r.hidden = FALSE
                 """
         ).formatted(TABLE_RECIPIENT, SQL_IS_CONTACT);
         try (final var connection = database.getConnection()) {
@@ -392,6 +392,15 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setBytes(1, storageId.getRaw());
             return Utils.executeQuerySingleRow(statement, this::getRecipientFromResultSet);
+        } catch (InvalidAddress e) {
+            try (final var statement = connection.prepareStatement("""
+                                                                   UPDATE %s SET aci=NULL, pni=NULL, username=NULL, number=NULL, storage_id=NULL WHERE storage_id = ?
+                                                                   """.formatted(TABLE_RECIPIENT))) {
+                statement.setBytes(1, storageId.getRaw());
+                statement.executeUpdate();
+            }
+            connection.commit();
+            throw e;
         }
     }
 
@@ -426,7 +435,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                        r.discoverable,
                        r.storage_record
                 FROM %s r
-                WHERE (r.number IS NOT NULL OR r.aci IS NOT NULL) AND %s
+                WHERE (r.number IS NOT NULL OR r.pni IS NOT NULL OR r.aci IS NOT NULL) AND %s
                 """
         ).formatted(TABLE_RECIPIENT, sqlWhere.isEmpty() ? "TRUE" : String.join(" AND ", sqlWhere));
         final var selfAddress = selfAddressProvider.getSelfAddress();
@@ -512,7 +521,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 """
                 SELECT r._id
                 FROM %s r
-                WHERE (r.number IS NOT NULL OR r.aci IS NOT NULL)
+                WHERE (r.aci IS NOT NULL OR r.pni IS NOT NULL)
                 """
         ).formatted(TABLE_RECIPIENT);
         try (final var statement = connection.prepareStatement(sql)) {
@@ -525,7 +534,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 """
                 SELECT r._id
                 FROM %s r
-                WHERE r.storage_id IS NULL AND r.unregistered_timestamp IS NULL
+                WHERE r.storage_id IS NULL AND r.unregistered_timestamp IS NULL AND (r.aci IS NOT NULL OR r.pni IS NOT NULL)
                 """
         ).formatted(TABLE_RECIPIENT);
         final var updateSql = (
