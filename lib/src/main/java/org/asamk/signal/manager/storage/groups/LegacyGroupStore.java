@@ -151,7 +151,8 @@ public class LegacyGroupStore {
 
                 @Override
                 public List<Member> deserialize(
-                        JsonParser jsonParser, DeserializationContext deserializationContext
+                        JsonParser jsonParser,
+                        DeserializationContext deserializationContext
                 ) throws IOException {
                     var addresses = new ArrayList<Member>();
                     JsonNode node = jsonParser.getCodec().readTree(jsonParser);
@@ -184,7 +185,8 @@ public class LegacyGroupStore {
 
         @Override
         public List<Object> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             var groups = new ArrayList<>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);

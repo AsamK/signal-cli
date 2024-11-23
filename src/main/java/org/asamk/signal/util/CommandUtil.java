@@ -84,7 +84,8 @@ public class CommandUtil {
     }
 
     public static Set<RecipientIdentifier.Single> getSingleRecipientIdentifiers(
-            final Collection<String> recipientStrings, final String localNumber
+            final Collection<String> recipientStrings,
+            final String localNumber
     ) throws UserErrorException {
         if (recipientStrings == null) {
             return Set.of();
@@ -97,7 +98,8 @@ public class CommandUtil {
     }
 
     public static RecipientIdentifier.Single getSingleRecipientIdentifier(
-            final String recipientString, final String localNumber
+            final String recipientString,
+            final String localNumber
     ) throws UserErrorException {
         try {
             return RecipientIdentifier.Single.fromString(recipientString, localNumber);

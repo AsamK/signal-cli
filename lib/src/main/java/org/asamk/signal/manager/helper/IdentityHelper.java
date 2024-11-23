@@ -66,9 +66,7 @@ public class IdentityHelper {
         return fingerprint == null ? null : fingerprint.getScannableFingerprint();
     }
 
-    private Fingerprint computeSafetyNumberFingerprint(
-            final ServiceId serviceId, final IdentityKey theirIdentityKey
-    ) {
+    private Fingerprint computeSafetyNumberFingerprint(final ServiceId serviceId, final IdentityKey theirIdentityKey) {
         if (!serviceId.isUnknown()) {
             return Utils.computeSafetyNumberForUuid(account.getAci(),
                     account.getAciIdentityKeyPair().getPublicKey(),
@@ -89,7 +87,9 @@ public class IdentityHelper {
     }
 
     private boolean trustIdentity(
-            RecipientId recipientId, BiFunction<ServiceId, IdentityKey, Boolean> verifier, TrustLevel trustLevel
+            RecipientId recipientId,
+            BiFunction<ServiceId, IdentityKey, Boolean> verifier,
+            TrustLevel trustLevel
     ) {
         final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
         final var serviceId = address.serviceId().orElse(null);

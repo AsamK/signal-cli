@@ -158,7 +158,8 @@ public class UnidentifiedAccessHelper {
     }
 
     private static byte[] getTargetUnidentifiedAccessKey(
-            final Profile targetProfile, final ProfileKey theirProfileKey
+            final Profile targetProfile,
+            final ProfileKey theirProfileKey
     ) {
         return switch (targetProfile.getUnidentifiedAccessMode()) {
             case ENABLED -> theirProfileKey == null ? null : UnidentifiedAccess.deriveAccessKeyFrom(theirProfileKey);

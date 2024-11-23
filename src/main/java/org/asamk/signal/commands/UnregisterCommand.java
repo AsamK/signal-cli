@@ -28,7 +28,9 @@ public class UnregisterCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         try {
             if (Boolean.TRUE.equals(ns.getBoolean("delete-account"))) {

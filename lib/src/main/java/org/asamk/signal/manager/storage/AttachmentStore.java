@@ -22,7 +22,8 @@ public class AttachmentStore {
     }
 
     public void storeAttachmentPreview(
-            final SignalServiceAttachmentPointer pointer, final AttachmentStorer storer
+            final SignalServiceAttachmentPointer pointer,
+            final AttachmentStorer storer
     ) throws IOException {
         storeAttachment(getAttachmentPreviewFile(pointer.getRemoteId(),
                 pointer.getFileName(),
@@ -30,7 +31,8 @@ public class AttachmentStore {
     }
 
     public void storeAttachment(
-            final SignalServiceAttachmentPointer pointer, final AttachmentStorer storer
+            final SignalServiceAttachmentPointer pointer,
+            final AttachmentStorer storer
     ) throws IOException {
         storeAttachment(getAttachmentFile(pointer), storer);
     }
@@ -54,22 +56,24 @@ public class AttachmentStore {
     }
 
     private File getAttachmentPreviewFile(
-            SignalServiceAttachmentRemoteId attachmentId, Optional<String> filename, Optional<String> contentType
+            SignalServiceAttachmentRemoteId attachmentId,
+            Optional<String> filename,
+            Optional<String> contentType
     ) {
         final var extension = getAttachmentExtension(filename, contentType);
         return new File(attachmentsPath, attachmentId.toString() + extension + ".preview");
     }
 
     private File getAttachmentFile(
-            SignalServiceAttachmentRemoteId attachmentId, Optional<String> filename, Optional<String> contentType
+            SignalServiceAttachmentRemoteId attachmentId,
+            Optional<String> filename,
+            Optional<String> contentType
     ) {
         final var extension = getAttachmentExtension(filename, contentType);
         return new File(attachmentsPath, attachmentId.toString() + extension);
     }
 
-    private static String getAttachmentExtension(
-            final Optional<String> filename, final Optional<String> contentType
-    ) {
+    private static String getAttachmentExtension(final Optional<String> filename, final Optional<String> contentType) {
         return filename.filter(f -> f.contains("."))
                 .map(f -> f.substring(f.lastIndexOf(".") + 1))
                 .or(() -> contentType.flatMap(MimeUtils::guessExtensionFromMimeType))

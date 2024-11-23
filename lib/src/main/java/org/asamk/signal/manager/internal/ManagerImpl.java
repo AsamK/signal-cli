@@ -417,7 +417,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void startChangeNumber(
-            String newNumber, boolean voiceVerification, String captcha
+            String newNumber,
+            boolean voiceVerification,
+            String captcha
     ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException, VerificationMethodNotAvailableException {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
@@ -427,7 +429,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void finishChangeNumber(
-            String newNumber, String verificationCode, String pin
+            String newNumber,
+            String verificationCode,
+            String pin
     ) throws IncorrectPinException, PinLockedException, IOException, NotPrimaryDeviceException {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
@@ -447,7 +451,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void submitRateLimitRecaptchaChallenge(
-            String challenge, String captcha
+            String challenge,
+            String captcha
     ) throws IOException, CaptchaRejectedException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
 
@@ -527,7 +532,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendGroupMessageResults quitGroup(
-            GroupId groupId, Set<RecipientIdentifier.Single> groupAdmins
+            GroupId groupId,
+            Set<RecipientIdentifier.Single> groupAdmins
     ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException, UnregisteredRecipientException {
         final var newAdmins = context.getRecipientHelper().resolveRecipients(groupAdmins);
         return context.getGroupHelper().quitGroup(groupId, newAdmins);
@@ -545,7 +551,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public Pair<GroupId, SendGroupMessageResults> createGroup(
-            String name, Set<RecipientIdentifier.Single> members, String avatarFile
+            String name,
+            Set<RecipientIdentifier.Single> members,
+            String avatarFile
     ) throws IOException, AttachmentInvalidException, UnregisteredRecipientException {
         return context.getGroupHelper()
                 .createGroup(name,
@@ -555,7 +563,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendGroupMessageResults updateGroup(
-            final GroupId groupId, final UpdateGroup updateGroup
+            final GroupId groupId,
+            final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException, UnregisteredRecipientException {
         return context.getGroupHelper()
                 .updateGroup(groupId,
@@ -596,7 +605,9 @@ public class ManagerImpl implements Manager {
     }
 
     private SendMessageResults sendMessage(
-            SignalServiceDataMessage.Builder messageBuilder, Set<RecipientIdentifier> recipients, boolean notifySelf
+            SignalServiceDataMessage.Builder messageBuilder,
+            Set<RecipientIdentifier> recipients,
+            boolean notifySelf
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return sendMessage(messageBuilder, recipients, notifySelf, Optional.empty());
     }
@@ -644,7 +655,8 @@ public class ManagerImpl implements Manager {
     }
 
     private SendMessageResults sendTypingMessage(
-            SignalServiceTypingMessage.Action action, Set<RecipientIdentifier> recipients
+            SignalServiceTypingMessage.Action action,
+            Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         final var timestamp = System.currentTimeMillis();
@@ -671,15 +683,14 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendTypingMessage(
-            TypingAction action, Set<RecipientIdentifier> recipients
+            TypingAction action,
+            Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return sendTypingMessage(action.toSignalService(), recipients);
     }
 
     @Override
-    public SendMessageResults sendReadReceipt(
-            RecipientIdentifier.Single sender, List<Long> messageIds
-    ) {
+    public SendMessageResults sendReadReceipt(RecipientIdentifier.Single sender, List<Long> messageIds) {
         final var timestamp = System.currentTimeMillis();
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.READ,
                 messageIds,
@@ -689,9 +700,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public SendMessageResults sendViewedReceipt(
-            RecipientIdentifier.Single sender, List<Long> messageIds
-    ) {
+    public SendMessageResults sendViewedReceipt(RecipientIdentifier.Single sender, List<Long> messageIds) {
         final var timestamp = System.currentTimeMillis();
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.VIEWED,
                 messageIds,
@@ -724,7 +733,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendMessage(
-            Message message, Set<RecipientIdentifier> recipients, boolean notifySelf
+            Message message,
+            Set<RecipientIdentifier> recipients,
+            boolean notifySelf
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
         final var selfProfile = context.getProfileHelper().getSelfProfile();
         if (selfProfile == null || selfProfile.getDisplayName().isEmpty()) {
@@ -738,7 +749,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendEditMessage(
-            Message message, Set<RecipientIdentifier> recipients, long editTargetTimestamp
+            Message message,
+            Set<RecipientIdentifier> recipients,
+            long editTargetTimestamp
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
@@ -746,7 +759,8 @@ public class ManagerImpl implements Manager {
     }
 
     private void applyMessage(
-            final SignalServiceDataMessage.Builder messageBuilder, final Message message
+            final SignalServiceDataMessage.Builder messageBuilder,
+            final Message message
     ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException, InvalidStickerException {
         final var additionalAttachments = new ArrayList<SignalServiceAttachment>();
         if (message.messageText().length() > ServiceConfig.MAX_MESSAGE_BODY_SIZE) {
@@ -863,7 +877,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendRemoteDeleteMessage(
-            long targetSentTimestamp, Set<RecipientIdentifier> recipients
+            long targetSentTimestamp,
+            Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
@@ -915,7 +930,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendPaymentNotificationMessage(
-            byte[] receipt, String note, RecipientIdentifier.Single recipient
+            byte[] receipt,
+            String note,
+            RecipientIdentifier.Single recipient
     ) throws IOException {
         final var paymentNotification = new SignalServiceDataMessage.PaymentNotification(receipt, note);
         final var payment = new SignalServiceDataMessage.Payment(paymentNotification, null);
@@ -958,7 +975,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendMessageRequestResponse(
-            final MessageRequestResponse.Type type, final Set<RecipientIdentifier> recipients
+            final MessageRequestResponse.Type type,
+            final Set<RecipientIdentifier> recipients
     ) {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         for (final var recipient : recipients) {
@@ -1021,7 +1039,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void setContactName(
-            RecipientIdentifier.Single recipient, String givenName, final String familyName
+            RecipientIdentifier.Single recipient,
+            String givenName,
+            final String familyName
     ) throws NotPrimaryDeviceException, UnregisteredRecipientException {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
@@ -1033,7 +1053,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void setContactsBlocked(
-            Collection<RecipientIdentifier.Single> recipients, boolean blocked
+            Collection<RecipientIdentifier.Single> recipients,
+            boolean blocked
     ) throws IOException, UnregisteredRecipientException {
         if (recipients.isEmpty()) {
             return;
@@ -1067,7 +1088,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void setGroupsBlocked(
-            final Collection<GroupId> groupIds, final boolean blocked
+            final Collection<GroupId> groupIds,
+            final boolean blocked
     ) throws GroupNotFoundException, IOException {
         if (groupIds.isEmpty()) {
             return;
@@ -1093,7 +1115,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void setExpirationTimer(
-            RecipientIdentifier.Single recipient, int messageExpirationTimer
+            RecipientIdentifier.Single recipient,
+            int messageExpirationTimer
     ) throws IOException, UnregisteredRecipientException {
         var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
         context.getContactHelper().setExpirationTimer(recipientId, messageExpirationTimer);
@@ -1255,7 +1278,9 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void receiveMessages(
-            Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
+            Optional<Duration> timeout,
+            Optional<Integer> maxMessages,
+            ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException {
         receiveMessages(timeout.orElse(Duration.ofMinutes(1)), timeout.isPresent(), maxMessages.orElse(null), handler);
     }
@@ -1275,7 +1300,10 @@ public class ManagerImpl implements Manager {
     }
 
     private void receiveMessages(
-            Duration timeout, boolean returnOnTimeout, Integer maxMessages, ReceiveMessageHandler handler
+            Duration timeout,
+            boolean returnOnTimeout,
+            Integer maxMessages,
+            ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException {
         synchronized (messageHandlers) {
             if (isReceiving()) {
@@ -1431,7 +1459,8 @@ public class ManagerImpl implements Manager {
 
     @Override
     public boolean trustIdentityVerified(
-            RecipientIdentifier.Single recipient, IdentityVerificationCode verificationCode
+            RecipientIdentifier.Single recipient,
+            IdentityVerificationCode verificationCode
     ) throws UnregisteredRecipientException {
         return switch (verificationCode) {
             case IdentityVerificationCode.Fingerprint fingerprint -> trustIdentity(recipient,
@@ -1450,7 +1479,8 @@ public class ManagerImpl implements Manager {
     }
 
     private boolean trustIdentity(
-            RecipientIdentifier.Single recipient, Function<RecipientId, Boolean> trustMethod
+            RecipientIdentifier.Single recipient,
+            Function<RecipientId, Boolean> trustMethod
     ) throws UnregisteredRecipientException {
         final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
         final var updated = trustMethod.apply(recipientId);

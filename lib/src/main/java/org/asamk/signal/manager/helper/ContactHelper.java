@@ -49,7 +49,9 @@ public class ContactHelper {
     }
 
     public void setExpirationTimer(
-            RecipientId recipientId, int messageExpirationTimer, int messageExpirationTimerVersion
+            RecipientId recipientId,
+            int messageExpirationTimer,
+            int messageExpirationTimerVersion
     ) {
         var contact = account.getContactStore().getContact(recipientId);
         if (contact != null && (

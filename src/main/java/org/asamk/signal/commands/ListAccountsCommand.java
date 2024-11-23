@@ -23,7 +23,9 @@ public class ListAccountsCommand implements JsonRpcMultiLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
+            final Namespace ns,
+            final MultiAccountManager c,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var accountNumbers = c.getAccountNumbers();
         switch (outputWriter) {

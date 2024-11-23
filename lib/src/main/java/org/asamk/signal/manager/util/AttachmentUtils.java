@@ -13,7 +13,8 @@ import java.util.UUID;
 public class AttachmentUtils {
 
     public static SignalServiceAttachmentStream createAttachmentStream(
-            String attachment, ResumableUploadSpec resumableUploadSpec
+            String attachment,
+            ResumableUploadSpec resumableUploadSpec
     ) throws AttachmentInvalidException {
         try {
             final var streamDetails = Utils.createStreamDetails(attachment);
@@ -25,7 +26,9 @@ public class AttachmentUtils {
     }
 
     public static SignalServiceAttachmentStream createAttachmentStream(
-            StreamDetails streamDetails, Optional<String> name, ResumableUploadSpec resumableUploadSpec
+            StreamDetails streamDetails,
+            Optional<String> name,
+            ResumableUploadSpec resumableUploadSpec
     ) throws ResumeLocationInvalidException {
         // TODO maybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
         final var uploadTimestamp = System.currentTimeMillis();

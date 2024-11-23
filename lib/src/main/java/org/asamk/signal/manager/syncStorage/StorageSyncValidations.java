@@ -112,13 +112,17 @@ public final class StorageSyncValidations {
     }
 
     public static void validateForcePush(
-            SignalStorageManifest manifest, List<SignalStorageRecord> inserts, RecipientAddress self
+            SignalStorageManifest manifest,
+            List<SignalStorageRecord> inserts,
+            RecipientAddress self
     ) {
         validateManifestAndInserts(manifest, inserts, self);
     }
 
     private static void validateManifestAndInserts(
-            SignalStorageManifest manifest, List<SignalStorageRecord> inserts, RecipientAddress self
+            SignalStorageManifest manifest,
+            List<SignalStorageRecord> inserts,
+            RecipientAddress self
     ) {
         int accountCount = 0;
         for (StorageId id : manifest.getStorageIds()) {

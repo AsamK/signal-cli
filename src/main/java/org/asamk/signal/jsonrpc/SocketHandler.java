@@ -39,7 +39,9 @@ public class SocketHandler implements AutoCloseable {
     }
 
     public SocketHandler(
-            final ServerSocketChannel serverChannel, final MultiAccountManager c, final boolean noReceiveOnStart
+            final ServerSocketChannel serverChannel,
+            final MultiAccountManager c,
+            final boolean noReceiveOnStart
     ) {
         this.serverChannel = serverChannel;
         this.socketHandler = channel -> getSignalJsonRpcDispatcherHandler(channel).handleConnection(c);

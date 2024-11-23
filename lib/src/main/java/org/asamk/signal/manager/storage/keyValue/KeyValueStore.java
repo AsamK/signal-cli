@@ -74,7 +74,9 @@ public class KeyValueStore {
     }
 
     public <T> boolean storeEntry(
-            final Connection connection, final KeyValueEntry<T> key, final T value
+            final Connection connection,
+            final KeyValueEntry<T> key,
+            final T value
     ) throws SQLException {
         final var entry = getEntry(key);
         if (Objects.equals(entry, value)) {
@@ -98,7 +100,8 @@ public class KeyValueStore {
 
     @SuppressWarnings("unchecked")
     private static <T> T readValueFromResultSet(
-            final KeyValueEntry<T> key, final ResultSet resultSet
+            final KeyValueEntry<T> key,
+            final ResultSet resultSet
     ) throws SQLException {
         Object value;
         final var clazz = key.clazz();
@@ -134,7 +137,10 @@ public class KeyValueStore {
     }
 
     private static <T> void setParameterValue(
-            final PreparedStatement statement, final int parameterIndex, final Class<T> clazz, final T value
+            final PreparedStatement statement,
+            final int parameterIndex,
+            final Class<T> clazz,
+            final T value
     ) throws SQLException {
         if (clazz == int.class || clazz == Integer.class) {
             if (value == null) {

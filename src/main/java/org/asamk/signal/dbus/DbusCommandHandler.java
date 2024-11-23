@@ -87,7 +87,8 @@ public class DbusCommandHandler {
     }
 
     private static String tryGetSingleAccountObjectPath(
-            final DBusConnection dBusConn, final String busname
+            final DBusConnection dBusConn,
+            final String busname
     ) throws DBusException, CommandException {
         var control = dBusConn.getRemoteObject(busname, DbusConfig.getObjectPath(), SignalControl.class);
         try {

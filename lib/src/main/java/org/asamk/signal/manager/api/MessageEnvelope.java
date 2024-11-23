@@ -338,7 +338,8 @@ public record MessageEnvelope(
             }
 
             static Attachment from(
-                    SignalServiceDataMessage.Quote.QuotedAttachment a, final AttachmentFileProvider fileProvider
+                    SignalServiceDataMessage.Quote.QuotedAttachment a,
+                    final AttachmentFileProvider fileProvider
             ) {
                 return new Attachment(Optional.empty(),
                         Optional.empty(),
@@ -510,9 +511,7 @@ public record MessageEnvelope(
 
         public record Preview(String title, String description, long date, String url, Optional<Attachment> image) {
 
-            static Preview from(
-                    SignalServicePreview preview, final AttachmentFileProvider fileProvider
-            ) {
+            static Preview from(SignalServicePreview preview, final AttachmentFileProvider fileProvider) {
                 return new Preview(preview.getTitle(),
                         preview.getDescription(),
                         preview.getDate(),
@@ -832,9 +831,7 @@ public record MessageEnvelope(
             Optional<TextAttachment> textAttachment
     ) {
 
-        public static Story from(
-                SignalServiceStoryMessage storyMessage, final AttachmentFileProvider fileProvider
-        ) {
+        public static Story from(SignalServiceStoryMessage storyMessage, final AttachmentFileProvider fileProvider) {
             return new Story(storyMessage.getAllowsReplies().orElse(false),
                     storyMessage.getGroupContext().map(c -> GroupUtils.getGroupIdV2(c.getMasterKey())),
                     storyMessage.getFileAttachment().map(f -> Data.Attachment.from(f, fileProvider)),
@@ -852,7 +849,8 @@ public record MessageEnvelope(
         ) {
 
             static TextAttachment from(
-                    SignalServiceTextAttachment textAttachment, final AttachmentFileProvider fileProvider
+                    SignalServiceTextAttachment textAttachment,
+                    final AttachmentFileProvider fileProvider
             ) {
                 return new TextAttachment(textAttachment.getText(),
                         textAttachment.getStyle().map(Style::from),

@@ -31,7 +31,8 @@ public class LegacyJsonSessionStore {
 
         @Override
         public LegacyJsonSessionStore deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 

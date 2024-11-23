@@ -80,7 +80,9 @@ public final class StorageSyncModels {
     }
 
     public static SignalStorageRecord localToRemoteRecord(
-            Recipient recipient, IdentityInfo identity, byte[] rawStorageId
+            Recipient recipient,
+            IdentityInfo identity,
+            byte[] rawStorageId
     ) {
         final var address = recipient.getAddress();
         final var builder = new SignalContactRecord.Builder(rawStorageId,
@@ -121,9 +123,7 @@ public final class StorageSyncModels {
         return SignalStorageRecord.forContact(builder.build());
     }
 
-    public static SignalStorageRecord localToRemoteRecord(
-            GroupInfoV1 group, byte[] rawStorageId
-    ) {
+    public static SignalStorageRecord localToRemoteRecord(GroupInfoV1 group, byte[] rawStorageId) {
         final var builder = new SignalGroupV1Record.Builder(rawStorageId,
                 group.getGroupId().serialize(),
                 group.getStorageRecord());
@@ -133,9 +133,7 @@ public final class StorageSyncModels {
         return SignalStorageRecord.forGroupV1(builder.build());
     }
 
-    public static SignalStorageRecord localToRemoteRecord(
-            GroupInfoV2 group, byte[] rawStorageId
-    ) {
+    public static SignalStorageRecord localToRemoteRecord(GroupInfoV2 group, byte[] rawStorageId) {
         final var builder = new SignalGroupV2Record.Builder(rawStorageId,
                 group.getMasterKey(),
                 group.getStorageRecord());

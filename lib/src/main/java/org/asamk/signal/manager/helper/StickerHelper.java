@@ -30,7 +30,9 @@ public class StickerHelper {
     }
 
     public StickerPack addOrUpdateStickerPack(
-            final StickerPackId stickerPackId, final byte[] stickerPackKey, final boolean installed
+            final StickerPackId stickerPackId,
+            final byte[] stickerPackKey,
+            final boolean installed
     ) {
         final var sticker = account.getStickerStore().getStickerPack(stickerPackId);
         if (sticker != null) {
@@ -50,7 +52,8 @@ public class StickerHelper {
     }
 
     public JsonStickerPack getOrRetrieveStickerPack(
-            StickerPackId packId, byte[] packKey
+            StickerPackId packId,
+            byte[] packKey
     ) throws InvalidStickerException {
         try {
             retrieveStickerPack(packId, packKey);

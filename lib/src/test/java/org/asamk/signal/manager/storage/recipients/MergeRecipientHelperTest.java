@@ -217,9 +217,7 @@ class MergeRecipientHelperTest {
         }
 
         @Override
-        public void updateRecipientAddress(
-                final RecipientId recipientId, final RecipientAddress address
-        ) {
+        public void updateRecipientAddress(final RecipientId recipientId, final RecipientAddress address) {
             recipients.removeIf(r -> r.id().equals(recipientId));
             recipients.add(new RecipientWithAddress(recipientId, address));
         }

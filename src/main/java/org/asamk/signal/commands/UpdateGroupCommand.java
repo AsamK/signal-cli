@@ -102,7 +102,9 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var groupIdString = ns.getString("group-id");
         var groupId = CommandUtil.getGroupId(groupIdString);
@@ -180,7 +182,9 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
     }
 
     private void outputResult(
-            final OutputWriter outputWriter, final SendGroupMessageResults results, final GroupId groupId
+            final OutputWriter outputWriter,
+            final SendGroupMessageResults results,
+            final GroupId groupId
     ) {
         switch (outputWriter) {
             case PlainTextWriter writer -> {

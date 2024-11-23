@@ -18,9 +18,7 @@ public interface JsonRpcLocalCommand extends JsonRpcSingleCommand<Map<String, Ob
         return new TypeReference<>() {};
     }
 
-    default void handleCommand(
-            Map<String, Object> request, Manager m, JsonWriter jsonWriter
-    ) throws CommandException {
+    default void handleCommand(Map<String, Object> request, Manager m, JsonWriter jsonWriter) throws CommandException {
         Namespace commandNamespace = new JsonRpcNamespace(request == null ? Map.of() : request);
         handleCommand(commandNamespace, m, jsonWriter);
     }

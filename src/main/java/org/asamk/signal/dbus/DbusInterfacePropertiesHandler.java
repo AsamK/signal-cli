@@ -12,9 +12,7 @@ public class DbusInterfacePropertiesHandler {
     private final String interfaceName;
     private final List<DbusProperty<?>> properties;
 
-    public DbusInterfacePropertiesHandler(
-            final String interfaceName, final List<DbusProperty<?>> properties
-    ) {
+    public DbusInterfacePropertiesHandler(final String interfaceName, final List<DbusProperty<?>> properties) {
         this.interfaceName = interfaceName;
         this.properties = properties;
     }

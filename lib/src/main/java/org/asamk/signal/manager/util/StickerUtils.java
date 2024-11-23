@@ -100,7 +100,9 @@ public class StickerUtils {
     }
 
     private static Pair<InputStream, Long> getInputStreamAndLength(
-            final String rootPath, final ZipFile zip, final String subfile
+            final String rootPath,
+            final ZipFile zip,
+            final String subfile
     ) throws IOException {
         if (zip != null) {
             final var entry = zip.getEntry(subfile);
@@ -112,7 +114,9 @@ public class StickerUtils {
     }
 
     private static String getContentType(
-            final String rootPath, final ZipFile zip, final String subfile
+            final String rootPath,
+            final ZipFile zip,
+            final String subfile
     ) throws IOException {
         if (zip != null) {
             final var entry = zip.getEntry(subfile);

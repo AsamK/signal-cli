@@ -33,7 +33,8 @@ public class ServiceConfig {
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(
-            ServiceEnvironment serviceEnvironment, String userAgent
+            ServiceEnvironment serviceEnvironment,
+            String userAgent
     ) {
         final Interceptor userAgentInterceptor = chain -> chain.proceed(chain.request()
                 .newBuilder()

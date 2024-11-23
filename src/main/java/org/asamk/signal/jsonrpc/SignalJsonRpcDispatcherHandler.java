@@ -43,7 +43,9 @@ public class SignalJsonRpcDispatcherHandler {
     private SignalJsonRpcCommandHandler commandHandler;
 
     public SignalJsonRpcDispatcherHandler(
-            final JsonWriter jsonWriter, final Supplier<String> lineSupplier, final boolean noReceiveOnStart
+            final JsonWriter jsonWriter,
+            final Supplier<String> lineSupplier,
+            final boolean noReceiveOnStart
     ) {
         this.noReceiveOnStart = noReceiveOnStart;
         this.objectMapper = Util.createJsonObjectMapper();
@@ -167,7 +169,9 @@ public class SignalJsonRpcDispatcherHandler {
 
         @Override
         public void handleCommand(
-                final Void request, final Manager m, final JsonWriter jsonWriter
+                final Void request,
+                final Manager m,
+                final JsonWriter jsonWriter
         ) throws CommandException {
             final var subscriptionId = subscribeReceive(m, false);
             jsonWriter.write(subscriptionId);
@@ -175,7 +179,9 @@ public class SignalJsonRpcDispatcherHandler {
 
         @Override
         public void handleCommand(
-                final Void request, final MultiAccountManager c, final JsonWriter jsonWriter
+                final Void request,
+                final MultiAccountManager c,
+                final JsonWriter jsonWriter
         ) throws CommandException {
             final var subscriptionId = subscribeReceive(c.getManagers(), false);
             jsonWriter.write(subscriptionId);
@@ -196,7 +202,9 @@ public class SignalJsonRpcDispatcherHandler {
 
         @Override
         public void handleCommand(
-                final JsonNode request, final Manager m, final JsonWriter jsonWriter
+                final JsonNode request,
+                final Manager m,
+                final JsonWriter jsonWriter
         ) throws CommandException {
             final var subscriptionId = getSubscriptionId(request);
             if (subscriptionId == null) {
@@ -210,7 +218,9 @@ public class SignalJsonRpcDispatcherHandler {
 
         @Override
         public void handleCommand(
-                final JsonNode request, final MultiAccountManager c, final JsonWriter jsonWriter
+                final JsonNode request,
+                final MultiAccountManager c,
+                final JsonWriter jsonWriter
         ) throws CommandException {
             final var subscriptionId = getSubscriptionId(request);
             if (subscriptionId == null) {

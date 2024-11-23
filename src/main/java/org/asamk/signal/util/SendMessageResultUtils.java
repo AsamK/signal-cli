@@ -41,7 +41,8 @@ public class SendMessageResultUtils {
     }
 
     public static void outputResult(
-            final OutputWriter outputWriter, final SendMessageResults sendMessageResults
+            final OutputWriter outputWriter,
+            final SendMessageResults sendMessageResults
     ) throws CommandException {
         switch (outputWriter) {
             case PlainTextWriter writer -> {

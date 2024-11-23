@@ -33,7 +33,9 @@ public class JoinGroupCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final GroupInviteLinkUrl linkUrl;
         var uri = ns.getString("uri");

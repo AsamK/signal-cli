@@ -41,9 +41,7 @@ public class UnknownStorageIdStore {
         }
     }
 
-    public List<StorageId> getUnknownStorageIds(
-            Connection connection, Collection<Integer> types
-    ) throws SQLException {
+    public List<StorageId> getUnknownStorageIds(Connection connection, Collection<Integer> types) throws SQLException {
         final var typesCommaSeparated = types.stream().map(String::valueOf).collect(Collectors.joining(","));
         final var sql = (
                 """

@@ -59,7 +59,10 @@ public class Utils {
     }
 
     public static Fingerprint computeSafetyNumberForNumber(
-            String ownNumber, IdentityKey ownIdentityKey, String theirNumber, IdentityKey theirIdentityKey
+            String ownNumber,
+            IdentityKey ownIdentityKey,
+            String theirNumber,
+            IdentityKey theirIdentityKey
     ) {
         // Version 1: E164 user
         final var version = 1;
@@ -70,7 +73,10 @@ public class Utils {
     }
 
     public static Fingerprint computeSafetyNumberForUuid(
-            ServiceId ownServiceId, IdentityKey ownIdentityKey, ServiceId theirServiceId, IdentityKey theirIdentityKey
+            ServiceId ownServiceId,
+            IdentityKey ownIdentityKey,
+            ServiceId theirServiceId,
+            IdentityKey theirIdentityKey
     ) {
         // Version 2: UUID user
         final var version = 2;

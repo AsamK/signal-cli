@@ -23,9 +23,7 @@ public class ProfileUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(ProfileUtils.class);
 
-    public static Profile decryptProfile(
-            final ProfileKey profileKey, final SignalServiceProfile encryptedProfile
-    ) {
+    public static Profile decryptProfile(final ProfileKey profileKey, final SignalServiceProfile encryptedProfile) {
         var profileCipher = new ProfileCipher(profileKey);
         IdentityKey identityKey = null;
         try {
@@ -64,7 +62,8 @@ public class ProfileUtils {
     }
 
     public static Profile.UnidentifiedAccessMode getUnidentifiedAccessMode(
-            final SignalServiceProfile encryptedProfile, final ProfileCipher profileCipher
+            final SignalServiceProfile encryptedProfile,
+            final ProfileCipher profileCipher
     ) {
         if (encryptedProfile.isUnrestrictedUnidentifiedAccess()) {
             return Profile.UnidentifiedAccessMode.UNRESTRICTED;
@@ -90,7 +89,8 @@ public class ProfileUtils {
     }
 
     private static String decryptString(
-            final String encrypted, final ProfileCipher profileCipher
+            final String encrypted,
+            final ProfileCipher profileCipher
     ) throws InvalidCiphertextException {
         try {
             return encrypted == null ? null : profileCipher.decryptString(Base64.getDecoder().decode(encrypted));
@@ -100,7 +100,8 @@ public class ProfileUtils {
     }
 
     private static Optional<Boolean> decryptBoolean(
-            final String encrypted, final ProfileCipher profileCipher
+            final String encrypted,
+            final ProfileCipher profileCipher
     ) throws InvalidCiphertextException {
         try {
             return encrypted == null
@@ -112,7 +113,9 @@ public class ProfileUtils {
     }
 
     private static byte[] decryptAndVerifyMobileCoinAddress(
-            final byte[] encryptedPaymentAddress, final ProfileCipher profileCipher, final ECPublicKey publicKey
+            final byte[] encryptedPaymentAddress,
+            final ProfileCipher profileCipher,
+            final ECPublicKey publicKey
     ) throws InvalidCiphertextException {
         byte[] decrypted;
         try {

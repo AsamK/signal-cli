@@ -32,7 +32,9 @@ public class FinishLinkCommand implements JsonRpcMultiCommand<FinishLinkCommand.
 
     @Override
     public void handleCommand(
-            final FinishLinkParams request, final MultiAccountManager m, final JsonWriter jsonWriter
+            final FinishLinkParams request,
+            final MultiAccountManager m,
+            final JsonWriter jsonWriter
     ) throws CommandException {
         if (request.deviceLinkUri() == null) {
             throw new UserErrorException("Missing deviceLinkUri.");

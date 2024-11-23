@@ -44,7 +44,9 @@ public interface RecipientTrustedResolver {
 
         @Override
         public RecipientId resolveRecipientTrusted(
-                final Optional<ACI> aci, final Optional<PNI> pni, final Optional<String> number
+                final Optional<ACI> aci,
+                final Optional<PNI> pni,
+                final Optional<String> number
         ) {
             return recipientTrustedResolverSupplier.get().resolveRecipientTrusted(aci, pni, number);
         }

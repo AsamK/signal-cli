@@ -59,7 +59,9 @@ public class JsonRpcDispatcherCommand implements LocalCommand, MultiLocalCommand
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         Shutdown.installHandler();
         final var receiveMode = ns.<ReceiveMode>get("receive-mode");
@@ -79,7 +81,9 @@ public class JsonRpcDispatcherCommand implements LocalCommand, MultiLocalCommand
 
     @Override
     public void handleCommand(
-            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
+            final Namespace ns,
+            final MultiAccountManager c,
+            final OutputWriter outputWriter
     ) throws CommandException {
         Shutdown.installHandler();
         final var receiveMode = ns.<ReceiveMode>get("receive-mode");

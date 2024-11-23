@@ -26,7 +26,8 @@ public class LegacyJsonPreKeyStore {
 
         @Override
         public LegacyJsonPreKeyStore deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 

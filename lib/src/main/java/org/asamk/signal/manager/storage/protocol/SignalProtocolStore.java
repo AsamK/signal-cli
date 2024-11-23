@@ -172,7 +172,9 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
 
     @Override
     public void storeSenderKey(
-            final SignalProtocolAddress sender, final UUID distributionId, final SenderKeyRecord record
+            final SignalProtocolAddress sender,
+            final UUID distributionId,
+            final SenderKeyRecord record
     ) {
         senderKeyStore.storeSenderKey(sender, distributionId, record);
     }
@@ -189,7 +191,8 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
 
     @Override
     public void markSenderKeySharedWith(
-            final DistributionId distributionId, final Collection<SignalProtocolAddress> addresses
+            final DistributionId distributionId,
+            final Collection<SignalProtocolAddress> addresses
     ) {
         senderKeyStore.markSenderKeySharedWith(distributionId, addresses);
     }

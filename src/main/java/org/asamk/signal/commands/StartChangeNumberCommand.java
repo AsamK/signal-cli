@@ -39,7 +39,9 @@ public class StartChangeNumberCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var newNumber = ns.getString("number");
         final var voiceVerification = Boolean.TRUE.equals(ns.getBoolean("voice"));

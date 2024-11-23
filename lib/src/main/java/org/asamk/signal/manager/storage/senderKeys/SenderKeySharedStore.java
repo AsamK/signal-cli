@@ -65,7 +65,8 @@ public class SenderKeySharedStore {
     }
 
     public void markSenderKeySharedWith(
-            final DistributionId distributionId, final Collection<SignalProtocolAddress> addresses
+            final DistributionId distributionId,
+            final Collection<SignalProtocolAddress> addresses
     ) {
         final var newEntries = addresses.stream()
                 .map(a -> new SenderKeySharedEntry(a.getName(), a.getDeviceId()))
@@ -138,9 +139,7 @@ public class SenderKeySharedStore {
         }
     }
 
-    public void deleteSharedWith(
-            final ServiceId serviceId, final int deviceId, final DistributionId distributionId
-    ) {
+    public void deleteSharedWith(final ServiceId serviceId, final int deviceId, final DistributionId distributionId) {
         try (final var connection = database.getConnection()) {
             final var sql = (
                     """
@@ -192,7 +191,9 @@ public class SenderKeySharedStore {
     }
 
     private void markSenderKeysSharedWith(
-            final Connection connection, final DistributionId distributionId, final Set<SenderKeySharedEntry> newEntries
+            final Connection connection,
+            final DistributionId distributionId,
+            final Set<SenderKeySharedEntry> newEntries
     ) throws SQLException {
         final var sql = (
                 """

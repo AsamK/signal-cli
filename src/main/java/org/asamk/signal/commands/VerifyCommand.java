@@ -55,13 +55,17 @@ public class VerifyCommand implements RegistrationCommand, JsonRpcRegistrationCo
 
     @Override
     public void handleCommand(
-            final VerifyParams request, final RegistrationManager m, final JsonWriter jsonWriter
+            final VerifyParams request,
+            final RegistrationManager m,
+            final JsonWriter jsonWriter
     ) throws CommandException {
         verify(m, request.verificationCode(), request.pin());
     }
 
     private void verify(
-            final RegistrationManager m, final String verificationCode, final String pin
+            final RegistrationManager m,
+            final String verificationCode,
+            final String pin
     ) throws UserErrorException, IOErrorException {
         try {
             m.verifyAccount(verificationCode, pin);

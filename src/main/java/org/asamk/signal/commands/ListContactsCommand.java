@@ -47,7 +47,9 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var allRecipients = Boolean.TRUE.equals(ns.getBoolean("all-recipients"));
         final var blocked = ns.getBoolean("blocked");

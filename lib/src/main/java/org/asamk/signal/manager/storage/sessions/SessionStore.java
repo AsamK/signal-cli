@@ -342,7 +342,9 @@ public class SessionStore implements SignalServiceSessionStore {
     }
 
     private void storeSession(
-            final Connection connection, final Key key, final SessionRecord session
+            final Connection connection,
+            final Key key,
+            final SessionRecord session
     ) throws SQLException {
         synchronized (cachedSessions) {
             cachedSessions.put(key, session);

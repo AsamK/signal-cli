@@ -101,9 +101,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         writer.println();
     }
 
-    private void printDataMessage(
-            PlainTextWriter writer, MessageEnvelope.Data message
-    ) {
+    private void printDataMessage(PlainTextWriter writer, MessageEnvelope.Data message) {
         writer.println("Message timestamp: {}", DateUtils.formatTimestamp(message.timestamp()));
         if (message.isViewOnce()) {
             writer.println("=VIEW ONCE=");
@@ -197,16 +195,12 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printEditMessage(
-            PlainTextWriter writer, MessageEnvelope.Edit message
-    ) {
+    private void printEditMessage(PlainTextWriter writer, MessageEnvelope.Edit message) {
         writer.println("Edit: Target message timestamp: {}", DateUtils.formatTimestamp(message.targetSentTimestamp()));
         printDataMessage(writer.indentedWriter(), message.dataMessage());
     }
 
-    private void printStoryMessage(
-            PlainTextWriter writer, MessageEnvelope.Story message
-    ) {
+    private void printStoryMessage(PlainTextWriter writer, MessageEnvelope.Story message) {
         writer.println("Story: with replies: {}", message.allowsReplies());
         if (message.groupId().isPresent()) {
             writer.println("Group info:");
@@ -226,9 +220,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printTypingMessage(
-            final PlainTextWriter writer, final MessageEnvelope.Typing typingMessage
-    ) {
+    private void printTypingMessage(final PlainTextWriter writer, final MessageEnvelope.Typing typingMessage) {
         writer.println("Action: {}", typingMessage.type());
         writer.println("Timestamp: {}", DateUtils.formatTimestamp(typingMessage.timestamp()));
         if (typingMessage.groupId().isPresent()) {
@@ -238,9 +230,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printReceiptMessage(
-            final PlainTextWriter writer, final MessageEnvelope.Receipt receiptMessage
-    ) {
+    private void printReceiptMessage(final PlainTextWriter writer, final MessageEnvelope.Receipt receiptMessage) {
         writer.println("When: {}", DateUtils.formatTimestamp(receiptMessage.when()));
         if (receiptMessage.type() == MessageEnvelope.Receipt.Type.DELIVERY) {
             writer.println("Is delivery receipt");
@@ -257,9 +247,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printCallMessage(
-            final PlainTextWriter writer, final MessageEnvelope.Call callMessage
-    ) {
+    private void printCallMessage(final PlainTextWriter writer, final MessageEnvelope.Call callMessage) {
         if (callMessage.destinationDeviceId().isPresent()) {
             final var deviceId = callMessage.destinationDeviceId().get();
             writer.println("Destination device id: {}", deviceId);
@@ -302,9 +290,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printSyncMessage(
-            final PlainTextWriter writer, final MessageEnvelope.Sync syncMessage
-    ) {
+    private void printSyncMessage(final PlainTextWriter writer, final MessageEnvelope.Sync syncMessage) {
         if (syncMessage.contacts().isPresent()) {
             final var contactsMessage = syncMessage.contacts().get();
             var type = contactsMessage.isComplete() ? "complete" : "partial";
@@ -392,9 +378,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printPreview(
-            final PlainTextWriter writer, final MessageEnvelope.Data.Preview preview
-    ) {
+    private void printPreview(final PlainTextWriter writer, final MessageEnvelope.Data.Preview preview) {
         writer.println("Title: {}", preview.title());
         writer.println("Description: {}", preview.description());
         writer.println("Date: {}", DateUtils.formatTimestamp(preview.date()));
@@ -405,25 +389,19 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printSticker(
-            final PlainTextWriter writer, final MessageEnvelope.Data.Sticker sticker
-    ) {
+    private void printSticker(final PlainTextWriter writer, final MessageEnvelope.Data.Sticker sticker) {
         writer.println("Pack id: {}", Hex.toStringCondensed(sticker.packId().serialize()));
         writer.println("Sticker id: {}", sticker.stickerId());
     }
 
-    private void printReaction(
-            final PlainTextWriter writer, final MessageEnvelope.Data.Reaction reaction
-    ) {
+    private void printReaction(final PlainTextWriter writer, final MessageEnvelope.Data.Reaction reaction) {
         writer.println("Emoji: {}", reaction.emoji());
         writer.println("Target author: {}", formatContact(reaction.targetAuthor()));
         writer.println("Target timestamp: {}", DateUtils.formatTimestamp(reaction.targetSentTimestamp()));
         writer.println("Is remove: {}", reaction.isRemove());
     }
 
-    private void printQuote(
-            final PlainTextWriter writer, final MessageEnvelope.Data.Quote quote
-    ) {
+    private void printQuote(final PlainTextWriter writer, final MessageEnvelope.Data.Quote quote) {
         writer.println("Id: {}", quote.id());
         writer.println("Author: {}", formatContact(quote.author()));
         if (quote.text().isPresent()) {
@@ -541,17 +519,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printGroupContext(
-            final PlainTextWriter writer, final MessageEnvelope.Data.GroupContext groupContext
-    ) {
+    private void printGroupContext(final PlainTextWriter writer, final MessageEnvelope.Data.GroupContext groupContext) {
         printGroupInfo(writer, groupContext.groupId());
         writer.println("Revision: {}", groupContext.revision());
         writer.println("Type: {}", groupContext.isGroupUpdate() ? "UPDATE" : "DELIVER");
     }
 
-    private void printStoryContext(
-            final PlainTextWriter writer, final MessageEnvelope.Data.StoryContext storyContext
-    ) {
+    private void printStoryContext(final PlainTextWriter writer, final MessageEnvelope.Data.StoryContext storyContext) {
         writer.println("Sender: {}", formatContact(storyContext.author()));
         writer.println("Sent timestamp: {}", storyContext.sentTimestamp());
     }
@@ -567,15 +541,11 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
     }
 
-    private void printMention(
-            PlainTextWriter writer, MessageEnvelope.Data.Mention mention
-    ) {
+    private void printMention(PlainTextWriter writer, MessageEnvelope.Data.Mention mention) {
         writer.println("- {}: {} (length: {})", formatContact(mention.recipient()), mention.start(), mention.length());
     }
 
-    private void printTextStyle(
-            PlainTextWriter writer, TextStyle textStyle
-    ) {
+    private void printTextStyle(PlainTextWriter writer, TextStyle textStyle) {
         writer.println("- {}: {} (length: {})", textStyle.style().name(), textStyle.start(), textStyle.length());
     }
 

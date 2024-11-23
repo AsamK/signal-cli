@@ -218,7 +218,9 @@ public class StorageHelper {
     }
 
     private boolean writeToStorage(
-            final StorageKey storageKey, final SignalStorageManifest remoteManifest, final boolean needsForcePush
+            final StorageKey storageKey,
+            final SignalStorageManifest remoteManifest,
+            final boolean needsForcePush
     ) throws IOException, RetryLaterException {
         final WriteOperationResult remoteWriteOperation;
         try (final var connection = account.getAccountDatabase().getConnection()) {
@@ -408,7 +410,8 @@ public class StorageHelper {
     }
 
     private List<SignalStorageRecord> getSignalStorageRecords(
-            final StorageKey storageKey, final List<StorageId> storageIds
+            final StorageKey storageKey,
+            final List<StorageId> storageIds
     ) throws IOException {
         List<SignalStorageRecord> records;
         try {
@@ -430,7 +433,8 @@ public class StorageHelper {
     }
 
     private List<SignalStorageRecord> buildLocalStorageRecords(
-            final Connection connection, final List<StorageId> storageIds
+            final Connection connection,
+            final List<StorageId> storageIds
     ) throws SQLException {
         final var records = new ArrayList<SignalStorageRecord>();
         for (final var storageId : storageIds) {
@@ -443,7 +447,8 @@ public class StorageHelper {
     }
 
     private SignalStorageRecord buildLocalStorageRecord(
-            Connection connection, StorageId storageId
+            Connection connection,
+            StorageId storageId
     ) throws SQLException {
         return switch (ManifestRecord.Identifier.Type.fromValue(storageId.getType())) {
             case ManifestRecord.Identifier.Type.CONTACT -> {
@@ -484,7 +489,8 @@ public class StorageHelper {
      * exclusive to the local data set.
      */
     private static IdDifferenceResult findIdDifference(
-            Collection<StorageId> remoteIds, Collection<StorageId> localIds
+            Collection<StorageId> remoteIds,
+            Collection<StorageId> localIds
     ) {
         final var base64Encoder = Base64.getEncoder();
         final var remoteByRawId = remoteIds.stream()
@@ -520,7 +526,8 @@ public class StorageHelper {
     }
 
     private List<StorageId> processKnownRecords(
-            final Connection connection, List<SignalStorageRecord> records
+            final Connection connection,
+            List<SignalStorageRecord> records
     ) throws SQLException {
         final var unknownRecords = new ArrayList<StorageId>();
 

@@ -49,7 +49,9 @@ public class IdentityKeyStore {
     }
 
     public IdentityKeyStore(
-            final Database database, final TrustNewIdentity trustNewIdentity, RecipientStore recipientStore
+            final Database database,
+            final TrustNewIdentity trustNewIdentity,
+            RecipientStore recipientStore
     ) {
         this.database = database;
         this.trustNewIdentity = trustNewIdentity;
@@ -65,7 +67,9 @@ public class IdentityKeyStore {
     }
 
     public boolean saveIdentity(
-            final Connection connection, final ServiceId serviceId, final IdentityKey identityKey
+            final Connection connection,
+            final ServiceId serviceId,
+            final IdentityKey identityKey
     ) throws SQLException {
         return saveIdentity(connection, serviceId.toString(), identityKey);
     }
@@ -82,7 +86,9 @@ public class IdentityKeyStore {
     }
 
     private boolean saveIdentity(
-            final Connection connection, final String address, final IdentityKey identityKey
+            final Connection connection,
+            final String address,
+            final IdentityKey identityKey
     ) throws SQLException {
         final var identityInfo = loadIdentity(connection, address);
         if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
@@ -230,9 +236,7 @@ public class IdentityKeyStore {
         logger.debug("Complete identities migration took {}ms", (System.nanoTime() - start) / 1000000);
     }
 
-    private IdentityInfo loadIdentity(
-            final Connection connection, final String address
-    ) throws SQLException {
+    private IdentityInfo loadIdentity(final Connection connection, final String address) throws SQLException {
         final var sql = (
                 """
                 SELECT i.address, i.identity_key, i.added_timestamp, i.trust_level

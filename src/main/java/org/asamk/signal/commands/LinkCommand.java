@@ -33,7 +33,9 @@ public class LinkCommand implements ProvisioningCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final ProvisioningManager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final ProvisioningManager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var writer = (PlainTextWriter) outputWriter;
 

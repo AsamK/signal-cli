@@ -13,11 +13,14 @@ import java.util.List;
 public interface SignalControl extends DBusInterface {
 
     void register(
-            String number, boolean voiceVerification
+            String number,
+            boolean voiceVerification
     ) throws Error.Failure, Error.InvalidNumber, Error.RequiresCaptcha;
 
     void registerWithCaptcha(
-            String number, boolean voiceVerification, String captcha
+            String number,
+            boolean voiceVerification,
+            String captcha
     ) throws Error.Failure, Error.InvalidNumber, Error.RequiresCaptcha;
 
     void verify(String number, String verificationCode) throws Error.Failure, Error.InvalidNumber;

@@ -31,7 +31,9 @@ public class SendPaymentNotificationCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var recipientString = ns.getString("recipient");
         final var recipientIdentifier = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getSelfNumber());

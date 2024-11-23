@@ -611,7 +611,8 @@ public class AccountDatabase extends Database {
     }
 
     private static void createUuidMappingTable(
-            final Connection connection, final Statement statement
+            final Connection connection,
+            final Statement statement
     ) throws SQLException {
         statement.executeUpdate("""
                                 CREATE TABLE tmp_mapping_table (

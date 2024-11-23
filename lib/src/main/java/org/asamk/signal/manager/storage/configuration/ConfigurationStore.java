@@ -59,7 +59,8 @@ public class ConfigurationStore {
     }
 
     public void setUnidentifiedDeliveryIndicators(
-            final Connection connection, final boolean value
+            final Connection connection,
+            final boolean value
     ) throws SQLException {
         if (keyValueStore.storeEntry(connection, unidentifiedDeliveryIndicators, value)) {
             recipientStore.rotateSelfStorageId(connection);
@@ -125,7 +126,8 @@ public class ConfigurationStore {
     }
 
     public void setPhoneNumberSharingMode(
-            final Connection connection, final PhoneNumberSharingMode value
+            final Connection connection,
+            final PhoneNumberSharingMode value
     ) throws SQLException {
         if (keyValueStore.storeEntry(connection, phoneNumberSharingMode, value)) {
             recipientStore.rotateSelfStorageId(connection);

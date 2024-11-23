@@ -105,7 +105,9 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void register(
-            boolean voiceVerification, String captcha, final boolean forceRegister
+            boolean voiceVerification,
+            String captcha,
+            final boolean forceRegister
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethodNotAvailableException {
         if (account.isRegistered()
                 && account.getServiceEnvironment() != null
@@ -145,7 +147,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void verifyAccount(
-            String verificationCode, String pin
+            String verificationCode,
+            String pin
     ) throws IOException, PinLockedException, IncorrectPinException {
         if (account.isRegistered()) {
             throw new IOException("Account is already registered");

@@ -13,7 +13,9 @@ public class ResendMessageAction implements HandleAction {
     private final MessageSendLogEntry messageSendLogEntry;
 
     public ResendMessageAction(
-            final RecipientId recipientId, final long timestamp, final MessageSendLogEntry messageSendLogEntry
+            final RecipientId recipientId,
+            final long timestamp,
+            final MessageSendLogEntry messageSendLogEntry
     ) {
         this.recipientId = recipientId;
         this.timestamp = timestamp;

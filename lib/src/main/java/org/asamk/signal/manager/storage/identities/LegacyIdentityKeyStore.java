@@ -41,7 +41,9 @@ public class LegacyIdentityKeyStore {
     static final Pattern identityFileNamePattern = Pattern.compile("(\\d+)");
 
     private static List<IdentityInfo> getIdentities(
-            final File identitiesPath, final RecipientResolver resolver, final RecipientAddressResolver addressResolver
+            final File identitiesPath,
+            final RecipientResolver resolver,
+            final RecipientAddressResolver addressResolver
     ) {
         final var files = identitiesPath.listFiles();
         if (files == null) {
@@ -66,7 +68,9 @@ public class LegacyIdentityKeyStore {
     }
 
     private static IdentityInfo loadIdentityLocked(
-            final RecipientId recipientId, RecipientAddressResolver addressResolver, final File identitiesPath
+            final RecipientId recipientId,
+            RecipientAddressResolver addressResolver,
+            final File identitiesPath
     ) {
         final var file = getIdentityFile(recipientId, identitiesPath);
         if (!file.exists()) {

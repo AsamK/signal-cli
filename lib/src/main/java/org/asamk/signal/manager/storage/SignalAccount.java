@@ -189,7 +189,10 @@ public class SignalAccount implements Closeable {
     }
 
     public static SignalAccount load(
-            File dataPath, String accountPath, boolean waitForLock, final Settings settings
+            File dataPath,
+            String accountPath,
+            boolean waitForLock,
+            final Settings settings
     ) throws IOException {
         logger.trace("Opening account file");
         final var fileName = getFileName(dataPath, accountPath);
@@ -316,7 +319,9 @@ public class SignalAccount implements Closeable {
     }
 
     public void finishLinking(
-            final int deviceId, final PreKeyCollection aciPreKeys, final PreKeyCollection pniPreKeys
+            final int deviceId,
+            final PreKeyCollection aciPreKeys,
+            final PreKeyCollection pniPreKeys
     ) {
         this.registered = true;
         this.deviceId = deviceId;
@@ -375,7 +380,9 @@ public class SignalAccount implements Closeable {
     }
 
     private void mergeRecipients(
-            final Connection connection, RecipientId recipientId, RecipientId toBeMergedRecipientId
+            final Connection connection,
+            RecipientId recipientId,
+            RecipientId toBeMergedRecipientId
     ) throws SQLException {
         getMessageCache().mergeRecipients(recipientId, toBeMergedRecipientId);
         getGroupStore().mergeRecipients(connection, recipientId, toBeMergedRecipientId);
@@ -438,9 +445,7 @@ public class SignalAccount implements Closeable {
         return f.exists() && !f.isDirectory() && f.length() > 0L;
     }
 
-    private void load(
-            File dataPath, String accountPath, final Settings settings
-    ) throws IOException {
+    private void load(File dataPath, String accountPath, final Settings settings) throws IOException {
         logger.trace("Loading account file {}", accountPath);
         this.dataPath = dataPath;
         this.accountPath = accountPath;
@@ -786,7 +791,8 @@ public class SignalAccount implements Closeable {
     }
 
     private void loadLegacyStores(
-            final JsonNode rootNode, final LegacyJsonSignalProtocolStore legacySignalProtocolStore
+            final JsonNode rootNode,
+            final LegacyJsonSignalProtocolStore legacySignalProtocolStore
     ) {
         var legacyRecipientStoreNode = rootNode.get("recipientStore");
         if (legacyRecipientStoreNode != null) {

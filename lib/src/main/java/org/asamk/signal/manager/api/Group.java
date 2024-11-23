@@ -27,7 +27,9 @@ public record Group(
 ) {
 
     public static Group from(
-            final GroupInfo groupInfo, final RecipientAddressResolver recipientStore, final RecipientId selfRecipientId
+            final GroupInfo groupInfo,
+            final RecipientAddressResolver recipientStore,
+            final RecipientId selfRecipientId
     ) {
         return new Group(groupInfo.getGroupId(),
                 groupInfo.getTitle(),

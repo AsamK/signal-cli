@@ -36,7 +36,9 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         var givenName = ns.getString("given-name");
         var familyName = ns.getString("family-name");

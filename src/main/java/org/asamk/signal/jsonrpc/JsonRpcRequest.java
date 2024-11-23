@@ -38,7 +38,9 @@ public final class JsonRpcRequest extends JsonRpcMessage {
     private ValueNode id;
 
     public static JsonRpcRequest forNotification(
-            final String method, final ContainerNode<?> params, final ValueNode id
+            final String method,
+            final ContainerNode<?> params,
+            final ValueNode id
     ) {
         return new JsonRpcRequest("2.0", method, params, id);
     }
@@ -47,7 +49,10 @@ public final class JsonRpcRequest extends JsonRpcMessage {
     }
 
     private JsonRpcRequest(
-            final String jsonrpc, final String method, final ContainerNode<?> params, final ValueNode id
+            final String jsonrpc,
+            final String method,
+            final ContainerNode<?> params,
+            final ValueNode id
     ) {
         this.jsonrpc = jsonrpc;
         this.method = method;

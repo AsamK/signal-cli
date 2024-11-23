@@ -92,7 +92,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         Shutdown.installHandler();
         logger.info("Starting daemon in single-account mode for " + m.getSelfNumber());
@@ -117,7 +119,9 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
+            final Namespace ns,
+            final MultiAccountManager c,
+            final OutputWriter outputWriter
     ) throws CommandException {
         Shutdown.installHandler();
         logger.info("Starting daemon in multi-account mode");

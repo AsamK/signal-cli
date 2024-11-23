@@ -21,9 +21,7 @@ public class PinHelper {
         this.secureValueRecoveries = secureValueRecoveries;
     }
 
-    public void setRegistrationLockPin(
-            String pin, MasterKey masterKey
-    ) throws IOException {
+    public void setRegistrationLockPin(String pin, MasterKey masterKey) throws IOException {
         IOException exception = null;
         for (final var secureValueRecovery : secureValueRecoveries) {
             try {
@@ -82,7 +80,8 @@ public class PinHelper {
     }
 
     public SecureValueRecovery.RestoreResponse.Success getRegistrationLockData(
-            String pin, LockedException lockedException
+            String pin,
+            LockedException lockedException
     ) throws IOException, IncorrectPinException {
         var svr2Credentials = lockedException.getSvr2Credentials();
         if (svr2Credentials != null) {
@@ -103,7 +102,9 @@ public class PinHelper {
     }
 
     public SecureValueRecovery.RestoreResponse.Success getRegistrationLockData(
-            SecureValueRecovery secureValueRecovery, AuthCredentials authCredentials, String pin
+            SecureValueRecovery secureValueRecovery,
+            AuthCredentials authCredentials,
+            String pin
     ) throws IOException, IncorrectPinException {
         final var restoreResponse = secureValueRecovery.restoreDataPreRegistration(authCredentials, null, pin);
 

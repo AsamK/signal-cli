@@ -19,7 +19,9 @@ public interface JsonRpcMultiLocalCommand extends JsonRpcMultiCommand<Map<String
     }
 
     default void handleCommand(
-            Map<String, Object> request, MultiAccountManager c, JsonWriter jsonWriter
+            Map<String, Object> request,
+            MultiAccountManager c,
+            JsonWriter jsonWriter
     ) throws CommandException {
         Namespace commandNamespace = new JsonRpcNamespace(request == null ? Map.of() : request);
         handleCommand(commandNamespace, c, jsonWriter);

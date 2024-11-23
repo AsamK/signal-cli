@@ -165,7 +165,9 @@ public class AccountHelper {
     }
 
     public void startChangeNumber(
-            String newNumber, boolean voiceVerification, String captcha
+            String newNumber,
+            boolean voiceVerification,
+            String captcha
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethodNotAvailableException {
         final var accountManager = dependencies.createUnauthenticatedAccountManager(newNumber, account.getPassword());
         final var registrationApi = accountManager.getRegistrationApi();
@@ -178,7 +180,9 @@ public class AccountHelper {
     }
 
     public void finishChangeNumber(
-            String newNumber, String verificationCode, String pin
+            String newNumber,
+            String verificationCode,
+            String pin
     ) throws IncorrectPinException, PinLockedException, IOException {
         for (var attempts = 0; attempts < 5; attempts++) {
             try {
@@ -196,7 +200,9 @@ public class AccountHelper {
     }
 
     private void finishChangeNumberInternal(
-            String newNumber, String verificationCode, String pin
+            String newNumber,
+            String verificationCode,
+            String pin
     ) throws IncorrectPinException, PinLockedException, IOException {
         final var pniIdentity = KeyUtils.generateIdentityKeyPair();
         final var encryptedDeviceMessages = new ArrayList<OutgoingPushMessage>();
@@ -308,9 +314,7 @@ public class AccountHelper {
         handlePniChangeNumberMessage(selfChangeNumber, updatePni);
     }
 
-    public void handlePniChangeNumberMessage(
-            final SyncMessage.PniChangeNumber pniChangeNumber, final PNI updatedPni
-    ) {
+    public void handlePniChangeNumberMessage(final SyncMessage.PniChangeNumber pniChangeNumber, final PNI updatedPni) {
         if (pniChangeNumber.identityKeyPair != null
                 && pniChangeNumber.registrationId != null
                 && pniChangeNumber.signedPreKey != null) {

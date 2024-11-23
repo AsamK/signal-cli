@@ -15,7 +15,8 @@ public class MergeRecipientHelper {
     private static final Logger logger = LoggerFactory.getLogger(MergeRecipientHelper.class);
 
     static Pair<RecipientId, List<RecipientId>> resolveRecipientTrustedLocked(
-            Store store, RecipientAddress address
+            Store store,
+            RecipientAddress address
     ) throws SQLException {
         // address has at least one of serviceId/pni and optionally number/username
 

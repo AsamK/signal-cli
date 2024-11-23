@@ -66,7 +66,9 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         Shutdown.installHandler();
         final var timeout = ns.getDouble("timeout");
@@ -98,7 +100,9 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
 
     @Override
     public void handleCommand(
-            final ReceiveParams request, final Manager m, final JsonWriter jsonWriter
+            final ReceiveParams request,
+            final Manager m,
+            final JsonWriter jsonWriter
     ) throws CommandException {
         final var timeout = request.timeout() == null ? 3.0 : request.timeout();
         final var maxMessagesRaw = request.maxMessages() == null ? -1 : request.maxMessages();

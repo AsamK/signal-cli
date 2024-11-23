@@ -59,7 +59,9 @@ public class SenderKeyRecordStore implements SenderKeyStore {
 
     @Override
     public void storeSenderKey(
-            final SignalProtocolAddress address, final UUID distributionId, final SenderKeyRecord record
+            final SignalProtocolAddress address,
+            final UUID distributionId,
+            final SenderKeyRecord record
     ) {
         final var key = getKey(address, distributionId);
 
@@ -165,7 +167,9 @@ public class SenderKeyRecordStore implements SenderKeyStore {
     }
 
     private void storeSenderKey(
-            final Connection connection, final Key key, final SenderKeyRecord senderKeyRecord
+            final Connection connection,
+            final Key key,
+            final SenderKeyRecord senderKeyRecord
     ) throws SQLException {
         final var sqlUpdate = """
                               UPDATE %s

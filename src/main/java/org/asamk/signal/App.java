@@ -292,7 +292,8 @@ public class App {
     }
 
     private RegistrationManager loadRegistrationManager(
-            final String account, final SignalAccountFiles signalAccountFiles
+            final String account,
+            final SignalAccountFiles signalAccountFiles
     ) throws UnexpectedErrorException {
         try {
             return signalAccountFiles.initRegistrationManager(account);
@@ -306,7 +307,8 @@ public class App {
     }
 
     private Manager loadManager(
-            final String account, final SignalAccountFiles signalAccountFiles
+            final String account,
+            final SignalAccountFiles signalAccountFiles
     ) throws CommandException {
         logger.trace("Loading account file for {}", account);
         try {

@@ -34,7 +34,8 @@ public class LegacyProfileStore {
 
         @Override
         public List<LegacySignalProfileEntry> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 

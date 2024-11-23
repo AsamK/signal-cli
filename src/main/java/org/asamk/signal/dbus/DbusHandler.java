@@ -28,7 +28,10 @@ public class DbusHandler implements AutoCloseable {
     private final boolean noReceiveOnStart;
 
     public DbusHandler(
-            final boolean isDbusSystem, final String busname, final Manager m, final boolean noReceiveOnStart
+            final boolean isDbusSystem,
+            final String busname,
+            final Manager m,
+            final boolean noReceiveOnStart
     ) {
         this.isDbusSystem = isDbusSystem;
         this.dbusRunner = (connection) -> {

@@ -60,7 +60,9 @@ public class DeleteLocalAccountDataCommand implements RegistrationCommand, JsonR
 
     @Override
     public void handleCommand(
-            Map<String, Object> request, RegistrationManager m, JsonWriter jsonWriter
+            Map<String, Object> request,
+            RegistrationManager m,
+            JsonWriter jsonWriter
     ) throws CommandException {
         Namespace commandNamespace = new JsonRpcNamespace(request == null ? Map.of() : request);
         handleCommand(commandNamespace, m);

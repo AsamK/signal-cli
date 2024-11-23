@@ -63,13 +63,18 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
 
     @Override
     public void handleCommand(
-            final RegistrationParams request, final RegistrationManager m, final JsonWriter jsonWriter
+            final RegistrationParams request,
+            final RegistrationManager m,
+            final JsonWriter jsonWriter
     ) throws CommandException {
         register(m, Boolean.TRUE.equals(request.voice()), request.captcha(), Boolean.TRUE.equals(request.reregister()));
     }
 
     private void register(
-            final RegistrationManager m, final boolean voiceVerification, final String captcha, final boolean reregister
+            final RegistrationManager m,
+            final boolean voiceVerification,
+            final String captcha,
+            final boolean reregister
     ) throws CommandException {
         try {
             m.register(voiceVerification, captcha, reregister);

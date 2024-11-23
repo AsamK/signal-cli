@@ -63,7 +63,8 @@ public class KeyUtils {
     }
 
     public static SignedPreKeyRecord generateSignedPreKeyRecord(
-            final int signedPreKeyId, final ECPrivateKey privateKey
+            final int signedPreKeyId,
+            final ECPrivateKey privateKey
     ) {
         var keyPair = Curve.generateKeyPair();
         byte[] signature;
@@ -75,9 +76,7 @@ public class KeyUtils {
         return new SignedPreKeyRecord(signedPreKeyId, System.currentTimeMillis(), keyPair, signature);
     }
 
-    public static List<KyberPreKeyRecord> generateKyberPreKeyRecords(
-            final int offset, final ECPrivateKey privateKey
-    ) {
+    public static List<KyberPreKeyRecord> generateKyberPreKeyRecords(final int offset, final ECPrivateKey privateKey) {
         var records = new ArrayList<KyberPreKeyRecord>(PREKEY_BATCH_SIZE);
         for (var i = 0; i < PREKEY_BATCH_SIZE; i++) {
             var preKeyId = (offset + i) % PREKEY_MAXIMUM_ID;

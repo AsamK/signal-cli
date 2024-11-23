@@ -108,7 +108,9 @@ public class SendCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var notifySelf = Boolean.TRUE.equals(ns.getBoolean("notify-self"));
         final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
@@ -257,7 +259,8 @@ public class SendCommand implements JsonRpcLocalCommand {
     }
 
     private List<Message.Mention> parseMentions(
-            final String selfNumber, final List<String> mentionStrings
+            final String selfNumber,
+            final List<String> mentionStrings
     ) throws UserErrorException {
         final var mentionPattern = Pattern.compile("(\\d+):(\\d+):(.+)");
         final var mentions = new ArrayList<Message.Mention>();

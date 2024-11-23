@@ -190,7 +190,9 @@ public final class IncomingMessageHandler {
     }
 
     private SignalServiceContent validate(
-            Envelope envelope, SignalServiceCipherResult cipherResult, long serverDeliveredTimestamp
+            Envelope envelope,
+            SignalServiceCipherResult cipherResult,
+            long serverDeliveredTimestamp
     ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException, InvalidMessageStructureException {
         final var content = cipherResult.getContent();
         final var envelopeMetadata = cipherResult.getMetadata();
@@ -280,7 +282,9 @@ public final class IncomingMessageHandler {
     }
 
     public List<HandleAction> handleMessage(
-            SignalServiceEnvelope envelope, SignalServiceContent content, ReceiveConfig receiveConfig
+            SignalServiceEnvelope envelope,
+            SignalServiceContent content,
+            ReceiveConfig receiveConfig
     ) {
         var actions = new ArrayList<HandleAction>();
         final var senderDeviceAddress = getSender(envelope, content);
@@ -381,7 +385,8 @@ public final class IncomingMessageHandler {
     }
 
     private boolean handlePniSignatureMessage(
-            final SignalServicePniSignatureMessage message, final SignalServiceAddress senderAddress
+            final SignalServicePniSignatureMessage message,
+            final SignalServiceAddress senderAddress
     ) {
         final var aci = senderAddress.getServiceId();
         final var aciIdentity = account.getIdentityKeyStore().getIdentityInfo(aci);
@@ -865,7 +870,9 @@ public final class IncomingMessageHandler {
     }
 
     private List<HandleAction> handleSignalServiceStoryMessage(
-            SignalServiceStoryMessage message, RecipientId source, boolean ignoreAttachments
+            SignalServiceStoryMessage message,
+            RecipientId source,
+            boolean ignoreAttachments
     ) {
         var actions = new ArrayList<HandleAction>();
         if (message.getGroupContext().isPresent()) {

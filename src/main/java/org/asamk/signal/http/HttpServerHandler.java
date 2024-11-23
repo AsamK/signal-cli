@@ -240,7 +240,9 @@ public class HttpServerHandler implements AutoCloseable {
     }
 
     private List<Pair<Manager, Manager.ReceiveMessageHandler>> subscribeReceiveHandlers(
-            final List<Manager> managers, final ServerSentEventSender sender, Callable unsubscribe
+            final List<Manager> managers,
+            final ServerSentEventSender sender,
+            Callable unsubscribe
     ) {
         return managers.stream().map(m1 -> {
             final var receiveMessageHandler = new JsonReceiveMessageHandler(m1, s -> {

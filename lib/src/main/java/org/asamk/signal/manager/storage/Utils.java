@@ -72,7 +72,8 @@ public class Utils {
     }
 
     public static <T> T executeQuerySingleRow(
-            PreparedStatement statement, ResultSetMapper<T> mapper
+            PreparedStatement statement,
+            ResultSetMapper<T> mapper
     ) throws SQLException {
         final var resultSet = statement.executeQuery();
         if (!resultSet.next()) {
@@ -82,7 +83,8 @@ public class Utils {
     }
 
     public static <T> Optional<T> executeQueryForOptional(
-            PreparedStatement statement, ResultSetMapper<T> mapper
+            PreparedStatement statement,
+            ResultSetMapper<T> mapper
     ) throws SQLException {
         final var resultSet = statement.executeQuery();
         if (!resultSet.next()) {
@@ -92,7 +94,8 @@ public class Utils {
     }
 
     public static <T> Stream<T> executeQueryForStream(
-            PreparedStatement statement, ResultSetMapper<T> mapper
+            PreparedStatement statement,
+            ResultSetMapper<T> mapper
     ) throws SQLException {
         final var resultSet = statement.executeQuery();
 

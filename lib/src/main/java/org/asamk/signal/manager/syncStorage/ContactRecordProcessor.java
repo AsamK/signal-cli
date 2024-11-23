@@ -91,9 +91,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
     }
 
     @Override
-    protected SignalContactRecord merge(
-            SignalContactRecord remote, SignalContactRecord local
-    ) {
+    protected SignalContactRecord merge(SignalContactRecord remote, SignalContactRecord local) {
         String profileGivenName;
         String profileFamilyName;
         if (remote.getProfileGivenName().isPresent() || remote.getProfileFamilyName().isPresent()) {

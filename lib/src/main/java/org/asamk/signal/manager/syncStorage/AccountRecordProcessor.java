@@ -33,7 +33,9 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
     private final JobExecutor jobExecutor;
 
     public AccountRecordProcessor(
-            SignalAccount account, Connection connection, final JobExecutor jobExecutor
+            SignalAccount account,
+            Connection connection,
+            final JobExecutor jobExecutor
     ) throws SQLException {
         this.account = account;
         this.connection = connection;

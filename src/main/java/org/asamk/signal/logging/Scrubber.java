@@ -249,9 +249,7 @@ public final class Scrubber {
         return scrub(in, IPV4_PATTERN, (matcher, output) -> output.append(IPV4_CENSOR));
     }
 
-    private static CharSequence scrub(
-            CharSequence in, Pattern pattern, ProcessMatch processMatch
-    ) {
+    private static CharSequence scrub(CharSequence in, Pattern pattern, ProcessMatch processMatch) {
         final StringBuilder output = new StringBuilder(in.length());
         final Matcher matcher = pattern.matcher(in);
 

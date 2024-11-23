@@ -41,7 +41,9 @@ public class AccountsStore {
     private final AccountLoader accountLoader;
 
     public AccountsStore(
-            final File dataPath, final ServiceEnvironment serviceEnvironment, final AccountLoader accountLoader
+            final File dataPath,
+            final ServiceEnvironment serviceEnvironment,
+            final AccountLoader accountLoader
     ) throws IOException {
         this.dataPath = dataPath;
         this.serviceEnvironment = getServiceEnvironmentString(serviceEnvironment);
@@ -202,7 +204,9 @@ public class AccountsStore {
     }
 
     private AccountsStorage upgradeAccountsFile(
-            final FileChannel fileChannel, final AccountsStorage storage, final int accountsVersion
+            final FileChannel fileChannel,
+            final AccountsStorage storage,
+            final int accountsVersion
     ) {
         try {
             List<AccountsStorage.Account> newAccounts = storage.accounts();

@@ -130,11 +130,15 @@ public interface Manager extends Closeable {
     void deleteUsername() throws IOException;
 
     void startChangeNumber(
-            String newNumber, boolean voiceVerification, String captcha
+            String newNumber,
+            boolean voiceVerification,
+            String captcha
     ) throws RateLimitException, IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, NotPrimaryDeviceException, VerificationMethodNotAvailableException;
 
     void finishChangeNumber(
-            String newNumber, String verificationCode, String pin
+            String newNumber,
+            String verificationCode,
+            String pin
     ) throws IncorrectPinException, PinLockedException, IOException, NotPrimaryDeviceException;
 
     void unregister() throws IOException;
@@ -142,7 +146,8 @@ public interface Manager extends Closeable {
     void deleteAccount() throws IOException;
 
     void submitRateLimitRecaptchaChallenge(
-            String challenge, String captcha
+            String challenge,
+            String captcha
     ) throws IOException, CaptchaRejectedException;
 
     List<Device> getLinkedDevices() throws IOException;
@@ -156,17 +161,21 @@ public interface Manager extends Closeable {
     List<Group> getGroups();
 
     SendGroupMessageResults quitGroup(
-            GroupId groupId, Set<RecipientIdentifier.Single> groupAdmins
+            GroupId groupId,
+            Set<RecipientIdentifier.Single> groupAdmins
     ) throws GroupNotFoundException, IOException, NotAGroupMemberException, LastGroupAdminException, UnregisteredRecipientException;
 
     void deleteGroup(GroupId groupId) throws IOException;
 
     Pair<GroupId, SendGroupMessageResults> createGroup(
-            String name, Set<RecipientIdentifier.Single> members, String avatarFile
+            String name,
+            Set<RecipientIdentifier.Single> members,
+            String avatarFile
     ) throws IOException, AttachmentInvalidException, UnregisteredRecipientException;
 
     SendGroupMessageResults updateGroup(
-            final GroupId groupId, final UpdateGroup updateGroup
+            final GroupId groupId,
+            final UpdateGroup updateGroup
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException, UnregisteredRecipientException;
 
     Pair<GroupId, SendGroupMessageResults> joinGroup(
@@ -174,27 +183,29 @@ public interface Manager extends Closeable {
     ) throws IOException, InactiveGroupLinkException, PendingAdminApprovalException;
 
     SendMessageResults sendTypingMessage(
-            TypingAction action, Set<RecipientIdentifier> recipients
+            TypingAction action,
+            Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException;
 
-    SendMessageResults sendReadReceipt(
-            RecipientIdentifier.Single sender, List<Long> messageIds
-    );
+    SendMessageResults sendReadReceipt(RecipientIdentifier.Single sender, List<Long> messageIds);
 
-    SendMessageResults sendViewedReceipt(
-            RecipientIdentifier.Single sender, List<Long> messageIds
-    );
+    SendMessageResults sendViewedReceipt(RecipientIdentifier.Single sender, List<Long> messageIds);
 
     SendMessageResults sendMessage(
-            Message message, Set<RecipientIdentifier> recipients, boolean notifySelf
+            Message message,
+            Set<RecipientIdentifier> recipients,
+            boolean notifySelf
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 
     SendMessageResults sendEditMessage(
-            Message message, Set<RecipientIdentifier> recipients, long editTargetTimestamp
+            Message message,
+            Set<RecipientIdentifier> recipients,
+            long editTargetTimestamp
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 
     SendMessageResults sendRemoteDeleteMessage(
-            long targetSentTimestamp, Set<RecipientIdentifier> recipients
+            long targetSentTimestamp,
+            Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException;
 
     SendMessageResults sendMessageReaction(
@@ -207,13 +218,16 @@ public interface Manager extends Closeable {
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException;
 
     SendMessageResults sendPaymentNotificationMessage(
-            byte[] receipt, String note, RecipientIdentifier.Single recipient
+            byte[] receipt,
+            String note,
+            RecipientIdentifier.Single recipient
     ) throws IOException;
 
     SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException;
 
     SendMessageResults sendMessageRequestResponse(
-            MessageEnvelope.Sync.MessageRequestResponse.Type type, Set<RecipientIdentifier> recipientIdentifiers
+            MessageEnvelope.Sync.MessageRequestResponse.Type type,
+            Set<RecipientIdentifier> recipientIdentifiers
     );
 
     void hideRecipient(RecipientIdentifier.Single recipient);
@@ -223,22 +237,27 @@ public interface Manager extends Closeable {
     void deleteContact(RecipientIdentifier.Single recipient);
 
     void setContactName(
-            RecipientIdentifier.Single recipient, String givenName, final String familyName
+            RecipientIdentifier.Single recipient,
+            String givenName,
+            final String familyName
     ) throws NotPrimaryDeviceException, UnregisteredRecipientException;
 
     void setContactsBlocked(
-            Collection<RecipientIdentifier.Single> recipient, boolean blocked
+            Collection<RecipientIdentifier.Single> recipient,
+            boolean blocked
     ) throws NotPrimaryDeviceException, IOException, UnregisteredRecipientException;
 
     void setGroupsBlocked(
-            Collection<GroupId> groupId, boolean blocked
+            Collection<GroupId> groupId,
+            boolean blocked
     ) throws GroupNotFoundException, IOException, NotPrimaryDeviceException;
 
     /**
      * Change the expiration timer for a contact
      */
     void setExpirationTimer(
-            RecipientIdentifier.Single recipient, int messageExpirationTimer
+            RecipientIdentifier.Single recipient,
+            int messageExpirationTimer
     ) throws IOException, UnregisteredRecipientException;
 
     /**
@@ -277,7 +296,9 @@ public interface Manager extends Closeable {
      * Receive new messages from server, returns if no new message arrive in a timespan of timeout.
      */
     void receiveMessages(
-            Optional<Duration> timeout, Optional<Integer> maxMessages, ReceiveMessageHandler handler
+            Optional<Duration> timeout,
+            Optional<Integer> maxMessages,
+            ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException;
 
     void stopReceiveMessages();
@@ -309,7 +330,8 @@ public interface Manager extends Closeable {
      * @param recipient account of the identity
      */
     boolean trustIdentityVerified(
-            RecipientIdentifier.Single recipient, IdentityVerificationCode verificationCode
+            RecipientIdentifier.Single recipient,
+            IdentityVerificationCode verificationCode
     ) throws UnregisteredRecipientException;
 
     /**

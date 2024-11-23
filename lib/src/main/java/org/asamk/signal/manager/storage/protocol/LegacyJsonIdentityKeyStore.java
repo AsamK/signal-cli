@@ -32,7 +32,9 @@ public class LegacyJsonIdentityKeyStore {
     private final int localRegistrationId;
 
     private LegacyJsonIdentityKeyStore(
-            final List<LegacyIdentityInfo> identities, IdentityKeyPair identityKeyPair, int localRegistrationId
+            final List<LegacyIdentityInfo> identities,
+            IdentityKeyPair identityKeyPair,
+            int localRegistrationId
     ) {
         this.identities = identities;
         this.identityKeyPair = identityKeyPair;
@@ -77,7 +79,8 @@ public class LegacyJsonIdentityKeyStore {
 
         @Override
         public LegacyJsonIdentityKeyStore deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 

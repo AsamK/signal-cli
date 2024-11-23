@@ -104,9 +104,7 @@ public class AttachmentHelper {
         retrieveAttachment(attachment, input -> IOUtils.copyStream(input, outputStream));
     }
 
-    public void retrieveAttachment(
-            SignalServiceAttachment attachment, AttachmentHandler consumer
-    ) throws IOException {
+    public void retrieveAttachment(SignalServiceAttachment attachment, AttachmentHandler consumer) throws IOException {
         if (attachment.isStream()) {
             var input = attachment.asStream().getInputStream();
             // don't close input stream here, it might be reused later (e.g. with contact sync messages ...)
@@ -131,7 +129,8 @@ public class AttachmentHelper {
     }
 
     private InputStream retrieveAttachmentAsStream(
-            SignalServiceAttachmentPointer pointer, File tmpFile
+            SignalServiceAttachmentPointer pointer,
+            File tmpFile
     ) throws IOException {
         try {
             return dependencies.getMessageReceiver()

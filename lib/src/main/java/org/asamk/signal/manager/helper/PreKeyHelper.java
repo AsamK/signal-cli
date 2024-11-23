@@ -30,9 +30,7 @@ public class PreKeyHelper {
     private final SignalAccount account;
     private final SignalDependencies dependencies;
 
-    public PreKeyHelper(
-            final SignalAccount account, final SignalDependencies dependencies
-    ) {
+    public PreKeyHelper(final SignalAccount account, final SignalDependencies dependencies) {
         this.account = account;
         this.dependencies = dependencies;
     }
@@ -79,7 +77,8 @@ public class PreKeyHelper {
     }
 
     private boolean refreshPreKeysIfNecessary(
-            final ServiceIdType serviceIdType, final IdentityKeyPair identityKeyPair
+            final ServiceIdType serviceIdType,
+            final IdentityKeyPair identityKeyPair
     ) throws IOException {
         OneTimePreKeyCounts preKeyCounts;
         try {
@@ -221,7 +220,8 @@ public class PreKeyHelper {
     }
 
     private List<KyberPreKeyRecord> generateKyberPreKeys(
-            ServiceIdType serviceIdType, final IdentityKeyPair identityKeyPair
+            ServiceIdType serviceIdType,
+            final IdentityKeyPair identityKeyPair
     ) {
         final var accountData = account.getAccountData(serviceIdType);
         final var offset = accountData.getPreKeyMetadata().getNextKyberPreKeyId();
@@ -246,7 +246,9 @@ public class PreKeyHelper {
     }
 
     private KyberPreKeyRecord generateLastResortKyberPreKey(
-            ServiceIdType serviceIdType, IdentityKeyPair identityKeyPair, final int offset
+            ServiceIdType serviceIdType,
+            IdentityKeyPair identityKeyPair,
+            final int offset
     ) {
         final var accountData = account.getAccountData(serviceIdType);
         final var signedPreKeyId = accountData.getPreKeyMetadata().getNextKyberPreKeyId() + offset;

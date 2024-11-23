@@ -97,7 +97,8 @@ public class RecipientHelper {
     }
 
     public RecipientId resolveRecipientByUsernameOrLink(
-            String username, boolean forceRefresh
+            String username,
+            boolean forceRefresh
     ) throws UnregisteredRecipientException {
         final Username finalUsername;
         try {
@@ -180,7 +181,8 @@ public class RecipientHelper {
     }
 
     private Map<String, RegisteredUser> getRegisteredUsers(
-            final Set<String> numbers, final boolean isPartialRefresh
+            final Set<String> numbers,
+            final boolean isPartialRefresh
     ) throws IOException {
         Map<String, RegisteredUser> registeredUsers = getRegisteredUsersV2(numbers, isPartialRefresh);
 
@@ -211,7 +213,8 @@ public class RecipientHelper {
     }
 
     private Map<String, RegisteredUser> getRegisteredUsersV2(
-            final Set<String> numbers, boolean isPartialRefresh
+            final Set<String> numbers,
+            boolean isPartialRefresh
     ) throws IOException {
         final var previousNumbers = isPartialRefresh ? Set.<String>of() : account.getCdsiStore().getAllNumbers();
         final var newNumbers = new HashSet<>(numbers) {{

@@ -81,7 +81,10 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(DbusSignalImpl.class);
 
     public DbusSignalImpl(
-            final Manager m, DBusConnection connection, final String objectPath, final boolean noReceiveOnStart
+            final Manager m,
+            DBusConnection connection,
+            final String objectPath,
+            final boolean noReceiveOnStart
     ) {
         this.m = m;
         this.connection = connection;
@@ -258,16 +261,12 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     }
 
     @Override
-    public long sendRemoteDeleteMessage(
-            final long targetSentTimestamp, final String recipient
-    ) {
+    public long sendRemoteDeleteMessage(final long targetSentTimestamp, final String recipient) {
         return sendRemoteDeleteMessage(targetSentTimestamp, List.of(recipient));
     }
 
     @Override
-    public long sendRemoteDeleteMessage(
-            final long targetSentTimestamp, final List<String> recipients
-    ) {
+    public long sendRemoteDeleteMessage(final long targetSentTimestamp, final List<String> recipients) {
         try {
             final var results = m.sendRemoteDeleteMessage(targetSentTimestamp,
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
@@ -323,7 +322,9 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public long sendPaymentNotification(
-            final byte[] receipt, final String note, final String recipient
+            final byte[] receipt,
+            final String note,
+            final String recipient
     ) throws Error.Failure {
         try {
             final var results = m.sendPaymentNotificationMessage(receipt,
@@ -338,7 +339,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public void sendTyping(
-            final String recipient, final boolean stop
+            final String recipient,
+            final boolean stop
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {
         try {
             final var results = m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
@@ -355,7 +357,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public void sendReadReceipt(
-            final String recipient, final List<Long> messageIds
+            final String recipient,
+            final List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity {
         final var results = m.sendReadReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()), messageIds);
         checkSendMessageResults(results);
@@ -363,7 +366,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public void sendViewedReceipt(
-            final String recipient, final List<Long> messageIds
+            final String recipient,
+            final List<Long> messageIds
     ) throws Error.Failure, Error.UntrustedIdentity {
         final var results = m.sendViewedReceipt(getSingleRecipientIdentifier(recipient, m.getSelfNumber()), messageIds);
         checkSendMessageResults(results);
@@ -389,7 +393,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public long sendNoteToSelfMessage(
-            final String messageText, final List<String> attachments
+            final String messageText,
+            final List<String> attachments
     ) throws Error.AttachmentInvalid, Error.Failure, Error.UntrustedIdentity {
         try {
             final var message = new Message(messageText,
@@ -461,7 +466,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public void sendGroupTyping(
-            final byte[] groupId, final boolean stop
+            final byte[] groupId,
+            final boolean stop
     ) throws Error.Failure, Error.GroupNotFound, Error.UntrustedIdentity {
         try {
             final var results = m.sendTypingMessage(stop ? TypingAction.STOP : TypingAction.START,
@@ -475,9 +481,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     }
 
     @Override
-    public long sendGroupRemoteDeleteMessage(
-            final long targetSentTimestamp, final byte[] groupId
-    ) {
+    public long sendGroupRemoteDeleteMessage(final long targetSentTimestamp, final byte[] groupId) {
         try {
             final var results = m.sendRemoteDeleteMessage(targetSentTimestamp,
                     Set.of(getGroupRecipientIdentifier(groupId)));
@@ -621,7 +625,9 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public byte[] createGroup(
-            final String name, final List<String> members, final String avatar
+            final String name,
+            final List<String> members,
+            final String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber {
         return updateGroupInternal(new byte[0], name, members, avatar);
     }
@@ -900,7 +906,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     }
 
     private static void checkGroupSendMessageResults(
-            long timestamp, Collection<SendMessageResult> results
+            long timestamp,
+            Collection<SendMessageResult> results
     ) throws DBusExecutionException {
         if (results.size() == 1) {
             checkSendMessageResult(timestamp, results.stream().findFirst().get());
@@ -927,7 +934,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     }
 
     private static Set<RecipientIdentifier.Single> getSingleRecipientIdentifiers(
-            final Collection<String> recipientStrings, final String localNumber
+            final Collection<String> recipientStrings,
+            final String localNumber
     ) throws DBusExecutionException {
         final var identifiers = new HashSet<RecipientIdentifier.Single>();
         for (var recipientString : recipientStrings) {
@@ -937,7 +945,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     }
 
     private static RecipientIdentifier.Single getSingleRecipientIdentifier(
-            final String recipientString, final String localNumber
+            final String recipientString,
+            final String localNumber
     ) throws DBusExecutionException {
         try {
             return RecipientIdentifier.Single.fromString(recipientString, localNumber);

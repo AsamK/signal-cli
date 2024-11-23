@@ -33,7 +33,9 @@ public class TrustCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         var recipientString = ns.getString("recipient");
         var recipient = CommandUtil.getSingleRecipientIdentifier(recipientString, m.getSelfNumber());

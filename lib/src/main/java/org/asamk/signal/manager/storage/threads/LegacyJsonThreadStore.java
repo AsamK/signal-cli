@@ -35,7 +35,9 @@ public class LegacyJsonThreadStore {
 
         @Override
         public void serialize(
-                final Map<?, ?> value, final JsonGenerator jgen, final SerializerProvider provider
+                final Map<?, ?> value,
+                final JsonGenerator jgen,
+                final SerializerProvider provider
         ) throws IOException {
             jgen.writeObject(value.values());
         }
@@ -45,7 +47,8 @@ public class LegacyJsonThreadStore {
 
         @Override
         public Map<String, LegacyThreadInfo> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             var threads = new HashMap<String, LegacyThreadInfo>();
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);

@@ -27,7 +27,9 @@ public class DbusRegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void register(
-            final boolean voiceVerification, final String captcha, final boolean forceRegister
+            final boolean voiceVerification,
+            final String captcha,
+            final boolean forceRegister
     ) throws IOException, CaptchaRequiredException {
         if (forceRegister) {
             throw new UnsupportedOperationException();
@@ -41,7 +43,8 @@ public class DbusRegistrationManagerImpl implements RegistrationManager {
 
     @Override
     public void verifyAccount(
-            final String verificationCode, final String pin
+            final String verificationCode,
+            final String pin
     ) throws IOException, PinLockedException, IncorrectPinException {
         if (pin == null) {
             signalControl.verify(number, verificationCode);

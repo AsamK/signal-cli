@@ -11,9 +11,7 @@ public class IdentityInfo {
     private final TrustLevel trustLevel;
     private final long addedTimestamp;
 
-    IdentityInfo(
-            final String address, IdentityKey identityKey, TrustLevel trustLevel, long addedTimestamp
-    ) {
+    IdentityInfo(final String address, IdentityKey identityKey, TrustLevel trustLevel, long addedTimestamp) {
         this.address = address;
         this.identityKey = identityKey;
         this.trustLevel = trustLevel;

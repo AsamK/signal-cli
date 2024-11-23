@@ -18,7 +18,8 @@ import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 public class GroupUtils {
 
     public static void setGroupContext(
-            final SignalServiceDataMessage.Builder messageBuilder, final GroupInfo groupInfo
+            final SignalServiceDataMessage.Builder messageBuilder,
+            final GroupInfo groupInfo
     ) {
         if (groupInfo instanceof GroupInfoV1) {
             var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.DELIVER)

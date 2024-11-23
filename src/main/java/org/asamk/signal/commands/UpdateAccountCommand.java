@@ -47,7 +47,9 @@ public class UpdateAccountCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var deviceName = ns.getString("device-name");
         final var unrestrictedUnidentifiedSender = ns.getBoolean("unrestricted-unidentified-sender");

@@ -88,7 +88,9 @@ public class NumberVerificationUtils {
     }
 
     public static void requestVerificationCode(
-            RegistrationApi registrationApi, String sessionId, boolean voiceVerification
+            RegistrationApi registrationApi,
+            String sessionId,
+            boolean voiceVerification
     ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException {
         final var locale = Utils.getDefaultLocale(Locale.US);
         final var response = registrationApi.requestSmsVerificationCode(sessionId,
@@ -108,7 +110,11 @@ public class NumberVerificationUtils {
     }
 
     public static Pair<VerifyAccountResponse, MasterKey> verifyNumber(
-            String sessionId, String verificationCode, String pin, PinHelper pinHelper, Verifier verifier
+            String sessionId,
+            String verificationCode,
+            String pin,
+            PinHelper pinHelper,
+            Verifier verifier
     ) throws IOException, PinLockedException, IncorrectPinException {
         verificationCode = verificationCode.replace("-", "");
         try {
@@ -138,7 +144,8 @@ public class NumberVerificationUtils {
     }
 
     private static RegistrationSessionMetadataResponse validateSession(
-            final RegistrationApi registrationApi, final String sessionId
+            final RegistrationApi registrationApi,
+            final String sessionId
     ) throws IOException {
         if (sessionId == null || sessionId.isEmpty()) {
             throw new NoSuchSessionException();
@@ -153,7 +160,8 @@ public class NumberVerificationUtils {
     }
 
     private static RegistrationSessionMetadataResponse getValidSession(
-            final RegistrationApi registrationApi, final String sessionId
+            final RegistrationApi registrationApi,
+            final String sessionId
     ) throws IOException {
         try {
             return validateSession(registrationApi, sessionId);
@@ -164,7 +172,9 @@ public class NumberVerificationUtils {
     }
 
     private static RegistrationSessionMetadataResponse submitCaptcha(
-            RegistrationApi registrationApi, String sessionId, String captcha
+            RegistrationApi registrationApi,
+            String sessionId,
+            String captcha
     ) throws IOException, CaptchaRequiredException {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
         try {
@@ -184,7 +194,9 @@ public class NumberVerificationUtils {
     public interface Verifier {
 
         VerifyAccountResponse verify(
-                String sessionId, String verificationCode, String registrationLock
+                String sessionId,
+                String verificationCode,
+                String registrationLock
         ) throws IOException;
     }
 }

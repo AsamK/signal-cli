@@ -28,9 +28,7 @@ public record JsonMessageEnvelope(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonTypingMessage typingMessage
 ) {
 
-    public static JsonMessageEnvelope from(
-            MessageEnvelope envelope, Throwable exception, Manager m
-    ) {
+    public static JsonMessageEnvelope from(MessageEnvelope envelope, Throwable exception, Manager m) {
         final RecipientAddress sourceAddress;
         final Integer sourceDevice;
         if (envelope.sourceAddress().isPresent()) {

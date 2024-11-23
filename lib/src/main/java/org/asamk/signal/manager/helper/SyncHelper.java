@@ -217,7 +217,9 @@ public class SyncHelper {
 
     @NotNull
     private DeviceContact getDeviceContact(
-            final RecipientAddress address, final RecipientId recipientId, final Contact contact
+            final RecipientAddress address,
+            final RecipientId recipientId,
+            final Contact contact
     ) throws IOException {
         var currentIdentity = address.serviceId().isEmpty()
                 ? null
@@ -262,7 +264,9 @@ public class SyncHelper {
     }
 
     public SendMessageResult sendVerifiedMessage(
-            SignalServiceAddress destination, IdentityKey identityKey, TrustLevel trustLevel
+            SignalServiceAddress destination,
+            IdentityKey identityKey,
+            TrustLevel trustLevel
     ) {
         var verifiedMessage = new VerifiedMessage(destination,
                 identityKey,
@@ -278,7 +282,8 @@ public class SyncHelper {
     }
 
     public SendMessageResult sendStickerOperationsMessage(
-            List<StickerPack> installStickers, List<StickerPack> removeStickers
+            List<StickerPack> installStickers,
+            List<StickerPack> removeStickers
     ) {
         var installStickerMessages = installStickers.stream().map(s -> getStickerPackOperationMessage(s, true));
         var removeStickerMessages = removeStickers.stream().map(s -> getStickerPackOperationMessage(s, false));
@@ -288,7 +293,8 @@ public class SyncHelper {
     }
 
     private static StickerPackOperationMessage getStickerPackOperationMessage(
-            final StickerPack s, final boolean installed
+            final StickerPack s,
+            final boolean installed
     ) {
         return new StickerPackOperationMessage(s.packId().serialize(),
                 s.packKey(),
@@ -414,15 +420,14 @@ public class SyncHelper {
         }
     }
 
-    public SendMessageResult sendMessageRequestResponse(
-            final MessageRequestResponse.Type type, final GroupId groupId
-    ) {
+    public SendMessageResult sendMessageRequestResponse(final MessageRequestResponse.Type type, final GroupId groupId) {
         final var response = MessageRequestResponseMessage.forGroup(groupId.serialize(), localToRemoteType(type));
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forMessageRequestResponse(response));
     }
 
     public SendMessageResult sendMessageRequestResponse(
-            final MessageRequestResponse.Type type, final RecipientId recipientId
+            final MessageRequestResponse.Type type,
+            final RecipientId recipientId
     ) {
         final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
         if (address.serviceId().isEmpty()) {

@@ -27,7 +27,8 @@ public class LegacyRecipientStore {
 
         @Override
         public List<RecipientAddress> deserialize(
-                JsonParser jsonParser, DeserializationContext deserializationContext
+                JsonParser jsonParser,
+                DeserializationContext deserializationContext
         ) throws IOException {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 

@@ -15,7 +15,9 @@ public class SendReceiptAction implements HandleAction {
     private final List<Long> timestamps = new ArrayList<>();
 
     public SendReceiptAction(
-            final RecipientId recipientId, final SignalServiceReceiptMessage.Type type, final long timestamp
+            final RecipientId recipientId,
+            final SignalServiceReceiptMessage.Type type,
+            final long timestamp
     ) {
         this.recipientId = recipientId;
         this.type = type;

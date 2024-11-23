@@ -20,13 +20,15 @@ public class CommandHandler {
     }
 
     public void handleProvisioningCommand(
-            final ProvisioningCommand command, final ProvisioningManager provisioningManager
+            final ProvisioningCommand command,
+            final ProvisioningManager provisioningManager
     ) throws CommandException {
         command.handleCommand(ns, provisioningManager, outputWriter);
     }
 
     public void handleRegistrationCommand(
-            final RegistrationCommand command, final RegistrationManager registrationManager
+            final RegistrationCommand command,
+            final RegistrationManager registrationManager
     ) throws CommandException {
         command.handleCommand(ns, registrationManager);
     }
@@ -36,7 +38,8 @@ public class CommandHandler {
     }
 
     public void handleMultiLocalCommand(
-            final MultiLocalCommand command, MultiAccountManager multiAccountManager
+            final MultiLocalCommand command,
+            MultiAccountManager multiAccountManager
     ) throws CommandException {
         command.handleCommand(ns, multiAccountManager, outputWriter);
     }

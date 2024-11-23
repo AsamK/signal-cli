@@ -48,9 +48,7 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                 .collect(Collectors.toSet());
     }
 
-    private static void printGroupPlainText(
-            PlainTextWriter writer, Group group, boolean detailed
-    ) {
+    private static void printGroupPlainText(PlainTextWriter writer, Group group, boolean detailed) {
         if (detailed) {
             final var groupInviteLink = group.groupInviteLinkUrl();
 
@@ -79,7 +77,9 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         var groups = m.getGroups();
 

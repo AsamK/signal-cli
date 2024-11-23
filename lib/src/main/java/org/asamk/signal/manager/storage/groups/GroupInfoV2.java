@@ -31,7 +31,9 @@ public final class GroupInfoV2 extends GroupInfo {
     private final RecipientResolver recipientResolver;
 
     public GroupInfoV2(
-            final GroupIdV2 groupId, final GroupMasterKey masterKey, final RecipientResolver recipientResolver
+            final GroupIdV2 groupId,
+            final GroupMasterKey masterKey,
+            final RecipientResolver recipientResolver
     ) {
         this.groupId = groupId;
         this.masterKey = masterKey;

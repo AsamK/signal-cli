@@ -38,7 +38,9 @@ public class UpdateConfigurationCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var readReceipts = ns.getBoolean("read-receipts");
         final var unidentifiedDeliveryIndicators = ns.getBoolean("unidentified-delivery-indicators");

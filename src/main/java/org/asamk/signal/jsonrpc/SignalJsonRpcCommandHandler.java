@@ -56,7 +56,9 @@ public class SignalJsonRpcCommandHandler {
     }
 
     public JsonNode handleRequest(
-            final ObjectMapper objectMapper, final String method, ContainerNode<?> params
+            final ObjectMapper objectMapper,
+            final String method,
+            ContainerNode<?> params
     ) throws JsonRpcException {
         var command = getCommand(method);
         if (c != null) {
@@ -197,7 +199,9 @@ public class SignalJsonRpcCommandHandler {
     }
 
     private JsonNode runCommand(
-            final ObjectMapper objectMapper, final ContainerNode<?> params, final CommandRunner<?> command
+            final ObjectMapper objectMapper,
+            final ContainerNode<?> params,
+            final CommandRunner<?> command
     ) throws JsonRpcException {
         final Object[] result = {null};
         final JsonWriter commandJsonWriter = s -> {

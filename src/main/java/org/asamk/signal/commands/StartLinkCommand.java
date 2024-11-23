@@ -23,7 +23,9 @@ public class StartLinkCommand implements JsonRpcMultiCommand<Void> {
 
     @Override
     public void handleCommand(
-            final Void request, final MultiAccountManager m, final JsonWriter jsonWriter
+            final Void request,
+            final MultiAccountManager m,
+            final JsonWriter jsonWriter
     ) throws CommandException {
         final URI deviceLinkUri;
         try {

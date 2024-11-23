@@ -34,7 +34,9 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
     private final String busname;
 
     public DbusMultiAccountManagerImpl(
-            final SignalControl signalControl, DBusConnection connection, final String busname
+            final SignalControl signalControl,
+            DBusConnection connection,
+            final String busname
     ) {
         this.signalControl = signalControl;
         this.connection = connection;

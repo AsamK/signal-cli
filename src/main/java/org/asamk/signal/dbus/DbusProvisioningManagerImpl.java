@@ -27,7 +27,9 @@ public class DbusProvisioningManagerImpl implements ProvisioningManager {
     }
 
     public DbusProvisioningManagerImpl(
-            final SignalControl signalControl, DBusConnection connection, URI deviceLinkUri
+            final SignalControl signalControl,
+            DBusConnection connection,
+            URI deviceLinkUri
     ) {
         this.signalControl = signalControl;
         this.connection = connection;

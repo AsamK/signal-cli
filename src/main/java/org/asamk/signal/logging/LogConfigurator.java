@@ -83,7 +83,8 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
     }
 
     private ConsoleAppender<ILoggingEvent> createLoggingConsoleAppender(
-            final LoggerContext lc, final LayoutWrappingEncoder<ILoggingEvent> layoutEncoder
+            final LoggerContext lc,
+            final LayoutWrappingEncoder<ILoggingEvent> layoutEncoder
     ) {
         return new ConsoleAppender<>() {{
             setContext(lc);
@@ -95,7 +96,8 @@ public class LogConfigurator extends ContextAwareBase implements Configurator {
     }
 
     private FileAppender<ILoggingEvent> createLoggingFileAppender(
-            final LoggerContext lc, final LayoutWrappingEncoder<ILoggingEvent> layoutEncoder
+            final LoggerContext lc,
+            final LayoutWrappingEncoder<ILoggingEvent> layoutEncoder
     ) {
         return new FileAppender<>() {{
             setContext(lc);

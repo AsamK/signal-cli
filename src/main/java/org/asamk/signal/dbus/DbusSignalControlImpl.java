@@ -49,14 +49,17 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     @Override
     public void register(
-            final String number, final boolean voiceVerification
+            final String number,
+            final boolean voiceVerification
     ) throws Error.Failure, Error.InvalidNumber {
         registerWithCaptcha(number, voiceVerification, null);
     }
 
     @Override
     public void registerWithCaptcha(
-            final String number, final boolean voiceVerification, final String captcha
+            final String number,
+            final boolean voiceVerification,
+            final String captcha
     ) throws Error.Failure, Error.InvalidNumber {
         if (!Manager.isValidNumber(number, null)) {
             throw new SignalControl.Error.InvalidNumber(
@@ -86,7 +89,9 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     @Override
     public void verifyWithPin(
-            final String number, final String verificationCode, final String pin
+            final String number,
+            final String verificationCode,
+            final String pin
     ) throws Error.Failure, Error.InvalidNumber {
         try (final RegistrationManager registrationManager = c.getNewRegistrationManager(number)) {
             registrationManager.verifyAccount(verificationCode, pin);

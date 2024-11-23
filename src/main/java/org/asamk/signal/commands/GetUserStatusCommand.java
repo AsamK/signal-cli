@@ -43,7 +43,9 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         // Get a map of registration statuses
         Map<String, UserStatus> registered;

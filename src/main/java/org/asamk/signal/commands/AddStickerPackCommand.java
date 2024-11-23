@@ -36,7 +36,9 @@ public class AddStickerPackCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var uris = ns.<String>getList("uri");
         for (final var uri : uris) {

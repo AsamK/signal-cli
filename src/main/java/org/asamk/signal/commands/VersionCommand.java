@@ -35,14 +35,18 @@ public class VersionCommand implements JsonRpcLocalCommand, JsonRpcMultiLocalCom
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager m, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager m,
+            final OutputWriter outputWriter
     ) throws CommandException {
         outputVersion(outputWriter);
     }
 
     @Override
     public void handleCommand(
-            final Namespace ns, final MultiAccountManager c, final OutputWriter outputWriter
+            final Namespace ns,
+            final MultiAccountManager c,
+            final OutputWriter outputWriter
     ) throws CommandException {
         outputVersion(outputWriter);
     }

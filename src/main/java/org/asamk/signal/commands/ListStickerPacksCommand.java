@@ -27,7 +27,9 @@ public class ListStickerPacksCommand implements JsonRpcLocalCommand {
 
     @Override
     public void handleCommand(
-            final Namespace ns, final Manager c, final OutputWriter outputWriter
+            final Namespace ns,
+            final Manager c,
+            final OutputWriter outputWriter
     ) throws CommandException {
         final var stickerPacks = c.getStickerPacks();
         switch (outputWriter) {
