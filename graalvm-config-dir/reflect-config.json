@@ -43,6 +43,15 @@
   "name":"[Lorg.asamk.signal.json.JsonAttachment;"
 },
 {
+  "name":"[Lorg.asamk.signal.json.JsonContactAddress;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonContactEmail;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonContactPhone;"
+},
+{
   "name":"[Lorg.asamk.signal.json.JsonMention;"
 },
 {
@@ -50,6 +59,9 @@
 },
 {
   "name":"[Lorg.asamk.signal.json.JsonQuotedAttachment;"
+},
+{
+  "name":"[Lorg.asamk.signal.json.JsonSharedContact;"
 },
 {
   "name":"[Lorg.asamk.signal.json.JsonSyncReadMessage;"
@@ -1008,7 +1020,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"display","parameterTypes":[] }, {"name":"family","parameterTypes":[] }, {"name":"given","parameterTypes":[] }, {"name":"middle","parameterTypes":[] }, {"name":"prefix","parameterTypes":[] }, {"name":"suffix","parameterTypes":[] }]
+  "methods":[{"name":"display","parameterTypes":[] }, {"name":"family","parameterTypes":[] }, {"name":"given","parameterTypes":[] }, {"name":"middle","parameterTypes":[] }, {"name":"nickname","parameterTypes":[] }, {"name":"prefix","parameterTypes":[] }, {"name":"suffix","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonContactPhone",
