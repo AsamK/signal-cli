@@ -20,7 +20,7 @@ import java.util.TreeSet;
  * our local store). We use it for a {@link TreeSet}, so mainly it's just important that the '0'
  * case is correct. Other cases are whatever, just make it something stable.
  */
-abstract class DefaultStorageRecordProcessor<E extends SignalRecord> implements StorageRecordProcessor<E>, Comparator<E> {
+abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implements StorageRecordProcessor<E>, Comparator<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultStorageRecordProcessor.class);
     private final Set<E> matchedRecords = new TreeSet<>(this);
@@ -76,7 +76,7 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord> implements 
     }
 
     private void debug(StorageId i, E record, String message) {
-        logger.debug("[" + i + "][" + record.getClass().getSimpleName() + "] " + message);
+        logger.debug("[{}][{}] {}", i, record.getClass().getSimpleName(), message);
     }
 
     /**
