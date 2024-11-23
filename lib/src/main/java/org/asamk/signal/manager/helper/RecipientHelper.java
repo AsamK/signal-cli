@@ -239,7 +239,6 @@ public class RecipientHelper {
                             newNumbers,
                             account.getRecipientStore().getServiceIdToProfileKeyMap(),
                             token,
-                            dependencies.getServiceEnvironmentConfig().cdsiMrenclave(),
                             null,
                             dependencies.getLibSignalNetwork(),
                             newToken -> {

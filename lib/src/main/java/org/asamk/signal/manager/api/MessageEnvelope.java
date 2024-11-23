@@ -611,11 +611,12 @@ public record MessageEnvelope(
                     RecipientResolver recipientResolver,
                     RecipientAddressResolver addressResolver
             ) {
-                return new Blocked(blockedListMessage.getAddresses()
-                        .stream()
-                        .map(d -> addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(d))
-                                .toApiRecipientAddress())
-                        .toList(), blockedListMessage.getGroupIds().stream().map(GroupId::unknownVersion).toList());
+                return new Blocked(blockedListMessage.individuals.stream()
+                        .map(d -> new RecipientAddress(d.getAci() == null ? null : d.getAci().toString(),
+                                null,
+                                d.getE164(),
+                                null))
+                        .toList(), blockedListMessage.groupIds.stream().map(GroupId::unknownVersion).toList());
             }
         }
 

@@ -15,10 +15,13 @@ import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
+import org.whispersystems.signalservice.api.link.LinkDeviceApi;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.registration.RegistrationApi;
 import org.whispersystems.signalservice.api.services.ProfileService;
+import org.whispersystems.signalservice.api.storage.StorageServiceApi;
+import org.whispersystems.signalservice.api.storage.StorageServiceRepository;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
@@ -49,6 +52,8 @@ public class SignalDependencies {
     private SignalServiceAccountManager accountManager;
     private GroupsV2Api groupsV2Api;
     private RegistrationApi registrationApi;
+    private LinkDeviceApi linkDeviceApi;
+    private StorageServiceApi storageServiceApi;
     private GroupsV2Operations groupsV2Operations;
     private ClientZkOperations clientZkOperations;
 
@@ -153,6 +158,19 @@ public class SignalDependencies {
 
     public RegistrationApi getRegistrationApi() {
         return getOrCreate(() -> registrationApi, () -> registrationApi = getAccountManager().getRegistrationApi());
+    }
+
+    public LinkDeviceApi getLinkDeviceApi() {
+        return getOrCreate(() -> linkDeviceApi, () -> linkDeviceApi = new LinkDeviceApi(getPushServiceSocket()));
+    }
+
+    private StorageServiceApi getStorageServiceApi() {
+        return getOrCreate(() -> storageServiceApi,
+                () -> storageServiceApi = new StorageServiceApi(getPushServiceSocket()));
+    }
+
+    public StorageServiceRepository getStorageServiceRepository() {
+        return new StorageServiceRepository(getStorageServiceApi());
     }
 
     public GroupsV2Operations getGroupsV2Operations() {

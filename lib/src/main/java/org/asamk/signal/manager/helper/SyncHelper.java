@@ -247,10 +247,14 @@ public class SyncHelper {
     }
 
     public SendMessageResult sendBlockedList() {
-        var addresses = new ArrayList<SignalServiceAddress>();
+        var addresses = new ArrayList<BlockedListMessage.Individual>();
         for (var record : account.getContactStore().getContacts()) {
             if (record.second().isBlocked()) {
-                addresses.add(context.getRecipientHelper().resolveSignalServiceAddress(record.first()));
+                final var address = account.getRecipientAddressResolver().resolveRecipientAddress(record.first());
+                if (address.aci().isPresent() || address.number().isPresent()) {
+                    addresses.add(new BlockedListMessage.Individual(address.aci().orElse(null),
+                            address.number().orElse(null)));
+                }
             }
         }
         var groupIds = new ArrayList<byte[]>();
@@ -276,8 +280,10 @@ public class SyncHelper {
     }
 
     public SendMessageResult sendKeysMessage() {
-        var keysMessage = new KeysMessage(Optional.ofNullable(account.getOrCreateStorageKey()),
-                Optional.ofNullable(account.getOrCreatePinMasterKey()));
+        var keysMessage = new KeysMessage(account.getOrCreateStorageKey(),
+                account.getOrCreatePinMasterKey(),
+                account.getOrCreateAccountEntropyPool(),
+                account.getOrCreateMediaRootBackupKey());
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));
     }
 
@@ -405,7 +411,7 @@ public class SyncHelper {
                     builder.withMessageExpirationTimeVersion(c.getExpirationTimerVersion().get());
                 } else {
                     logger.debug(
-                            "[ContactSync] {} was synced with an old expiration timer. Ignoring. Received: {} Current: ${}",
+                            "[ContactSync] {} was synced with an old expiration timer. Ignoring. Received: {} Current: {}",
                             recipientId,
                             c.getExpirationTimerVersion(),
                             contact == null ? 1 : contact.messageExpirationTimeVersion());

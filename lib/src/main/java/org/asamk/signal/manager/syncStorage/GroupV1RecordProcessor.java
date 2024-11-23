@@ -8,6 +8,8 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.storage.SignalGroupV1Record;
+import org.whispersystems.signalservice.api.storage.StorageId;
+import org.whispersystems.signalservice.internal.storage.protos.GroupV1Record;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -36,7 +38,7 @@ public final class GroupV1RecordProcessor extends DefaultStorageRecordProcessor<
     @Override
     protected boolean isInvalid(SignalGroupV1Record remote) throws SQLException {
         try {
-            final var id = GroupId.unknownVersion(remote.getGroupId());
+            final var id = GroupId.unknownVersion(remote.getProto().id.toByteArray());
             if (!(id instanceof GroupIdV1)) {
                 return true;
             }
@@ -56,7 +58,7 @@ public final class GroupV1RecordProcessor extends DefaultStorageRecordProcessor<
 
     @Override
     protected Optional<SignalGroupV1Record> getMatching(SignalGroupV1Record remote) throws SQLException {
-        final var id = GroupId.v1(remote.getGroupId());
+        final var id = GroupId.v1(remote.getProto().id.toByteArray());
         final var group = account.getGroupStore().getGroup(connection, id);
 
         if (group == null) {
@@ -64,39 +66,35 @@ public final class GroupV1RecordProcessor extends DefaultStorageRecordProcessor<
         }
 
         final var storageId = account.getGroupStore().getGroupStorageId(connection, id);
-        return Optional.of(StorageSyncModels.localToRemoteRecord(group, storageId.getRaw()).getGroupV1().get());
+        return Optional.of(new SignalGroupV1Record(storageId, StorageSyncModels.localToRemoteRecord(group)));
     }
 
     @Override
-    protected SignalGroupV1Record merge(SignalGroupV1Record remote, SignalGroupV1Record local) {
-        final var unknownFields = remote.serializeUnknownFields();
-        final var blocked = remote.isBlocked();
-        final var profileSharing = remote.isProfileSharingEnabled();
-        final var archived = remote.isArchived();
-        final var forcedUnread = remote.isForcedUnread();
-        final var muteUntil = remote.getMuteUntil();
+    protected SignalGroupV1Record merge(SignalGroupV1Record remoteRecord, SignalGroupV1Record localRecord) {
+        final var remote = remoteRecord.getProto();
+        final var local = localRecord.getProto();
 
-        final var mergedBuilder = new SignalGroupV1Record.Builder(remote.getId().getRaw(),
-                remote.getGroupId(),
-                unknownFields).setBlocked(blocked)
-                .setProfileSharingEnabled(profileSharing)
-                .setForcedUnread(forcedUnread)
-                .setMuteUntil(muteUntil)
-                .setArchived(archived);
+        final var mergedBuilder = SignalGroupV1Record.Companion.newBuilder(remote.unknownFields().toByteArray())
+                .id(remote.id)
+                .blocked(remote.blocked)
+                .whitelisted(remote.whitelisted)
+                .markedUnread(remote.markedUnread)
+                .mutedUntilTimestamp(remote.mutedUntilTimestamp)
+                .archived(remote.archived);
 
         final var merged = mergedBuilder.build();
 
         final var matchesRemote = doProtosMatch(merged, remote);
         if (matchesRemote) {
-            return remote;
+            return remoteRecord;
         }
 
         final var matchesLocal = doProtosMatch(merged, local);
         if (matchesLocal) {
-            return local;
+            return localRecord;
         }
 
-        return mergedBuilder.setId(KeyUtils.createRawStorageId()).build();
+        return new SignalGroupV1Record(StorageId.forGroupV1(KeyUtils.createRawStorageId()), mergedBuilder.build());
     }
 
     @Override
@@ -110,30 +108,28 @@ public final class GroupV1RecordProcessor extends DefaultStorageRecordProcessor<
     @Override
     protected void updateLocal(StorageRecordUpdate<SignalGroupV1Record> update) throws SQLException {
         final var groupV1Record = update.newRecord();
-        final var groupIdV1 = GroupId.v1(groupV1Record.getGroupId());
+        final var groupV1Proto = groupV1Record.getProto();
+        final var groupIdV1 = GroupId.v1(groupV1Proto.id.toByteArray());
 
         final var group = account.getGroupStore().getOrCreateGroupV1(connection, groupIdV1);
         if (group != null) {
-            group.setBlocked(groupV1Record.isBlocked());
+            group.setBlocked(groupV1Proto.blocked);
             account.getGroupStore().updateGroup(connection, group);
             account.getGroupStore()
-                    .storeStorageRecord(connection,
-                            group.getGroupId(),
-                            groupV1Record.getId(),
-                            groupV1Record.toProto().encode());
+                    .storeStorageRecord(connection, group.getGroupId(), groupV1Record.getId(), groupV1Proto.encode());
         }
     }
 
     @Override
     public int compare(SignalGroupV1Record lhs, SignalGroupV1Record rhs) {
-        if (Arrays.equals(lhs.getGroupId(), rhs.getGroupId())) {
+        if (lhs.getProto().id.equals(rhs.getProto().id)) {
             return 0;
         } else {
             return 1;
         }
     }
 
-    private static boolean doProtosMatch(SignalGroupV1Record merged, SignalGroupV1Record other) {
-        return Arrays.equals(merged.toProto().encode(), other.toProto().encode());
+    private static boolean doProtosMatch(GroupV1Record merged, GroupV1Record other) {
+        return Arrays.equals(merged.encode(), other.encode());
     }
 }

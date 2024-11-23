@@ -184,7 +184,7 @@ public class NumberVerificationUtils {
                  TokenNotAcceptedException _e) {
             throw new CaptchaRequiredException("Captcha not accepted");
         } catch (NonSuccessfulResponseCodeException e) {
-            if (e.getCode() == 400) {
+            if (e.code == 400) {
                 throw new CaptchaRequiredException("Captcha has invalid format");
             }
             throw e;

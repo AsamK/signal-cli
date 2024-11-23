@@ -5,6 +5,8 @@ import org.signal.core.util.Base64;
 import org.signal.core.util.SetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
+import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
@@ -32,9 +34,7 @@ public final class StorageSyncValidations {
         validateManifestAndInserts(result.manifest(), result.inserts(), self);
 
         if (!result.deletes().isEmpty()) {
-            Set<String> allSetEncoded = result.manifest()
-                    .getStorageIds()
-                    .stream()
+            Set<String> allSetEncoded = result.manifest().storageIds.stream()
                     .map(StorageId::getRaw)
                     .map(Base64::encodeWithPadding)
                     .collect(Collectors.toSet());
@@ -47,13 +47,13 @@ public final class StorageSyncValidations {
             }
         }
 
-        if (previousManifest.getVersion() == 0) {
+        if (previousManifest.version == 0) {
             logger.debug(
                     "Previous manifest is empty, not bothering with additional validations around the diffs between the two manifests.");
             return;
         }
 
-        if (result.manifest().getVersion() != previousManifest.getVersion() + 1) {
+        if (result.manifest().version != previousManifest.version + 1) {
             throw new IncorrectManifestVersionError();
         }
 
@@ -63,13 +63,10 @@ public final class StorageSyncValidations {
             return;
         }
 
-        Set<ByteBuffer> previousIds = previousManifest.getStorageIds()
-                .stream()
+        Set<ByteBuffer> previousIds = previousManifest.storageIds.stream()
                 .map(id -> ByteBuffer.wrap(id.getRaw()))
                 .collect(Collectors.toSet());
-        Set<ByteBuffer> newIds = result.manifest()
-                .getStorageIds()
-                .stream()
+        Set<ByteBuffer> newIds = result.manifest().storageIds.stream()
                 .map(id -> ByteBuffer.wrap(id.getRaw()))
                 .collect(Collectors.toSet());
 
@@ -83,12 +80,12 @@ public final class StorageSyncValidations {
         Set<ByteBuffer> declaredDeletes = result.deletes().stream().map(ByteBuffer::wrap).collect(Collectors.toSet());
 
         if (declaredInserts.size() > manifestInserts.size()) {
-            logger.debug("DeclaredInserts: " + declaredInserts.size() + ", ManifestInserts: " + manifestInserts.size());
+            logger.debug("DeclaredInserts: {}, ManifestInserts: {}", declaredInserts.size(), manifestInserts.size());
             throw new MoreInsertsThanExpectedError();
         }
 
         if (declaredInserts.size() < manifestInserts.size()) {
-            logger.debug("DeclaredInserts: " + declaredInserts.size() + ", ManifestInserts: " + manifestInserts.size());
+            logger.debug("DeclaredInserts: {}, ManifestInserts: {}", declaredInserts.size(), manifestInserts.size());
             throw new LessInsertsThanExpectedError();
         }
 
@@ -97,12 +94,12 @@ public final class StorageSyncValidations {
         }
 
         if (declaredDeletes.size() > manifestDeletes.size()) {
-            logger.debug("DeclaredDeletes: " + declaredDeletes.size() + ", ManifestDeletes: " + manifestDeletes.size());
+            logger.debug("DeclaredDeletes: {}, ManifestDeletes: {}", declaredDeletes.size(), manifestDeletes.size());
             throw new MoreDeletesThanExpectedError();
         }
 
         if (declaredDeletes.size() < manifestDeletes.size()) {
-            logger.debug("DeclaredDeletes: " + declaredDeletes.size() + ", ManifestDeletes: " + manifestDeletes.size());
+            logger.debug("DeclaredDeletes: {}, ManifestDeletes: {}", declaredDeletes.size(), manifestDeletes.size());
             throw new LessDeletesThanExpectedError();
         }
 
@@ -125,7 +122,7 @@ public final class StorageSyncValidations {
             RecipientAddress self
     ) {
         int accountCount = 0;
-        for (StorageId id : manifest.getStorageIds()) {
+        for (StorageId id : manifest.storageIds) {
             accountCount += id.getType() == ManifestRecord.Identifier.Type.ACCOUNT.getValue() ? 1 : 0;
         }
 
@@ -137,11 +134,11 @@ public final class StorageSyncValidations {
             throw new MissingAccountError();
         }
 
-        Set<StorageId> allSet = new HashSet<>(manifest.getStorageIds());
+        Set<StorageId> allSet = new HashSet<>(manifest.storageIds);
         Set<StorageId> insertSet = inserts.stream().map(SignalStorageRecord::getId).collect(Collectors.toSet());
         Set<ByteBuffer> rawIdSet = allSet.stream().map(id -> ByteBuffer.wrap(id.getRaw())).collect(Collectors.toSet());
 
-        if (allSet.size() != manifest.getStorageIds().size()) {
+        if (allSet.size() != manifest.storageIds.size()) {
             throw new DuplicateStorageIdError();
         }
 
@@ -166,6 +163,11 @@ public final class StorageSyncValidations {
                 throw new DuplicateDistributionListIdError();
             }
 
+            ids = manifest.getStorageIdsByType().get(ManifestRecord.Identifier.Type.CALL_LINK.getValue());
+            if (ids.size() != new HashSet<>(ids).size()) {
+                throw new DuplicateCallLinkError();
+            }
+
             throw new DuplicateRawIdAcrossTypesError();
         }
 
@@ -182,18 +184,18 @@ public final class StorageSyncValidations {
                 throw new UnknownInsertError();
             }
 
-            if (insert.getContact().isPresent()) {
-                final var contact = insert.getContact().get();
-                final var aci = contact.getAci();
-                final var pni = contact.getPni();
-                final var number = contact.getNumber();
-                final var username = contact.getUsername();
+            if (insert.getProto().contact != null) {
+                final var contact = insert.getProto().contact;
+                final var aci = ACI.parseOrNull(contact.aci);
+                final var pni = PNI.parseOrNull(contact.pni);
+                final var number = contact.e164.isEmpty() ? null : contact.e164;
+                final var username = contact.username.isEmpty() ? null : contact.username;
                 final var address = new RecipientAddress(aci, pni, number, username);
                 if (self.matches(address)) {
                     throw new SelfAddedAsContactError();
                 }
             }
-            if (insert.getAccount().isPresent() && insert.getAccount().get().getProfileKey().isEmpty()) {
+            if (insert.getProto().account != null && insert.getProto().account.profileKey.size() == 0) {
                 logger.debug("Uploading a null profile key in our AccountRecord!");
             }
         }
@@ -210,6 +212,8 @@ public final class StorageSyncValidations {
     private static final class DuplicateGroupV2IdError extends Error {}
 
     private static final class DuplicateDistributionListIdError extends Error {}
+
+    private static final class DuplicateCallLinkError extends Error {}
 
     private static final class DuplicateInsertInWriteError extends Error {}
 

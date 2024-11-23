@@ -336,13 +336,6 @@ public final class ProfileHelper {
 
             final var profile = account.getProfileStore().getProfile(recipientId);
 
-            if (recipientId.equals(account.getSelfRecipientId())) {
-                final var isUnrestricted = encryptedProfile.isUnrestrictedUnidentifiedAccess();
-                if (account.isUnrestrictedUnidentifiedAccess() != isUnrestricted) {
-                    account.setUnrestrictedUnidentifiedAccess(isUnrestricted);
-                }
-            }
-
             Profile newProfile = null;
             if (profileKey.isPresent()) {
                 logger.trace("Decrypting profile");
@@ -356,6 +349,18 @@ public final class ProfileHelper {
                         .withUnidentifiedAccessMode(ProfileUtils.getUnidentifiedAccessMode(encryptedProfile, null))
                         .withCapabilities(ProfileUtils.getCapabilities(encryptedProfile))
                         .build();
+            }
+
+            if (recipientId.equals(account.getSelfRecipientId())) {
+                final var isUnrestricted = encryptedProfile.isUnrestrictedUnidentifiedAccess();
+                if (account.isUnrestrictedUnidentifiedAccess() != isUnrestricted) {
+                    account.setUnrestrictedUnidentifiedAccess(isUnrestricted);
+                }
+                if (account.isPrimaryDevice() && profile != null && newProfile.getCapabilities()
+                        .contains(Profile.Capability.storageServiceEncryptionV2Capability) && !profile.getCapabilities()
+                        .contains(Profile.Capability.storageServiceEncryptionV2Capability)) {
+                    context.getJobExecutor().enqueueJob(new SyncStorageJob(true));
+                }
             }
 
             try {

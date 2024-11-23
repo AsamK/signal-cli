@@ -51,7 +51,7 @@ class LiveConfig {
     private static final byte[] backupServerPublicParams = Base64.getDecoder()
             .decode("AJwNSU55fsFCbgaxGRD11wO1juAs8Yr5GF8FPlGzzvdJJIKH5/4CC7ZJSOe3yL2vturVaRU2Cx0n751Vt8wkj1bozK3CBV1UokxV09GWf+hdVImLGjXGYLLhnI1J2TWEe7iWHyb553EEnRb5oxr9n3lUbNAJuRmFM7hrr0Al0F0wrDD4S8lo2mGaXe0MJCOM166F8oYRQqpFeEHfiLnxA1O8ZLh7vMdv4g9jI5phpRBTsJ5IjiJrWeP0zdIGHEssUeprDZ9OUJ14m0v61eYJMKsf59Bn+mAT2a7YfB+Don9O");
 
-    private static Environment LIBSIGNAL_NET_ENV = Environment.PRODUCTION;
+    private static final Environment LIBSIGNAL_NET_ENV = Environment.PRODUCTION;
 
     static SignalServiceConfiguration createDefaultServiceConfiguration(
             final List<Interceptor> interceptors
@@ -71,7 +71,8 @@ class LiveConfig {
                 proxy,
                 zkGroupServerPublicParams,
                 genericServerPublicParams,
-                backupServerPublicParams);
+                backupServerPublicParams,
+                false);
     }
 
     static ECPublicKey getUnidentifiedSenderTrustRoot() {

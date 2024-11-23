@@ -84,6 +84,9 @@ public class ProfileUtils {
         if (encryptedProfile.getCapabilities().isStorage()) {
             capabilities.add(Profile.Capability.storage);
         }
+        if (encryptedProfile.getCapabilities().isStorageServiceEncryptionV2()) {
+            capabilities.add(Profile.Capability.storageServiceEncryptionV2Capability);
+        }
 
         return capabilities;
     }

@@ -125,6 +125,13 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"com.squareup.wire.Message",
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"com.squareup.wire.ProtoAdapter"
+},
+{
   "name":"com.squareup.wire.internal.ImmutableList",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -210,8 +217,13 @@
   "name":"java.io.FilePermission"
 },
 {
+  "name":"java.io.OutputStream"
+},
+{
   "name":"java.io.Serializable",
-  "allDeclaredMethods":true
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredClasses":true
 },
 {
   "name":"java.lang.Boolean",
@@ -578,6 +590,9 @@
   "name":"kotlin.String"
 },
 {
+  "name":"kotlin.Unit"
+},
+{
   "name":"kotlin.collections.AbstractCollection",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
@@ -628,6 +643,9 @@
 },
 {
   "name":"long[]"
+},
+{
+  "name":"okio.BufferedSink"
 },
 {
   "name":"okio.ByteString"
@@ -1025,7 +1043,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"groupId","parameterTypes":[] }, {"name":"type","parameterTypes":[] }]
+  "methods":[{"name":"groupId","parameterTypes":[] }, {"name":"groupName","parameterTypes":[] }, {"name":"revision","parameterTypes":[] }, {"name":"type","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonMention",
@@ -1247,7 +1265,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["int","long","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"aciAccountData","parameterTypes":[] }, {"name":"deviceId","parameterTypes":[] }, {"name":"encryptedDeviceName","parameterTypes":[] }, {"name":"isMultiDevice","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"password","parameterTypes":[] }, {"name":"pinMasterKey","parameterTypes":[] }, {"name":"pniAccountData","parameterTypes":[] }, {"name":"profileKey","parameterTypes":[] }, {"name":"registered","parameterTypes":[] }, {"name":"registrationLockPin","parameterTypes":[] }, {"name":"serviceEnvironment","parameterTypes":[] }, {"name":"storageKey","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"usernameLinkEntropy","parameterTypes":[] }, {"name":"usernameLinkServerId","parameterTypes":[] }, {"name":"version","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["int","long","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","long","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["int","java.lang.String","boolean","java.lang.String","java.lang.String","java.lang.String","int","boolean","java.lang.String","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String"] }, {"name":"accountEntropyPool","parameterTypes":[] }, {"name":"aciAccountData","parameterTypes":[] }, {"name":"deviceId","parameterTypes":[] }, {"name":"encryptedDeviceName","parameterTypes":[] }, {"name":"isMultiDevice","parameterTypes":[] }, {"name":"mediaRootBackupKey","parameterTypes":[] }, {"name":"number","parameterTypes":[] }, {"name":"password","parameterTypes":[] }, {"name":"pinMasterKey","parameterTypes":[] }, {"name":"pniAccountData","parameterTypes":[] }, {"name":"profileKey","parameterTypes":[] }, {"name":"registered","parameterTypes":[] }, {"name":"registrationLockPin","parameterTypes":[] }, {"name":"serviceEnvironment","parameterTypes":[] }, {"name":"storageKey","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"usernameLinkEntropy","parameterTypes":[] }, {"name":"usernameLinkServerId","parameterTypes":[] }, {"name":"version","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.SignalAccount$Storage$AccountData",
@@ -2257,7 +2275,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"getAnnouncementGroup","parameterTypes":[] }, {"name":"getChangeNumber","parameterTypes":[] }, {"name":"getDeleteSync","parameterTypes":[] }, {"name":"getGiftBadges","parameterTypes":[] }, {"name":"getPaymentActivation","parameterTypes":[] }, {"name":"getPni","parameterTypes":[] }, {"name":"getSenderKey","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getStories","parameterTypes":[] }, {"name":"getVersionedExpirationTimer","parameterTypes":[] }]
+  "methods":[{"name":"getAnnouncementGroup","parameterTypes":[] }, {"name":"getChangeNumber","parameterTypes":[] }, {"name":"getDeleteSync","parameterTypes":[] }, {"name":"getGiftBadges","parameterTypes":[] }, {"name":"getPaymentActivation","parameterTypes":[] }, {"name":"getPni","parameterTypes":[] }, {"name":"getSenderKey","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getStorageServiceEncryptionV2","parameterTypes":[] }, {"name":"getStories","parameterTypes":[] }, {"name":"getVersionedExpirationTimer","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest",
@@ -2283,6 +2301,13 @@
 },
 {
   "name":"org.whispersystems.signalservice.api.groupsv2.TemporalCredential[]"
+},
+{
+  "name":"org.whispersystems.signalservice.api.link.LinkedDeviceVerificationCodeResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.messages.calls.HangupMessage",
@@ -2891,7 +2916,17 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$Builder"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$Companion"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PhoneNumberSharingMode"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PinnedConversation",
@@ -2907,7 +2942,17 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$Builder"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$Companion"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$IdentityState"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord$Name",
@@ -2915,11 +2960,28 @@
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV1Record",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV1Record$Builder"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV1Record$Companion"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record",
-  "allDeclaredFields":true
+  "allDeclaredFields":true,
+  "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record$Builder"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record$Companion"
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record$StorySendMode"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ManifestRecord",
@@ -2928,6 +2990,9 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ManifestRecord$Identifier",
   "fields":[{"name":"raw_"}, {"name":"type_"}]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.storage.protos.OptionalBool"
 },
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.Payments",

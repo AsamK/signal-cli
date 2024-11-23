@@ -82,7 +82,7 @@ class GroupV2Helper {
             final var groupsV2AuthorizationString = getGroupAuthForToday(groupSecretParams);
             return dependencies.getGroupsV2Api().getGroup(groupSecretParams, groupsV2AuthorizationString);
         } catch (NonSuccessfulResponseCodeException e) {
-            if (e.getCode() == 403) {
+            if (e.code == 403) {
                 throw new NotAGroupMemberException(GroupUtils.getGroupIdV2(groupSecretParams), null);
             }
             logger.warn("Failed to retrieve Group V2 info, ignoring: {}", e.getMessage());
@@ -119,7 +119,7 @@ class GroupV2Helper {
                             false,
                             sendEndorsementsExpirationMs);
         } catch (NonSuccessfulResponseCodeException e) {
-            if (e.getCode() == 403) {
+            if (e.code == 403) {
                 throw new NotAGroupMemberException(GroupUtils.getGroupIdV2(groupSecretParams), null);
             }
             logger.warn("Failed to retrieve Group V2 history, ignoring: {}", e.getMessage());

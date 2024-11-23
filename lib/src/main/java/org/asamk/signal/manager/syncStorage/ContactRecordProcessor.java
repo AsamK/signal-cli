@@ -17,7 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.storage.SignalContactRecord;
-import org.whispersystems.signalservice.api.util.OptionalUtil;
+import org.whispersystems.signalservice.api.storage.StorageId;
+import org.whispersystems.signalservice.internal.storage.protos.ContactRecord;
 import org.whispersystems.signalservice.internal.storage.protos.ContactRecord.IdentityState;
 
 import java.sql.Connection;
@@ -26,6 +27,11 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+
+import okio.ByteString;
+
+import static org.asamk.signal.manager.util.Utils.firstNonEmpty;
+import static org.asamk.signal.manager.util.Utils.nullIfEmpty;
 
 public class ContactRecordProcessor extends DefaultStorageRecordProcessor<SignalContactRecord> {
 
@@ -55,20 +61,24 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
      * - You can't have a contact record for yourself. That should be an account record.
      */
     @Override
-    protected boolean isInvalid(SignalContactRecord remote) {
-        boolean hasAci = remote.getAci().isPresent() && remote.getAci().get().isValid();
-        boolean hasPni = remote.getPni().isPresent() && remote.getPni().get().isValid();
+    protected boolean isInvalid(SignalContactRecord remoteRecord) {
+        final var remote = remoteRecord.getProto();
+        final var aci = ACI.parseOrNull(remote.aci);
+        final var pni = PNI.parseOrNull(remote.pni);
+        final var e164 = nullIfEmpty(remote.e164);
+        boolean hasAci = aci != null && aci.isValid();
+        boolean hasPni = pni != null && pni.isValid();
 
         if (!hasAci && !hasPni) {
             logger.debug("Found a ContactRecord with neither an ACI nor a PNI -- marking as invalid.");
             return true;
-        } else if (selfAci != null && selfAci.equals(remote.getAci().orElse(null)) || (
-                selfPni != null && selfPni.equals(remote.getPni().orElse(null))
-        ) || (selfNumber != null && selfNumber.equals(remote.getNumber().orElse(null)))) {
+        } else if (selfAci != null && selfAci.equals(aci) || (
+                selfPni != null && selfPni.equals(pni)
+        ) || (selfNumber != null && selfNumber.equals(e164))) {
             logger.debug("Found a ContactRecord for ourselves -- marking as invalid.");
             return true;
-        } else if (remote.getNumber().isPresent() && !isValidE164(remote.getNumber().get())) {
-            logger.debug("Found a record with an invalid E164. Marking as invalid.");
+        } else if (e164 != null && !isValidE164(e164)) {
+            logger.debug("Found a record with an invalid E164 ({}). Marking as invalid.", e164);
             return true;
         } else {
             return false;
@@ -77,7 +87,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
 
     @Override
     protected Optional<SignalContactRecord> getMatching(SignalContactRecord remote) throws SQLException {
-        final var address = getRecipientAddress(remote);
+        final var address = getRecipientAddress(remote.getProto());
         final var recipientId = account.getRecipientStore().resolveRecipient(connection, address);
         final var recipient = account.getRecipientStore().getRecipient(connection, recipientId);
 
@@ -85,141 +95,120 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var identity = account.getIdentityKeyStore().getIdentityInfo(connection, identifier);
         final var storageId = account.getRecipientStore().getStorageId(connection, recipientId);
 
-        return Optional.of(StorageSyncModels.localToRemoteRecord(recipient, identity, storageId.getRaw())
-                .getContact()
-                .get());
+        return Optional.of(new SignalContactRecord(storageId,
+                StorageSyncModels.localToRemoteRecord(recipient, identity)));
     }
 
     @Override
-    protected SignalContactRecord merge(SignalContactRecord remote, SignalContactRecord local) {
+    protected SignalContactRecord merge(SignalContactRecord remoteRecord, SignalContactRecord localRecord) {
+        final var remote = remoteRecord.getProto();
+        final var local = localRecord.getProto();
+
         String profileGivenName;
         String profileFamilyName;
-        if (remote.getProfileGivenName().isPresent() || remote.getProfileFamilyName().isPresent()) {
-            profileGivenName = remote.getProfileGivenName().orElse("");
-            profileFamilyName = remote.getProfileFamilyName().orElse("");
+        if (!remote.givenName.isEmpty() || !remote.familyName.isEmpty()) {
+            profileGivenName = remote.givenName;
+            profileFamilyName = remote.familyName;
         } else {
-            profileGivenName = local.getProfileGivenName().orElse("");
-            profileFamilyName = local.getProfileFamilyName().orElse("");
+            profileGivenName = local.givenName;
+            profileFamilyName = local.familyName;
         }
 
         IdentityState identityState;
-        byte[] identityKey;
-        if (remote.getIdentityKey().isPresent() && (
-                remote.getIdentityState() != local.getIdentityState()
-                        || local.getIdentityKey().isEmpty()
-                        || !account.isPrimaryDevice()
+        ByteString identityKey;
+        if (remote.identityKey.size() > 0 && (
+                !account.isPrimaryDevice()
+                        || remote.identityState != local.identityState
+                        || local.identityKey.size() == 0
 
         )) {
-            identityState = remote.getIdentityState();
-            identityKey = remote.getIdentityKey().get();
+            identityState = remote.identityState;
+            identityKey = remote.identityKey;
         } else {
-            identityState = local.getIdentityState();
-            identityKey = local.getIdentityKey().orElse(null);
+            identityState = local.identityState;
+            identityKey = local.identityKey.size() > 0 ? local.identityKey : ByteString.EMPTY;
         }
 
-        if (local.getAci().isPresent()
-                && local.getIdentityKey().isPresent()
-                && remote.getIdentityKey().isPresent()
-                && !Arrays.equals(local.getIdentityKey().get(), remote.getIdentityKey().get())) {
+        if (!local.aci.isEmpty()
+                && local.identityKey.size() > 0
+                && remote.identityKey.size() > 0
+                && !local.identityKey.equals(remote.identityKey)) {
             logger.debug("The local and remote identity keys do not match for {}. Enqueueing a profile fetch.",
-                    local.getAci().orElse(null));
+                    local.aci);
             final var address = getRecipientAddress(local);
             jobExecutor.enqueueJob(new DownloadProfileJob(address));
         }
 
-        final var e164sMatchButPnisDont = local.getNumber().isPresent()
-                && local.getNumber()
-                .get()
-                .equals(remote.getNumber().orElse(null))
-                && local.getPni().isPresent()
-                && remote.getPni().isPresent()
-                && !local.getPni().get().equals(remote.getPni().get());
-
-        final var pnisMatchButE164sDont = local.getPni().isPresent()
-                && local.getPni()
-                .get()
-                .equals(remote.getPni().orElse(null))
-                && local.getNumber().isPresent()
-                && remote.getNumber().isPresent()
-                && !local.getNumber().get().equals(remote.getNumber().get());
-
-        PNI pni;
+        String pni;
         String e164;
-        if (!account.isPrimaryDevice() && (e164sMatchButPnisDont || pnisMatchButE164sDont)) {
-            if (e164sMatchButPnisDont) {
-                logger.debug("Matching E164s, but the PNIs differ! Trusting our local pair.");
-            } else if (pnisMatchButE164sDont) {
-                logger.debug("Matching PNIs, but the E164s differ! Trusting our local pair.");
+        if (account.isPrimaryDevice()) {
+            final var e164sMatchButPnisDont = !local.e164.isEmpty()
+                    && local.e164.equals(remote.e164)
+                    && !local.pni.isEmpty()
+                    && !remote.pni.isEmpty()
+                    && !local.pni.equals(remote.pni);
+
+            final var pnisMatchButE164sDont = !local.pni.isEmpty()
+                    && local.pni.equals(remote.pni)
+                    && !local.e164.isEmpty()
+                    && !remote.e164.isEmpty()
+                    && !local.e164.equals(remote.e164);
+
+            if (e164sMatchButPnisDont || pnisMatchButE164sDont) {
+                if (e164sMatchButPnisDont) {
+                    logger.debug("Matching E164s, but the PNIs differ! Trusting our local pair.");
+                } else if (pnisMatchButE164sDont) {
+                    logger.debug("Matching PNIs, but the E164s differ! Trusting our local pair.");
+                }
+                jobExecutor.enqueueJob(new RefreshRecipientsJob());
+                pni = local.pni;
+                e164 = local.e164;
+            } else {
+                pni = firstNonEmpty(remote.pni, local.pni);
+                e164 = firstNonEmpty(remote.e164, local.e164);
             }
-            jobExecutor.enqueueJob(new RefreshRecipientsJob());
-            pni = local.getPni().get();
-            e164 = local.getNumber().get();
         } else {
-            pni = OptionalUtil.or(remote.getPni(), local.getPni()).orElse(null);
-            e164 = OptionalUtil.or(remote.getNumber(), local.getNumber()).orElse(null);
+            pni = firstNonEmpty(remote.pni, local.pni);
+            e164 = firstNonEmpty(remote.e164, local.e164);
         }
 
-        final var unknownFields = remote.serializeUnknownFields();
-        final var aci = local.getAci().isEmpty() ? remote.getAci().orElse(null) : local.getAci().get();
-        final var profileKey = OptionalUtil.or(remote.getProfileKey(), local.getProfileKey()).orElse(null);
-        final var username = OptionalUtil.or(remote.getUsername(), local.getUsername()).orElse("");
-        final var blocked = remote.isBlocked();
-        final var profileSharing = remote.isProfileSharingEnabled();
-        final var archived = remote.isArchived();
-        final var forcedUnread = remote.isForcedUnread();
-        final var muteUntil = remote.getMuteUntil();
-        final var hideStory = remote.shouldHideStory();
-        final var unregisteredTimestamp = remote.getUnregisteredTimestamp();
-        final var hidden = remote.isHidden();
-        final var systemGivenName = account.isPrimaryDevice()
-                ? local.getSystemGivenName().orElse("")
-                : remote.getSystemGivenName().orElse("");
-        final var systemFamilyName = account.isPrimaryDevice()
-                ? local.getSystemFamilyName().orElse("")
-                : remote.getSystemFamilyName().orElse("");
-        final var systemNickname = remote.getSystemNickname().orElse("");
-        final var nicknameGivenName = remote.getNicknameGivenName().orElse("");
-        final var nicknameFamilyName = remote.getNicknameFamilyName().orElse("");
-        final var pniSignatureVerified = remote.isPniSignatureVerified() || local.isPniSignatureVerified();
-        final var note = remote.getNote().or(local::getNote).orElse("");
-
-        final var mergedBuilder = new SignalContactRecord.Builder(remote.getId().getRaw(), aci, unknownFields).setE164(
-                        e164)
-                .setPni(pni)
-                .setProfileGivenName(profileGivenName)
-                .setProfileFamilyName(profileFamilyName)
-                .setSystemGivenName(systemGivenName)
-                .setSystemFamilyName(systemFamilyName)
-                .setSystemNickname(systemNickname)
-                .setProfileKey(profileKey)
-                .setUsername(username)
-                .setIdentityState(identityState)
-                .setIdentityKey(identityKey)
-                .setBlocked(blocked)
-                .setProfileSharingEnabled(profileSharing)
-                .setArchived(archived)
-                .setForcedUnread(forcedUnread)
-                .setMuteUntil(muteUntil)
-                .setHideStory(hideStory)
-                .setUnregisteredTimestamp(unregisteredTimestamp)
-                .setHidden(hidden)
-                .setPniSignatureVerified(pniSignatureVerified)
-                .setNicknameGivenName(nicknameGivenName)
-                .setNicknameFamilyName(nicknameFamilyName)
-                .setNote(note);
+        final var mergedBuilder = SignalContactRecord.Companion.newBuilder(remote.unknownFields().toByteArray())
+                .aci(local.aci.isEmpty() ? remote.aci : local.aci)
+                .e164(e164)
+                .pni(pni)
+                .givenName(profileGivenName)
+                .familyName(profileFamilyName)
+                .systemGivenName(account.isPrimaryDevice() ? local.systemGivenName : remote.systemGivenName)
+                .systemFamilyName(account.isPrimaryDevice() ? local.systemFamilyName : remote.systemFamilyName)
+                .systemNickname(remote.systemNickname)
+                .profileKey(firstNonEmpty(remote.profileKey, local.profileKey))
+                .username(firstNonEmpty(remote.username, local.username))
+                .identityState(identityState)
+                .identityKey(identityKey)
+                .blocked(remote.blocked)
+                .whitelisted(remote.whitelisted)
+                .archived(remote.archived)
+                .markedUnread(remote.markedUnread)
+                .mutedUntilTimestamp(remote.mutedUntilTimestamp)
+                .hideStory(remote.hideStory)
+                .unregisteredAtTimestamp(remote.unregisteredAtTimestamp)
+                .hidden(remote.hidden)
+                .pniSignatureVerified(remote.pniSignatureVerified || local.pniSignatureVerified)
+                .nickname(remote.nickname)
+                .note(remote.note);
         final var merged = mergedBuilder.build();
 
         final var matchesRemote = doProtosMatch(merged, remote);
         if (matchesRemote) {
-            return remote;
+            return remoteRecord;
         }
 
         final var matchesLocal = doProtosMatch(merged, local);
         if (matchesLocal) {
-            return local;
+            return localRecord;
         }
 
-        return mergedBuilder.setId(KeyUtils.createRawStorageId()).build();
+        return new SignalContactRecord(StorageId.forContact(KeyUtils.createRawStorageId()), mergedBuilder.build());
     }
 
     @Override
@@ -231,7 +220,8 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
     @Override
     protected void updateLocal(StorageRecordUpdate<SignalContactRecord> update) throws SQLException {
         final var contactRecord = update.newRecord();
-        final var address = getRecipientAddress(contactRecord);
+        final var contactProto = contactRecord.getProto();
+        final var address = getRecipientAddress(contactProto);
         final var recipientId = account.getRecipientStore().resolveRecipientTrusted(connection, address);
         final var recipient = account.getRecipientStore().getRecipient(connection, recipientId);
 
@@ -251,95 +241,92 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var contactNickGivenName = contact == null ? null : contact.nickNameGivenName();
         final var contactNickFamilyName = contact == null ? null : contact.nickNameFamilyName();
         final var contactNote = contact == null ? null : contact.note();
-        if (blocked != contactRecord.isBlocked()
-                || profileShared != contactRecord.isProfileSharingEnabled()
-                || archived != contactRecord.isArchived()
-                || hidden != contactRecord.isHidden()
-                || hideStory != contactRecord.shouldHideStory()
-                || muteUntil != contactRecord.getMuteUntil()
-                || unregisteredTimestamp != contactRecord.getUnregisteredTimestamp()
-                || !Objects.equals(contactRecord.getSystemGivenName().orElse(null), contactGivenName)
-                || !Objects.equals(contactRecord.getSystemFamilyName().orElse(null), contactFamilyName)
-                || !Objects.equals(contactRecord.getSystemNickname().orElse(null), contactNickName)
-                || !Objects.equals(contactRecord.getNicknameGivenName().orElse(null), contactNickGivenName)
-                || !Objects.equals(contactRecord.getNicknameFamilyName().orElse(null), contactNickFamilyName)
-                || !Objects.equals(contactRecord.getNote().orElse(null), contactNote)) {
+        if (blocked != contactProto.blocked
+                || profileShared != contactProto.whitelisted
+                || archived != contactProto.archived
+                || hidden != contactProto.hidden
+                || hideStory != contactProto.hideStory
+                || muteUntil != contactProto.mutedUntilTimestamp
+                || unregisteredTimestamp != contactProto.unregisteredAtTimestamp
+                || !Objects.equals(nullIfEmpty(contactProto.systemGivenName), contactGivenName)
+                || !Objects.equals(nullIfEmpty(contactProto.systemFamilyName), contactFamilyName)
+                || !Objects.equals(nullIfEmpty(contactProto.systemNickname), contactNickName)
+                || !Objects.equals(nullIfEmpty(contactProto.nickname == null ? "" : contactProto.nickname.given),
+                contactNickGivenName)
+                || !Objects.equals(nullIfEmpty(contactProto.nickname == null ? "" : contactProto.nickname.family),
+                contactNickFamilyName)
+                || !Objects.equals(nullIfEmpty(contactProto.note), contactNote)) {
             logger.debug("Storing new or updated contact {}", recipientId);
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
-            final var newContact = contactBuilder.withIsBlocked(contactRecord.isBlocked())
-                    .withIsProfileSharingEnabled(contactRecord.isProfileSharingEnabled())
-                    .withIsArchived(contactRecord.isArchived())
-                    .withIsHidden(contactRecord.isHidden())
-                    .withMuteUntil(contactRecord.getMuteUntil())
-                    .withHideStory(contactRecord.shouldHideStory())
-                    .withGivenName(contactRecord.getSystemGivenName().orElse(null))
-                    .withFamilyName(contactRecord.getSystemFamilyName().orElse(null))
-                    .withNickName(contactRecord.getSystemNickname().orElse(null))
-                    .withNickNameGivenName(contactRecord.getNicknameGivenName().orElse(null))
-                    .withNickNameFamilyName(contactRecord.getNicknameFamilyName().orElse(null))
-                    .withNote(contactRecord.getNote().orElse(null))
-                    .withUnregisteredTimestamp(contactRecord.getUnregisteredTimestamp() == 0
-                            ? null
-                            : contactRecord.getUnregisteredTimestamp());
+            final var newContact = contactBuilder.withIsBlocked(contactProto.blocked)
+                    .withIsProfileSharingEnabled(contactProto.whitelisted)
+                    .withIsArchived(contactProto.archived)
+                    .withIsHidden(contactProto.hidden)
+                    .withMuteUntil(contactProto.mutedUntilTimestamp)
+                    .withHideStory(contactProto.hideStory)
+                    .withGivenName(nullIfEmpty(contactProto.systemGivenName))
+                    .withFamilyName(nullIfEmpty(contactProto.systemFamilyName))
+                    .withNickName(nullIfEmpty(contactProto.systemNickname))
+                    .withNickNameGivenName(nullIfEmpty(contactProto.givenName))
+                    .withNickNameFamilyName(nullIfEmpty(contactProto.familyName))
+                    .withNote(nullIfEmpty(contactProto.note))
+                    .withUnregisteredTimestamp(contactProto.unregisteredAtTimestamp);
             account.getRecipientStore().storeContact(connection, recipientId, newContact.build());
         }
 
         final var profile = recipient.getProfile();
         final var profileGivenName = profile == null ? null : profile.getGivenName();
         final var profileFamilyName = profile == null ? null : profile.getFamilyName();
-        if (!Objects.equals(contactRecord.getProfileGivenName().orElse(null), profileGivenName) || !Objects.equals(
-                contactRecord.getProfileFamilyName().orElse(null),
-                profileFamilyName)) {
+        if (!Objects.equals(nullIfEmpty(contactProto.givenName), profileGivenName) || !Objects.equals(nullIfEmpty(
+                contactProto.familyName), profileFamilyName)) {
             final var profileBuilder = profile == null ? Profile.newBuilder() : Profile.newBuilder(profile);
-            final var newProfile = profileBuilder.withGivenName(contactRecord.getProfileGivenName().orElse(null))
-                    .withFamilyName(contactRecord.getProfileFamilyName().orElse(null))
+            final var newProfile = profileBuilder.withGivenName(nullIfEmpty(contactProto.givenName))
+                    .withFamilyName(nullIfEmpty(contactProto.familyName))
                     .build();
             account.getRecipientStore().storeProfile(connection, recipientId, newProfile);
         }
-        if (contactRecord.getProfileKey().isPresent()) {
+        if (contactProto.profileKey.size() > 0) {
             try {
                 logger.trace("Storing profile key {}", recipientId);
-                final var profileKey = new ProfileKey(contactRecord.getProfileKey().get());
+                final var profileKey = new ProfileKey(contactProto.profileKey.toByteArray());
                 account.getRecipientStore().storeProfileKey(connection, recipientId, profileKey);
             } catch (InvalidInputException e) {
                 logger.warn("Received invalid contact profile key from storage");
             }
         }
-        if (contactRecord.getIdentityKey().isPresent() && contactRecord.getAci().isPresent()) {
+        if (contactProto.identityKey.size() > 0 && address.aci().isPresent()) {
             try {
                 logger.trace("Storing identity key {}", recipientId);
-                final var identityKey = new IdentityKey(contactRecord.getIdentityKey().get());
-                account.getIdentityKeyStore()
-                        .saveIdentity(connection, contactRecord.getAci().orElse(null), identityKey);
+                final var identityKey = new IdentityKey(contactProto.identityKey.toByteArray());
+                account.getIdentityKeyStore().saveIdentity(connection, address.aci().get(), identityKey);
 
-                final var trustLevel = StorageSyncModels.remoteToLocal(contactRecord.getIdentityState());
+                final var trustLevel = StorageSyncModels.remoteToLocal(contactProto.identityState);
                 if (trustLevel != null) {
                     account.getIdentityKeyStore()
-                            .setIdentityTrustLevel(connection,
-                                    contactRecord.getAci().orElse(null),
-                                    identityKey,
-                                    trustLevel);
+                            .setIdentityTrustLevel(connection, address.aci().get(), identityKey, trustLevel);
                 }
             } catch (InvalidKeyException e) {
                 logger.warn("Received invalid contact identity key from storage");
             }
         }
         account.getRecipientStore()
-                .storeStorageRecord(connection, recipientId, contactRecord.getId(), contactRecord.toProto().encode());
+                .storeStorageRecord(connection, recipientId, contactRecord.getId(), contactProto.encode());
     }
 
-    private static RecipientAddress getRecipientAddress(final SignalContactRecord contactRecord) {
-        return new RecipientAddress(contactRecord.getAci().orElse(null),
-                contactRecord.getPni().orElse(null),
-                contactRecord.getNumber().orElse(null),
-                contactRecord.getUsername().orElse(null));
+    private static RecipientAddress getRecipientAddress(final ContactRecord contactRecord) {
+        return new RecipientAddress(ACI.parseOrNull(contactRecord.aci),
+                PNI.parseOrNull(contactRecord.pni),
+                nullIfEmpty(contactRecord.e164),
+                nullIfEmpty(contactRecord.username));
     }
 
     @Override
-    public int compare(SignalContactRecord lhs, SignalContactRecord rhs) {
-        if ((lhs.getAci().isPresent() && Objects.equals(lhs.getAci(), rhs.getAci())) || (
-                lhs.getNumber().isPresent() && Objects.equals(lhs.getNumber(), rhs.getNumber())
-        ) || (lhs.getPni().isPresent() && Objects.equals(lhs.getPni(), rhs.getPni()))) {
+    public int compare(SignalContactRecord lhsRecord, SignalContactRecord rhsRecord) {
+        final var lhs = lhsRecord.getProto();
+        final var rhs = rhsRecord.getProto();
+        if ((!lhs.aci.isEmpty() && Objects.equals(lhs.aci, rhs.aci)) || (
+                !lhs.e164.isEmpty() && Objects.equals(lhs.e164, rhs.e164)
+        ) || (!lhs.pni.isEmpty() && Objects.equals(lhs.pni, rhs.pni))) {
             return 0;
         } else {
             return 1;
@@ -350,7 +337,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         return E164_PATTERN.matcher(value).matches();
     }
 
-    private static boolean doProtosMatch(SignalContactRecord merged, SignalContactRecord other) {
-        return Arrays.equals(merged.toProto().encode(), other.toProto().encode());
+    private static boolean doProtosMatch(ContactRecord merged, ContactRecord other) {
+        return Arrays.equals(merged.encode(), other.encode());
     }
 }

@@ -51,7 +51,7 @@ class StagingConfig {
     private static final byte[] backupServerPublicParams = Base64.getDecoder()
             .decode("AHYrGb9IfugAAJiPKp+mdXUx+OL9zBolPYHYQz6GI1gWjpEu5me3zVNSvmYY4zWboZHif+HG1sDHSuvwFd0QszSwuSF4X4kRP3fJREdTZ5MCR0n55zUppTwfHRW2S4sdQ0JGz7YDQIJCufYSKh0pGNEHL6hv79Agrdnr4momr3oXdnkpVBIp3HWAQ6IbXQVSG18X36GaicI1vdT0UFmTwU2KTneluC2eyL9c5ff8PcmiS+YcLzh0OKYQXB5ZfQ06d6DiINvDQLy75zcfUOniLAj0lGJiHxGczin/RXisKSR8");
 
-    private static Network.Environment LIBSIGNAL_NET_ENV = Network.Environment.STAGING;
+    private static final Network.Environment LIBSIGNAL_NET_ENV = Network.Environment.STAGING;
 
     static SignalServiceConfiguration createDefaultServiceConfiguration(
             final List<Interceptor> interceptors
@@ -71,7 +71,8 @@ class StagingConfig {
                 proxy,
                 zkGroupServerPublicParams,
                 genericServerPublicParams,
-                backupServerPublicParams);
+                backupServerPublicParams,
+                false);
     }
 
     static ECPublicKey getUnidentifiedSenderTrustRoot() {

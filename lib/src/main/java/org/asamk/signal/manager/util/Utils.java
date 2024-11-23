@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import okio.ByteString;
 
 public class Utils {
 
@@ -156,5 +159,47 @@ public class Utils {
             }
         }
         return response.successOrThrow();
+    }
+
+    public static ByteString firstNonEmpty(ByteString... strings) {
+        for (final var s : strings) {
+            if (s.size() > 0) {
+                return s;
+            }
+        }
+        return ByteString.EMPTY;
+    }
+
+    @SafeVarargs
+    public static <T> List<T> firstNonEmpty(List<T>... values) {
+        for (final var s : values) {
+            if (!s.isEmpty()) {
+                return s;
+            }
+        }
+        return List.of();
+    }
+
+    public static String firstNonEmpty(String... strings) {
+        for (final var s : strings) {
+            if (!s.isEmpty()) {
+                return s;
+            }
+        }
+        return "";
+    }
+
+    @SafeVarargs
+    public static <T> T firstNonNull(T... values) {
+        for (final var v : values) {
+            if (v != null) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    public static String nullIfEmpty(String string) {
+        return string == null || string.isEmpty() ? null : string;
     }
 }

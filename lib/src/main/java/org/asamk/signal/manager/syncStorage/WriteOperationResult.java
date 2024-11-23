@@ -21,8 +21,8 @@ public record WriteOperationResult(
         } else {
             return String.format(Locale.ROOT,
                     "ManifestVersion: %d, Total Keys: %d, Inserts: %d, Deletes: %d",
-                    manifest.getVersion(),
-                    manifest.getStorageIds().size(),
+                    manifest.version,
+                    manifest.storageIds.size(),
                     inserts.size(),
                     deletes.size());
         }

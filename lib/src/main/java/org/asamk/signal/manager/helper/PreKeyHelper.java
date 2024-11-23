@@ -172,7 +172,7 @@ public class PreKeyHelper {
             // This can happen when the primary device has changed phone number
             logger.warn("Failed to updated pre keys: {}", e.getMessage());
         } catch (NonSuccessfulResponseCodeException e) {
-            if (serviceIdType != ServiceIdType.PNI || e.getCode() != 422) {
+            if (serviceIdType != ServiceIdType.PNI || e.code != 422) {
                 throw e;
             }
             logger.warn("Failed to set PNI pre keys, ignoring for now. Account needs to be reregistered to fix this.");

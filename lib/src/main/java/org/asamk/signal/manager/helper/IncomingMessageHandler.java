@@ -31,6 +31,7 @@ import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.jobs.RetrieveStickerPackJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.signal.libsignal.metadata.ProtocolInvalidKeyException;
@@ -525,12 +526,12 @@ public final class IncomingMessageHandler {
         }
         if (syncMessage.getBlockedList().isPresent()) {
             final var blockedListMessage = syncMessage.getBlockedList().get();
-            for (var address : blockedListMessage.getAddresses()) {
-                context.getContactHelper()
-                        .setContactBlocked(account.getRecipientResolver().resolveRecipient(address), true);
+            for (var individual : blockedListMessage.individuals) {
+                final var address = new RecipientAddress(individual.getAci(), individual.getE164());
+                final var recipientId = account.getRecipientResolver().resolveRecipient(address);
+                context.getContactHelper().setContactBlocked(recipientId, true);
             }
-            for (var groupId : blockedListMessage.getGroupIds()
-                    .stream()
+            for (var groupId : blockedListMessage.groupIds.stream()
                     .map(GroupId::unknownVersion)
                     .collect(Collectors.toSet())) {
                 try {
@@ -585,14 +586,22 @@ public final class IncomingMessageHandler {
         }
         if (syncMessage.getKeys().isPresent()) {
             final var keysMessage = syncMessage.getKeys().get();
-            if (keysMessage.getStorageService().isPresent()) {
-                final var storageKey = keysMessage.getStorageService().get();
+            if (keysMessage.getAccountEntropyPool() != null) {
+                final var aep = keysMessage.getAccountEntropyPool();
+                account.setAccountEntropyPool(aep);
+                actions.add(SyncStorageDataAction.create());
+            } else if (keysMessage.getMaster() != null) {
+                final var masterKey = keysMessage.getMaster();
+                account.setMasterKey(masterKey);
+                actions.add(SyncStorageDataAction.create());
+            } else if (keysMessage.getStorageService() != null) {
+                final var storageKey = keysMessage.getStorageService();
                 account.setStorageKey(storageKey);
                 actions.add(SyncStorageDataAction.create());
             }
-            if (keysMessage.getMaster().isPresent()) {
-                final var masterKey = keysMessage.getMaster().get();
-                account.setMasterKey(masterKey);
+            if (keysMessage.getMediaRootBackupKey() != null) {
+                final var mrb = keysMessage.getMediaRootBackupKey();
+                account.setMediaRootBackupKey(mrb);
                 actions.add(SyncStorageDataAction.create());
             }
         }

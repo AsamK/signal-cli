@@ -161,7 +161,8 @@ public class Profile {
     }
 
     public enum Capability {
-        storage;
+        storage,
+        storageServiceEncryptionV2Capability;
 
         public static Capability valueOfOrNull(String value) {
             try {
