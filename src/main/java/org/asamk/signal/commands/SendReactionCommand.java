@@ -11,6 +11,7 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
+import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.util.CommandUtil;
@@ -74,10 +75,18 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
         final var targetTimestamp = ns.getLong("target-timestamp");
         final var isStory = Boolean.TRUE.equals(ns.getBoolean("story"));
 
+        final RecipientIdentifier.Single targetAuthorIdentifier;
+        if (targetAuthor == null && recipientIdentifiers.size() == 1 && recipientIdentifiers.stream()
+                .findFirst()
+                .get() instanceof RecipientIdentifier.Single single) {
+            targetAuthorIdentifier = single;
+        } else {
+            targetAuthorIdentifier = CommandUtil.getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber());
+        }
         try {
             final var results = m.sendMessageReaction(emoji,
                     isRemove,
-                    CommandUtil.getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
+                    targetAuthorIdentifier,
                     targetTimestamp,
                     recipientIdentifiers,
                     isStory);
