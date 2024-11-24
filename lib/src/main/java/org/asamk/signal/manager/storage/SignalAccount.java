@@ -292,7 +292,9 @@ public class SignalAccount implements Closeable {
             final IdentityKeyPair aciIdentity,
             final IdentityKeyPair pniIdentity,
             final ProfileKey profileKey,
-            final MasterKey masterKey
+            final MasterKey masterKey,
+            final AccountEntropyPool accountEntropyPool,
+            final MediaRootBackupKey mediaRootBackupKey
     ) {
         this.deviceId = 0;
         this.number = number;
@@ -308,8 +310,14 @@ public class SignalAccount implements Closeable {
         this.registered = false;
         this.isMultiDevice = true;
         setLastReceiveTimestamp(0L);
-        this.pinMasterKey = masterKey;
-        this.accountEntropyPool = null;
+        if (accountEntropyPool != null) {
+            this.pinMasterKey = null;
+            this.accountEntropyPool = accountEntropyPool;
+        } else {
+            this.pinMasterKey = masterKey;
+            this.accountEntropyPool = null;
+        }
+        this.mediaRootBackupKey = mediaRootBackupKey;
         getKeyValueStore().storeEntry(storageManifestVersion, -1L);
         this.setStorageManifest(null);
         this.storageKey = null;

@@ -502,6 +502,7 @@ public class AccountHelper {
                         account.getProfileKey(),
                         account.getOrCreatePinMasterKey(),
                         account.getOrCreateMediaRootBackupKey(),
+                        account.getOrCreateAccountEntropyPool(),
                         verificationCode.getVerificationCode(),
                         null));
         account.setMultiDevice(true);

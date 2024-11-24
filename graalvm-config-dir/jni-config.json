@@ -229,6 +229,10 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"org.signal.libsignal.usernames.DiscriminatorCannotBeZeroException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.signal.libsignal.usernames.MissingSeparatorException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },

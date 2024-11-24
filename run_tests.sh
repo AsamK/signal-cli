@@ -149,6 +149,7 @@ exec 3<> "$FIFO_FILE"
   echo '{"jsonrpc":"2.0","id":7,"method":"sendTyping","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
   echo '{"jsonrpc":"2.0","id":7,"method":"send","params":{"recipient":"'"$NUMBER_1"'","message":"some text"}}' >&3
   echo '{"jsonrpc":"2.0","id":7,"method":"send","params":{"recipients":["'"$NUMBER_1"'","'"$NUMBER_2"'"],"message":"some other text"}}' >&3
+  echo '{"jsonrpc":"2.0","id":7,"method":"sendReaction","params":{"recipients":["'"$NUMBER_2"'"],"targetAuthor":"'"$NUMBER_1"'","emoji":"👍","targetTimestamp":4756473756}}' >&3
   echo '{"jsonrpc":"2.0","id":7,"method":"updateProfile","params":{"givenName":"n1","familyName":"n2","about":"ABA","aboutEmoji":"EMO","avatar":"LICENSE"}}' >&3
   echo '{"jsonrpc":"2.0","id":7,"method":"getUserStatus","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
 
