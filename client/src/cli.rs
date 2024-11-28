@@ -413,8 +413,8 @@ pub enum CliCommands {
         #[arg(long = "about-emoji")]
         about_emoji: Option<String>,
 
-        #[arg(long = "mobile-coin-address")]
-        mobile_coin_address: Option<String>,
+        #[arg(long = "mobilecoin-address")]
+        mobilecoin_address: Option<String>,
 
         #[arg(long)]
         avatar: Option<String>,

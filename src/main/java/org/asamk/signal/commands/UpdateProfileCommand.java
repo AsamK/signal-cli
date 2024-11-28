@@ -27,7 +27,7 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--family-name").help("New profile family name (optional)");
         subparser.addArgument("--about").help("New profile about text");
         subparser.addArgument("--about-emoji").help("New profile about emoji");
-        subparser.addArgument("--mobile-coin-address").help("New MobileCoin address (Base64 encoded public address)");
+        subparser.addArgument("--mobilecoin-address").help("New MobileCoin address (Base64 encoded public address)");
 
         final var avatarOptions = subparser.addMutuallyExclusiveGroup();
         avatarOptions.addArgument("--avatar").help("Path to new profile avatar");
@@ -42,7 +42,7 @@ public class UpdateProfileCommand implements JsonRpcLocalCommand {
         var familyName = ns.getString("family-name");
         var about = ns.getString("about");
         var aboutEmoji = ns.getString("about-emoji");
-        var mobileCoinAddressString = ns.getString("mobile-coin-address");
+        var mobileCoinAddressString = ns.getString("mobilecoin-address");
         var mobileCoinAddress = mobileCoinAddressString == null
                 ? null
                 : Base64.getDecoder().decode(mobileCoinAddressString);

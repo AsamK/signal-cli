@@ -209,7 +209,7 @@ for OUTPUT in "plain-text" "json"; do
 done
 
 ## Profile
-run_main -a "$NUMBER_1" updateProfile --given-name=GIVEN --family-name=FAMILY --about=ABOUT --about-emoji=EMOJI --avatar=LICENSE --mobile-coin-address="YWJjCg=="
+run_main -a "$NUMBER_1" updateProfile --given-name=GIVEN --family-name=FAMILY --about=ABOUT --about-emoji=EMOJI --avatar=LICENSE --mobilecoin-address="YWJjCg=="
 
 ## Provisioning
 link "$NUMBER_1"
