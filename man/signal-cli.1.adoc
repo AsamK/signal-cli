@@ -26,7 +26,13 @@ For this use-case, it has a dbus and a JSON-RPC interface, that can be used to s
 Originally the Signal protocol only allowed sending messages to other phone numbers.
 Now with the introduction of phone number privacy, the phone number of a recipient is not always known.
 Only the recipient's ServiceId, ACI/PNI (a special UUID) is known.
-This special identifier can be used instead of the phone number in signal-cli's interface.
+
+In all places where a RECIPIENT argument is expected in signal-cli's interface, one of the following can be used:
+
+- The phone number
+- The ACI, just a UUID
+- The PNI, just a UUID, with "PNI:" prefix
+- The username, with "u:" prefix, e.g. "u:test.000"
 
 For some functionality the Signal protocol requires that all messages have been received from the server.
 The `receive` command should be regularly executed.
@@ -181,7 +187,7 @@ Indicates if Signal should share its phone number when sending a message.
 Change an account to a new phone number with SMS or voice verification.
 Use the finishChangeNumber command to complete the verification.
 
-NUMBER::
+RECIPIENT::
 The new phone number.
 
 *-v*, *--voice*::
@@ -198,7 +204,7 @@ After solving the captcha, right-click on the "Open Signal" link and copy the li
 
 Verify the number using the code received via SMS or voice.
 
-NUMBER::
+RECIPIENT::
 The new phone number.
 
 *-v*, *--verification-code*::
@@ -227,7 +233,7 @@ Indicates if Signal should generate link previews.
 
 === setPin
 
-Set a registration lock pin, to prevent others from registering this number.
+Set a registration lock pin, to prevent others from registering your account's phone number.
 
 REGISTRATION_LOCK_PIN::
 The registration lock PIN, that will be required for new registrations (resets after 7 days of inactivity)
@@ -286,7 +292,7 @@ One or more usernames to check.
 Send a message to another user or group.
 
 RECIPIENT::
-Specify the recipients’ phone number.
+Specify the recipients.
 
 *--note-to-self*::
 Send the message to self without notification.
@@ -332,7 +338,7 @@ e.g.: `-m "Something BIG!" --text-style "10:3:BOLD"` or for a mixed text style `
 Specify the timestamp of a previous message with the recipient or group to add a quote to the new message.
 
 *--quote-author*::
-Specify the number of the author of the original message.
+Specify the author of the original message.
 
 *--quote-message*::
 Specify the message of the original message.
@@ -363,7 +369,7 @@ Specify the image file for the link preview (optional).
 Specify the timestamp of a story to reply to.
 
 *--story-author*::
-Specify the number of the author of the story.
+Specify the author of the story.
 
 *-e*, *--end-session*::
 Clear session state and send end session message.
@@ -376,7 +382,7 @@ Specify the timestamp of a previous message with the recipient or group to send 
 Send response to a message request to linked devices.
 
 RECIPIENT::
-Specify the recipients’ phone number.
+Specify the recipients.
 
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
@@ -392,7 +398,7 @@ Type of message request response (accept, delete)
 Send a payment notification.
 
 RECIPIENT::
-Specify the recipient’s phone number.
+Specify the recipient.
 
 *--receipt* RECEIPT::
 The base64 encoded receipt blob.
@@ -405,7 +411,7 @@ Specify a note for the payment notification.
 Send reaction to a previously received or sent message.
 
 RECIPIENT::
-Specify the recipients’ phone number.
+Specify the recipients.
 
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
@@ -416,8 +422,8 @@ Specify the recipient username or username link.
 *-e* EMOJI, *--emoji* EMOJI::
 Specify the emoji, should be a single unicode grapheme cluster.
 
-*-a* NUMBER, *--target-author* NUMBER::
-Specify the number of the author of the message to which to react.
+*-a* RECIPIENT, *--target-author* RECIPIENT::
+Specify the author of the message to which to react.
 
 *-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
 Specify the timestamp of the message to which to react.
@@ -433,7 +439,7 @@ React to a story instead of a normal message
 Send a read or viewed receipt to a previously received message.
 
 RECIPIENT::
-Specify the sender’s phone number.
+Specify the sender.
 
 *-t* TIMESTAMP, *--target-timestamp* TIMESTAMP::
 Specify the timestamp of the message to which to react.
@@ -447,7 +453,7 @@ Send typing message to trigger a typing indicator for the recipient.
 Indicator will be shown for 15seconds unless a typing STOP message is sent first.
 
 RECIPIENT::
-Specify the recipients’ phone number.
+Specify the recipients.
 
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
@@ -460,7 +466,7 @@ Send a typing STOP message.
 Remotely delete a previously sent message.
 
 RECIPIENT::
-Specify the recipients’ phone number.
+Specify the recipients.
 
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.
@@ -586,7 +592,7 @@ Show a list of known contacts with names and profiles.
 When a specific recipient is given, its profile will be refreshed.
 
 RECIPIENT::
-Specify the recipients’ phone number.
+Specify the recipients.
 
 *-a*, *--all-recipients*::
 Include all known recipients, not only contacts.
@@ -608,17 +614,17 @@ Include internal information that's normally not user visible
 
 List all known identity keys and their trust status, fingerprint and safety number.
 
-*-n* NUMBER, *--number* NUMBER::
-Only show identity keys for the given phone number.
+*-n* RECIPIENT, *--number* RECIPIENT::
+Only show identity keys for the given recipient.
 
 === trust
 
-Set the trust level of a given number.
-The first time a key for a number is seen, it is trusted by default (TOFU).
+Set the trust level of a given recipient.
+The first time a key for a recipient is seen, it is trusted by default (TOFU).
 If the key changes, the new key must be trusted manually.
 
-number::
-Specify the phone number, for which to set the trust.
+RECIPIENT::
+Specify the recipient, for which to set the trust.
 
 *-a*, *--trust-all-known-keys*::
 Trust all known keys of this user, only use this for testing.
@@ -656,12 +662,12 @@ New MobileCoin address (Base64 encoded public address)
 
 === updateContact
 
-Update the info associated to a number on our contact list.
+Update the info associated to a recipient on our contact list.
 This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
 If the contact doesn't exist yet, it will be added.
 
-NUMBER::
-Specify the contact phone number.
+RECIPIENT::
+Specify the recipient.
 
 *--given-name* NAME, *--name* NAME::
 New (given) name.
@@ -677,8 +683,8 @@ To disable expiration set expiration time to 0.
 
 Remove the info of a given contact
 
-NUMBER::
-Specify the contact phone number.
+RECIPIENT::
+Specify the recipient.
 
 *--hide*::
 Hide the contact in the contact list, but keep the data.
@@ -691,8 +697,8 @@ Delete all data associated with this contact, including identity keys and sessio
 Block the given contacts or groups (no messages will be received).
 This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
 
-[CONTACT [CONTACT ...]]::
-Specify the phone numbers of contacts that should be blocked.
+[RECIPIENT [RECIPIENT ...]]::
+Specify the contacts that should be blocked.
 
 *-g* [GROUP [GROUP ...]], *--group-id* [GROUP [GROUP ...]]::
 Specify the group IDs that should be blocked in base64 encoding.
@@ -702,8 +708,8 @@ Specify the group IDs that should be blocked in base64 encoding.
 Unblock the given contacts or groups (messages will be received again).
 This change is only local but can be synchronized to other devices by using `sendContacts` (see below).
 
-[CONTACT [CONTACT ...]]::
-Specify the phone numbers of contacts that should be unblocked.
+[RECIPIENT [RECIPIENT ...]]::
+Specify the contacts that should be unblocked.
 
 *-g* [GROUP [GROUP ...]], *--group-id* [GROUP [GROUP ...]]::
 Specify the group IDs that should be unblocked in base64 encoding.
@@ -776,7 +782,7 @@ The attachment data is returned as a Base64 String.
 The ID of the attachment as given in the attachment list of the message.
 
 *--recipient* [RECIPIENT]::
-Specify the number which sent the attachment.
+Specify the recipient which sent the attachment.
 Referred to generally as recipient.
 
 *-g* [GROUP], *--group-id* [GROUP]::
@@ -788,10 +794,10 @@ Gets the raw data for a specified contact, contact's profile or group avatar.
 The attachment data is returned as a Base64 String.
 
 *--contact* [RECIPIENT]::
-Specify the number of a recipient.
+Specify the recipient.
 
 *--profile* [RECIPIENT]::
-Specify the number of a recipient.
+Specify the recipient.
 
 *-g* [GROUP], *--group-id* [GROUP]::
 Alternatively, specify the group ID for which to get the avatar.
@@ -912,10 +918,10 @@ Send a message to a group::
 signal-cli -a ACCOUNT send -m "This is a message" -g GROUP_ID
 
 Trust new key, after having verified it::
-signal-cli -a ACCOUNT trust -v SAFETY_NUMBER NUMBER
+signal-cli -a ACCOUNT trust -v SAFETY_NUMBER RECIPIENT
 
 Trust new key, without having verified it. Only use this if you don't care about security::
-signal-cli -a ACCOUNT trust -a NUMBER
+signal-cli -a ACCOUNT trust -a RECIPIENT
 
 == Exit codes
 
