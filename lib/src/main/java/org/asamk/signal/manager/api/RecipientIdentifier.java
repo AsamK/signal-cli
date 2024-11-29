@@ -29,6 +29,14 @@ public sealed interface RecipientIdentifier {
                     return new Uuid(UUID.fromString(identifier));
                 }
 
+                if (identifier.startsWith("PNI:")) {
+                    final var pni = identifier.substring(4);
+                    if (!UuidUtil.isUuid(pni)) {
+                        throw new InvalidNumberException("Invalid PNI");
+                    }
+                    return new Pni(UUID.fromString(pni));
+                }
+
                 if (identifier.startsWith("u:")) {
                     return new Username(identifier.substring(2));
                 }
@@ -50,7 +58,7 @@ public sealed interface RecipientIdentifier {
             } else if (address.aci().isPresent()) {
                 return new Uuid(UUID.fromString(address.aci().get()));
             } else if (address.pni().isPresent()) {
-                return new Pni(address.pni().get());
+                return new Pni(UUID.fromString(address.pni().get().substring(4)));
             } else if (address.username().isPresent()) {
                 return new Username(address.username().get());
             }
@@ -73,16 +81,16 @@ public sealed interface RecipientIdentifier {
         }
     }
 
-    record Pni(String pni) implements Single {
+    record Pni(UUID pni) implements Single {
 
         @Override
         public String getIdentifier() {
-            return pni;
+            return "PNI:" + pni.toString();
         }
 
         @Override
         public RecipientAddress toPartialRecipientAddress() {
-            return new RecipientAddress(null, pni, null, null);
+            return new RecipientAddress(null, getIdentifier(), null, null);
         }
     }
 

@@ -888,7 +888,7 @@ public class ManagerImpl implements Manager {
                         .deleteEntryForRecipientNonGroup(targetSentTimestamp, ACI.from(u.uuid()));
             } else if (recipient instanceof RecipientIdentifier.Pni pni) {
                 account.getMessageSendLogStore()
-                        .deleteEntryForRecipientNonGroup(targetSentTimestamp, PNI.parseOrThrow(pni.pni()));
+                        .deleteEntryForRecipientNonGroup(targetSentTimestamp, PNI.from(pni.pni()));
             } else if (recipient instanceof RecipientIdentifier.Single r) {
                 try {
                     final var recipientId = context.getRecipientHelper().resolveRecipient(r);

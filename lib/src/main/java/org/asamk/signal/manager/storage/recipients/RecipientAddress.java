@@ -69,8 +69,8 @@ public record RecipientAddress(
     }
 
     public RecipientAddress(org.asamk.signal.manager.api.RecipientAddress address) {
-        this(address.aci().map(ACI::parseOrNull),
-                address.pni().map(PNI::parseOrNull),
+        this(address.aci().map(ACI::parseOrThrow),
+                address.pni().map(PNI::parseOrThrow),
                 address.number(),
                 address.username());
     }
