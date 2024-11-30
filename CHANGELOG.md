@@ -1,6 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.10] - 2024-11-30
+
+### Fixed
+
+- Fix receiving some unusual contact sync messages
+- Fix receiving expiration timer updates
+
+### Improved
+- Add support for new storage encryption scheme
 
 ## [0.13.9] - 2024-10-28
 
