@@ -4,6 +4,8 @@
 
 ## [0.13.10] - 2024-11-30
 
+Requires libsignal-client version 0.62.0.
+
 ### Fixed
 
 - Fix receiving some unusual contact sync messages
