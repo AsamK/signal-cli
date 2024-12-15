@@ -10,7 +10,7 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 logback = "ch.qos.logback:logback-classic:1.5.12"
 
-signalservice = "com.github.turasa:signal-service-java:2.15.3_unofficial_112"
+signalservice = "com.github.turasa:signal-service-java:2.15.3_unofficial_113"
 sqlite = "org.xerial:sqlite-jdbc:3.47.0.0"
 hikari = "com.zaxxer:HikariCP:6.2.1"
 junit-jupiter = "org.junit.jupiter:junit-jupiter:5.11.3"

@@ -49,7 +49,7 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implemen
         final var local = getMatching(remote);
 
         if (local.isEmpty()) {
-            debug(remote.getId(), remote, "No matching local record. Inserting.");
+            debug(remote.getId(), remote, "[Local Insert] No matching local record. Inserting.");
             insertLocal(remote);
             return;
         }
@@ -70,7 +70,7 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implemen
 
         if (!merged.equals(local.get())) {
             final var update = new StorageRecordUpdate<>(local.get(), merged);
-            debug(remote.getId(), remote, "[Local Update] " + update);
+            debug(remote.getId(), remote, "[Local Update] " + local.get().describeDiff(merged));
             updateLocal(update);
         }
     }

@@ -28,6 +28,7 @@ import org.signal.storageservice.protos.groups.local.DecryptedMember;
 import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.groupsv2.DecryptChangeVerificationMode;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupResponse;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupUtil;
 import org.whispersystems.signalservice.api.groupsv2.GroupCandidate;
@@ -652,11 +653,13 @@ class GroupV2Helper {
 
     DecryptedGroupChange getDecryptedGroupChange(byte[] signedGroupChange, GroupMasterKey groupMasterKey) {
         if (signedGroupChange != null) {
-            var groupOperations = dependencies.getGroupsV2Operations()
-                    .forGroup(GroupSecretParams.deriveFromMasterKey(groupMasterKey));
+            final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
+            final var groupOperations = dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
+            final var groupId = groupSecretParams.getPublicParams().getGroupIdentifier();
 
             try {
-                return groupOperations.decryptChange(GroupChange.ADAPTER.decode(signedGroupChange), true).orElse(null);
+                return groupOperations.decryptChange(GroupChange.ADAPTER.decode(signedGroupChange),
+                        DecryptChangeVerificationMode.verify(groupId)).orElse(null);
             } catch (VerificationFailedException | InvalidGroupStateException | IOException e) {
                 return null;
             }
