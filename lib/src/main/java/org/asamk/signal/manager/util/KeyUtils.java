@@ -15,7 +15,6 @@ import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.signalservice.api.account.PreKeyCollection;
 import org.whispersystems.signalservice.api.backup.MediaRootBackupKey;
-import org.whispersystems.signalservice.api.kbs.MasterKey;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -107,10 +106,6 @@ public class KeyUtils {
 
     public static byte[] createStickerUploadKey() {
         return getSecretBytes(32);
-    }
-
-    public static MasterKey createMasterKey() {
-        return MasterKey.createNew(secureRandom);
     }
 
     public static MediaRootBackupKey createMediaRootBackupKey() {

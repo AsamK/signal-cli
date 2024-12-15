@@ -1550,9 +1550,7 @@ public class SignalAccount implements Closeable {
             return key;
         }
 
-        pinMasterKey = KeyUtils.createMasterKey();
-        save();
-        return pinMasterKey;
+        return getOrCreateAccountEntropyPool().deriveMasterKey();
     }
 
     private MasterKey getMasterKey() {
