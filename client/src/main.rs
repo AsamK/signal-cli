@@ -371,7 +371,7 @@ async fn handle_command(
             family_name,
             about,
             about_emoji,
-            mobile_coin_address,
+            mobilecoin_address,
             avatar,
             remove_avatar,
         } => {
@@ -382,7 +382,7 @@ async fn handle_command(
                     family_name,
                     about,
                     about_emoji,
-                    mobile_coin_address,
+                    mobilecoin_address,
                     avatar,
                     remove_avatar,
                 )
