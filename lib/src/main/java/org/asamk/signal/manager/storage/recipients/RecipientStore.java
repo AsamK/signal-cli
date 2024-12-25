@@ -934,7 +934,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     }
 
     public void markUndiscoverablePossiblyUnregistered(final Set<String> numbers) {
-        logger.debug("Marking {} numbers as unregistered", numbers.size());
+        logger.debug("Marking {} numbers as undiscoverable", numbers.size());
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
             for (final var number : numbers) {
