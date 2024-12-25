@@ -962,7 +962,7 @@ public final class IncomingMessageHandler {
 
     private DeviceAddress getDestination(SignalServiceEnvelope envelope) {
         final var destination = envelope.getDestinationServiceId();
-        if (destination == null) {
+        if (destination == null || destination.isUnknown()) {
             return new DeviceAddress(account.getSelfRecipientId(), account.getAci(), account.getDeviceId());
         }
         return new DeviceAddress(account.getRecipientResolver().resolveRecipient(destination),
