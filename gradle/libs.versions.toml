@@ -8,10 +8,10 @@ argparse4j = "net.sourceforge.argparse4j:argparse4j:0.9.0"
 dbusjava = "com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.0.0"
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
-logback = "ch.qos.logback:logback-classic:1.5.12"
+logback = "ch.qos.logback:logback-classic:1.5.15"
 
 signalservice = "com.github.turasa:signal-service-java:2.15.3_unofficial_114"
 sqlite = "org.xerial:sqlite-jdbc:3.47.1.0"
 hikari = "com.zaxxer:HikariCP:6.2.1"
-junit-jupiter = "org.junit.jupiter:junit-jupiter:5.11.3"
-junit-launcher = "org.junit.platform:junit-platform-launcher:1.11.3"
+junit-jupiter = "org.junit.jupiter:junit-jupiter:5.11.4"
+junit-launcher = "org.junit.platform:junit-platform-launcher:1.11.4"
