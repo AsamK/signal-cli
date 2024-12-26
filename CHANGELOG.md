@@ -1,6 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.11] - 2024-12-26
+
+Requires libsignal-client version 0.64.0.
+
+### Fixed
+- Fix issue with receiving messages that have an invalid destination
 
 ## [0.13.10] - 2024-11-30
 
