@@ -68,7 +68,6 @@ import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.asamk.signal.manager.api.UsernameStatus;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
-import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
@@ -140,6 +139,10 @@ import java.util.stream.Stream;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+import okio.Utf8;
+
+import static org.asamk.signal.manager.config.ServiceConfig.MAX_MESSAGE_SIZE_BYTES;
+import static org.signal.core.util.StringExtensionsKt.splitByByteLength;
 
 public class ManagerImpl implements Manager {
 
@@ -763,17 +766,24 @@ public class ManagerImpl implements Manager {
             final Message message
     ) throws AttachmentInvalidException, IOException, UnregisteredRecipientException, InvalidStickerException {
         final var additionalAttachments = new ArrayList<SignalServiceAttachment>();
-        if (message.messageText().length() > ServiceConfig.MAX_MESSAGE_BODY_SIZE) {
-            final var messageBytes = message.messageText().getBytes(StandardCharsets.UTF_8);
-            final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec();
-            final var streamDetails = new StreamDetails(new ByteArrayInputStream(messageBytes),
-                    MimeUtils.LONG_TEXT,
-                    messageBytes.length);
-            final var textAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
-                    Optional.empty(),
-                    uploadSpec);
-            messageBuilder.withBody(message.messageText().substring(0, ServiceConfig.MAX_MESSAGE_BODY_SIZE));
-            additionalAttachments.add(context.getAttachmentHelper().uploadAttachment(textAttachment));
+        if (Utf8.size(message.messageText()) > MAX_MESSAGE_SIZE_BYTES) {
+            final var result = splitByByteLength(message.messageText(), MAX_MESSAGE_SIZE_BYTES);
+            final var trimmed = result.getFirst();
+            final var remainder = result.getSecond();
+            if (remainder != null) {
+                final var messageBytes = message.messageText().getBytes(StandardCharsets.UTF_8);
+                final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec();
+                final var streamDetails = new StreamDetails(new ByteArrayInputStream(messageBytes),
+                        MimeUtils.LONG_TEXT,
+                        messageBytes.length);
+                final var textAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
+                        Optional.empty(),
+                        uploadSpec);
+                messageBuilder.withBody(trimmed);
+                additionalAttachments.add(context.getAttachmentHelper().uploadAttachment(textAttachment));
+            } else {
+                messageBuilder.withBody(message.messageText());
+            }
         } else {
             messageBuilder.withBody(message.messageText());
         }
