@@ -1,0 +1,6 @@
+/var/www/html/example.org/*.txt {
+    rotate 12
+    weekly
+    compress
+    missingok
+}
