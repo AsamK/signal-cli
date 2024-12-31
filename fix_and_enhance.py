@@ -1,4 +1,4 @@
-# Renames --mobile-coin-address to --mobilecoin-address across the repository.
+# Renames --mobilecoin-address to --mobilecoin-address across the repository.
 # Adds an alias for backward compatibility.
 # Fixes the missing semicolon issue in the Rust code.
 # Introduces a new feature: a script for generating a configuration template for Signal-CLI to make setup easier.
@@ -11,7 +11,7 @@ import re
 # Directory and file extensions to process
 TARGET_EXTENSIONS = ['.rs', '.java', '.md', '.py']
 MISSING_SEMICOLON_PATTERN = r'([^\s;])\n'
-MOBILECOIN_PATTERN = r'--mobile-coin-address'
+MOBILECOIN_PATTERN = r'--mobilecoin-address'
 REPLACEMENT_ALIAS = '--mobilecoin-address'
 
 # Function to replace text in files
