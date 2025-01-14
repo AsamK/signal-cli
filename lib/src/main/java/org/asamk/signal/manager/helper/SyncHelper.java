@@ -366,7 +366,7 @@ public class SyncHelper {
                 c = s.read();
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().contains("Missing contact address!")) {
-                    logger.warn("Sync contacts contained invalid contact, ignoring: {}", e.getMessage());
+                    logger.debug("Sync contacts contained invalid contact, ignoring: {}", e.getMessage());
                     continue;
                 } else {
                     throw e;
