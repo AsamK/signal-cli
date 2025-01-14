@@ -22,6 +22,8 @@ import org.whispersystems.signalservice.internal.storage.protos.ContactRecord.Id
 import org.whispersystems.signalservice.internal.storage.protos.GroupV1Record;
 import org.whispersystems.signalservice.internal.storage.protos.GroupV2Record;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Optional;
 
 import okio.ByteString;
@@ -49,10 +51,11 @@ public final class StorageSyncModels {
     }
 
     public static AccountRecord localToRemoteRecord(
+            final Connection connection,
             ConfigurationStore configStore,
             Recipient self,
             UsernameLinkComponents usernameLinkComponents
-    ) {
+    ) throws SQLException {
         final var builder = SignalAccountRecord.Companion.newBuilder(self.getStorageRecord());
         if (self.getProfileKey() != null) {
             builder.profileKey(ByteString.of(self.getProfileKey().serialize()));
@@ -62,19 +65,19 @@ public final class StorageSyncModels {
                     .familyName(emptyIfNull(self.getProfile().getFamilyName()))
                     .avatarUrlPath(emptyIfNull(self.getProfile().getAvatarUrlPath()));
         }
-        builder.typingIndicators(Optional.ofNullable(configStore.getTypingIndicators()).orElse(true))
-                .readReceipts(Optional.ofNullable(configStore.getReadReceipts()).orElse(true))
-                .sealedSenderIndicators(Optional.ofNullable(configStore.getUnidentifiedDeliveryIndicators())
+        builder.typingIndicators(Optional.ofNullable(configStore.getTypingIndicators(connection)).orElse(true))
+                .readReceipts(Optional.ofNullable(configStore.getReadReceipts(connection)).orElse(true))
+                .sealedSenderIndicators(Optional.ofNullable(configStore.getUnidentifiedDeliveryIndicators(connection))
                         .orElse(true))
-                .linkPreviews(Optional.ofNullable(configStore.getLinkPreviews()).orElse(true))
-                .unlistedPhoneNumber(Optional.ofNullable(configStore.getPhoneNumberUnlisted()).orElse(false))
-                .phoneNumberSharingMode(Optional.ofNullable(configStore.getPhoneNumberSharingMode())
+                .linkPreviews(Optional.ofNullable(configStore.getLinkPreviews(connection)).orElse(true))
+                .unlistedPhoneNumber(Optional.ofNullable(configStore.getPhoneNumberUnlisted(connection)).orElse(false))
+                .phoneNumberSharingMode(Optional.ofNullable(configStore.getPhoneNumberSharingMode(connection))
                         .map(StorageSyncModels::localToRemote)
                         .orElse(AccountRecord.PhoneNumberSharingMode.UNKNOWN))
                 .e164(self.getAddress().number().orElse(""))
                 .username(self.getAddress().username().orElse(""));
         if (usernameLinkComponents != null) {
-            final var linkColor = configStore.getUsernameLinkColor();
+            final var linkColor = configStore.getUsernameLinkColor(connection);
             builder.usernameLink(new UsernameLink.Builder().entropy(ByteString.of(usernameLinkComponents.getEntropy()))
                     .serverId(UuidUtil.toByteString(usernameLinkComponents.getServerId()))
                     .color(linkColor == null ? UsernameLink.Color.UNKNOWN : UsernameLink.Color.valueOf(linkColor))

@@ -353,7 +353,8 @@ public class StorageHelper {
                 final var storageId = newContactStorageIds.get(recipientId);
                 if (storageId.getType() == ManifestRecord.Identifier.Type.ACCOUNT.getValue()) {
                     final var recipient = account.getRecipientStore().getRecipient(connection, recipientId);
-                    final var accountRecord = StorageSyncModels.localToRemoteRecord(account.getConfigurationStore(),
+                    final var accountRecord = StorageSyncModels.localToRemoteRecord(connection,
+                            account.getConfigurationStore(),
                             recipient,
                             account.getUsernameLink());
                     newStorageRecords.add(new SignalStorageRecord(storageId,
@@ -551,7 +552,8 @@ public class StorageHelper {
                 final var selfRecipient = account.getRecipientStore()
                         .getRecipient(connection, account.getSelfRecipientId());
 
-                final var record = StorageSyncModels.localToRemoteRecord(account.getConfigurationStore(),
+                final var record = StorageSyncModels.localToRemoteRecord(connection,
+                        account.getConfigurationStore(),
                         selfRecipient,
                         account.getUsernameLink());
                 yield new SignalStorageRecord(storageId, new StorageRecord.Builder().account(record).build());

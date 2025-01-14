@@ -53,7 +53,8 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var recipient = account.getRecipientStore().getRecipient(connection, selfRecipientId);
         final var storageId = account.getRecipientStore().getSelfStorageId(connection);
         this.localAccountRecord = new SignalAccountRecord(storageId,
-                StorageSyncModels.localToRemoteRecord(account.getConfigurationStore(),
+                StorageSyncModels.localToRemoteRecord(connection,
+                        account.getConfigurationStore(),
                         recipient,
                         account.getUsernameLink()));
     }

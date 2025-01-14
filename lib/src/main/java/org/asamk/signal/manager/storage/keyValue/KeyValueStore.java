@@ -52,7 +52,7 @@ public class KeyValueStore {
         }
     }
 
-    private <T> T getEntry(final Connection connection, final KeyValueEntry<T> key) throws SQLException {
+    public <T> T getEntry(final Connection connection, final KeyValueEntry<T> key) throws SQLException {
         final var sql = (
                 """
                 SELECT key, value
