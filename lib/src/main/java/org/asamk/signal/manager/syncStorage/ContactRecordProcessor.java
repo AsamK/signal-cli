@@ -267,8 +267,12 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                     .withGivenName(nullIfEmpty(contactProto.systemGivenName))
                     .withFamilyName(nullIfEmpty(contactProto.systemFamilyName))
                     .withNickName(nullIfEmpty(contactProto.systemNickname))
-                    .withNickNameGivenName(nullIfEmpty(contactProto.givenName))
-                    .withNickNameFamilyName(nullIfEmpty(contactProto.familyName))
+                    .withNickNameGivenName(nullIfEmpty(contactProto.nickname == null
+                            ? null
+                            : contactProto.nickname.given))
+                    .withNickNameFamilyName(nullIfEmpty(contactProto.nickname == null
+                            ? null
+                            : contactProto.nickname.family))
                     .withNote(nullIfEmpty(contactProto.note))
                     .withUnregisteredTimestamp(contactProto.unregisteredAtTimestamp == 0
                             ? null
