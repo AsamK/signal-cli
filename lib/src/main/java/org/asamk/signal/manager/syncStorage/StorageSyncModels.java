@@ -89,7 +89,7 @@ public final class StorageSyncModels {
         final var builder = SignalContactRecord.Companion.newBuilder(recipient.getStorageRecord())
                 .aci(address.aci().map(ACI::toString).orElse(""))
                 .e164(address.number().orElse(""))
-                .pni(address.pni().map(PNI::toString).orElse(""))
+                .pni(address.pni().map(PNI::toStringWithoutPrefix).orElse(""))
                 .username(address.username().orElse(""))
                 .profileKey(recipient.getProfileKey() == null
                         ? ByteString.EMPTY
