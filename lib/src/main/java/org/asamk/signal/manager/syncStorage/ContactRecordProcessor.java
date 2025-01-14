@@ -270,7 +270,9 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                     .withNickNameGivenName(nullIfEmpty(contactProto.givenName))
                     .withNickNameFamilyName(nullIfEmpty(contactProto.familyName))
                     .withNote(nullIfEmpty(contactProto.note))
-                    .withUnregisteredTimestamp(contactProto.unregisteredAtTimestamp);
+                    .withUnregisteredTimestamp(contactProto.unregisteredAtTimestamp == 0
+                            ? null
+                            : contactProto.unregisteredAtTimestamp);
             account.getRecipientStore().storeContact(connection, recipientId, newContact.build());
         }
 
