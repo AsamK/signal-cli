@@ -78,7 +78,7 @@ public class KeyValueStore {
             final KeyValueEntry<T> key,
             final T value
     ) throws SQLException {
-        final var entry = getEntry(key);
+        final var entry = getEntry(connection, key);
         if (Objects.equals(entry, value)) {
             return false;
         }
