@@ -39,7 +39,7 @@ public class MergeRecipientHelper {
                     )
             ) || recipient.address().aci().equals(address.aci())) {
                 logger.debug("Got existing recipient {}, updating with high trust address", recipient.id());
-                store.updateRecipientAddress(recipient.id(), recipient.address().withIdentifiersFrom(address));
+                store.updateRecipientAddress(recipient.id(), address.withOtherIdentifiersFrom(recipient.address()));
                 return new Pair<>(recipient.id(), List.of());
             }
 
@@ -93,14 +93,14 @@ public class MergeRecipientHelper {
             if (finalAddress == null) {
                 finalAddress = recipient.address();
             } else {
-                finalAddress = finalAddress.withIdentifiersFrom(recipient.address());
+                finalAddress = finalAddress.withOtherIdentifiersFrom(recipient.address());
             }
             store.removeRecipientAddress(recipient.id());
         }
         if (finalAddress == null) {
             finalAddress = address;
         } else {
-            finalAddress = finalAddress.withIdentifiersFrom(address);
+            finalAddress = address.withOtherIdentifiersFrom(finalAddress);
         }
 
         for (final var recipient : recipientsToBeStripped) {

@@ -79,11 +79,11 @@ public record RecipientAddress(
         this(Optional.of(serviceId), Optional.empty());
     }
 
-    public RecipientAddress withIdentifiersFrom(RecipientAddress address) {
-        return new RecipientAddress(address.aci.or(this::aci),
-                address.pni.or(this::pni),
-                address.number.or(this::number),
-                address.username.or(this::username));
+    public RecipientAddress withOtherIdentifiersFrom(RecipientAddress address) {
+        return new RecipientAddress(this.aci.or(address::aci),
+                this.pni.or(address::pni),
+                this.number.or(address::number),
+                this.username.or(address::username));
     }
 
     public RecipientAddress removeIdentifiersFrom(RecipientAddress address) {
