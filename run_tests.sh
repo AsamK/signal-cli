@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ $# -ne 2 ]; then
   echo "Usage: $0 NUMBER_1 NUMBER_2"
   exit 1
@@ -133,7 +133,7 @@ mkfifo "$FIFO_FILE"
 run_main -a "$NUMBER_1" send "$NUMBER_2" -m hi
 run_main -a "$NUMBER_2" jsonRpc < "$FIFO_FILE" &
 
-exec 3<> "$FIFO_FILE"
+exec 3> "$FIFO_FILE"
   echo '{"jsonrpc":"2.0","id":"id","method":"updateContact","params":{"recipient":"'"$NUMBER_1"'","name":"NUMBER_1","expiration":10}}' >&3
   echo '{"jsonrpc":"2.0","id":5,"method":"block","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
   echo '{"jsonrpc":"2.0","id":null,"method":"unblock","params":{"recipient":"'"$NUMBER_1"'"}}' >&3
