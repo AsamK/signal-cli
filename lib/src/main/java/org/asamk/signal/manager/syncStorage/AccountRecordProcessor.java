@@ -11,6 +11,7 @@ import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.UsernameLinkComponents;
+import org.whispersystems.signalservice.api.storage.IAPSubscriptionId;
 import org.whispersystems.signalservice.api.storage.SignalAccountRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
 import org.whispersystems.signalservice.api.util.UuidUtil;
@@ -22,8 +23,12 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
 
+import okio.ByteString;
+
 import static org.asamk.signal.manager.util.Utils.firstNonEmpty;
-import static org.asamk.signal.manager.util.Utils.firstNonNull;
+import static org.whispersystems.signalservice.api.storage.AccountRecordExtensionsKt.safeSetBackupsSubscriber;
+import static org.whispersystems.signalservice.api.storage.AccountRecordExtensionsKt.safeSetPayments;
+import static org.whispersystems.signalservice.api.storage.AccountRecordExtensionsKt.safeSetSubscriber;
 
 /**
  * Processes {@link SignalAccountRecord}s.
@@ -77,6 +82,35 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
             familyName = local.familyName;
         }
 
+        final var payments = remote.payments != null && remote.payments.entropy.size() > 0
+                ? remote.payments
+                : local.payments;
+
+        final ByteString donationSubscriberId;
+        final String donationSubscriberCurrencyCode;
+
+        if (remote.subscriberId.size() > 0) {
+            donationSubscriberId = remote.subscriberId;
+            donationSubscriberCurrencyCode = remote.subscriberCurrencyCode;
+        } else {
+            donationSubscriberId = local.subscriberId;
+            donationSubscriberCurrencyCode = local.subscriberCurrencyCode;
+        }
+
+        final ByteString backupsSubscriberId;
+        final IAPSubscriptionId backupsPurchaseToken;
+
+        final var remoteBackupSubscriberData = remote.backupSubscriberData;
+        if (remoteBackupSubscriberData != null && remoteBackupSubscriberData.subscriberId.size() > 0) {
+            backupsSubscriberId = remoteBackupSubscriberData.subscriberId;
+            backupsPurchaseToken = IAPSubscriptionId.Companion.from(remoteBackupSubscriberData);
+        } else {
+            backupsSubscriberId = local.backupSubscriberData != null
+                    ? local.backupSubscriberData.subscriberId
+                    : ByteString.EMPTY;
+            backupsPurchaseToken = IAPSubscriptionId.Companion.from(local.backupSubscriberData);
+        }
+
         final var mergedBuilder = SignalAccountRecord.Companion.newBuilder(remote.unknownFields().toByteArray())
                 .givenName(givenName)
                 .familyName(familyName)
@@ -96,9 +130,6 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .preferredReactionEmoji(firstNonEmpty(remote.preferredReactionEmoji, local.preferredReactionEmoji))
                 .subscriberId(firstNonEmpty(remote.subscriberId, local.subscriberId))
                 .subscriberCurrencyCode(firstNonEmpty(remote.subscriberCurrencyCode, local.subscriberCurrencyCode))
-                .backupsSubscriberId(firstNonEmpty(remote.backupsSubscriberId, local.backupsSubscriberId))
-                .backupsSubscriberCurrencyCode(firstNonEmpty(remote.backupsSubscriberCurrencyCode,
-                        local.backupsSubscriberCurrencyCode))
                 .displayBadgesOnProfile(remote.displayBadgesOnProfile)
                 .subscriptionManuallyCancelled(remote.subscriptionManuallyCancelled)
                 .keepMutedChatsArchived(remote.keepMutedChatsArchived)
@@ -115,9 +146,12 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .username(remote.username)
                 .usernameLink(remote.usernameLink)
                 .e164(account.isPrimaryDevice() ? local.e164 : remote.e164);
-        if (firstNonNull(remote.payments, local.payments) != null) {
-            mergedBuilder.payments(firstNonNull(remote.payments, local.payments));
-        }
+        safeSetPayments(mergedBuilder,
+                payments != null && payments.enabled,
+                payments == null ? null : payments.entropy.toByteArray());
+        safeSetSubscriber(mergedBuilder, donationSubscriberId, donationSubscriberCurrencyCode);
+        safeSetBackupsSubscriber(mergedBuilder, backupsSubscriberId, backupsPurchaseToken);
+
         final var merged = mergedBuilder.build();
 
         final var matchesRemote = doProtosMatch(merged, remote);

@@ -2947,6 +2947,9 @@
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$Companion"
 },
 {
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$IAPSubscriberData"
+},
+{
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PhoneNumberSharingMode"
 },
 {

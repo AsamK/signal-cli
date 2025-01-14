@@ -8,7 +8,7 @@ import java.sql.SQLException;
  * Handles processing a remote record, which involves applying any local changes that need to be
  * made based on the remote records.
  */
-interface StorageRecordProcessor<E extends SignalRecord> {
+interface StorageRecordProcessor<E extends SignalRecord<?>> {
 
     void process(E remoteRecord) throws SQLException;
 }
