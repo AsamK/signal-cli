@@ -95,7 +95,7 @@ public abstract class Database implements AutoCloseable {
         sqliteConfig.setTransactionMode(SQLiteConfig.TransactionMode.IMMEDIATE);
 
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:sqlite:" + databaseFile + "?foreign_keys=ON");
+        config.setJdbcUrl("jdbc:sqlite:" + databaseFile + "?foreign_keys=ON&journal_mode=wal");
         config.setDataSourceProperties(sqliteConfig.toProperties());
         config.setMinimumIdle(1);
         return new HikariDataSource(config);
