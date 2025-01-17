@@ -156,7 +156,7 @@ public class HttpServerHandler implements AutoCloseable {
         }
 
         try {
-            final var queryString = httpExchange.getRequestURI().getQuery();
+            final var queryString = httpExchange.getRequestURI().getRawQuery();
             final var query = queryString == null ? Map.<String, String>of() : Util.getQueryMap(queryString);
 
             List<Manager> managers = getManagerFromQuery(query);
