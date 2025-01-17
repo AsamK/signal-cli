@@ -76,6 +76,9 @@
   "name":"[Lorg.asamk.signal.manager.storage.accounts.AccountsStorage$Account;"
 },
 {
+  "name":"[Lorg.asamk.signal.manager.storage.stickerPacks.JsonStickerPack$JsonSticker;"
+},
+{
   "name":"[Lorg.whispersystems.signalservice.api.groupsv2.TemporalCredential;"
 },
 {
