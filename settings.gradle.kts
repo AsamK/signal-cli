@@ -6,4 +6,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "signal-cli"
-include("lib")
+
+include("libsignal-cli")
+project(":libsignal-cli").projectDir = file("lib")

@@ -51,7 +51,7 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.jul)
     implementation(libs.logback)
-    implementation(project(":lib"))
+    implementation(project(":libsignal-cli"))
 }
 
 configurations {
