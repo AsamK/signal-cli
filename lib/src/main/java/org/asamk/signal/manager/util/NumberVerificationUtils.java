@@ -11,9 +11,9 @@ import org.asamk.signal.manager.helper.PinHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.kbs.MasterKey;
+import org.whispersystems.signalservice.api.push.exceptions.ChallengeRequiredException;
 import org.whispersystems.signalservice.api.push.exceptions.NoSuchSessionException;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
-import org.whispersystems.signalservice.api.push.exceptions.PushChallengeRequiredException;
 import org.whispersystems.signalservice.api.push.exceptions.TokenNotAcceptedException;
 import org.whispersystems.signalservice.api.registration.RegistrationApi;
 import org.whispersystems.signalservice.internal.push.LockedException;
@@ -39,8 +39,7 @@ public class NumberVerificationUtils {
         RegistrationSessionMetadataResponse sessionResponse;
         try {
             sessionResponse = getValidSession(registrationApi, sessionId);
-        } catch (PushChallengeRequiredException |
-                 org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
+        } catch (ChallengeRequiredException e) {
             if (captcha != null) {
                 sessionResponse = submitCaptcha(registrationApi, sessionId, captcha);
             } else {
@@ -99,7 +98,7 @@ public class NumberVerificationUtils {
                 voiceVerification ? VerificationCodeTransport.VOICE : VerificationCodeTransport.SMS);
         try {
             Utils.handleResponseException(response);
-        } catch (org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException e) {
+        } catch (ChallengeRequiredException e) {
             throw new CaptchaRequiredException(e.getMessage(), e);
         } catch (org.whispersystems.signalservice.api.push.exceptions.NonNormalizedPhoneNumberException e) {
             throw new NonNormalizedPhoneNumberException("Phone number is not normalized ("
@@ -179,9 +178,7 @@ public class NumberVerificationUtils {
         captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
         try {
             return Utils.handleResponseException(registrationApi.submitCaptchaToken(sessionId, captcha));
-        } catch (PushChallengeRequiredException |
-                 org.whispersystems.signalservice.api.push.exceptions.CaptchaRequiredException |
-                 TokenNotAcceptedException _e) {
+        } catch (ChallengeRequiredException | TokenNotAcceptedException _e) {
             throw new CaptchaRequiredException("Captcha not accepted");
         } catch (NonSuccessfulResponseCodeException e) {
             if (e.code == 400) {
