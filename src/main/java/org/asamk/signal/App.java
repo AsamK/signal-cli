@@ -99,6 +99,9 @@ public class App {
                 .help("Disable message send log (for resending messages that recipient couldn't decrypt)")
                 .action(Arguments.storeTrue());
 
+        parser.epilog(
+                "The global arguments are shown with 'signal-cli -h' and need to come before the subcommand, while the subcommand-specific arguments (shown with 'signal-cli SUBCOMMAND -h') need to be given after the subcommand.");
+
         var subparsers = parser.addSubparsers().title("subcommands").dest("command");
 
         Commands.getCommandSubparserAttachers().forEach((key, value) -> {
