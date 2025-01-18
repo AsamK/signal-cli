@@ -1,6 +1,19 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.12] - 2025-01-18
+
+Requires libsignal-client version 0.65.2.
+
+### Fixed
+
+- Fix sync of contact nick name
+- Fix incorrectly marking recipients as unregistered after sync
+- Fix cause of database deadlock (Thanks @dukhaSlayer)
+- Fix parsing of account query param in events http endpoint
+
+### Changed
+
+- Enable sqlite WAL journal\_mode for improved performance
 
 ## [0.13.11] - 2024-12-26
 
