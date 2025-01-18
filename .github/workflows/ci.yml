@@ -29,8 +29,19 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           dependency-graph: generate-and-submit
+      - name: Install asciidoc
+        run: sudo apt --no-install-recommends install -y asciidoc-base
       - name: Build with Gradle
         run: ./gradlew --no-daemon build
+      - name: Build man page
+        run: |
+          cd man
+          make install
+      - name: Add man page to archive
+        run: |
+          version=$(tar tf build/distributions/signal-cli-*.tar | head -n1 | sed 's|signal-cli-\([^/]*\)/.*|\1|')
+          echo $version
+          tar --transform="flags=r;s|man|signal-cli-${version}/man|" -rf build/distributions/signal-cli-${version}.tar man/man{1,5}
       - name: Compress archive
         run: gzip -n -9 build/distributions/signal-cli-*.tar
       - name: Archive production artifacts
