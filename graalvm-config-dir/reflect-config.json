@@ -2916,7 +2916,28 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.whispersystems.signalservice.internal.push.WhoAmIResponse$Entitlements"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","org.whispersystems.signalservice.internal.push.WhoAmIResponse$Entitlements","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.WhoAmIResponse$BackupEntitlement",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Long","java.lang.Long"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.WhoAmIResponse$BadgeEntitlement",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.Boolean","java.lang.Long"] }, {"name":"<init>","parameterTypes":["java.lang.String","java.lang.Boolean","java.lang.Long","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.internal.push.WhoAmIResponse$Entitlements",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.util.List","org.whispersystems.signalservice.internal.push.WhoAmIResponse$BackupEntitlement"] }, {"name":"<init>","parameterTypes":["java.util.List","org.whispersystems.signalservice.internal.push.WhoAmIResponse$BackupEntitlement","int","kotlin.jvm.internal.DefaultConstructorMarker"] }]
 },
 {
   "name":"org.whispersystems.signalservice.internal.serialize.protos.AddressProto",
