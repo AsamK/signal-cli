@@ -21,8 +21,8 @@ import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableExcept
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,7 +92,7 @@ public class ReceiveHelper {
         hasCaughtUpWithOldMessages = false;
 
         // Use a Map here because java Set doesn't have a get method ...
-        Map<HandleAction, HandleAction> queuedActions = new HashMap<>();
+        Map<HandleAction, HandleAction> queuedActions = new LinkedHashMap<>();
 
         final var signalWebSocket = dependencies.getSignalWebSocket();
         final var webSocketStateDisposable = Observable.merge(signalWebSocket.getUnidentifiedWebSocketState(),
@@ -255,7 +255,7 @@ public class ReceiveHelper {
     }
 
     private void retryFailedReceivedMessages(Manager.ReceiveMessageHandler handler) {
-        Set<HandleAction> queuedActions = new HashSet<>();
+        Set<HandleAction> queuedActions = new LinkedHashSet<>();
         for (var cachedMessage : account.getMessageCache().getCachedMessages()) {
             var actions = retryFailedReceivedMessage(handler, cachedMessage);
             if (actions != null) {
