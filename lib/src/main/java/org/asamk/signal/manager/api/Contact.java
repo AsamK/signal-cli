@@ -49,8 +49,12 @@ public record Contact(
         builder.givenName = copy.givenName();
         builder.familyName = copy.familyName();
         builder.nickName = copy.nickName();
+        builder.nickNameGivenName = copy.nickNameGivenName();
+        builder.nickNameFamilyName = copy.nickNameFamilyName();
+        builder.note = copy.note();
         builder.color = copy.color();
         builder.messageExpirationTime = copy.messageExpirationTime();
+        builder.messageExpirationTimeVersion = copy.messageExpirationTimeVersion();
         builder.muteUntil = copy.muteUntil();
         builder.hideStory = copy.hideStory();
         builder.isBlocked = copy.isBlocked();
