@@ -237,9 +237,12 @@ public interface Manager extends Closeable {
     void deleteContact(RecipientIdentifier.Single recipient);
 
     void setContactName(
-            RecipientIdentifier.Single recipient,
-            String givenName,
-            final String familyName
+            final RecipientIdentifier.Single recipient,
+            final String givenName,
+            final String familyName,
+            final String nickGivenName,
+            final String nickFamilyName,
+            final String note
     ) throws NotPrimaryDeviceException, UnregisteredRecipientException;
 
     void setContactsBlocked(

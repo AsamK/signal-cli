@@ -516,7 +516,10 @@ public class DbusManagerImpl implements Manager {
     public void setContactName(
             final RecipientIdentifier.Single recipient,
             final String givenName,
-            final String familyName
+            final String familyName,
+            final String nickGivenName,
+            final String nickFamilyName,
+            final String note
     ) throws NotPrimaryDeviceException {
         signal.setContactName(recipient.getIdentifier(), givenName);
     }

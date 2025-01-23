@@ -1049,15 +1049,23 @@ public class ManagerImpl implements Manager {
 
     @Override
     public void setContactName(
-            RecipientIdentifier.Single recipient,
-            String givenName,
-            final String familyName
+            final RecipientIdentifier.Single recipient,
+            final String givenName,
+            final String familyName,
+            final String nickGivenName,
+            final String nickFamilyName,
+            final String note
     ) throws NotPrimaryDeviceException, UnregisteredRecipientException {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
         }
         context.getContactHelper()
-                .setContactName(context.getRecipientHelper().resolveRecipient(recipient), givenName, familyName);
+                .setContactName(context.getRecipientHelper().resolveRecipient(recipient),
+                        givenName,
+                        familyName,
+                        nickGivenName,
+                        nickFamilyName,
+                        note);
         syncRemoteStorage();
     }
 

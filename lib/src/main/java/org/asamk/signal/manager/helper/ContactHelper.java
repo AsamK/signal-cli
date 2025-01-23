@@ -17,7 +17,14 @@ public class ContactHelper {
         return sourceContact != null && sourceContact.isBlocked();
     }
 
-    public void setContactName(final RecipientId recipientId, final String givenName, final String familyName) {
+    public void setContactName(
+            final RecipientId recipientId,
+            final String givenName,
+            final String familyName,
+            final String nickGivenName,
+            final String nickFamilyName,
+            final String note
+    ) {
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
         builder.withIsHidden(false);
@@ -26,6 +33,15 @@ public class ContactHelper {
         }
         if (familyName != null) {
             builder.withFamilyName(familyName);
+        }
+        if (nickGivenName != null) {
+            builder.withNickNameGivenName(nickGivenName);
+        }
+        if (nickFamilyName != null) {
+            builder.withNickNameFamilyName(nickFamilyName);
+        }
+        if (note != null) {
+            builder.withNote(note);
         }
         account.getContactStore().storeContact(recipientId, builder.build());
     }

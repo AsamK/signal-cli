@@ -669,11 +669,20 @@ If the contact doesn't exist yet, it will be added.
 RECIPIENT::
 Specify the recipient.
 
-*--given-name* NAME, *--name* NAME::
-New (given) name.
+*--given-name* GIVEN_NAME, *--name* NAME::
+New system given name.
 
 *--family-name* FAMILY_NAME::
-New family name.
+New system family name.
+
+*--nick-given-name* NICK_GIVEN_NAME::
+New nick given name.
+
+*--nick-family-name* NICK_FAMILY_NAME::
+New nick family name.
+
+*--note* NOTE::
+New note.
 
 *-e*, *--expiration* EXPIRATION_SECONDS::
 Set expiration time of messages (seconds).

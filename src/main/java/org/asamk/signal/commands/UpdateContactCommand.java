@@ -26,8 +26,11 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
         subparser.help("Update the details of a given contact");
         subparser.addArgument("recipient").help("Contact number");
         subparser.addArgument("-n", "--name").help("New contact name");
-        subparser.addArgument("--given-name").help("New contact given name");
-        subparser.addArgument("--family-name").help("New contact family name");
+        subparser.addArgument("--given-name").help("New system given name");
+        subparser.addArgument("--family-name").help("New system family name");
+        subparser.addArgument("--nick-given-name").help("New nick given name");
+        subparser.addArgument("--nick-family-name").help("New nick family name");
+        subparser.addArgument("--note").help("New note");
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
     }
 
@@ -54,8 +57,15 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
                     familyName = "";
                 }
             }
-            if (givenName != null || familyName != null) {
-                m.setContactName(recipient, givenName, familyName);
+            var nickGivenName = ns.getString("nick-given-name");
+            var nickFamilyName = ns.getString("nick-family-name");
+            var note = ns.getString("note");
+            if (givenName != null
+                    || familyName != null
+                    || nickGivenName != null
+                    || nickFamilyName != null
+                    || note != null) {
+                m.setContactName(recipient, givenName, familyName, nickGivenName, nickFamilyName, note);
             }
         } catch (IOException e) {
             throw new IOErrorException("Update contact error: " + e.getMessage(), e);
