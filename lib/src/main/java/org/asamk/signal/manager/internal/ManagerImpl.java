@@ -96,6 +96,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage.StoryContext;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
@@ -733,6 +734,21 @@ public class ManagerImpl implements Manager {
         }
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
+        return sendMessage(messageBuilder, recipients, notifySelf);
+    }
+
+    @Override
+    public SendMessageResults sendStoryMessage(
+            Message message, Set<RecipientIdentifier> recipients, boolean notifySelf
+    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
+        final var selfProfile = context.getProfileHelper().getSelfProfile();
+        if (selfProfile == null || selfProfile.getDisplayName().isEmpty()) {
+            logger.warn(
+                    "No profile name set. When sending a message it's recommended to set a profile name with the updateProfile command. This may become mandatory in the future.");
+        }
+        final var messageBuilder = SignalServiceDataMessage.newBuilder();
+        applyMessage(messageBuilder, message);
+        messageBuilder.withStoryContext(new StoryContext(account.getSelfAddress().getServiceId(), System.currentTimeMillis()));
         return sendMessage(messageBuilder, recipients, notifySelf);
     }
 
