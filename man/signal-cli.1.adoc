@@ -657,7 +657,7 @@ Path to the new avatar image file.
 *--remove-avatar*::
 Remove the avatar
 
-*--mobile-coin-address*::
+*--mobile-coin-address*, **--mobilecoin-address**::
 New MobileCoin address (Base64 encoded public address)
 
 === updateContact
