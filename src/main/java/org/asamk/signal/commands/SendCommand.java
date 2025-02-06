@@ -233,6 +233,8 @@ public class SendCommand implements JsonRpcLocalCommand {
 
         final var editTimestamp = ns.getLong("edit-timestamp");
 
+        final boolean story = false;
+        
         try {
             final var message = new Message(messageText,
                     attachments,
@@ -244,7 +246,8 @@ public class SendCommand implements JsonRpcLocalCommand {
                     textStyles);
             var results = editTimestamp != null
                     ? m.sendEditMessage(message, recipientIdentifiers, editTimestamp)
-                    : m.sendMessage(message, recipientIdentifiers, notifySelf);
+                    //: story ? // m.sendStoryMessage(message, recipientIdentifiers, notifySelf)
+                    		: m.sendMessage(message, recipientIdentifiers, notifySelf);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()

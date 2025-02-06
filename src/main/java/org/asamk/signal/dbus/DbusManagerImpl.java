@@ -429,9 +429,9 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendStoryMessage(
-            final Message message, final Set<RecipientIdentifier> recipients, final boolean notifySelf
+            final Message message, final RecipientIdentifier.Group recipient
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
-        return handleMessage(recipients,
+        return handleMessage(Set.of(recipient),
                 numbers -> signal.sendMessage(message.messageText(), message.attachments(), numbers),
                 () -> signal.sendNoteToSelfMessage(message.messageText(), message.attachments()),
                 groupId -> signal.sendStoryMessage(message.messageText(), message.attachments(), groupId));
@@ -1160,4 +1160,5 @@ public class DbusManagerImpl implements Manager {
     private <T> T getValue(final Map<String, Variant<?>> stringVariantMap, final String field) {
         return (T) stringVariantMap.get(field).getValue();
     }
+
 }

@@ -37,7 +37,7 @@ graalvmNative {
             if (System.getenv("GRAALVM_HOME") == null) {
                 toolchainDetection.set(true)
                 javaLauncher.set(javaToolchains.launcherFor {
-                    languageVersion.set(JavaLanguageVersion.of(21))
+                    languageVersion.set(JavaLanguageVersion.of(22))
                 })
             } else {
                 toolchainDetection.set(false)

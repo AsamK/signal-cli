@@ -475,7 +475,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                     List.of(),
                     Optional.empty(),
                     List.of());
-            var results = m.sendStoryMessage(message, Set.of(getGroupRecipientIdentifier(groupId)), false);
+            var results = m.sendStoryMessage(message,getGroupRecipientIdentifier(groupId));
             checkSendMessageResults(results);
             return results.timestamp();
         } catch (IOException | InvalidStickerException e) {

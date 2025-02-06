@@ -16,6 +16,34 @@
  */
 package org.asamk.signal.manager.internal;
 
+import static org.asamk.signal.manager.config.ServiceConfig.MAX_MESSAGE_SIZE_BYTES;
+import static org.signal.core.util.StringExtensionsKt.splitByByteLength;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
@@ -78,6 +106,7 @@ import org.asamk.signal.manager.storage.AttachmentStore;
 import org.asamk.signal.manager.storage.AvatarStore;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
@@ -95,9 +124,10 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage.StoryContext;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
@@ -110,33 +140,9 @@ import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.StreamDetails;
+import org.whispersystems.signalservice.internal.push.BodyRange;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.signalservice.internal.util.Util;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -752,18 +758,31 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public SendMessageResults sendStoryMessage(
-            Message message, Set<RecipientIdentifier> recipients, boolean notifySelf
+    public SendMessageResults sendStoryMessage(Message message, RecipientIdentifier.Group idGroup
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
         final var selfProfile = context.getProfileHelper().getSelfProfile();
         if (selfProfile == null || selfProfile.getDisplayName().isEmpty()) {
             logger.warn(
                     "No profile name set. When sending a message it's recommended to set a profile name with the updateProfile command. This may become mandatory in the future.");
         }
-        final var messageBuilder = SignalServiceDataMessage.newBuilder();
-        applyMessage(messageBuilder, message);
-        messageBuilder.withStoryContext(new StoryContext(account.getSelfAddress().getServiceId(), System.currentTimeMillis()));
-        return sendMessage(messageBuilder, recipients, notifySelf);
+        final var profileKey = account.getProfileKey().serialize();
+        GroupInfoV2 groupInfo = (GroupInfoV2) context.getGroupHelper().getGroup(idGroup.groupId());
+        List<String> attachments = message.attachments();
+        List<BodyRange> bodyRanges = message.textStyles().stream().map(t -> t.toBodyRange()).toList();
+        
+        SignalServiceStoryMessage storyMessage = null;
+        if (attachments != null && attachments.size() > 0) {
+        	SignalServiceAttachment.Builder attachmentBuilder = new SignalServiceAttachment.Builder().withFileName(attachments.get(0));
+        	storyMessage = SignalServiceStoryMessage.forFileAttachment(profileKey, null, attachmentBuilder.build(), true, bodyRanges);
+        } else {
+        	//SignalServiceTextAttachment textBuilder = new SignalServiceTextAttachment.
+        	//storyMessage = SignalServiceStoryMessage.forTextAttachment(profileKey, ssgroup, textBuilder.build(), true, bodyRanges);
+        }
+        var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
+        long timestamp = System.currentTimeMillis();
+        final var result = context.getSendHelper().sendGroupStoryMessage(storyMessage, groupInfo);
+                results.put(idGroup, result.stream().map(this::toSendMessageResult).toList());
+        return new SendMessageResults(timestamp, results);
     }
 
     @Override
@@ -1625,4 +1644,5 @@ public class ManagerImpl implements Manager {
 
         account = null;
     }
+
 }

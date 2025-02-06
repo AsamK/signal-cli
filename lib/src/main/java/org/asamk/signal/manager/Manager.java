@@ -197,10 +197,6 @@ public interface Manager extends Closeable {
             boolean notifySelf
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 
-    SendMessageResults sendStoryMessage(
-            Message message, Set<RecipientIdentifier> recipients, boolean notifySelf
-    ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
-    
     SendMessageResults sendEditMessage(
             Message message,
             Set<RecipientIdentifier> recipients,
@@ -372,4 +368,7 @@ public interface Manager extends Closeable {
 
         void handleMessage(MessageEnvelope envelope, Throwable e);
     }
+
+	SendMessageResults sendStoryMessage(Message message, RecipientIdentifier.Group recipient)
+			throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 }
