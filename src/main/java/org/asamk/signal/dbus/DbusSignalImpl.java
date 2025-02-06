@@ -465,6 +465,31 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     }
 
     @Override
+    public long sendStoryMessage(final String messageText, final List<String> attachments, final byte[] groupId) {
+        try {
+            final var message = new Message(messageText,
+                    attachments,
+                    List.of(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    List.of(),
+                    Optional.empty(),
+                    List.of());
+            var results = m.sendStoryMessage(message, Set.of(getGroupRecipientIdentifier(groupId)), false);
+            checkSendMessageResults(results);
+            return results.timestamp();
+        } catch (IOException | InvalidStickerException e) {
+            throw new Error.Failure(e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
+            throw new Error.GroupNotFound(e.getMessage());
+        } catch (AttachmentInvalidException e) {
+            throw new Error.AttachmentInvalid(e.getMessage());
+        } catch (UnregisteredRecipientException e) {
+            throw new Error.UntrustedIdentity(e.getSender().getIdentifier() + " is not registered.");
+        }
+    }
+
+    @Override
     public void sendGroupTyping(
             final byte[] groupId,
             final boolean stop
