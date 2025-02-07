@@ -40,7 +40,7 @@ public class KeyValueStore {
         try (final var connection = database.getConnection()) {
             return getEntry(connection, key);
         } catch (SQLException e) {
-            throw new RuntimeException("Failed read from pre_key store", e);
+            throw new RuntimeException("Failed read from key_value store", e);
         }
     }
 
