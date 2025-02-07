@@ -59,8 +59,15 @@ of all country codes.)
 
       signal-cli -a ACCOUNT register
 
-  You can register Signal using a landline number. In this case you can skip SMS verification process and jump directly
-  to the voice call verification by adding the `--voice` switch at the end of above register command.
+  You can register Signal using a landline number. In this case, you need to follow the procedure below:
+   * Attempt a SMS verification process first (`signal-cli -a ACCOUNT register`)
+     * You will get an error `400 (InvalidTransportModeException)`, this is normal
+   * Wait 60 seconds
+   * Attempt a voice call verification by adding the `--voice` switch and wait for the call:
+
+     ```sh
+     signal-cli -a ACCOUNT register --voice
+     ```
 
   Registering may require solving a CAPTCHA
   challenge: [Registration with captcha](https://github.com/AsamK/signal-cli/wiki/Registration-with-captcha)
