@@ -2,9 +2,12 @@ package org.asamk.signal.manager.internal;
 
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
+import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.libsignal.net.Network;
 import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.SignalServiceDataStore;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
@@ -31,12 +34,17 @@ import org.whispersystems.signalservice.internal.push.PushServiceSocket;
 import org.whispersystems.signalservice.internal.websocket.OkHttpWebSocketConnection;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 public class SignalDependencies {
+
+    private static final Logger logger = LoggerFactory.getLogger(SignalDependencies.class);
 
     private final Object LOCK = new Object();
 
@@ -129,8 +137,34 @@ public class SignalDependencies {
     }
 
     public Network getLibSignalNetwork() {
-        return getOrCreate(() -> libSignalNetwork,
-                () -> libSignalNetwork = new Network(serviceEnvironmentConfig.netEnvironment(), userAgent));
+        return getOrCreate(() -> libSignalNetwork, () -> {
+            libSignalNetwork = new Network(serviceEnvironmentConfig.netEnvironment(), userAgent);
+            setSignalNetworkProxy(libSignalNetwork);
+        });
+    }
+
+    private void setSignalNetworkProxy(Network libSignalNetwork) {
+        final var proxy = Utils.getHttpsProxy();
+        if (proxy.address() instanceof InetSocketAddress addr) {
+            switch (proxy.type()) {
+                case Proxy.Type.DIRECT -> {
+                }
+                case Proxy.Type.HTTP -> {
+                    try {
+                        libSignalNetwork.setProxy("http", addr.getHostName(), addr.getPort(), null, null);
+                    } catch (IOException e) {
+                        logger.warn("Failed to set http proxy", e);
+                    }
+                }
+                case Proxy.Type.SOCKS -> {
+                    try {
+                        libSignalNetwork.setProxy("socks", addr.getHostName(), addr.getPort(), null, null);
+                    } catch (IOException e) {
+                        logger.warn("Failed to set socks proxy", e);
+                    }
+                }
+            }
+        }
     }
 
     public SignalServiceAccountManager getAccountManager() {
