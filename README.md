@@ -11,6 +11,10 @@ For this use-case, it has a daemon mode with JSON-RPC interface ([man page](http
 and D-BUS interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) .
 For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
 
+signal-cli needs to be kept up-to-date to keep up with Signal-Server changes.
+The official Signal clients expire after three months and then the Signal-Server can make incompatible changes.
+So signal-cli releases older than three months may not work correctly.
+
 ## Installation
 
 You can [build signal-cli](#building) yourself or use
