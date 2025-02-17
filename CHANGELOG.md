@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+Requires libsignal-client version 0.65.6.
+
+### Added
+- Allow setting nickname and note with `updateContact` command
+
+### Fixed
+- Fix syncing nickname, note and expiration timer
+- Fix check for registered users with a proxy
+
 ## [0.13.12] - 2025-01-18
 
 Requires libsignal-client version 0.65.2.

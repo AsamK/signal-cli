@@ -15,6 +15,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -201,5 +205,20 @@ public class Utils {
 
     public static String nullIfEmpty(String string) {
         return string == null || string.isEmpty() ? null : string;
+    }
+
+    public static Proxy getHttpsProxy() {
+        final URI uri;
+        try {
+            uri = new URI("https://example");
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        final var proxies = ProxySelector.getDefault().select(uri);
+        if (proxies.isEmpty()) {
+            return Proxy.NO_PROXY;
+        } else {
+            return proxies.getFirst();
+        }
     }
 }

@@ -88,7 +88,7 @@
 },
 {
   "name":"org.signal.libsignal.internal.CompletableFuture",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"complete","parameterTypes":["java.lang.Object"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"complete","parameterTypes":["java.lang.Object"] }, {"name":"completeExceptionally","parameterTypes":["java.lang.Throwable"] }]
 },
 {
   "name":"org.signal.libsignal.net.CdsiLookupResponse",
@@ -109,6 +109,10 @@
 },
 {
   "name":"org.signal.libsignal.net.ChatService$ResponseAndDebugInfo"
+},
+{
+  "name":"org.signal.libsignal.net.NetworkException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"org.signal.libsignal.protocol.DuplicateMessageException",

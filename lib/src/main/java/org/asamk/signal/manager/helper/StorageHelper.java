@@ -210,12 +210,6 @@ public class StorageHelper {
                             remoteOnlyRecords.size());
                 }
 
-                final var unknownInserts = processKnownRecords(connection, remoteOnlyRecords);
-                final var unknownDeletes = idDifference.localOnlyIds()
-                        .stream()
-                        .filter(id -> !KNOWN_TYPES.contains(id.getType()))
-                        .toList();
-
                 if (!idDifference.localOnlyIds().isEmpty()) {
                     final var updated = account.getRecipientStore()
                             .removeStorageIdsFromLocalOnlyUnregisteredRecipients(connection,
@@ -227,6 +221,12 @@ public class StorageHelper {
                                 updated);
                     }
                 }
+
+                final var unknownInserts = processKnownRecords(connection, remoteOnlyRecords);
+                final var unknownDeletes = idDifference.localOnlyIds()
+                        .stream()
+                        .filter(id -> !KNOWN_TYPES.contains(id.getType()))
+                        .toList();
 
                 logger.debug("Storage ids with unknown type: {} inserts, {} deletes",
                         unknownInserts.size(),
@@ -279,9 +279,21 @@ public class StorageHelper {
         try (final var connection = account.getAccountDatabase().getConnection()) {
             connection.setAutoCommit(false);
 
-            final var localStorageIds = getAllLocalStorageIds(connection);
-            final var idDifference = findIdDifference(remoteManifest.storageIds, localStorageIds);
+            var localStorageIds = getAllLocalStorageIds(connection);
+            var idDifference = findIdDifference(remoteManifest.storageIds, localStorageIds);
             logger.debug("ID Difference :: {}", idDifference);
+
+            final var unknownOnlyLocal = idDifference.localOnlyIds()
+                    .stream()
+                    .filter(id -> !KNOWN_TYPES.contains(id.getType()))
+                    .toList();
+
+            if (!unknownOnlyLocal.isEmpty()) {
+                logger.debug("Storage ids with unknown type: {} to delete", unknownOnlyLocal.size());
+                account.getUnknownStorageIdStore().deleteUnknownStorageIds(connection, unknownOnlyLocal);
+                localStorageIds = getAllLocalStorageIds(connection);
+                idDifference = findIdDifference(remoteManifest.storageIds, localStorageIds);
+            }
 
             final var remoteDeletes = idDifference.remoteOnlyIds().stream().map(StorageId::getRaw).toList();
             final var remoteInserts = buildLocalStorageRecords(connection, idDifference.localOnlyIds());
@@ -595,7 +607,7 @@ public class StorageHelper {
             final var remote = remoteByRawId.get(rawId);
             final var local = localByRawId.get(rawId);
 
-            if (remote.getType() != local.getType() && local.getType() != 0) {
+            if (remote.getType() != local.getType() && KNOWN_TYPES.contains(local.getType())) {
                 remoteOnlyRawIds.remove(rawId);
                 localOnlyRawIds.remove(rawId);
                 hasTypeMismatch = true;

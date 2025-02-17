@@ -47,38 +47,38 @@ public class NumberVerificationUtils {
             }
         }
 
-        sessionId = sessionResponse.getBody().getId();
+        sessionId = sessionResponse.getMetadata().getId();
         sessionIdSaver.accept(sessionId);
 
-        if (sessionResponse.getBody().getVerified()) {
+        if (sessionResponse.getMetadata().getVerified()) {
             return sessionId;
         }
 
-        if (sessionResponse.getBody().getAllowedToRequestCode()) {
+        if (sessionResponse.getMetadata().getAllowedToRequestCode()) {
             return sessionId;
         }
 
         final var nextAttempt = voiceVerification
-                ? sessionResponse.getBody().getNextCall()
-                : sessionResponse.getBody().getNextSms();
+                ? sessionResponse.getMetadata().getNextCall()
+                : sessionResponse.getMetadata().getNextSms();
         if (nextAttempt == null) {
             throw new VerificationMethodNotAvailableException();
         } else if (nextAttempt > 0) {
-            final var timestamp = sessionResponse.getHeaders().getTimestamp() + nextAttempt * 1000;
+            final var timestamp = sessionResponse.getClientReceivedAtMilliseconds() + nextAttempt * 1000;
             throw new RateLimitException(timestamp);
         }
 
-        final var nextVerificationAttempt = sessionResponse.getBody().getNextVerificationAttempt();
+        final var nextVerificationAttempt = sessionResponse.getMetadata().getNextVerificationAttempt();
         if (nextVerificationAttempt != null && nextVerificationAttempt > 0) {
-            final var timestamp = sessionResponse.getHeaders().getTimestamp() + nextVerificationAttempt * 1000;
+            final var timestamp = sessionResponse.getClientReceivedAtMilliseconds() + nextVerificationAttempt * 1000;
             throw new CaptchaRequiredException(timestamp);
         }
 
-        if (sessionResponse.getBody().getRequestedInformation().contains("captcha")) {
+        if (sessionResponse.getMetadata().getRequestedInformation().contains("captcha")) {
             if (captcha != null) {
                 sessionResponse = submitCaptcha(registrationApi, sessionId, captcha);
             }
-            if (!sessionResponse.getBody().getAllowedToRequestCode()) {
+            if (!sessionResponse.getMetadata().getAllowedToRequestCode()) {
                 throw new CaptchaRequiredException("Captcha Required");
             }
         }
