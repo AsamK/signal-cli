@@ -124,7 +124,6 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
@@ -147,9 +146,6 @@ import org.whispersystems.signalservice.internal.util.Util;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import okio.Utf8;
-
-import static org.asamk.signal.manager.config.ServiceConfig.MAX_MESSAGE_SIZE_BYTES;
-import static org.signal.core.util.StringExtensionsKt.splitByByteLength;
 
 public class ManagerImpl implements Manager {
 
@@ -757,6 +753,7 @@ public class ManagerImpl implements Manager {
         return sendMessage(messageBuilder, recipients, notifySelf);
     }
 
+    
     @Override
     public SendMessageResults sendStoryMessage(Message message, RecipientIdentifier.Group idGroup
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
@@ -772,8 +769,8 @@ public class ManagerImpl implements Manager {
         
         SignalServiceStoryMessage storyMessage = null;
         if (attachments != null && attachments.size() > 0) {
-        	SignalServiceAttachment.Builder attachmentBuilder = new SignalServiceAttachment.Builder().withFileName(attachments.get(0));
-        	storyMessage = SignalServiceStoryMessage.forFileAttachment(profileKey, null, attachmentBuilder.build(), true, bodyRanges);
+        	var attachment = context.getAttachmentHelper().uploadAttachment(attachments.get(0));
+        	storyMessage = SignalServiceStoryMessage.forFileAttachment(profileKey, null, attachment, true, bodyRanges);
         } else {
         	//SignalServiceTextAttachment textBuilder = new SignalServiceTextAttachment.
         	//storyMessage = SignalServiceStoryMessage.forTextAttachment(profileKey, ssgroup, textBuilder.build(), true, bodyRanges);
@@ -1644,5 +1641,4 @@ public class ManagerImpl implements Manager {
 
         account = null;
     }
-
 }
