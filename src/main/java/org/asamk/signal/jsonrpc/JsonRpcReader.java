@@ -151,6 +151,13 @@ public class JsonRpcReader {
     }
 
     private JsonRpcMessage parseJsonRpcMessage(final String input) {
+        if (input.trim().isEmpty()) {
+            jsonRpcSender.sendResponse(JsonRpcResponse.forError(new JsonRpcResponse.Error(JsonRpcResponse.Error.PARSE_ERROR,
+                    "Empty input line",
+                    null), null));
+            return null;
+        }
+
         final JsonNode jsonNode;
         try {
             jsonNode = objectMapper.readTree(input);
