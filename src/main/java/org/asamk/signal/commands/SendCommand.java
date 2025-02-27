@@ -179,6 +179,9 @@ public class SendCommand implements JsonRpcLocalCommand {
         final var quoteTimestamp = ns.getLong("quote-timestamp");
         if (quoteTimestamp != null) {
             final var quoteAuthor = ns.getString("quote-author");
+            if (quoteAuthor == null) {
+                throw new UserErrorException("Quote author parameter is missing");
+            }
             final var quoteMessage = ns.getString("quote-message");
             final var quoteMentionStrings = ns.<String>getList("quote-mention");
             final var quoteMentions = quoteMentionStrings == null
