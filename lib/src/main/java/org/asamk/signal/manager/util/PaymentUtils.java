@@ -23,8 +23,8 @@ public class PaymentUtils {
     public static PaymentAddress signPaymentsAddress(byte[] publicAddressBytes, ECPrivateKey privateKey) {
         byte[] signature = privateKey.calculateSignature(publicAddressBytes);
 
-        return new PaymentAddress.Builder().mobileCoinAddress(new PaymentAddress.MobileCoinAddress.Builder().address(
-                ByteString.of(publicAddressBytes)).signature(ByteString.of(signature)).build()).build();
+        return new PaymentAddress.Builder().mobileCoin(new PaymentAddress.MobileCoin.Builder().publicAddress(ByteString.of(
+                publicAddressBytes)).signature(ByteString.of(signature)).build()).build();
     }
 
     /**
@@ -33,13 +33,15 @@ public class PaymentUtils {
      * Returns the validated bytes if so, otherwise returns null.
      */
     public static byte[] verifyPaymentsAddress(PaymentAddress paymentAddress, ECPublicKey publicKey) {
-        final var mobileCoinAddress = paymentAddress.mobileCoinAddress;
-        if (mobileCoinAddress == null || mobileCoinAddress.address == null || mobileCoinAddress.signature == null) {
+        final var mobileCoinAddress = paymentAddress.mobileCoin;
+        if (mobileCoinAddress == null
+                || mobileCoinAddress.publicAddress == null
+                || mobileCoinAddress.signature == null) {
             logger.debug("Got payment address without mobile coin address, ignoring.");
             return null;
         }
 
-        byte[] bytes = mobileCoinAddress.address.toByteArray();
+        byte[] bytes = mobileCoinAddress.publicAddress.toByteArray();
         byte[] signature = mobileCoinAddress.signature.toByteArray();
 
         if (signature.length != 64 || !publicKey.verifySignature(bytes, signature)) {

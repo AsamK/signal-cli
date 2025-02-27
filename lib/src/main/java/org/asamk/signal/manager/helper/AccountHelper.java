@@ -102,7 +102,7 @@ public class AccountHelper {
                 checkWhoAmiI();
             }
             if (!account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
-                context.getSyncHelper().requestSyncPniIdentity();
+                throw new IOException("Missing PNI identity key, relinking required");
             }
             if (account.getPreviousStorageVersion() < 4
                     && account.isPrimaryDevice()

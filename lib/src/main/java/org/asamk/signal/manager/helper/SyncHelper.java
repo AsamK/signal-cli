@@ -70,15 +70,10 @@ public class SyncHelper {
         requestSyncData(SyncMessage.Request.Type.BLOCKED);
         requestSyncData(SyncMessage.Request.Type.CONFIGURATION);
         requestSyncKeys();
-        requestSyncPniIdentity();
     }
 
     public void requestSyncKeys() {
         requestSyncData(SyncMessage.Request.Type.KEYS);
-    }
-
-    public void requestSyncPniIdentity() {
-        requestSyncData(SyncMessage.Request.Type.PNI_IDENTITY);
     }
 
     public SendMessageResult sendSyncFetchProfileMessage() {
@@ -165,7 +160,7 @@ public class SyncHelper {
                     final var contact = contactPair.second();
                     final var address = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId);
 
-                    final var deviceContact = getDeviceContact(address, recipientId, contact);
+                    final var deviceContact = getDeviceContact(address, contact);
                     out.write(deviceContact);
                     deviceContact.getAvatar().ifPresent(a -> {
                         try {
@@ -180,7 +175,7 @@ public class SyncHelper {
                     final var address = account.getSelfRecipientAddress();
                     final var recipientId = account.getSelfRecipientId();
                     final var contact = account.getContactStore().getContact(recipientId);
-                    final var deviceContact = getDeviceContact(address, recipientId, contact);
+                    final var deviceContact = getDeviceContact(address, contact);
                     out.write(deviceContact);
                     deviceContact.getAvatar().ifPresent(a -> {
                         try {
@@ -216,34 +211,14 @@ public class SyncHelper {
     }
 
     @NotNull
-    private DeviceContact getDeviceContact(
-            final RecipientAddress address,
-            final RecipientId recipientId,
-            final Contact contact
-    ) throws IOException {
-        var currentIdentity = address.serviceId().isEmpty()
-                ? null
-                : account.getIdentityKeyStore().getIdentityInfo(address.serviceId().get());
-        VerifiedMessage verifiedMessage = null;
-        if (currentIdentity != null) {
-            verifiedMessage = new VerifiedMessage(address.toSignalServiceAddress(),
-                    currentIdentity.getIdentityKey(),
-                    currentIdentity.getTrustLevel().toVerifiedState(),
-                    currentIdentity.getDateAddedTimestamp());
-        }
-
-        var profileKey = account.getProfileStore().getProfileKey(recipientId);
+    private DeviceContact getDeviceContact(final RecipientAddress address, final Contact contact) throws IOException {
         return new DeviceContact(address.aci(),
                 address.number(),
                 Optional.ofNullable(contact == null ? null : contact.getName()),
                 createContactAvatarAttachment(address),
-                Optional.ofNullable(contact == null ? null : contact.color()),
-                Optional.ofNullable(verifiedMessage),
-                Optional.ofNullable(profileKey),
                 Optional.ofNullable(contact == null ? null : contact.messageExpirationTime()),
                 Optional.ofNullable(contact == null ? null : contact.messageExpirationTimeVersion()),
-                Optional.empty(),
-                contact != null && contact.isArchived());
+                Optional.empty());
     }
 
     public SendMessageResult sendBlockedList() {
@@ -376,9 +351,6 @@ public class SyncHelper {
                 break;
             }
             final var address = new RecipientAddress(c.getAci(), Optional.empty(), c.getE164(), Optional.empty());
-            if (address.matches(account.getSelfRecipientAddress()) && c.getProfileKey().isPresent()) {
-                account.setProfileKey(c.getProfileKey().get());
-            }
             final var recipientId = account.getRecipientTrustedResolver().resolveRecipientTrusted(address);
             var contact = account.getContactStore().getContact(recipientId);
             final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
@@ -389,19 +361,6 @@ public class SyncHelper {
             )) {
                 builder.withGivenName(c.getName().get());
                 builder.withFamilyName(null);
-            }
-            if (c.getColor().isPresent()) {
-                builder.withColor(c.getColor().get());
-            }
-            if (c.getProfileKey().isPresent()) {
-                account.getProfileStore().storeProfileKey(recipientId, c.getProfileKey().get());
-            }
-            if (c.getVerified().isPresent()) {
-                final var verifiedMessage = c.getVerified().get();
-                account.getIdentityKeyStore()
-                        .setIdentityTrustLevel(verifiedMessage.getDestination().getServiceId(),
-                                verifiedMessage.getIdentityKey(),
-                                TrustLevel.fromVerifiedState(verifiedMessage.getVerified()));
             }
             if (c.getExpirationTimer().isPresent()) {
                 if (c.getExpirationTimerVersion().isPresent() && (
@@ -417,7 +376,6 @@ public class SyncHelper {
                             contact == null ? 1 : contact.messageExpirationTimeVersion());
                 }
             }
-            builder.withIsArchived(c.isArchived());
             account.getContactStore().storeContact(recipientId, builder.build());
 
             if (c.getAvatar().isPresent()) {
