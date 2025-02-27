@@ -2037,7 +2037,10 @@
   "name":"org.signal.libsignal.protocol.IdentityKey"
 },
 {
-  "name":"org.signal.libsignal.protocol.ServiceId"
+  "name":"org.signal.libsignal.protocol.ServiceId",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"org.signal.libsignal.protocol.SignalProtocolAddress"
@@ -3021,7 +3024,6 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record",
   "allDeclaredFields":true,
-  "fields":[{"name":"archived"}, {"name":"blocked"}, {"name":"dontNotifyForMentionsIfMuted"}, {"name":"hideStory"}, {"name":"markedUnread"}, {"name":"masterKey"}, {"name":"mutedUntilTimestamp"}, {"name":"storySendMode"}, {"name":"whitelisted"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {
