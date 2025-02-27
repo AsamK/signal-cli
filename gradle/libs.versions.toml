@@ -1,5 +1,5 @@
 [versions]
-slf4j = "2.0.16"
+slf4j = "2.0.17"
 
 [libraries]
 bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.80"
@@ -8,10 +8,10 @@ argparse4j = "net.sourceforge.argparse4j:argparse4j:0.9.0"
 dbusjava = "com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.0.0"
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
-logback = "ch.qos.logback:logback-classic:1.5.16"
+logback = "ch.qos.logback:logback-classic:1.5.17"
 
 signalservice = "com.github.turasa:signal-service-java:2.15.3_unofficial_117"
-sqlite = "org.xerial:sqlite-jdbc:3.49.0.0"
+sqlite = "org.xerial:sqlite-jdbc:3.49.1.0"
 hikari = "com.zaxxer:HikariCP:6.2.1"
-junit-jupiter = "org.junit.jupiter:junit-jupiter:5.11.4"
-junit-launcher = "org.junit.platform:junit-platform-launcher:1.11.4"
+junit-jupiter = "org.junit.jupiter:junit-jupiter:5.12.0"
+junit-launcher = "org.junit.platform:junit-platform-launcher:1.12.0"
