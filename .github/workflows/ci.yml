@@ -30,7 +30,7 @@ jobs:
         with:
           dependency-graph: generate-and-submit
       - name: Install asciidoc
-        run: sudo apt --no-install-recommends install -y asciidoc-base
+        run: sudo apt update && sudo apt --no-install-recommends install -y asciidoc-base
       - name: Build with Gradle
         run: ./gradlew --no-daemon build
       - name: Build man page
