@@ -124,6 +124,13 @@ public class SendCommand implements JsonRpcLocalCommand {
                 groupIdStrings,
                 usernameStrings);
 
+        boolean isStory = false;
+        
+		if (recipientIdentifiers.size() > 0
+				&& recipientIdentifiers.iterator().next() instanceof RecipientIdentifier.Group) {
+			isStory = Boolean.TRUE.equals(ns.getBoolean("story"));
+		}
+        
         final var isEndSession = Boolean.TRUE.equals(ns.getBoolean("end-session"));
         if (isEndSession) {
             final var singleRecipients = recipientIdentifiers.stream()
@@ -247,7 +254,8 @@ public class SendCommand implements JsonRpcLocalCommand {
                     textStyles);
             var results = editTimestamp != null
                     ? m.sendEditMessage(message, recipientIdentifiers, editTimestamp)
-                    : m.sendMessage(message, recipientIdentifiers, notifySelf);
+                    : isStory ? m.sendStoryMessage(message, (RecipientIdentifier.Group) recipientIdentifiers.iterator().next())
+                    		: m.sendMessage(message, recipientIdentifiers, notifySelf);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()

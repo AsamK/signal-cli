@@ -368,4 +368,7 @@ public interface Manager extends Closeable {
 
         void handleMessage(MessageEnvelope envelope, Throwable e);
     }
+
+	SendMessageResults sendStoryMessage(Message message, RecipientIdentifier.Group recipient)
+			throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 }
