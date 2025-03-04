@@ -46,7 +46,41 @@ graalvmNative {
     }
 }
 
+val artifactType = Attribute.of("artifactType", String::class.java)
+val minified = Attribute.of("minified", Boolean::class.javaObjectType)
 dependencies {
+    attributesSchema {
+        attribute(minified)
+    }
+    artifactTypes.getByName("jar") {
+        attributes.attribute(minified, false)
+    }
+}
+
+configurations.runtimeClasspath.configure {
+    attributes {
+        attribute(minified, true)
+    }
+}
+val excludePatterns = mapOf(
+    "libsignal-client" to setOf(
+        "libsignal_jni_testing_amd64.so",
+        "signal_jni_testing_amd64.dll",
+        "libsignal_jni_testing_amd64.dylib",
+        "libsignal_jni_testing_aarch64.dylib",
+    )
+)
+
+dependencies {
+    registerTransform(JarFileExcluder::class) {
+        from.attribute(minified, false).attribute(artifactType, "jar")
+        to.attribute(minified, true).attribute(artifactType, "jar")
+
+        parameters {
+            excludeFilesByArtifact = excludePatterns
+        }
+    }
+
     implementation(libs.bouncycastle)
     implementation(libs.jackson.databind)
     implementation(libs.argparse4j)
@@ -92,9 +126,11 @@ tasks.register("fatJar", type = Jar::class) {
         "META-INF/NOTICE*",
         "META-INF/LICENSE*",
         "META-INF/INDEX.LIST",
-        "**/module-info.class"
+        "**/module-info.class",
     )
     duplicatesStrategy = DuplicatesStrategy.WARN
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    doFirst {
+        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    }
     with(tasks.jar.get())
 }
