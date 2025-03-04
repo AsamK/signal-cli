@@ -83,7 +83,7 @@ tasks.withType<Jar> {
     }
 }
 
-task("fatJar", type = Jar::class) {
+tasks.register("fatJar", type = Jar::class) {
     archiveBaseName.set("${project.name}-fat")
     exclude(
         "META-INF/*.SF",
