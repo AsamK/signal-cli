@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.asamk.signal.manager.config.ServiceConfig.MAXIMUM_ONE_OFF_REQUEST_SIZE;
 import static org.asamk.signal.manager.util.Utils.handleResponseException;
@@ -77,12 +78,11 @@ public class RecipientHelper {
     }
 
     public RecipientId resolveRecipient(final RecipientIdentifier.Single recipient) throws UnregisteredRecipientException {
-        if (recipient instanceof RecipientIdentifier.Uuid uuidRecipient) {
-            return account.getRecipientResolver().resolveRecipient(ACI.from(uuidRecipient.uuid()));
-        } else if (recipient instanceof RecipientIdentifier.Pni pniRecipient) {
-            return account.getRecipientResolver().resolveRecipient(PNI.from(pniRecipient.pni()));
-        } else if (recipient instanceof RecipientIdentifier.Number numberRecipient) {
-            final var number = numberRecipient.number();
+        if (recipient instanceof RecipientIdentifier.Uuid(UUID uuid)) {
+            return account.getRecipientResolver().resolveRecipient(ACI.from(uuid));
+        } else if (recipient instanceof RecipientIdentifier.Pni(UUID pni)) {
+            return account.getRecipientResolver().resolveRecipient(PNI.from(pni));
+        } else if (recipient instanceof RecipientIdentifier.Number(String number)) {
             return account.getRecipientStore().resolveRecipientByNumber(number, () -> {
                 try {
                     return getRegisteredUserByNumber(number);
@@ -90,8 +90,7 @@ public class RecipientHelper {
                     return null;
                 }
             });
-        } else if (recipient instanceof RecipientIdentifier.Username usernameRecipient) {
-            var username = usernameRecipient.username();
+        } else if (recipient instanceof RecipientIdentifier.Username(String username)) {
             return resolveRecipientByUsernameOrLink(username, false);
         }
         throw new AssertionError("Unexpected RecipientIdentifier: " + recipient);
@@ -145,8 +144,8 @@ public class RecipientHelper {
         try {
             return Optional.of(resolveRecipient(recipient));
         } catch (UnregisteredRecipientException e) {
-            if (recipient instanceof RecipientIdentifier.Number r) {
-                return account.getRecipientStore().resolveRecipientByNumberOptional(r.number());
+            if (recipient instanceof RecipientIdentifier.Number(String number)) {
+                return account.getRecipientStore().resolveRecipientByNumberOptional(number);
             } else {
                 return Optional.empty();
             }
