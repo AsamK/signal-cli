@@ -827,9 +827,9 @@ public class SignalAccount implements Closeable {
 
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacyPreKeyStore() != null) {
             logger.debug("Migrating legacy pre key store.");
+            aciAccountData.getPreKeyStore().removeAllPreKeys();
             for (var entry : legacySignalProtocolStore.getLegacyPreKeyStore().getPreKeys().entrySet()) {
                 try {
-                    aciAccountData.getPreKeyStore().removeAllPreKeys();
                     aciAccountData.getPreKeyStore().storePreKey(entry.getKey(), new PreKeyRecord(entry.getValue()));
                 } catch (InvalidMessageException e) {
                     logger.warn("Failed to migrate pre key, ignoring", e);
@@ -839,9 +839,9 @@ public class SignalAccount implements Closeable {
 
         if (legacySignalProtocolStore != null && legacySignalProtocolStore.getLegacySignedPreKeyStore() != null) {
             logger.debug("Migrating legacy signed pre key store.");
+            aciAccountData.getSignedPreKeyStore().removeAllSignedPreKeys();
             for (var entry : legacySignalProtocolStore.getLegacySignedPreKeyStore().getSignedPreKeys().entrySet()) {
                 try {
-                    aciAccountData.getSignedPreKeyStore().removeAllSignedPreKeys();
                     aciAccountData.getSignedPreKeyStore()
                             .storeSignedPreKey(entry.getKey(), new SignedPreKeyRecord(entry.getValue()));
                 } catch (InvalidMessageException e) {
