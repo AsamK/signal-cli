@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.storage.accounts;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
 
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.ServiceEnvironment;
@@ -10,7 +11,6 @@ import org.asamk.signal.manager.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -181,7 +181,7 @@ public class AccountsStore {
         return Arrays.stream(files)
                 .filter(File::isFile)
                 .map(File::getName)
-                .filter(file -> PhoneNumberFormatter.isValidNumber(file, null))
+                .filter(file -> PhoneNumberUtil.getInstance().isPossibleNumber(file, null))
                 .collect(Collectors.toSet());
     }
 

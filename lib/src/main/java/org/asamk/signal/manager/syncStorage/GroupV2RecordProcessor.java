@@ -62,7 +62,8 @@ public final class GroupV2RecordProcessor extends DefaultStorageRecordProcessor<
                 .mutedUntilTimestamp(remote.mutedUntilTimestamp)
                 .dontNotifyForMentionsIfMuted(remote.dontNotifyForMentionsIfMuted)
                 .hideStory(remote.hideStory)
-                .storySendMode(remote.storySendMode);
+                .storySendMode(remote.storySendMode)
+                .avatarColor(remote.avatarColor);
         final var merged = mergedBuilder.build();
 
         final var matchesRemote = doProtosMatch(merged, remote);

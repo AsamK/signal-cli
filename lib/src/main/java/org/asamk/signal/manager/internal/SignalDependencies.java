@@ -13,7 +13,8 @@ import org.whispersystems.signalservice.api.SignalServiceDataStore;
 import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.SignalSessionLock;
-import org.whispersystems.signalservice.api.SignalWebSocket;
+import org.whispersystems.signalservice.api.account.AccountApi;
+import org.whispersystems.signalservice.api.cds.CdsApi;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
@@ -21,18 +22,18 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.link.LinkDeviceApi;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.ratelimit.RateLimitChallengeApi;
 import org.whispersystems.signalservice.api.registration.RegistrationApi;
 import org.whispersystems.signalservice.api.services.ProfileService;
 import org.whispersystems.signalservice.api.storage.StorageServiceApi;
 import org.whispersystems.signalservice.api.storage.StorageServiceRepository;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
+import org.whispersystems.signalservice.api.username.UsernameApi;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
-import org.whispersystems.signalservice.api.websocket.WebSocketFactory;
-import org.whispersystems.signalservice.internal.push.ProvisioningSocket;
+import org.whispersystems.signalservice.api.websocket.SignalWebSocket;
 import org.whispersystems.signalservice.internal.push.PushServiceSocket;
 import org.whispersystems.signalservice.internal.websocket.OkHttpWebSocketConnection;
-import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -58,6 +59,10 @@ public class SignalDependencies {
     private boolean allowStories = true;
 
     private SignalServiceAccountManager accountManager;
+    private AccountApi accountApi;
+    private RateLimitChallengeApi rateLimitChallengeApi;
+    private CdsApi cdsApi;
+    private UsernameApi usernameApi;
     private GroupsV2Api groupsV2Api;
     private RegistrationApi registrationApi;
     private LinkDeviceApi linkDeviceApi;
@@ -66,9 +71,9 @@ public class SignalDependencies {
     private ClientZkOperations clientZkOperations;
 
     private PushServiceSocket pushServiceSocket;
-    private ProvisioningSocket provisioningSocket;
     private Network libSignalNetwork;
-    private SignalWebSocket signalWebSocket;
+    private SignalWebSocket.AuthenticatedWebSocket authenticatedSignalWebSocket;
+    private SignalWebSocket.UnauthenticatedWebSocket unauthenticatedSignalWebSocket;
     private SignalServiceMessageReceiver messageReceiver;
     private SignalServiceMessageSender messageSender;
 
@@ -103,7 +108,12 @@ public class SignalDependencies {
             this.registrationApi = null;
             this.secureValueRecovery = null;
         }
-        getSignalWebSocket().forceNewWebSockets();
+        if (this.authenticatedSignalWebSocket != null) {
+            this.authenticatedSignalWebSocket.forceNewWebSocket();
+        }
+        if (this.unauthenticatedSignalWebSocket != null) {
+            this.unauthenticatedSignalWebSocket.forceNewWebSocket();
+        }
     }
 
     /**
@@ -128,12 +138,6 @@ public class SignalDependencies {
                         userAgent,
                         getClientZkProfileOperations(),
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
-    }
-
-    public ProvisioningSocket getProvisioningSocket() {
-        return getOrCreate(() -> provisioningSocket,
-                () -> provisioningSocket = new ProvisioningSocket(getServiceEnvironmentConfig().signalServiceConfiguration(),
-                        userAgent));
     }
 
     public Network getLibSignalNetwork() {
@@ -169,8 +173,8 @@ public class SignalDependencies {
 
     public SignalServiceAccountManager getAccountManager() {
         return getOrCreate(() -> accountManager,
-                () -> accountManager = new SignalServiceAccountManager(getPushServiceSocket(),
-                        getProvisioningSocket(),
+                () -> accountManager = new SignalServiceAccountManager(getAccountApi(),
+                        getPushServiceSocket(),
                         getGroupsV2Operations()));
     }
 
@@ -186,6 +190,23 @@ public class SignalDependencies {
                 ServiceConfig.GROUP_MAX_SIZE);
     }
 
+    public AccountApi getAccountApi() {
+        return getOrCreate(() -> accountApi, () -> accountApi = new AccountApi(getAuthenticatedSignalWebSocket()));
+    }
+
+    public RateLimitChallengeApi getRateLimitChallengeApi() {
+        return getOrCreate(() -> rateLimitChallengeApi,
+                () -> rateLimitChallengeApi = new RateLimitChallengeApi(getAuthenticatedSignalWebSocket()));
+    }
+
+    public CdsApi getCdsApi() {
+        return getOrCreate(() -> cdsApi, () -> cdsApi = new CdsApi(getAuthenticatedSignalWebSocket()));
+    }
+
+    public UsernameApi getUsernameApi() {
+        return getOrCreate(() -> usernameApi, () -> usernameApi = new UsernameApi(getUnauthenticatedSignalWebSocket()));
+    }
+
     public GroupsV2Api getGroupsV2Api() {
         return getOrCreate(() -> groupsV2Api, () -> groupsV2Api = getAccountManager().getGroupsV2Api());
     }
@@ -195,12 +216,14 @@ public class SignalDependencies {
     }
 
     public LinkDeviceApi getLinkDeviceApi() {
-        return getOrCreate(() -> linkDeviceApi, () -> linkDeviceApi = new LinkDeviceApi(getPushServiceSocket()));
+        return getOrCreate(() -> linkDeviceApi,
+                () -> linkDeviceApi = new LinkDeviceApi(getAuthenticatedSignalWebSocket()));
     }
 
     private StorageServiceApi getStorageServiceApi() {
         return getOrCreate(() -> storageServiceApi,
-                () -> storageServiceApi = new StorageServiceApi(getPushServiceSocket()));
+                () -> storageServiceApi = new StorageServiceApi(getAuthenticatedSignalWebSocket(),
+                        getPushServiceSocket()));
     }
 
     public StorageServiceRepository getStorageServiceRepository() {
@@ -223,33 +246,35 @@ public class SignalDependencies {
         return clientZkOperations.getProfileOperations();
     }
 
-    public SignalWebSocket getSignalWebSocket() {
-        return getOrCreate(() -> signalWebSocket, () -> {
+    public SignalWebSocket.AuthenticatedWebSocket getAuthenticatedSignalWebSocket() {
+        return getOrCreate(() -> authenticatedSignalWebSocket, () -> {
             final var timer = new UptimeSleepTimer();
             final var healthMonitor = new SignalWebSocketHealthMonitor(timer);
-            final var webSocketFactory = new WebSocketFactory() {
-                @Override
-                public WebSocketConnection createWebSocket() {
-                    return new OkHttpWebSocketConnection("normal",
-                            serviceEnvironmentConfig.signalServiceConfiguration(),
-                            Optional.of(credentialsProvider),
-                            userAgent,
-                            healthMonitor,
-                            allowStories);
-                }
 
-                @Override
-                public WebSocketConnection createUnidentifiedWebSocket() {
-                    return new OkHttpWebSocketConnection("unidentified",
-                            serviceEnvironmentConfig.signalServiceConfiguration(),
-                            Optional.empty(),
-                            userAgent,
-                            healthMonitor,
-                            allowStories);
-                }
-            };
-            signalWebSocket = new SignalWebSocket(webSocketFactory);
-            healthMonitor.monitor(signalWebSocket);
+            authenticatedSignalWebSocket = new SignalWebSocket.AuthenticatedWebSocket(() -> new OkHttpWebSocketConnection(
+                    "normal",
+                    serviceEnvironmentConfig.signalServiceConfiguration(),
+                    Optional.of(credentialsProvider),
+                    userAgent,
+                    healthMonitor,
+                    allowStories));
+            healthMonitor.monitor(authenticatedSignalWebSocket);
+        });
+    }
+
+    public SignalWebSocket.UnauthenticatedWebSocket getUnauthenticatedSignalWebSocket() {
+        return getOrCreate(() -> unauthenticatedSignalWebSocket, () -> {
+            final var timer = new UptimeSleepTimer();
+            final var healthMonitor = new SignalWebSocketHealthMonitor(timer);
+
+            unauthenticatedSignalWebSocket = new SignalWebSocket.UnauthenticatedWebSocket(() -> new OkHttpWebSocketConnection(
+                    "unidentified",
+                    serviceEnvironmentConfig.signalServiceConfiguration(),
+                    Optional.empty(),
+                    userAgent,
+                    healthMonitor,
+                    allowStories));
+            healthMonitor.monitor(unauthenticatedSignalWebSocket);
         });
     }
 
@@ -263,7 +288,8 @@ public class SignalDependencies {
                 () -> messageSender = new SignalServiceMessageSender(getPushServiceSocket(),
                         dataStore,
                         sessionLock,
-                        getSignalWebSocket(),
+                        getAuthenticatedSignalWebSocket(),
+                        getUnauthenticatedSignalWebSocket(),
                         Optional.empty(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE));
@@ -281,7 +307,8 @@ public class SignalDependencies {
         return getOrCreate(() -> profileService,
                 () -> profileService = new ProfileService(getClientZkProfileOperations(),
                         getMessageReceiver(),
-                        getSignalWebSocket()));
+                        getAuthenticatedSignalWebSocket(),
+                        getUnauthenticatedSignalWebSocket()));
     }
 
     public SignalServiceCipher getCipher(ServiceIdType serviceIdType) {

@@ -1,5 +1,7 @@
 package org.asamk.signal.manager;
 
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+
 import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
 import org.asamk.signal.manager.api.CaptchaRejectedException;
@@ -49,7 +51,6 @@ import org.asamk.signal.manager.api.UsernameStatus;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 
 import java.io.Closeable;
 import java.io.File;
@@ -65,7 +66,7 @@ import java.util.Set;
 public interface Manager extends Closeable {
 
     static boolean isValidNumber(final String e164Number, final String countryCode) {
-        return PhoneNumberFormatter.isValidNumber(e164Number, countryCode);
+        return PhoneNumberUtil.getInstance().isPossibleNumber(e164Number, countryCode);
     }
 
     static boolean isSignalClientAvailable() {

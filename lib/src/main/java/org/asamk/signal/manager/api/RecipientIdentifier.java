@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.api;
 
+import org.asamk.signal.manager.util.PhoneNumberFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.util.UUID;
@@ -24,32 +24,28 @@ public sealed interface RecipientIdentifier {
     sealed interface Single extends RecipientIdentifier {
 
         static Single fromString(String identifier, String localNumber) throws InvalidNumberException {
-            try {
-                if (UuidUtil.isUuid(identifier)) {
-                    return new Uuid(UUID.fromString(identifier));
-                }
-
-                if (identifier.startsWith("PNI:")) {
-                    final var pni = identifier.substring(4);
-                    if (!UuidUtil.isUuid(pni)) {
-                        throw new InvalidNumberException("Invalid PNI");
-                    }
-                    return new Pni(UUID.fromString(pni));
-                }
-
-                if (identifier.startsWith("u:")) {
-                    return new Username(identifier.substring(2));
-                }
-
-                final var normalizedNumber = PhoneNumberFormatter.formatNumber(identifier, localNumber);
-                if (!normalizedNumber.equals(identifier)) {
-                    final Logger logger = LoggerFactory.getLogger(RecipientIdentifier.class);
-                    logger.debug("Normalized number {} to {}.", identifier, normalizedNumber);
-                }
-                return new Number(normalizedNumber);
-            } catch (org.whispersystems.signalservice.api.util.InvalidNumberException e) {
-                throw new InvalidNumberException(e.getMessage(), e);
+            if (UuidUtil.isUuid(identifier)) {
+                return new Uuid(UUID.fromString(identifier));
             }
+
+            if (identifier.startsWith("PNI:")) {
+                final var pni = identifier.substring(4);
+                if (!UuidUtil.isUuid(pni)) {
+                    throw new InvalidNumberException("Invalid PNI");
+                }
+                return new Pni(UUID.fromString(pni));
+            }
+
+            if (identifier.startsWith("u:")) {
+                return new Username(identifier.substring(2));
+            }
+
+            final var normalizedNumber = PhoneNumberFormatter.formatNumber(identifier, localNumber);
+            if (!normalizedNumber.equals(identifier)) {
+                final Logger logger = LoggerFactory.getLogger(RecipientIdentifier.class);
+                logger.debug("Normalized number {} to {}.", identifier, normalizedNumber);
+            }
+            return new Number(normalizedNumber);
         }
 
         static Single fromAddress(RecipientAddress address) {

@@ -29,12 +29,11 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.SignalServiceAccountManager;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
-import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
+import org.whispersystems.signalservice.api.registration.ProvisioningApi;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.internal.push.ProvisioningSocket;
 import org.whispersystems.signalservice.internal.push.PushServiceSocket;
@@ -58,7 +57,7 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
     private final Consumer<Manager> newManagerListener;
     private final AccountsStore accountsStore;
 
-    private final SignalServiceAccountManager accountManager;
+    private final ProvisioningApi provisioningApi;
     private final IdentityKeyPair tempIdentityKey;
     private final String password;
 
@@ -78,7 +77,6 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
         tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         password = KeyUtils.createPassword();
         final var clientZkOperations = ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration());
-        final var groupsV2Operations = new GroupsV2Operations(clientZkOperations, ServiceConfig.GROUP_MAX_SIZE);
         final var credentialsProvider = new DynamicCredentialsProvider(null,
                 null,
                 null,
@@ -89,21 +87,21 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
                 userAgent,
                 clientZkOperations.getProfileOperations(),
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
-        accountManager = new SignalServiceAccountManager(pushServiceSocket,
-                new ProvisioningSocket(serviceEnvironmentConfig.signalServiceConfiguration(), userAgent),
-                groupsV2Operations);
+        final var provisioningSocket = new ProvisioningSocket(serviceEnvironmentConfig.signalServiceConfiguration(),
+                userAgent);
+        this.provisioningApi = new ProvisioningApi(pushServiceSocket, provisioningSocket, credentialsProvider);
     }
 
     @Override
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
-        var deviceUuid = accountManager.getNewDeviceUuid();
+        var deviceUuid = provisioningApi.getNewDeviceUuid();
 
         return new DeviceLinkUrl(deviceUuid, tempIdentityKey.getPublicKey().getPublicKey()).createDeviceLinkUri();
     }
 
     @Override
     public String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExistsException {
-        var ret = accountManager.getNewDeviceRegistration(tempIdentityKey);
+        var ret = provisioningApi.getNewDeviceRegistration(tempIdentityKey);
         var number = ret.getNumber();
         var aci = ret.getAci();
         var pni = ret.getPni();
@@ -160,7 +158,7 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
             final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
 
             logger.debug("Finishing new device registration");
-            var deviceId = accountManager.finishNewDeviceRegistration(ret.getProvisioningCode(),
+            var deviceId = provisioningApi.finishNewDeviceRegistration(ret.getProvisioningCode(),
                     account.getAccountAttributes(null),
                     aciPreKeys,
                     pniPreKeys);

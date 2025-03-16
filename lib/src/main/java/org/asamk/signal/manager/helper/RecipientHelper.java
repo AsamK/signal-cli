@@ -10,13 +10,13 @@ import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.libsignal.usernames.Username;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.cds.CdsiV2Service;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiInvalidArgumentException;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiInvalidTokenException;
-import org.whispersystems.signalservice.api.services.CdsiV2Service;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.asamk.signal.manager.config.ServiceConfig.MAXIMUM_ONE_OFF_REQUEST_SIZE;
+import static org.asamk.signal.manager.util.Utils.handleResponseException;
 
 public class RecipientHelper {
 
@@ -108,7 +109,7 @@ public class RecipientHelper {
         }
         if (forceRefresh) {
             try {
-                final var aci = dependencies.getAccountManager().getAciByUsername(finalUsername);
+                final var aci = handleResponseException(dependencies.getUsernameApi().getAciByUsername(finalUsername));
                 return account.getRecipientStore().resolveRecipientTrusted(aci, finalUsername.getUsername());
             } catch (IOException e) {
                 throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
@@ -119,7 +120,7 @@ public class RecipientHelper {
         }
         return account.getRecipientStore().resolveRecipientByUsername(finalUsername.getUsername(), () -> {
             try {
-                return dependencies.getAccountManager().getAciByUsername(finalUsername);
+                return handleResponseException(dependencies.getUsernameApi().getAciByUsername(finalUsername));
             } catch (Exception e) {
                 return null;
             }
@@ -130,8 +131,8 @@ public class RecipientHelper {
         try {
             final var usernameLinkUrl = UsernameLinkUrl.fromUri(username);
             final var components = usernameLinkUrl.getComponents();
-            final var encryptedUsername = dependencies.getAccountManager()
-                    .getEncryptedUsernameFromLinkServerId(components.getServerId());
+            final var encryptedUsername = handleResponseException(dependencies.getUsernameApi()
+                    .getEncryptedUsernameFromLinkServerId(components.getServerId()));
             final var link = new Username.UsernameLink(components.getEntropy(), encryptedUsername);
 
             return Username.fromLink(link);
@@ -234,13 +235,14 @@ public class RecipientHelper {
 
         final CdsiV2Service.Response response;
         try {
-            response = dependencies.getAccountManager()
-                    .getRegisteredUsersWithCdsi(token.isEmpty() ? Set.of() : previousNumbers,
+            response = handleResponseException(dependencies.getCdsApi()
+                    .getRegisteredUsers(token.isEmpty() ? Set.of() : previousNumbers,
                             newNumbers,
                             account.getRecipientStore().getServiceIdToProfileKeyMap(),
                             token,
                             null,
                             dependencies.getLibSignalNetwork(),
+                            false,
                             newToken -> {
                                 if (isPartialRefresh) {
                                     account.getCdsiStore().updateAfterPartialCdsQuery(newNumbers);
@@ -256,7 +258,7 @@ public class RecipientHelper {
                                     account.setCdsiToken(newToken);
                                     account.setLastRecipientsRefresh(System.currentTimeMillis());
                                 }
-                            });
+                            }));
         } catch (CdsiInvalidTokenException | CdsiInvalidArgumentException e) {
             account.setCdsiToken(null);
             account.getCdsiStore().clearAll();

@@ -35,6 +35,7 @@ import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.InvalidDeviceLinkException;
+import org.asamk.signal.manager.api.InvalidNumberException;
 import org.asamk.signal.manager.api.InvalidStickerException;
 import org.asamk.signal.manager.api.InvalidUsernameException;
 import org.asamk.signal.manager.api.LastGroupAdminException;
@@ -87,12 +88,12 @@ import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.MimeUtils;
+import org.asamk.signal.manager.util.PhoneNumberFormatter;
 import org.asamk.signal.manager.util.StickerUtils;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
@@ -106,8 +107,6 @@ import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhauste
 import org.whispersystems.signalservice.api.push.exceptions.UsernameMalformedException;
 import org.whispersystems.signalservice.api.push.exceptions.UsernameTakenException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
-import org.whispersystems.signalservice.api.util.InvalidNumberException;
-import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.signalservice.internal.util.Util;
@@ -132,7 +131,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -142,6 +140,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import okio.Utf8;
 
 import static org.asamk.signal.manager.config.ServiceConfig.MAX_MESSAGE_SIZE_BYTES;
+import static org.asamk.signal.manager.util.Utils.handleResponseException;
 import static org.signal.core.util.StringExtensionsKt.splitByByteLength;
 
 public class ManagerImpl implements Manager {
@@ -171,15 +170,7 @@ public class ManagerImpl implements Manager {
     ) {
         this.account = account;
 
-        final var sessionLock = new SignalSessionLock() {
-            private final ReentrantLock LEGACY_LOCK = new ReentrantLock();
-
-            @Override
-            public Lock acquire() {
-                LEGACY_LOCK.lock();
-                return LEGACY_LOCK::unlock;
-            }
-        };
+        final var sessionLock = new ReentrantSignalSessionLock();
         this.dependencies = new SignalDependencies(serviceEnvironmentConfig,
                 userAgent,
                 account.getCredentialsProvider(),
@@ -457,10 +448,10 @@ public class ManagerImpl implements Manager {
             String challenge,
             String captcha
     ) throws IOException, CaptchaRejectedException {
-        captcha = captcha == null ? null : captcha.replace("signalcaptcha://", "");
+        captcha = captcha == null ? "" : captcha.replace("signalcaptcha://", "");
 
         try {
-            dependencies.getAccountManager().submitRateLimitRecaptchaChallenge(challenge, captcha);
+            handleResponseException(dependencies.getRateLimitChallengeApi().submitCaptchaChallenge(challenge, captcha));
         } catch (org.whispersystems.signalservice.internal.push.exceptions.CaptchaRejectedException ignored) {
             throw new CaptchaRejectedException();
         }
@@ -468,7 +459,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public List<Device> getLinkedDevices() throws IOException {
-        var devices = dependencies.getAccountManager().getDevices();
+        var devices = handleResponseException(dependencies.getLinkDeviceApi().getDevices());
         account.setMultiDevice(devices.size() > 1);
         var identityKey = account.getAciIdentityKeyPair().getPrivateKey();
         return devices.stream().map(d -> {
@@ -1594,7 +1585,8 @@ public class ManagerImpl implements Manager {
         context.close();
         executor.close();
 
-        dependencies.getSignalWebSocket().disconnect();
+        dependencies.getAuthenticatedSignalWebSocket().disconnect();
+        dependencies.getUnauthenticatedSignalWebSocket().disconnect();
         dependencies.getPushServiceSocket().close();
         disposable.dispose();
 

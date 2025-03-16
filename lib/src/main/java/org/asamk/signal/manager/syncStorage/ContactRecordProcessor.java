@@ -195,7 +195,8 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .hidden(remote.hidden)
                 .pniSignatureVerified(remote.pniSignatureVerified || local.pniSignatureVerified)
                 .nickname(remote.nickname)
-                .note(remote.note);
+                .note(remote.note)
+                .avatarColor(remote.avatarColor);
         final var merged = mergedBuilder.build();
 
         final var matchesRemote = doProtosMatch(merged, remote);

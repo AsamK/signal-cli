@@ -2,7 +2,7 @@ package org.asamk.signal.manager.api;
 
 public class InvalidNumberException extends Exception {
 
-    InvalidNumberException(String message) {
+    public InvalidNumberException(String message) {
         super(message);
     }
 

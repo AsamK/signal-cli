@@ -162,7 +162,11 @@ public class Utils {
                 throw new IOException(throwableOptional);
             }
         }
-        return response.successOrThrow();
+        try {
+            return response.successOrThrow();
+        } catch (Throwable e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static ByteString firstNonEmpty(ByteString... strings) {
