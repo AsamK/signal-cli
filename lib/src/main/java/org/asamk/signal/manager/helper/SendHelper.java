@@ -31,6 +31,8 @@ import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEditMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessageRecipient;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
@@ -53,6 +55,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import okio.ByteString;
 
@@ -331,6 +334,66 @@ public class SendHelper {
                 editTargetTimestamp);
     }
 
+    public List<SendMessageResult> sendGroupStoryMessage(
+            final SignalServiceStoryMessage message,
+            final GroupInfo g
+    ) throws IOException {
+        final var messageSender = dependencies.getMessageSender();
+        final var messageSendLogStore = account.getMessageSendLogStore();
+        final AtomicLong entryId = new AtomicLong(-1);
+        final boolean urgent = true;
+        final long timestamp = System.currentTimeMillis();
+        // remove sender/self
+        final Set<RecipientId> recipientIds = g.getMembersWithout(account.getSelfRecipientId());
+        final List<String> distributionListIds = List.of(g.getGroupId().toBase64());
+        final Set<SignalServiceStoryMessageRecipient> messageRecipients = recipientIds.stream().map(i -> {
+        	SignalServiceAddress ssa = context.getRecipientHelper().resolveSignalServiceAddress(i);
+        	return new SignalServiceStoryMessageRecipient(ssa, distributionListIds, true);
+        }).collect(Collectors.toSet());
+        final SenderKeySenderHandler senderKeySender = (distId, recipients, unidentifiedAccess, groupSendEndorsements, isRecipientUpdate) -> messageSender.sendGroupStory(
+                g.getDistributionId(),
+                Optional.of(g.getGroupId().serialize()),
+                recipients,
+                unidentifiedAccess,
+                groupSendEndorsements,
+                true,
+                message,
+                timestamp,
+                messageRecipients,
+                sendResult -> {
+                    logger.trace("Partial message send results: {}", sendResult.size());
+                    synchronized (entryId) {
+                        if (entryId.get() == -1) {
+                            final var newId = messageSendLogStore.insertIfPossible(timestamp,
+                                    sendResult,
+                                    ContentHint.RESENDABLE,
+                                    urgent);
+                            entryId.set(newId);
+                        } else {
+                            messageSendLogStore.addRecipientToExistingEntryIfPossible(entryId.get(), sendResult);
+                        }
+                    }
+                    synchronized (entryId) {
+                        if (entryId.get() == -1) {
+                            final var newId = messageSendLogStore.insertIfPossible(timestamp,
+                                    sendResult,
+                                    ContentHint.RESENDABLE,
+                                    urgent);
+                            entryId.set(newId);
+                        } else {
+                            messageSendLogStore.addRecipientToExistingEntryIfPossible(entryId.get(), sendResult);
+                        }
+                    }
+                });
+        final var results = sendStoryMessageInternal(senderKeySender, recipientIds, g.getDistributionId());
+
+        for (var r : results) {
+            handleSendMessageResult(r);
+        }
+
+        return results;
+    }
+
     private List<SendMessageResult> sendGroupMessage(
             final SignalServiceDataMessage message,
             final Set<RecipientId> recipientIds,
@@ -466,6 +529,44 @@ public class SendHelper {
         return g;
     }
 
+    private List<SendMessageResult> sendStoryMessageInternal(
+            final SenderKeySenderHandler senderKeySender,
+            final Set<RecipientId> recipientIds,
+            final DistributionId distributionId
+    ) throws IOException {
+        long startTime = System.currentTimeMillis();
+        Set<RecipientId> senderKeyTargets = distributionId == null
+                ? Set.of()
+                : getSenderKeyCapableRecipientIds(recipientIds);
+        final var allResults = new ArrayList<SendMessageResult>();
+
+        if (!senderKeyTargets.isEmpty()) {
+            final var results = sendGroupMessageInternalWithSenderKey(senderKeySender,
+                    senderKeyTargets,
+                    distributionId,
+                    false);
+
+            if (results == null) {
+                senderKeyTargets = Set.of();
+            } else {
+                results.stream().filter(SendMessageResult::isSuccess).forEach(allResults::add);
+                final var recipientResolver = account.getRecipientResolver();
+                final var failedTargets = results.stream()
+                        .filter(r -> !r.isSuccess())
+                        .map(r -> recipientResolver.resolveRecipient(r.getAddress()))
+                        .toList();
+                if (!failedTargets.isEmpty()) {
+                    senderKeyTargets = new HashSet<>(senderKeyTargets);
+                    failedTargets.forEach(senderKeyTargets::remove);
+                }
+            }
+        }
+
+        final var duration = Duration.ofMillis(System.currentTimeMillis() - startTime);
+        logger.debug("Sending took {}", duration.toString());
+        return allResults;
+    }
+
     private List<SendMessageResult> sendGroupMessageInternal(
             final LegacySenderHandler legacySender,
             final SenderKeySenderHandler senderKeySender,
@@ -546,12 +647,12 @@ public class SendHelper {
 
             senderKeyTargets.add(recipientId);
         }
-
+/*
         if (senderKeyTargets.size() < 2) {
             logger.debug("Too few sender-key-capable users ({}). Doing all legacy sends.", senderKeyTargets.size());
             return Set.of();
         }
-
+*/
         logger.debug("Can use sender key for {}/{} recipients.", senderKeyTargets.size(), recipientIds.size());
         return senderKeyTargets;
     }

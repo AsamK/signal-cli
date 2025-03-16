@@ -754,4 +754,6 @@ public interface Signal extends DBusInterface {
             }
         }
     }
+
+	long sendStoryMessage(String messageText, List<String> attachments, byte[] groupId);
 }
