@@ -2992,6 +2992,9 @@
   "allDeclaredFields":true
 },
 {
+  "name":"org.whispersystems.signalservice.internal.storage.protos.AvatarColor"
+},
+{
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
   "allDeclaredFields":true,
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
