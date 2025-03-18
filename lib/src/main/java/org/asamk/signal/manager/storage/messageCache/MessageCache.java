@@ -10,6 +10,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
@@ -75,7 +76,7 @@ public class MessageCache {
             return cachedMessage;
         }
         logger.debug("Moving cached message {} to {}", cachedMessage.getFile().toPath(), cacheFile.toPath());
-        Files.move(cachedMessage.getFile().toPath(), cacheFile.toPath());
+        Files.move(cachedMessage.getFile().toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         return new CachedMessage(cacheFile);
     }
 
