@@ -41,6 +41,7 @@ import java.net.Proxy;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public class SignalDependencies {
@@ -257,7 +258,7 @@ public class SignalDependencies {
                     Optional.of(credentialsProvider),
                     userAgent,
                     healthMonitor,
-                    allowStories));
+                    allowStories), timer, TimeUnit.SECONDS.toMillis(10));
             healthMonitor.monitor(authenticatedSignalWebSocket);
         });
     }
@@ -273,7 +274,7 @@ public class SignalDependencies {
                     Optional.empty(),
                     userAgent,
                     healthMonitor,
-                    allowStories));
+                    allowStories), timer, TimeUnit.SECONDS.toMillis(10));
             healthMonitor.monitor(unauthenticatedSignalWebSocket);
         });
     }

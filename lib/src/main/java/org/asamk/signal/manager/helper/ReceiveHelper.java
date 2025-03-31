@@ -100,6 +100,7 @@ public class ReceiveHelper {
                 .distinctUntilChanged()
                 .subscribe(this::onWebSocketStateChange);
         signalWebSocket.connect();
+        signalWebSocket.registerKeepAliveToken("receive");
 
         try {
             receiveMessagesInternal(signalWebSocket, timeout, returnOnTimeout, maxMessages, handler, queuedActions);
@@ -107,6 +108,7 @@ public class ReceiveHelper {
             hasCaughtUpWithOldMessages = false;
             handleQueuedActions(queuedActions.keySet());
             queuedActions.clear();
+            signalWebSocket.removeKeepAliveToken("receive");
             signalWebSocket.disconnect();
             webSocketStateDisposable.dispose();
             shouldStop = false;

@@ -90,7 +90,7 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
     }
 
     private boolean sendKeepAlives() {
-        return needsKeepAlive && webSocket != null && webSocket.getShouldSendKeepAlives();
+        return needsKeepAlive && webSocket != null && webSocket.shouldSendKeepAlives();
     }
 
     /**
