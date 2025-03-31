@@ -157,6 +157,9 @@ public final class IncomingMessageHandler {
             } catch (ProtocolInvalidKeyIdException | ProtocolInvalidKeyException | ProtocolNoSessionException |
                      ProtocolInvalidMessageException e) {
                 logger.debug("Failed to decrypt incoming message", e);
+                if (e instanceof ProtocolInvalidKeyIdException) {
+                    actions.add(RefreshPreKeysAction.create());
+                }
                 final var sender = account.getRecipientResolver().resolveRecipient(e.getSender());
                 if (context.getContactHelper().isContactBlocked(sender)) {
                     logger.debug("Received invalid message from blocked contact, ignoring.");
