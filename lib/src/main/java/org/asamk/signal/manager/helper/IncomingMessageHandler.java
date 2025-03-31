@@ -165,12 +165,11 @@ public final class IncomingMessageHandler {
                     if (serviceId != null) {
                         final var isSelf = sender.equals(account.getSelfRecipientId())
                                 && e.getSenderDevice() == account.getDeviceId();
+                        logger.debug("Received invalid message, queuing renew session action.");
+                        actions.add(new RenewSessionAction(sender, serviceId, destination));
                         if (!isSelf) {
                             logger.debug("Received invalid message, requesting message resend.");
-                            actions.add(new SendRetryMessageRequestAction(sender, serviceId, e, envelope, destination));
-                        } else {
-                            logger.debug("Received invalid message, queuing renew session action.");
-                            actions.add(new RenewSessionAction(sender, serviceId, destination));
+                            actions.add(new SendRetryMessageRequestAction(sender, e, envelope));
                         }
                     } else {
                         logger.debug("Received invalid message from invalid sender: {}", e.getSender());
