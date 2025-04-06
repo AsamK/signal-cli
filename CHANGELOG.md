@@ -1,6 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.14] - 2025-04-06
+
+Requires libsignal-client version 0.68.1.
+
+### Fixed
+
+- Fix pre key import from old data files
+
+### Changed
+
+- Use websocket connection instead of HTTP for more requests
+- Improve handling of messages with decryption error
 
 ## [0.13.13] - 2025-02-28
 
