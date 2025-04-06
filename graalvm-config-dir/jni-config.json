@@ -91,6 +91,10 @@
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"complete","parameterTypes":["java.lang.Object"] }, {"name":"completeExceptionally","parameterTypes":["java.lang.Throwable"] }]
 },
 {
+  "name":"org.signal.libsignal.internal.NativeHandleGuard$SimpleOwner",
+  "methods":[{"name":"unsafeNativeHandleWithoutGuard","parameterTypes":[] }]
+},
+{
   "name":"org.signal.libsignal.net.CdsiLookupResponse",
   "methods":[{"name":"<init>","parameterTypes":["java.util.Map","int"] }]
 },

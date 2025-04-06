@@ -141,6 +141,7 @@ exec 3> "$FIFO_FILE"
   echo '{"jsonrpc":"2.0","id":"id","method":"listGroups"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"listDevices"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"listIdentities"}' >&3
+  echo '{"jsonrpc":"2.0","id":"id","method":"listStickerPacks"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"sendSyncRequest"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"sendContacts"}' >&3
   echo '{"jsonrpc":"2.0","id":"id","method":"version"}' >&3

@@ -23,6 +23,7 @@ import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.NetworkResultUtil;
 import org.whispersystems.signalservice.api.crypto.SealedSenderAccess;
 import org.whispersystems.signalservice.api.profiles.AvatarUploadParams;
 import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
@@ -196,9 +197,10 @@ public final class ProfileHelper {
                         : avatar == null ? AvatarUploadParams.unchanged(true) : AvatarUploadParams.unchanged(false);
                 final var paymentsAddress = Optional.ofNullable(newProfile.getMobileCoinAddress())
                         .map(address -> PaymentUtils.signPaymentsAddress(address,
-                                account.getAciIdentityKeyPair().getPrivateKey()));
+                                account.getAciIdentityKeyPair().getPrivateKey()))
+                        .orElse(null);
                 logger.debug("Uploading new profile");
-                final var avatarPath = dependencies.getAccountManager()
+                final var avatarPath = NetworkResultUtil.toSetProfileLegacy(dependencies.getProfileApi()
                         .setVersionedProfile(account.getAci(),
                                 account.getProfileKey(),
                                 newProfile.getInternalServiceName(),
@@ -208,9 +210,9 @@ public final class ProfileHelper {
                                 avatarUploadParams,
                                 List.of(/* TODO implement support for badges */),
                                 account.getConfigurationStore().getPhoneNumberSharingMode()
-                                        == PhoneNumberSharingMode.EVERYBODY);
+                                        == PhoneNumberSharingMode.EVERYBODY));
                 if (!avatarUploadParams.keepTheSame) {
-                    builder.withAvatarUrlPath(avatarPath.orElse(null));
+                    builder.withAvatarUrlPath(avatarPath);
                 }
                 newProfile = builder.build();
             }

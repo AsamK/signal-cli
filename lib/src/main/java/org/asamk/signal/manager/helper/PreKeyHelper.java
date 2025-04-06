@@ -11,17 +11,19 @@ import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.NetworkResultUtil;
 import org.whispersystems.signalservice.api.account.PreKeyUpload;
+import org.whispersystems.signalservice.api.keys.OneTimePreKeyCounts;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
-import org.whispersystems.signalservice.internal.push.OneTimePreKeyCounts;
 
 import java.io.IOException;
 import java.util.List;
 
 import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_STALE_AGE;
 import static org.asamk.signal.manager.config.ServiceConfig.SIGNED_PREKEY_ROTATE_AGE;
+import static org.asamk.signal.manager.util.Utils.handleResponseException;
 
 public class PreKeyHelper {
 
@@ -82,7 +84,7 @@ public class PreKeyHelper {
     ) throws IOException {
         OneTimePreKeyCounts preKeyCounts;
         try {
-            preKeyCounts = dependencies.getAccountManager().getPreKeyCounts(serviceIdType);
+            preKeyCounts = handleResponseException(dependencies.getKeysApi().getAvailablePreKeyCounts(serviceIdType));
         } catch (AuthorizationFailedException e) {
             logger.debug("Failed to get pre key count, ignoring: " + e.getClass().getSimpleName());
             preKeyCounts = new OneTimePreKeyCounts(0, 0);
@@ -143,7 +145,7 @@ public class PreKeyHelper {
                 kyberPreKeyRecords);
         var needsReset = false;
         try {
-            dependencies.getAccountManager().setPreKeys(preKeyUpload);
+            NetworkResultUtil.toPreKeysLegacy(dependencies.getKeysApi().setPreKeys(preKeyUpload));
             try {
                 if (preKeyRecords != null) {
                     account.addPreKeys(serviceIdType, preKeyRecords);

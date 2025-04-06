@@ -40,6 +40,9 @@
   "name":"[Ljava.sql.Statement;"
 },
 {
+  "name":"[Lorg.asamk.signal.commands.ListStickerPacksCommand$JsonStickerPack$JsonSticker;"
+},
+{
   "name":"[Lorg.asamk.signal.json.JsonAttachment;"
 },
 {
@@ -2302,7 +2305,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"getAnnouncementGroup","parameterTypes":[] }, {"name":"getChangeNumber","parameterTypes":[] }, {"name":"getDeleteSync","parameterTypes":[] }, {"name":"getGiftBadges","parameterTypes":[] }, {"name":"getPaymentActivation","parameterTypes":[] }, {"name":"getPni","parameterTypes":[] }, {"name":"getSenderKey","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getStorageServiceEncryptionV2","parameterTypes":[] }, {"name":"getStories","parameterTypes":[] }, {"name":"getVersionedExpirationTimer","parameterTypes":[] }]
+  "methods":[{"name":"getAnnouncementGroup","parameterTypes":[] }, {"name":"getAttachmentBackfill","parameterTypes":[] }, {"name":"getChangeNumber","parameterTypes":[] }, {"name":"getDeleteSync","parameterTypes":[] }, {"name":"getGiftBadges","parameterTypes":[] }, {"name":"getPaymentActivation","parameterTypes":[] }, {"name":"getPni","parameterTypes":[] }, {"name":"getSenderKey","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getStorageServiceEncryptionV2","parameterTypes":[] }, {"name":"getStories","parameterTypes":[] }, {"name":"getVersionedExpirationTimer","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.account.ChangePhoneNumberRequest",
@@ -2328,6 +2331,13 @@
 },
 {
   "name":"org.whispersystems.signalservice.api.groupsv2.TemporalCredential[]"
+},
+{
+  "name":"org.whispersystems.signalservice.api.keys.OneTimePreKeyCounts",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.whispersystems.signalservice.api.link.LinkedDeviceVerificationCodeResponse",
@@ -2396,7 +2406,14 @@
   "name":"org.whispersystems.signalservice.api.profiles.SignalServiceProfileWrite",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
-  "allDeclaredConstructors":true
+  "allDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String","byte[]","byte[]","byte[]","byte[]","byte[]","boolean","boolean","byte[]","java.util.List"] }, {"name":"getAbout","parameterTypes":[] }, {"name":"getAboutEmoji","parameterTypes":[] }, {"name":"getAvatar","parameterTypes":[] }, {"name":"getBadgeIds","parameterTypes":[] }, {"name":"getCommitment","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getPaymentAddress","parameterTypes":[] }, {"name":"getPhoneNumberSharing","parameterTypes":[] }, {"name":"getSameAvatar","parameterTypes":[] }, {"name":"getVersion","parameterTypes":[] }]
+},
+{
+  "name":"org.whispersystems.signalservice.api.provisioning.ProvisioningMessage",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"org.whispersystems.signalservice.api.push.ServiceId",
@@ -2440,6 +2457,12 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.api.ratelimit.SubmitRecaptchaChallengePayload",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"org.whispersystems.signalservice.api.storage.StorageAuthResponse",
@@ -2965,6 +2988,7 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord",
   "allDeclaredFields":true,
+  "fields":[{"name":"avatarColor"}, {"name":"avatarUrlPath"}, {"name":"backupSubscriberData"}, {"name":"backupTier"}, {"name":"displayBadgesOnProfile"}, {"name":"e164"}, {"name":"familyName"}, {"name":"givenName"}, {"name":"hasBackup"}, {"name":"hasCompletedUsernameOnboarding"}, {"name":"hasSeenGroupStoryEducationSheet"}, {"name":"hasSetMyStoriesPrivacy"}, {"name":"hasViewedOnboardingStory"}, {"name":"keepMutedChatsArchived"}, {"name":"linkPreviews"}, {"name":"noteToSelfArchived"}, {"name":"noteToSelfMarkedUnread"}, {"name":"payments"}, {"name":"phoneNumberSharingMode"}, {"name":"pinnedConversations"}, {"name":"preferContactAvatars"}, {"name":"preferredReactionEmoji"}, {"name":"primarySendsSms"}, {"name":"profileKey"}, {"name":"readReceipts"}, {"name":"sealedSenderIndicators"}, {"name":"storiesDisabled"}, {"name":"storyViewReceiptsEnabled"}, {"name":"subscriberCurrencyCode"}, {"name":"subscriberId"}, {"name":"subscriptionManuallyCancelled"}, {"name":"typingIndicators"}, {"name":"universalExpireTimer"}, {"name":"unlistedPhoneNumber"}, {"name":"username"}, {"name":"usernameLink"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {
@@ -3027,6 +3051,7 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record",
   "allDeclaredFields":true,
+  "fields":[{"name":"archived"}, {"name":"avatarColor"}, {"name":"blocked"}, {"name":"dontNotifyForMentionsIfMuted"}, {"name":"hideStory"}, {"name":"markedUnread"}, {"name":"masterKey"}, {"name":"mutedUntilTimestamp"}, {"name":"storySendMode"}, {"name":"whitelisted"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {

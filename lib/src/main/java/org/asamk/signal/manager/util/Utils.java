@@ -7,6 +7,7 @@ import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.NetworkResult;
+import org.whispersystems.signalservice.api.NetworkResultUtil;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 
@@ -154,19 +155,7 @@ public class Utils {
     }
 
     public static <T> T handleResponseException(final NetworkResult<T> response) throws IOException {
-        final var throwableOptional = response.getCause();
-        if (throwableOptional != null) {
-            if (throwableOptional instanceof IOException ioException) {
-                throw ioException;
-            } else {
-                throw new IOException(throwableOptional);
-            }
-        }
-        try {
-            return response.successOrThrow();
-        } catch (Throwable e) {
-            throw new AssertionError(e);
-        }
+        return NetworkResultUtil.toBasicLegacy(response);
     }
 
     public static ByteString firstNonEmpty(ByteString... strings) {

@@ -14,12 +14,17 @@ import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.account.AccountApi;
+import org.whispersystems.signalservice.api.attachment.AttachmentApi;
 import org.whispersystems.signalservice.api.cds.CdsApi;
+import org.whispersystems.signalservice.api.certificate.CertificateApi;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
+import org.whispersystems.signalservice.api.keys.KeysApi;
 import org.whispersystems.signalservice.api.link.LinkDeviceApi;
+import org.whispersystems.signalservice.api.message.MessageApi;
+import org.whispersystems.signalservice.api.profiles.ProfileApi;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.ratelimit.RateLimitChallengeApi;
@@ -68,6 +73,10 @@ public class SignalDependencies {
     private RegistrationApi registrationApi;
     private LinkDeviceApi linkDeviceApi;
     private StorageServiceApi storageServiceApi;
+    private CertificateApi certificateApi;
+    private AttachmentApi attachmentApi;
+    private MessageApi messageApi;
+    private KeysApi keysApi;
     private GroupsV2Operations groupsV2Operations;
     private ClientZkOperations clientZkOperations;
 
@@ -80,6 +89,7 @@ public class SignalDependencies {
 
     private List<SecureValueRecovery> secureValueRecovery;
     private ProfileService profileService;
+    private ProfileApi profileApi;
 
     SignalDependencies(
             final ServiceEnvironmentConfig serviceEnvironmentConfig,
@@ -174,7 +184,8 @@ public class SignalDependencies {
 
     public SignalServiceAccountManager getAccountManager() {
         return getOrCreate(() -> accountManager,
-                () -> accountManager = new SignalServiceAccountManager(getAccountApi(),
+                () -> accountManager = new SignalServiceAccountManager(getAuthenticatedSignalWebSocket(),
+                        getAccountApi(),
                         getPushServiceSocket(),
                         getGroupsV2Operations()));
     }
@@ -229,6 +240,27 @@ public class SignalDependencies {
 
     public StorageServiceRepository getStorageServiceRepository() {
         return new StorageServiceRepository(getStorageServiceApi());
+    }
+
+    public CertificateApi getCertificateApi() {
+        return getOrCreate(() -> certificateApi,
+                () -> certificateApi = new CertificateApi(getAuthenticatedSignalWebSocket()));
+    }
+
+    public AttachmentApi getAttachmentApi() {
+        return getOrCreate(() -> attachmentApi,
+                () -> attachmentApi = new AttachmentApi(getAuthenticatedSignalWebSocket(), getPushServiceSocket()));
+    }
+
+    public MessageApi getMessageApi() {
+        return getOrCreate(() -> messageApi,
+                () -> messageApi = new MessageApi(getAuthenticatedSignalWebSocket(),
+                        getUnauthenticatedSignalWebSocket()));
+    }
+
+    public KeysApi getKeysApi() {
+        return getOrCreate(() -> keysApi,
+                () -> keysApi = new KeysApi(getAuthenticatedSignalWebSocket(), getUnauthenticatedSignalWebSocket()));
     }
 
     public GroupsV2Operations getGroupsV2Operations() {
@@ -289,8 +321,9 @@ public class SignalDependencies {
                 () -> messageSender = new SignalServiceMessageSender(getPushServiceSocket(),
                         dataStore,
                         sessionLock,
-                        getAuthenticatedSignalWebSocket(),
-                        getUnauthenticatedSignalWebSocket(),
+                        getAttachmentApi(),
+                        getMessageApi(),
+                        getKeysApi(),
                         Optional.empty(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE));
@@ -304,10 +337,14 @@ public class SignalDependencies {
                         .toList());
     }
 
+    public ProfileApi getProfileApi() {
+        return getOrCreate(() -> profileApi,
+                () -> profileApi = new ProfileApi(getAuthenticatedSignalWebSocket(), getPushServiceSocket()));
+    }
+
     public ProfileService getProfileService() {
         return getOrCreate(() -> profileService,
                 () -> profileService = new ProfileService(getClientZkProfileOperations(),
-                        getMessageReceiver(),
                         getAuthenticatedSignalWebSocket(),
                         getUnauthenticatedSignalWebSocket()));
     }

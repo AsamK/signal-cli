@@ -30,7 +30,8 @@ public class ServiceConfig {
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
         final var deleteSync = !isPrimaryDevice;
         final var storageEncryptionV2 = !isPrimaryDevice;
-        return new AccountAttributes.Capabilities(true, deleteSync, true, storageEncryptionV2);
+        final var attachmentBackfill = !isPrimaryDevice;
+        return new AccountAttributes.Capabilities(true, deleteSync, true, storageEncryptionV2, attachmentBackfill);
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(

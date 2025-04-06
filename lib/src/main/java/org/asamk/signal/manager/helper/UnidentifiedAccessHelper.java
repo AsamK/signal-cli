@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.asamk.signal.manager.util.Utils.handleResponseException;
+
 public class UnidentifiedAccessHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(UnidentifiedAccessHelper.class);
@@ -109,7 +111,8 @@ public class UnidentifiedAccessHelper {
             return privacySenderCertificate.getSerialized();
         }
         try {
-            final var certificate = dependencies.getAccountManager().getSenderCertificateForPhoneNumberPrivacy();
+            final var certificate = handleResponseException(dependencies.getCertificateApi()
+                    .getSenderCertificateForPhoneNumberPrivacy());
             privacySenderCertificate = new SenderCertificate(certificate);
             return certificate;
         } catch (IOException | InvalidCertificateException e) {
@@ -125,7 +128,7 @@ public class UnidentifiedAccessHelper {
             return senderCertificate.getSerialized();
         }
         try {
-            final var certificate = dependencies.getAccountManager().getSenderCertificate();
+            final var certificate = handleResponseException(dependencies.getCertificateApi().getSenderCertificate());
             this.senderCertificate = new SenderCertificate(certificate);
             return certificate;
         } catch (IOException | InvalidCertificateException e) {
