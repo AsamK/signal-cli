@@ -83,10 +83,11 @@ public class MergeRecipientHelper {
             recipientsToBeStripped.add(recipient);
         }
 
-        logger.debug("Got separate recipients for high trust identifiers {}, need to merge ({}) and strip ({})",
+        logger.debug("Got separate recipients for high trust identifiers {}, need to merge ({}, {}) and strip ({})",
                 address,
-                recipientsToBeMerged.stream().map(r -> r.id().toString()).collect(Collectors.joining(", ")),
-                recipientsToBeStripped.stream().map(r -> r.id().toString()).collect(Collectors.joining(", ")));
+                resultingRecipient.map(RecipientWithAddress::address),
+                recipientsToBeMerged.stream().map(r -> r.address().toString()).collect(Collectors.joining(", ")),
+                recipientsToBeStripped.stream().map(r -> r.address().toString()).collect(Collectors.joining(", ")));
 
         RecipientAddress finalAddress = resultingRecipient.map(RecipientWithAddress::address).orElse(null);
         for (final var recipient : recipientsToBeMerged) {
