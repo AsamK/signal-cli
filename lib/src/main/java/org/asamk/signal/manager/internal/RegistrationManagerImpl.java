@@ -129,12 +129,15 @@ public class RegistrationManagerImpl implements RegistrationManager {
             }
 
             final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
+            logger.trace("Creating verification session");
             String sessionId = NumberVerificationUtils.handleVerificationSession(registrationApi,
                     account.getSessionId(account.getNumber()),
                     id -> account.setSessionId(account.getNumber(), id),
                     voiceVerification,
                     captcha);
+            logger.trace("Requesting verification code");
             NumberVerificationUtils.requestVerificationCode(registrationApi, sessionId, voiceVerification);
+            logger.debug("Successfully requested verification code");
             account.setRegistered(false);
         } catch (DeprecatedVersionException e) {
             logger.debug("Signal-Server returned deprecated version exception", e);
