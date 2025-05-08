@@ -24,6 +24,7 @@ java {
 
 application {
     mainClass.set("org.asamk.signal.Main")
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 graalvmNative {
@@ -112,7 +113,8 @@ tasks.withType<Jar> {
         attributes(
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
-            "Main-Class" to application.mainClass.get()
+            "Main-Class" to application.mainClass.get(),
+            "Enable-Native-Access" to "ALL-UNNAMED",
         )
     }
 }
