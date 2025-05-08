@@ -3,7 +3,7 @@ slf4j = "2.0.17"
 
 [libraries]
 bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.80"
-jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.18.3"
+jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.19.0"
 argparse4j = "net.sourceforge.argparse4j:argparse4j:0.9.0"
 dbusjava = "com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.0.0"
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
