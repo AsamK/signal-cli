@@ -241,7 +241,6 @@ public class RecipientHelper {
                             token,
                             null,
                             dependencies.getLibSignalNetwork(),
-                            false,
                             newToken -> {
                                 if (isPartialRefresh) {
                                     account.getCdsiStore().updateAfterPartialCdsQuery(newNumbers);

@@ -29,7 +29,6 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
@@ -76,7 +75,6 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
 
         tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         password = KeyUtils.createPassword();
-        final var clientZkOperations = ClientZkOperations.create(serviceEnvironmentConfig.signalServiceConfiguration());
         final var credentialsProvider = new DynamicCredentialsProvider(null,
                 null,
                 null,
@@ -85,7 +83,6 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
         final var pushServiceSocket = new PushServiceSocket(serviceEnvironmentConfig.signalServiceConfiguration(),
                 credentialsProvider,
                 userAgent,
-                clientZkOperations.getProfileOperations(),
                 ServiceConfig.AUTOMATIC_NETWORK_RETRY);
         final var provisioningSocket = new ProvisioningSocket(serviceEnvironmentConfig.signalServiceConfiguration(),
                 userAgent);

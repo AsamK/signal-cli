@@ -535,9 +535,9 @@ public class AccountHelper {
                         account.getAciIdentityKeyPair(),
                         account.getPniIdentityKeyPair(),
                         account.getProfileKey(),
+                        account.getOrCreateAccountEntropyPool(),
                         account.getOrCreatePinMasterKey(),
                         account.getOrCreateMediaRootBackupKey(),
-                        account.getOrCreateAccountEntropyPool(),
                         verificationCode.getVerificationCode(),
                         null));
         account.setMultiDevice(true);
@@ -595,7 +595,7 @@ public class AccountHelper {
         }
         account.setRegistrationLockPin(null);
 
-        dependencies.getAccountManager().deleteAccount();
+        handleResponseException(dependencies.getAccountApi().deleteAccount());
 
         account.setRegistered(false);
         unregisteredListener.call();

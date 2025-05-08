@@ -147,7 +147,6 @@ public class SignalDependencies {
                 () -> pushServiceSocket = new PushServiceSocket(serviceEnvironmentConfig.signalServiceConfiguration(),
                         credentialsProvider,
                         userAgent,
-                        getClientZkProfileOperations(),
                         ServiceConfig.AUTOMATIC_NETWORK_RETRY));
     }
 
@@ -290,7 +289,7 @@ public class SignalDependencies {
                     Optional.of(credentialsProvider),
                     userAgent,
                     healthMonitor,
-                    allowStories), timer, TimeUnit.SECONDS.toMillis(10));
+                    allowStories), () -> true, timer, TimeUnit.SECONDS.toMillis(10));
             healthMonitor.monitor(authenticatedSignalWebSocket);
         });
     }
@@ -306,7 +305,7 @@ public class SignalDependencies {
                     Optional.empty(),
                     userAgent,
                     healthMonitor,
-                    allowStories), timer, TimeUnit.SECONDS.toMillis(10));
+                    allowStories), () -> true, timer, TimeUnit.SECONDS.toMillis(10));
             healthMonitor.monitor(unauthenticatedSignalWebSocket);
         });
     }

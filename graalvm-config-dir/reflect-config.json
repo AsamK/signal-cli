@@ -3021,6 +3021,7 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
   "allDeclaredFields":true,
+  "fields":[{"name":"aci"}, {"name":"archived"}, {"name":"avatarColor"}, {"name":"blocked"}, {"name":"e164"}, {"name":"familyName"}, {"name":"givenName"}, {"name":"hidden"}, {"name":"hideStory"}, {"name":"identityKey"}, {"name":"identityState"}, {"name":"markedUnread"}, {"name":"mutedUntilTimestamp"}, {"name":"nickname"}, {"name":"note"}, {"name":"pni"}, {"name":"pniSignatureVerified"}, {"name":"profileKey"}, {"name":"systemFamilyName"}, {"name":"systemGivenName"}, {"name":"systemNickname"}, {"name":"unregisteredAtTimestamp"}, {"name":"username"}, {"name":"whitelisted"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {
