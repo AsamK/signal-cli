@@ -74,7 +74,6 @@ public final class StorageSyncModels {
                 .phoneNumberSharingMode(Optional.ofNullable(configStore.getPhoneNumberSharingMode(connection))
                         .map(StorageSyncModels::localToRemote)
                         .orElse(AccountRecord.PhoneNumberSharingMode.UNKNOWN))
-                .e164(self.getAddress().number().orElse(""))
                 .username(self.getAddress().username().orElse(""));
         if (usernameLinkComponents != null) {
             final var linkColor = configStore.getUsernameLinkColor(connection);

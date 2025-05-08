@@ -2,7 +2,6 @@ package org.asamk.signal.manager.syncStorage;
 
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.internal.JobExecutor;
-import org.asamk.signal.manager.jobs.CheckWhoAmIJob;
 import org.asamk.signal.manager.jobs.DownloadProfileAvatarJob;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
@@ -146,7 +145,7 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
                         : remote.storyViewReceiptsEnabled)
                 .username(remote.username)
                 .usernameLink(remote.usernameLink)
-                .e164(account.isPrimaryDevice() ? local.e164 : remote.e164);
+                .avatarColor(remote.avatarColor);
         safeSetPayments(mergedBuilder,
                 payments != null && payments.enabled,
                 payments == null ? null : payments.entropy.toByteArray());
@@ -178,10 +177,6 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
     protected void updateLocal(StorageRecordUpdate<SignalAccountRecord> update) throws SQLException {
         final var accountRecord = update.newRecord();
         final var accountProto = accountRecord.getProto();
-
-        if (!accountProto.e164.equals(account.getNumber())) {
-            jobExecutor.enqueueJob(new CheckWhoAmIJob());
-        }
 
         account.getConfigurationStore().setReadReceipts(connection, accountProto.readReceipts);
         account.getConfigurationStore().setTypingIndicators(connection, accountProto.typingIndicators);
