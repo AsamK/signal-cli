@@ -1,6 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.15] - 2025-05-08
+
+Requires libsignal-client version 0.70.0.
+
+### Fixed
+
+- Fix native access warning with Java 24
+- Fix storage sync loop due to old removed e164 field
+
+### Changed
+
+- Increased compatibility of native build with older/virtual CPUs
 
 ## [0.13.14] - 2025-04-06
 
