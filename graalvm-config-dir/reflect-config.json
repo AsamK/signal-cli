@@ -1410,6 +1410,12 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.asamk.signal.manager.storage.profiles.LegacySignalProfile",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
   "name":"org.asamk.signal.manager.storage.profiles.LegacySignalProfileEntry",
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
