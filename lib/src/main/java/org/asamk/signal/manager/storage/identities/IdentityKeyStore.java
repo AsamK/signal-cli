@@ -8,6 +8,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientStore;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.state.IdentityKeyStore.Direction;
+import org.signal.libsignal.protocol.state.IdentityKeyStore.IdentityChange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.ServiceId;
@@ -62,11 +63,11 @@ public class IdentityKeyStore {
         return identityChanges;
     }
 
-    public boolean saveIdentity(final ServiceId serviceId, final IdentityKey identityKey) {
+    public IdentityChange saveIdentity(final ServiceId serviceId, final IdentityKey identityKey) {
         return saveIdentity(serviceId.toString(), identityKey);
     }
 
-    public boolean saveIdentity(
+    public IdentityChange saveIdentity(
             final Connection connection,
             final ServiceId serviceId,
             final IdentityKey identityKey
@@ -74,9 +75,9 @@ public class IdentityKeyStore {
         return saveIdentity(connection, serviceId.toString(), identityKey);
     }
 
-    boolean saveIdentity(final String address, final IdentityKey identityKey) {
+    IdentityChange saveIdentity(final String address, final IdentityKey identityKey) {
         if (isRetryingDecryption) {
-            return false;
+            return IdentityChange.NEW_OR_UNCHANGED;
         }
         try (final var connection = database.getConnection()) {
             return saveIdentity(connection, address, identityKey);
@@ -85,20 +86,24 @@ public class IdentityKeyStore {
         }
     }
 
-    private boolean saveIdentity(
+    private IdentityChange saveIdentity(
             final Connection connection,
             final String address,
             final IdentityKey identityKey
     ) throws SQLException {
         final var identityInfo = loadIdentity(connection, address);
-        if (identityInfo != null && identityInfo.getIdentityKey().equals(identityKey)) {
+        if (identityInfo == null) {
+            saveNewIdentity(connection, address, identityKey, true);
+            return IdentityChange.NEW_OR_UNCHANGED;
+        }
+        if (identityInfo.getIdentityKey().equals(identityKey)) {
             // Identity already exists, not updating the trust level
             logger.trace("Not storing new identity for recipient {}, identity already stored", address);
-            return false;
+            return IdentityChange.NEW_OR_UNCHANGED;
         }
 
-        saveNewIdentity(connection, address, identityKey, identityInfo == null);
-        return true;
+        saveNewIdentity(connection, address, identityKey, false);
+        return IdentityChange.REPLACED_EXISTING;
     }
 
     public void setRetryingDecryption(final boolean retryingDecryption) {

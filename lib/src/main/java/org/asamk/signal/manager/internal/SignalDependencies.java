@@ -325,7 +325,8 @@ public class SignalDependencies {
                         getKeysApi(),
                         Optional.empty(),
                         executor,
-                        ServiceConfig.MAX_ENVELOPE_SIZE));
+                        ServiceConfig.MAX_ENVELOPE_SIZE,
+                        () -> true));
     }
 
     public List<SecureValueRecovery> getSecureValueRecovery() {

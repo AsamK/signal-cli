@@ -2994,7 +2994,6 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord",
   "allDeclaredFields":true,
-  "fields":[{"name":"avatarColor"}, {"name":"avatarUrlPath"}, {"name":"backupSubscriberData"}, {"name":"backupTier"}, {"name":"displayBadgesOnProfile"}, {"name":"e164"}, {"name":"familyName"}, {"name":"givenName"}, {"name":"hasBackup"}, {"name":"hasCompletedUsernameOnboarding"}, {"name":"hasSeenGroupStoryEducationSheet"}, {"name":"hasSetMyStoriesPrivacy"}, {"name":"hasViewedOnboardingStory"}, {"name":"keepMutedChatsArchived"}, {"name":"linkPreviews"}, {"name":"noteToSelfArchived"}, {"name":"noteToSelfMarkedUnread"}, {"name":"payments"}, {"name":"phoneNumberSharingMode"}, {"name":"pinnedConversations"}, {"name":"preferContactAvatars"}, {"name":"preferredReactionEmoji"}, {"name":"primarySendsSms"}, {"name":"profileKey"}, {"name":"readReceipts"}, {"name":"sealedSenderIndicators"}, {"name":"storiesDisabled"}, {"name":"storyViewReceiptsEnabled"}, {"name":"subscriberCurrencyCode"}, {"name":"subscriberId"}, {"name":"subscriptionManuallyCancelled"}, {"name":"typingIndicators"}, {"name":"universalExpireTimer"}, {"name":"unlistedPhoneNumber"}, {"name":"username"}, {"name":"usernameLink"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {
@@ -3027,7 +3026,6 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
   "allDeclaredFields":true,
-  "fields":[{"name":"aci"}, {"name":"archived"}, {"name":"avatarColor"}, {"name":"blocked"}, {"name":"e164"}, {"name":"familyName"}, {"name":"givenName"}, {"name":"hidden"}, {"name":"hideStory"}, {"name":"identityKey"}, {"name":"identityState"}, {"name":"markedUnread"}, {"name":"mutedUntilTimestamp"}, {"name":"nickname"}, {"name":"note"}, {"name":"pni"}, {"name":"pniSignatureVerified"}, {"name":"profileKey"}, {"name":"systemFamilyName"}, {"name":"systemGivenName"}, {"name":"systemNickname"}, {"name":"unregisteredAtTimestamp"}, {"name":"username"}, {"name":"whitelisted"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {
@@ -3058,7 +3056,6 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record",
   "allDeclaredFields":true,
-  "fields":[{"name":"archived"}, {"name":"avatarColor"}, {"name":"blocked"}, {"name":"dontNotifyForMentionsIfMuted"}, {"name":"hideStory"}, {"name":"markedUnread"}, {"name":"masterKey"}, {"name":"mutedUntilTimestamp"}, {"name":"storySendMode"}, {"name":"whitelisted"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {

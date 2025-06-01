@@ -33,7 +33,7 @@ public class SignalIdentityKeyStore implements org.signal.libsignal.protocol.sta
     }
 
     @Override
-    public boolean saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
+    public IdentityChange saveIdentity(SignalProtocolAddress address, IdentityKey identityKey) {
         return identityKeyStore.saveIdentity(address.getName(), identityKey);
     }
 

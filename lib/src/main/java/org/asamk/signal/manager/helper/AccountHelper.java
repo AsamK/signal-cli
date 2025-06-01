@@ -105,7 +105,7 @@ public class AccountHelper {
             if (!account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
                 throw new IOException("Missing PNI identity key, relinking required");
             }
-            if (account.getPreviousStorageVersion() < 4
+            if (account.getPreviousStorageVersion() < 10
                     && account.isPrimaryDevice()
                     && account.getRegistrationLockPin() != null) {
                 migrateRegistrationPin();

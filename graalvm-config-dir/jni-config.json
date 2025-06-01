@@ -28,6 +28,10 @@
   "name":"java.lang.ClassNotFoundException"
 },
 {
+  "name":"java.lang.Enum",
+  "methods":[{"name":"ordinal","parameterTypes":[] }]
+},
+{
   "name":"java.lang.IllegalArgumentException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
@@ -47,6 +51,10 @@
 },
 {
   "name":"java.lang.String"
+},
+{
+  "name":"java.lang.Thread",
+  "methods":[{"name":"currentThread","parameterTypes":[] }, {"name":"getStackTrace","parameterTypes":[] }]
 },
 {
   "name":"java.lang.Throwable",
@@ -88,7 +96,7 @@
 },
 {
   "name":"org.signal.libsignal.internal.CompletableFuture",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"complete","parameterTypes":["java.lang.Object"] }, {"name":"completeExceptionally","parameterTypes":["java.lang.Throwable"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"complete","parameterTypes":["java.lang.Object"] }, {"name":"completeExceptionally","parameterTypes":["java.lang.Throwable"] }, {"name":"setCancellationId","parameterTypes":["long"] }]
 },
 {
   "name":"org.signal.libsignal.internal.NativeHandleGuard$SimpleOwner",
@@ -194,6 +202,9 @@
 {
   "name":"org.signal.libsignal.protocol.state.IdentityKeyStore$Direction",
   "fields":[{"name":"RECEIVING"}, {"name":"SENDING"}]
+},
+{
+  "name":"org.signal.libsignal.protocol.state.IdentityKeyStore$IdentityChange"
 },
 {
   "name":"org.signal.libsignal.protocol.state.KyberPreKeyRecord",
