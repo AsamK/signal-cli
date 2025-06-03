@@ -131,6 +131,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -160,6 +161,7 @@ public class ManagerImpl implements Manager {
     private final List<Runnable> closedListeners = new ArrayList<>();
     private final List<Runnable> addressChangedListeners = new ArrayList<>();
     private final CompositeDisposable disposable = new CompositeDisposable();
+    private final AtomicLong lastMessageTimestamp = new AtomicLong();
 
     public ManagerImpl(
             SignalAccount account,
@@ -598,6 +600,24 @@ public class ManagerImpl implements Manager {
         return context.getGroupHelper().joinGroup(inviteLinkUrl);
     }
 
+    private long getNextMessageTimestamp() {
+        while (true) {
+            final var last = lastMessageTimestamp.get();
+            final var timestamp = System.currentTimeMillis();
+            if (last == timestamp) {
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                continue;
+            }
+            if (lastMessageTimestamp.compareAndSet(last, timestamp)) {
+                return timestamp;
+            }
+        }
+    }
+
     private SendMessageResults sendMessage(
             SignalServiceDataMessage.Builder messageBuilder,
             Set<RecipientIdentifier> recipients,
@@ -613,7 +633,7 @@ public class ManagerImpl implements Manager {
             Optional<Long> editTargetTimestamp
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
-        long timestamp = System.currentTimeMillis();
+        long timestamp = getNextMessageTimestamp();
         messageBuilder.withTimestamp(timestamp);
         for (final var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.NoteToSelf || (
@@ -653,7 +673,7 @@ public class ManagerImpl implements Manager {
             Set<RecipientIdentifier> recipients
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
-        final var timestamp = System.currentTimeMillis();
+        final var timestamp = getNextMessageTimestamp();
         for (var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single single) {
                 final var message = new SignalServiceTypingMessage(action, timestamp, Optional.empty());
@@ -685,7 +705,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendReadReceipt(RecipientIdentifier.Single sender, List<Long> messageIds) {
-        final var timestamp = System.currentTimeMillis();
+        final var timestamp = getNextMessageTimestamp();
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.READ,
                 messageIds,
                 timestamp);
@@ -695,7 +715,7 @@ public class ManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendViewedReceipt(RecipientIdentifier.Single sender, List<Long> messageIds) {
-        final var timestamp = System.currentTimeMillis();
+        final var timestamp = getNextMessageTimestamp();
         var receiptMessage = new SignalServiceReceiptMessage(SignalServiceReceiptMessage.Type.VIEWED,
                 messageIds,
                 timestamp);
