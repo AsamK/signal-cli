@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.16] - 2025-06-07
+
+Requires libsignal-client version 0.73.2.
+
+### Changed
+
+- Ensure every sent message gets a unique timestamp
 
 ## [0.13.15] - 2025-05-08
 
