@@ -339,7 +339,10 @@ public class SignalDependencies {
 
     public ProfileApi getProfileApi() {
         return getOrCreate(() -> profileApi,
-                () -> profileApi = new ProfileApi(getAuthenticatedSignalWebSocket(), getPushServiceSocket()));
+                () -> profileApi = new ProfileApi(getAuthenticatedSignalWebSocket(),
+                        getUnauthenticatedSignalWebSocket(),
+                        getPushServiceSocket(),
+                        getClientZkProfileOperations()));
     }
 
     public ProfileService getProfileService() {
