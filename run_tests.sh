@@ -176,6 +176,17 @@ run_main -a "$NUMBER_2" receive
 run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
 run_main -a "$NUMBER_1" receive
 run_main -a "$NUMBER_2" receive
+run_main -a "$NUMBER_1" updateAccount --discoverable-by-number=true
+run_main -a "$NUMBER_2" removeContact --forget "$NUMBER_1"
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m hii
+run_main -a "$NUMBER_1" updateAccount --discoverable-by-number=false
+run_main -a "$NUMBER_1" receive
+run_main -a "$NUMBER_2" receive
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m hi
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m hii
+run_main -a "$NUMBER_1" receive
+run_main -a "$NUMBER_2" receive
 ## Groups
 GROUP_ID=$(run_main -a "$NUMBER_1" --output=json updateGroup -n GRUPPE -a LICENSE -m "$NUMBER_1" | jq -r '.groupId')
 run_main -a "$NUMBER_1" send "$NUMBER_2" -m first
@@ -238,7 +249,9 @@ for OUTPUT in "plain-text" "json"; do
   run_linked -a "$NUMBER_1" --output="$OUTPUT" receive
 done
 
-run_main -a "$NUMBER_1" removeDevice -d 2
+run_main -a "$NUMBER_1" --output="$OUTPUT" receive
+run_main -a "$NUMBER_1" removeDevice -d 2 || true
+run_main -a "$NUMBER_1" removeDevice -d 2 || true
 
 ## Unregister
 if [ "$TEST_REGISTER" -eq 1 ]; then
