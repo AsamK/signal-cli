@@ -4,6 +4,7 @@ import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
@@ -185,7 +186,7 @@ public class AccountHelper {
             String newNumber,
             String verificationCode,
             String pin
-    ) throws IncorrectPinException, PinLockedException, IOException {
+    ) throws IncorrectPinException, PinLockedException, IOException, PinLockMissingException {
         for (var attempts = 0; attempts < 5; attempts++) {
             try {
                 finishChangeNumberInternal(newNumber, verificationCode, pin);
@@ -205,7 +206,7 @@ public class AccountHelper {
             String newNumber,
             String verificationCode,
             String pin
-    ) throws IncorrectPinException, PinLockedException, IOException {
+    ) throws IncorrectPinException, PinLockedException, IOException, PinLockMissingException {
         final var pniIdentity = KeyUtils.generateIdentityKeyPair();
         final var encryptedDeviceMessages = new ArrayList<OutgoingPushMessage>();
         final var devicePniSignedPreKeys = new HashMap<Integer, SignedPreKeyEntity>();

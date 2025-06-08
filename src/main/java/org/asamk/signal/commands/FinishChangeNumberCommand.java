@@ -9,6 +9,7 @@ import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.output.OutputWriter;
 
@@ -50,6 +51,8 @@ public class FinishChangeNumberCommand implements JsonRpcLocalCommand {
                             + "\nUse '--pin PIN_CODE' to specify the registration lock PIN");
         } catch (IncorrectPinException e) {
             throw new UserErrorException("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
+        } catch (PinLockMissingException e) {
+            throw new UserErrorException("Account is pin locked, but pin data has been deleted on the server.");
         } catch (NotPrimaryDeviceException e) {
             throw new UserErrorException("This command doesn't work on linked devices.");
         } catch (IOException e) {

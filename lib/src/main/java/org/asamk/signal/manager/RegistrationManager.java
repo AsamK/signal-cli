@@ -3,6 +3,7 @@ package org.asamk.signal.manager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
@@ -21,7 +22,7 @@ public interface RegistrationManager extends Closeable {
     void verifyAccount(
             String verificationCode,
             String pin
-    ) throws IOException, PinLockedException, IncorrectPinException;
+    ) throws IOException, PinLockedException, IncorrectPinException, PinLockMissingException;
 
     void deleteLocalAccountData() throws IOException;
 

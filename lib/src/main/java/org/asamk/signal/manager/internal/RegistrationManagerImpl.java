@@ -21,6 +21,7 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UpdateProfile;
@@ -149,7 +150,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
     public void verifyAccount(
             String verificationCode,
             String pin
-    ) throws IOException, PinLockedException, IncorrectPinException {
+    ) throws IOException, PinLockedException, IncorrectPinException, PinLockMissingException {
         if (account.isRegistered()) {
             throw new IOException("Account is already registered");
         }

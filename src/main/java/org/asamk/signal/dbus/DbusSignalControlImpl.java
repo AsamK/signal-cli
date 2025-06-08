@@ -10,6 +10,7 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.UserAlreadyExistsException;
@@ -105,6 +106,8 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
                             + (e.getTimeRemaining() / 1000 / 60 / 60));
         } catch (IncorrectPinException e) {
             throw new Error.Failure("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
+        } catch (PinLockMissingException e) {
+            throw new Error.Failure("Account is pin locked, but pin data has been deleted on the server.");
         }
     }
 

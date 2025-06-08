@@ -11,6 +11,7 @@ import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.IncorrectPinException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.output.JsonWriter;
 import org.slf4j.Logger;
@@ -76,6 +77,8 @@ public class VerifyCommand implements RegistrationCommand, JsonRpcRegistrationCo
                             + "\nUse '--pin PIN_CODE' to specify the registration lock PIN");
         } catch (IncorrectPinException e) {
             throw new UserErrorException("Verification failed! Invalid pin, tries remaining: " + e.getTriesRemaining());
+        } catch (PinLockMissingException e) {
+            throw new UserErrorException("Account is pin locked, but pin data has been deleted on the server.");
         } catch (IOException e) {
             throw new IOErrorException("Verify error: " + e.getMessage(), e);
         }

@@ -48,6 +48,7 @@ import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.RateLimitException;
@@ -428,7 +429,7 @@ public class ManagerImpl implements Manager {
             String newNumber,
             String verificationCode,
             String pin
-    ) throws IncorrectPinException, PinLockedException, IOException, NotPrimaryDeviceException {
+    ) throws IncorrectPinException, PinLockedException, IOException, NotPrimaryDeviceException, PinLockMissingException {
         if (!account.isPrimaryDevice()) {
             throw new NotPrimaryDeviceException();
         }

@@ -4,6 +4,7 @@ import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.Pair;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
@@ -114,7 +115,7 @@ public class NumberVerificationUtils {
             String pin,
             PinHelper pinHelper,
             Verifier verifier
-    ) throws IOException, PinLockedException, IncorrectPinException {
+    ) throws IOException, PinLockedException, IncorrectPinException, PinLockMissingException {
         verificationCode = verificationCode.replace("-", "");
         try {
             final var response = verifier.verify(sessionId, verificationCode, null);
@@ -127,7 +128,7 @@ public class NumberVerificationUtils {
 
             final var registrationLockData = pinHelper.getRegistrationLockData(pin, e);
             if (registrationLockData == null) {
-                throw e;
+                throw new PinLockMissingException();
             }
 
             var registrationLock = registrationLockData.getMasterKey().deriveRegistrationLock();

@@ -88,7 +88,11 @@ public class PinHelper {
             IOException exception = null;
             for (final var secureValueRecovery : secureValueRecoveries) {
                 try {
-                    return getRegistrationLockData(secureValueRecovery, svr2Credentials, pin);
+                    final var lockData = getRegistrationLockData(secureValueRecovery, svr2Credentials, pin);
+                    if (lockData == null) {
+                        continue;
+                    }
+                    return lockData;
                 } catch (IOException e) {
                     exception = e;
                 }

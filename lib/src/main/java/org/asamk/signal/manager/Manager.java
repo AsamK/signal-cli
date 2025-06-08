@@ -30,6 +30,7 @@ import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
+import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
 import org.asamk.signal.manager.api.ReceiveConfig;
@@ -140,7 +141,7 @@ public interface Manager extends Closeable {
             String newNumber,
             String verificationCode,
             String pin
-    ) throws IncorrectPinException, PinLockedException, IOException, NotPrimaryDeviceException;
+    ) throws IncorrectPinException, PinLockedException, IOException, NotPrimaryDeviceException, PinLockMissingException;
 
     void unregister() throws IOException;
 
