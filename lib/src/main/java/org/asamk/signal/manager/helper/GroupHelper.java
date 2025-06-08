@@ -551,6 +551,9 @@ public class GroupHelper {
         while (true) {
             final var page = context.getGroupV2Helper()
                     .getDecryptedGroupHistoryPage(groupSecretParams, fromRevision, sendEndorsementsExpirationMs);
+            if (page == null) {
+                break;
+            }
             page.getChangeLogs()
                     .stream()
                     .map(DecryptedGroupChangeLog::getChange)

@@ -44,6 +44,7 @@ import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.whispersystems.signalservice.internal.push.exceptions.NotInGroupException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -119,6 +120,8 @@ class GroupV2Helper {
                             groupsV2AuthorizationString,
                             false,
                             sendEndorsementsExpirationMs);
+        } catch (NotInGroupException e) {
+            throw new NotAGroupMemberException(GroupUtils.getGroupIdV2(groupSecretParams), null);
         } catch (NonSuccessfulResponseCodeException e) {
             if (e.code == 403) {
                 throw new NotAGroupMemberException(GroupUtils.getGroupIdV2(groupSecretParams), null);
