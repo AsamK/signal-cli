@@ -111,7 +111,7 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
             backupsPurchaseToken = IAPSubscriptionId.Companion.from(local.backupSubscriberData);
         }
 
-        final var mergedBuilder = SignalAccountRecord.Companion.newBuilder(remote.unknownFields().toByteArray())
+        final var mergedBuilder = remote.newBuilder()
                 .givenName(givenName)
                 .familyName(familyName)
                 .avatarUrlPath(firstNonEmpty(remote.avatarUrlPath, local.avatarUrlPath))

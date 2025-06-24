@@ -172,7 +172,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             e164 = firstNonEmpty(remote.e164, local.e164);
         }
 
-        final var mergedBuilder = SignalContactRecord.Companion.newBuilder(remote.unknownFields().toByteArray())
+        final var mergedBuilder = remote.newBuilder()
                 .aci(local.aci.isEmpty() ? remote.aci : local.aci)
                 .e164(e164)
                 .pni(pni)

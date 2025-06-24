@@ -53,7 +53,7 @@ public final class GroupV2RecordProcessor extends DefaultStorageRecordProcessor<
         final var remote = remoteRecord.getProto();
         final var local = localRecord.getProto();
 
-        final var mergedBuilder = SignalGroupV2Record.Companion.newBuilder(remote.unknownFields().toByteArray())
+        final var mergedBuilder = remote.newBuilder()
                 .masterKey(remote.masterKey)
                 .blocked(remote.blocked)
                 .whitelisted(remote.whitelisted)

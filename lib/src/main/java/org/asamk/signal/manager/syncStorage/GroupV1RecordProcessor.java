@@ -74,7 +74,7 @@ public final class GroupV1RecordProcessor extends DefaultStorageRecordProcessor<
         final var remote = remoteRecord.getProto();
         final var local = localRecord.getProto();
 
-        final var mergedBuilder = SignalGroupV1Record.Companion.newBuilder(remote.unknownFields().toByteArray())
+        final var mergedBuilder = remote.newBuilder()
                 .id(remote.id)
                 .blocked(remote.blocked)
                 .whitelisted(remote.whitelisted)
