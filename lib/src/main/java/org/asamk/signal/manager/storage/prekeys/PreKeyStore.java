@@ -4,8 +4,9 @@ import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.InvalidKeyIdException;
-import org.signal.libsignal.protocol.ecc.Curve;
 import org.signal.libsignal.protocol.ecc.ECKeyPair;
+import org.signal.libsignal.protocol.ecc.ECPrivateKey;
+import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,8 +177,8 @@ public class PreKeyStore implements SignalServicePreKeyStore {
     private PreKeyRecord getPreKeyRecordFromResultSet(ResultSet resultSet) throws SQLException {
         try {
             final var keyId = resultSet.getInt("key_id");
-            final var publicKey = Curve.decodePoint(resultSet.getBytes("public_key"), 0);
-            final var privateKey = Curve.decodePrivatePoint(resultSet.getBytes("private_key"));
+            final var publicKey = new ECPublicKey(resultSet.getBytes("public_key"));
+            final var privateKey = new ECPrivateKey(resultSet.getBytes("private_key"));
             return new PreKeyRecord(keyId, new ECKeyPair(publicKey, privateKey));
         } catch (InvalidKeyException e) {
             return null;

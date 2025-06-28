@@ -2,7 +2,6 @@ package org.asamk.signal.manager.api;
 
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.protocol.InvalidKeyException;
-import org.signal.libsignal.protocol.ecc.Curve;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
 
 import java.net.URI;
@@ -37,7 +36,7 @@ public record DeviceLinkUrl(String deviceIdentifier, ECPublicKey deviceKey) {
         }
         ECPublicKey deviceKey;
         try {
-            deviceKey = Curve.decodePoint(publicKeyBytes, 0);
+            deviceKey = new ECPublicKey(publicKeyBytes);
         } catch (InvalidKeyException e) {
             throw new InvalidDeviceLinkException("Invalid device link", e);
         }

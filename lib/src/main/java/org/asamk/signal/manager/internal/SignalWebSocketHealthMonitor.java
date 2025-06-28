@@ -56,7 +56,10 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
                     .distinctUntilChanged()
                     .subscribe(this::onStateChanged);
 
-            webSocket.setKeepAliveChangedListener(this::updateKeepAliveSenderStatus);
+            webSocket.addKeepAliveChangeListener(() -> {
+                executor.execute(this::updateKeepAliveSenderStatus);
+                return Unit.INSTANCE;
+            });
         });
     }
 
@@ -78,7 +81,7 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
     public void onMessageError(int status, boolean isIdentifiedWebSocket) {
     }
 
-    private Unit updateKeepAliveSenderStatus() {
+    private void updateKeepAliveSenderStatus() {
         if (keepAliveSender == null && sendKeepAlives()) {
             keepAliveSender = new KeepAliveSender();
             keepAliveSender.start();
@@ -86,7 +89,6 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
             keepAliveSender.shutdown();
             keepAliveSender = null;
         }
-        return Unit.INSTANCE;
     }
 
     private boolean sendKeepAlives() {

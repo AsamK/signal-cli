@@ -2,7 +2,6 @@ package org.asamk.signal.manager.config;
 
 import org.signal.libsignal.net.Network;
 import org.signal.libsignal.protocol.InvalidKeyException;
-import org.signal.libsignal.protocol.ecc.Curve;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.whispersystems.signalservice.api.push.TrustStore;
 import org.whispersystems.signalservice.internal.configuration.HttpProxy;
@@ -80,7 +79,7 @@ class StagingConfig {
 
     static ECPublicKey getUnidentifiedSenderTrustRoot() {
         try {
-            return Curve.decodePoint(UNIDENTIFIED_SENDER_TRUST_ROOT, 0);
+            return new ECPublicKey(UNIDENTIFIED_SENDER_TRUST_ROOT);
         } catch (InvalidKeyException e) {
             throw new AssertionError(e);
         }
