@@ -1,8 +1,18 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.17] - 2025-06-28
 
-Requires libsignal-client version 0.74.0.
+Requires libsignal-client version 0.76.0.
+
+### Fixed
+
+- Fix issue when loading an older inactive group
+- Close attachment input streams after upload
+- Fix storage sync behavior with unhandled fields
+
+### Changed
+
+- Improve behavior when pin data doesn't exist on the server
 
 ## [0.13.16] - 2025-06-07
 
