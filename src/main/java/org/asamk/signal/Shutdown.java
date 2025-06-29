@@ -1,5 +1,6 @@
 package org.asamk.signal;
 
+import org.asamk.signal.commands.exceptions.CommandException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +12,7 @@ import sun.misc.Signal;
 public class Shutdown {
 
     private static final Logger logger = LoggerFactory.getLogger(Shutdown.class);
-    private static final CompletableFuture<Void> shutdown = new CompletableFuture<>();
+    private static final CompletableFuture<Object> shutdown = new CompletableFuture<>();
     private static final CompletableFuture<Void> shutdownComplete = new CompletableFuture<>();
     private static boolean initialized = false;
 
@@ -43,9 +44,17 @@ public class Shutdown {
         shutdown.complete(null);
     }
 
-    public static void waitForShutdown() throws InterruptedException {
+    public static void triggerShutdown(CommandException exception) {
+        logger.debug("Triggering shutdown with exception.", exception);
+        shutdown.complete(exception);
+    }
+
+    public static void waitForShutdown() throws InterruptedException, CommandException {
         try {
-            shutdown.get();
+            final var result = shutdown.get();
+            if (result instanceof CommandException e) {
+                throw e;
+            }
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
