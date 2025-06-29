@@ -1,17 +1,21 @@
 package org.asamk.signal.dbus;
 
 import org.asamk.signal.DbusConfig;
+import org.asamk.signal.Shutdown;
 import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
+import org.freedesktop.dbus.connections.IDisconnectCallback;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,7 +98,9 @@ public class DbusHandler implements AutoCloseable {
         final var busType = isDbusSystem ? DBusConnection.DBusBusType.SYSTEM : DBusConnection.DBusBusType.SESSION;
         logger.debug("Starting DBus server on {} bus: {}", busType, busname);
         try {
-            dBusConnection = DBusConnectionBuilder.forType(busType).build();
+            dBusConnection = DBusConnectionBuilder.forType(busType)
+                    .withDisconnectCallback(new DisconnectCallback())
+                    .build();
             dbusRunner.run(dBusConnection);
         } catch (DBusException e) {
             throw new UnexpectedErrorException("Dbus command failed: " + e.getMessage(), e);
@@ -140,5 +146,14 @@ public class DbusHandler implements AutoCloseable {
     private interface DbusRunner {
 
         void run(DBusConnection connection) throws DBusException;
+    }
+
+    private static final class DisconnectCallback implements IDisconnectCallback {
+
+        @Override
+        public void disconnectOnError(IOException ex) {
+            logger.debug("DBus daemon disconnected unexpectedly, shutting down");
+            Shutdown.triggerShutdown(new IOErrorException("Unexpected dbus daemon disconnect", ex));
+        }
     }
 }
