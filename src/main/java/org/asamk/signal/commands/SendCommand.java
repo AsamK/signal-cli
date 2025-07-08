@@ -250,8 +250,14 @@ public class SendCommand implements JsonRpcLocalCommand {
                     : m.sendMessage(message, recipientIdentifiers, notifySelf);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
-            throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
-                    .getSimpleName() + ")", e);
+            if (e instanceof IOException io && io.getMessage().contains("No prekeys available")) {
+                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                        .getSimpleName() + "), maybe one of the devices of the recipient wasn't online for a while.",
+                        e);
+            } else {
+                throw new UnexpectedErrorException("Failed to send message: " + e.getMessage() + " (" + e.getClass()
+                        .getSimpleName() + ")", e);
+            }
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
             throw new UserErrorException(e.getMessage());
         } catch (UnregisteredRecipientException e) {
