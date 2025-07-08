@@ -291,6 +291,8 @@ public class App {
             commandHandler.handleMultiLocalCommand(command, multiAccountManager);
         } catch (IOException e) {
             throw new IOErrorException("Failed to load local accounts file", e);
+        } catch (AccountCheckException e) {
+            throw new UnexpectedErrorException("Failed to load local accounts file", e);
         }
     }
 

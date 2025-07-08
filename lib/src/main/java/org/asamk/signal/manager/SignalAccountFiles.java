@@ -2,6 +2,7 @@ package org.asamk.signal.manager;
 
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
@@ -63,19 +64,28 @@ public class SignalAccountFiles {
         return accountsStore.getAllNumbers();
     }
 
-    public MultiAccountManager initMultiAccountManager() throws IOException {
-        final var managers = accountsStore.getAllAccounts().parallelStream().map(a -> {
+    public MultiAccountManager initMultiAccountManager() throws IOException, AccountCheckException {
+        final var managerPairs = accountsStore.getAllAccounts().parallelStream().map(a -> {
             try {
-                return initManager(a.number(), a.path());
-            } catch (NotRegisteredException | IOException | AccountCheckException e) {
+                return new Pair<Manager, Throwable>(initManager(a.number(), a.path()), null);
+            } catch (NotRegisteredException e) {
                 logger.warn("Ignoring {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
                 return null;
-            } catch (Throwable e) {
+            } catch (AccountCheckException | IOException e) {
                 logger.error("Failed to load {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
-                throw e;
+                return new Pair<Manager, Throwable>(null, e);
             }
         }).filter(Objects::nonNull).toList();
 
+        for (final var pair : managerPairs) {
+            if (pair.second() instanceof IOException e) {
+                throw e;
+            } else if (pair.second() instanceof AccountCheckException e) {
+                throw e;
+            }
+        }
+
+        final var managers = managerPairs.stream().map(Pair::first).toList();
         return new MultiAccountManagerImpl(managers, this);
     }
 
