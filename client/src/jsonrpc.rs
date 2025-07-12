@@ -410,6 +410,7 @@ pub async fn connect_tcp(
     Ok(ClientBuilder::default().build_with_tokio(sender, receiver))
 }
 
+#[cfg(unix)]
 pub async fn connect_unix(
     socket_path: impl AsRef<Path>,
 ) -> Result<impl SubscriptionClientT, std::io::Error> {

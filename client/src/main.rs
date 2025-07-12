@@ -482,23 +482,30 @@ async fn connect(cli: Cli) -> Result<Value, RpcError> {
 
         handle_command(cli, client).await
     } else {
-        let socket_path = cli
-            .json_rpc_socket
-            .clone()
-            .unwrap_or(None)
-            .or_else(|| {
-                std::env::var_os("XDG_RUNTIME_DIR").map(|runtime_dir| {
-                    PathBuf::from(runtime_dir)
-                        .join(DEFAULT_SOCKET_SUFFIX)
-                        .into()
+        #[cfg(windows)]
+        {
+            Err(RpcError::Custom("Invalid socket".into()))
+        }
+        #[cfg(unix)]
+        {
+            let socket_path = cli
+                .json_rpc_socket
+                .clone()
+                .unwrap_or(None)
+                .or_else(|| {
+                    std::env::var_os("XDG_RUNTIME_DIR").map(|runtime_dir| {
+                        PathBuf::from(runtime_dir)
+                            .join(DEFAULT_SOCKET_SUFFIX)
+                            .into()
+                    })
                 })
-            })
-            .unwrap_or_else(|| ("/run".to_owned() + DEFAULT_SOCKET_SUFFIX).into());
-        let client = jsonrpc::connect_unix(socket_path)
-            .await
-            .map_err(|e| RpcError::Custom(format!("Failed to connect to socket: {e}")))?;
+                .unwrap_or_else(|| ("/run".to_owned() + DEFAULT_SOCKET_SUFFIX).into());
+            let client = jsonrpc::connect_unix(socket_path)
+                .await
+                .map_err(|e| RpcError::Custom(format!("Failed to connect to socket: {e}")))?;
 
-        handle_command(cli, client).await
+            handle_command(cli, client).await
+        }
     }
 }
 
