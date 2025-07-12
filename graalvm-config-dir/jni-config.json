@@ -58,7 +58,7 @@
 },
 {
   "name":"java.lang.Throwable",
-  "methods":[{"name":"getMessage","parameterTypes":[] }, {"name":"toString","parameterTypes":[] }]
+  "methods":[{"name":"getMessage","parameterTypes":[] }, {"name":"setStackTrace","parameterTypes":["java.lang.StackTraceElement[]"] }, {"name":"toString","parameterTypes":[] }]
 },
 {
   "name":"java.lang.UnsatisfiedLinkError",
@@ -125,6 +125,10 @@
 {
   "name":"org.signal.libsignal.net.NetworkException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.net.RetryLaterException",
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
 },
 {
   "name":"org.signal.libsignal.protocol.DuplicateMessageException",

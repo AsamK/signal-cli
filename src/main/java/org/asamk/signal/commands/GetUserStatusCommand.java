@@ -64,9 +64,16 @@ public class GetUserStatusCommand implements JsonRpcLocalCommand {
         }
 
         final var usernames = ns.<String>getList("username");
-        final var registeredUsernames = usernames == null
-                ? Map.<String, UsernameStatus>of()
-                : m.getUsernameStatus(new HashSet<>(usernames));
+        final Map<String, UsernameStatus> registeredUsernames;
+        try {
+            registeredUsernames = usernames == null ? Map.of() : m.getUsernameStatus(new HashSet<>(usernames));
+        } catch (IOException e) {
+            throw new IOErrorException("Unable to check if users are registered: "
+                    + e.getMessage()
+                    + " ("
+                    + e.getClass().getSimpleName()
+                    + ")", e);
+        }
 
         // Output
         switch (outputWriter) {

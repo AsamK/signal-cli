@@ -96,7 +96,7 @@ public interface Manager extends Closeable {
      */
     Map<String, UserStatus> getUserStatus(Set<String> numbers) throws IOException, RateLimitException;
 
-    Map<String, UsernameStatus> getUsernameStatus(Set<String> usernames);
+    Map<String, UsernameStatus> getUsernameStatus(Set<String> usernames) throws IOException;
 
     void updateAccountAttributes(
             String deviceName,

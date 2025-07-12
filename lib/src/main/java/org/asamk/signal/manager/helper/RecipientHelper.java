@@ -17,6 +17,7 @@ import org.whispersystems.signalservice.api.push.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiInvalidArgumentException;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiInvalidTokenException;
+import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -68,7 +69,7 @@ public class RecipientHelper {
                 .toSignalServiceAddress();
     }
 
-    public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws UnregisteredRecipientException {
+    public Set<RecipientId> resolveRecipients(Collection<RecipientIdentifier.Single> recipients) throws UnregisteredRecipientException, IOException {
         final var recipientIds = new HashSet<RecipientId>(recipients.size());
         for (var number : recipients) {
             final var recipientId = resolveRecipient(number);
@@ -91,7 +92,11 @@ public class RecipientHelper {
                 }
             });
         } else if (recipient instanceof RecipientIdentifier.Username(String username)) {
-            return resolveRecipientByUsernameOrLink(username, false);
+            try {
+                return resolveRecipientByUsernameOrLink(username, false);
+            } catch (Exception e) {
+                return null;
+            }
         }
         throw new AssertionError("Unexpected RecipientIdentifier: " + recipient);
     }
@@ -99,7 +104,7 @@ public class RecipientHelper {
     public RecipientId resolveRecipientByUsernameOrLink(
             String username,
             boolean forceRefresh
-    ) throws UnregisteredRecipientException {
+    ) throws UnregisteredRecipientException, IOException {
         final Username finalUsername;
         try {
             finalUsername = getUsernameFromUsernameOrLink(username);
@@ -110,11 +115,15 @@ public class RecipientHelper {
             try {
                 final var aci = handleResponseException(dependencies.getUsernameApi().getAciByUsername(finalUsername));
                 return account.getRecipientStore().resolveRecipientTrusted(aci, finalUsername.getUsername());
-            } catch (IOException e) {
-                throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
-                        null,
-                        null,
-                        username));
+            } catch (NonSuccessfulResponseCodeException e) {
+                if (e.code == 404) {
+                    throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
+                            null,
+                            null,
+                            username));
+                }
+                logger.debug("Failed to get uuid for username: {}", username, e);
+                throw e;
             }
         }
         return account.getRecipientStore().resolveRecipientByUsername(finalUsername.getUsername(), () -> {

@@ -285,7 +285,7 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public Map<String, UsernameStatus> getUsernameStatus(Set<String> usernames) {
+    public Map<String, UsernameStatus> getUsernameStatus(Set<String> usernames) throws IOException {
         final var registeredUsers = new HashMap<String, RecipientAddress>();
         for (final var username : usernames) {
             try {
