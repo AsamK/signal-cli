@@ -1070,7 +1070,6 @@ dependencies = [
  "clap",
  "futures-util",
  "jsonrpsee",
- "log",
  "serde",
  "serde_json",
  "thiserror 2.0.12",
