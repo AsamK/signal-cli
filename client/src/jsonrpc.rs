@@ -417,6 +417,6 @@ pub async fn connect_unix(
     Ok(ClientBuilder::default().build_with_tokio(sender, receiver))
 }
 
-pub async fn connect_http(uri: &str) -> Result<impl SubscriptionClientT, Error> {
+pub async fn connect_http(uri: &str) -> Result<impl SubscriptionClientT + use<>, Error> {
     HttpClientBuilder::default().build(uri)
 }
