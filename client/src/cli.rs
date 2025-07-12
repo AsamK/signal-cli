@@ -84,6 +84,8 @@ pub enum CliCommands {
     },
     GetUserStatus {
         recipient: Vec<String>,
+        #[arg(long)]
+        username: Vec<String>,
     },
     JoinGroup {
         #[arg(long)]

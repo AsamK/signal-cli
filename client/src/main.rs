@@ -60,8 +60,13 @@ async fn handle_command(
                 .delete_local_account_data(cli.account, ignore_registered)
                 .await
         }
-        CliCommands::GetUserStatus { recipient } => {
-            client.get_user_status(cli.account, recipient).await
+        CliCommands::GetUserStatus {
+            recipient,
+            username,
+        } => {
+            client
+                .get_user_status(cli.account, recipient, username)
+                .await
         }
         CliCommands::JoinGroup { uri } => client.join_group(cli.account, uri).await,
         CliCommands::Link { name } => {

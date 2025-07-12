@@ -70,6 +70,7 @@ pub trait Rpc {
         &self,
         account: Option<String>,
         recipients: Vec<String>,
+        usernames: Vec<String>,
     ) -> Result<Value, ErrorObjectOwned>;
 
     #[method(name = "joinGroup", param_kind = map)]
