@@ -83,6 +83,12 @@ of all country codes.)
      signal-cli -a ACCOUNT send -m "This is a message" RECIPIENT
      ```
 
+* Send a message to a username, usernames need to be prefixed with `u:`
+
+     ```sh
+     signal-cli -a ACCOUNT send -m "This is a message" u:USERNAME.000
+     ```
+
 * Pipe the message content from another process.
 
       uname -a | signal-cli -a ACCOUNT send --message-from-stdin RECIPIENT
