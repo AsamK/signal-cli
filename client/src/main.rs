@@ -70,7 +70,7 @@ async fn handle_command(
                 .await
                 .map_err(|e| RpcError::Custom(format!("JSON-RPC command startLink failed: {e:?}")))?
                 .device_link_uri;
-            println!("{}", url);
+            println!("{url}");
             client.finish_link(url, name).await
         }
         CliCommands::ListAccounts => client.list_accounts().await,

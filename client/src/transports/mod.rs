@@ -27,7 +27,7 @@ impl<T: Send + Sink<String, Error = impl std::error::Error> + Unpin + 'static> T
         self.inner
             .send(body)
             .await
-            .map_err(|e| Errors::Other(format!("{:?}", e)))?;
+            .map_err(|e| Errors::Other(format!("{e:?}")))?;
         Ok(())
     }
 
@@ -35,7 +35,7 @@ impl<T: Send + Sink<String, Error = impl std::error::Error> + Unpin + 'static> T
         self.inner
             .close()
             .await
-            .map_err(|e| Errors::Other(format!("{:?}", e)))?;
+            .map_err(|e| Errors::Other(format!("{e:?}")))?;
         Ok(())
     }
 }
@@ -53,7 +53,7 @@ impl<T: Send + Stream<Item = Result<String, std::io::Error>> + Unpin + 'static> 
         match self.inner.next().await {
             None => Err(Errors::Closed),
             Some(Ok(msg)) => Ok(ReceivedMessage::Text(msg)),
-            Some(Err(e)) => Err(Errors::Other(format!("{:?}", e))),
+            Some(Err(e)) => Err(Errors::Other(format!("{e:?}"))),
         }
     }
 }
