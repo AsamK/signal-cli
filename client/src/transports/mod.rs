@@ -1,8 +1,5 @@
 use futures_util::{stream::StreamExt, Sink, SinkExt, Stream};
-use jsonrpsee::core::{
-    async_trait,
-    client::{ReceivedMessage, TransportReceiverT, TransportSenderT},
-};
+use jsonrpsee::core::client::{ReceivedMessage, TransportReceiverT, TransportSenderT};
 use thiserror::Error;
 
 pub mod ipc;
@@ -21,7 +18,6 @@ struct Sender<T: Send + Sink<String>> {
     inner: T,
 }
 
-#[async_trait]
 impl<T: Send + Sink<String, Error = impl std::error::Error> + Unpin + 'static> TransportSenderT
     for Sender<T>
 {
@@ -48,7 +44,6 @@ struct Receiver<T: Send + Stream> {
     inner: T,
 }
 
-#[async_trait]
 impl<T: Send + Stream<Item = Result<String, std::io::Error>> + Unpin + 'static> TransportReceiverT
     for Receiver<T>
 {
