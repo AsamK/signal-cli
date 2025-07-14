@@ -316,6 +316,11 @@ Data URI encoded attachments must follow the RFC 2397.
 Additionally a file name can be added:
 e.g.: `data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>`
 
+*--view-once*::
+Send the message as a view once message.
+A conformant client will only allow the receiver to view the message once.
+View Once is only supported for messages that include an image attachment.
+
 *--sticker* STICKER::
 Send a sticker of a locally known sticker pack (syntax: stickerPackId:stickerId).
 Shouldn't be used together with `-m` as the official clients don't support this.

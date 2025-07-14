@@ -810,6 +810,7 @@ public class ManagerImpl implements Manager {
         } else if (!additionalAttachments.isEmpty()) {
             messageBuilder.withAttachments(additionalAttachments);
         }
+        messageBuilder.withViewOnce(message.viewOnce());
         if (!message.mentions().isEmpty()) {
             messageBuilder.withMentions(resolveMentions(message.mentions()));
         }

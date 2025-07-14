@@ -183,6 +183,7 @@ pub trait Rpc {
         endSession: bool,
         message: String,
         attachments: Vec<String>,
+        view_once: bool,
         mentions: Vec<String>,
         textStyle: Vec<String>,
         quoteTimestamp: Option<u64>,

@@ -66,6 +66,9 @@ public class SendCommand implements JsonRpcLocalCommand {
                 .help("Add an attachment. "
                         + "Can be either a file path or a data URI. Data URI encoded attachments must follow the RFC 2397. Additionally a file name can be added, e.g. "
                         + "data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>.");
+        subparser.addArgument("--view-once")
+                .action(Arguments.storeTrue())
+                .help("Send the message as a view once message");
         subparser.addArgument("-e", "--end-session", "--endsession")
                 .help("Clear session state and send end session message.")
                 .action(Arguments.storeTrue());
@@ -164,6 +167,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         if (attachments == null) {
             attachments = List.of();
         }
+        final var viewOnce = ns.getBoolean("view-once");
 
         final var selfNumber = m.getSelfNumber();
 
@@ -239,6 +243,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         try {
             final var message = new Message(messageText,
                     attachments,
+                    viewOnce,
                     mentions,
                     Optional.ofNullable(quote),
                     Optional.ofNullable(sticker),

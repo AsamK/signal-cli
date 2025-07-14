@@ -180,6 +180,9 @@ pub enum CliCommands {
         attachment: Vec<String>,
 
         #[arg(long)]
+        view_once: bool,
+
+        #[arg(long)]
         mention: Vec<String>,
 
         #[arg(long)]

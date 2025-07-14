@@ -6,6 +6,7 @@ import java.util.Optional;
 public record Message(
         String messageText,
         List<String> attachments,
+        boolean viewOnce,
         List<Mention> mentions,
         Optional<Quote> quote,
         Optional<Sticker> sticker,
