@@ -167,7 +167,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         if (attachments == null) {
             attachments = List.of();
         }
-        final var viewOnce = ns.getBoolean("view-once");
+        final var viewOnce = Boolean.TRUE.equals(ns.getBoolean("view-once"));
 
         final var selfNumber = m.getSelfNumber();
 
