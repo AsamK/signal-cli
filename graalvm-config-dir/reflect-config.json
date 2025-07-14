@@ -3070,6 +3070,7 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record",
   "allDeclaredFields":true,
+  "fields":[{"name":"archived"}, {"name":"avatarColor"}, {"name":"blocked"}, {"name":"dontNotifyForMentionsIfMuted"}, {"name":"hideStory"}, {"name":"markedUnread"}, {"name":"masterKey"}, {"name":"mutedUntilTimestamp"}, {"name":"storySendMode"}, {"name":"whitelisted"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {

@@ -41,6 +41,7 @@ import org.signal.libsignal.metadata.ProtocolNoSessionException;
 import org.signal.libsignal.metadata.ProtocolUntrustedIdentityException;
 import org.signal.libsignal.metadata.SelfSendException;
 import org.signal.libsignal.protocol.InvalidMessageException;
+import org.signal.libsignal.protocol.UsePqRatchet;
 import org.signal.libsignal.protocol.groups.GroupSessionBuilder;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
 import org.signal.libsignal.zkgroup.InvalidInputException;
@@ -105,7 +106,7 @@ public final class IncomingMessageHandler {
             try {
                 final var cipherResult = dependencies.getCipher(destination == null
                                 || destination.equals(account.getAci()) ? ServiceIdType.ACI : ServiceIdType.PNI)
-                        .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
+                        .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp(), UsePqRatchet.NO);
                 content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
                 if (content == null) {
                     return new Pair<>(List.of(), null);
@@ -143,7 +144,7 @@ public final class IncomingMessageHandler {
             try {
                 final var cipherResult = dependencies.getCipher(destination == null
                                 || destination.equals(account.getAci()) ? ServiceIdType.ACI : ServiceIdType.PNI)
-                        .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
+                        .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp(), UsePqRatchet.NO);
                 content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
                 if (content == null) {
                     return new Pair<>(List.of(), null);

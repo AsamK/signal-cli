@@ -37,7 +37,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
 
     private static final Logger logger = LoggerFactory.getLogger(ContactRecordProcessor.class);
 
-    private static final Pattern E164_PATTERN = Pattern.compile("^\\+[1-9]\\d{0,18}$");
+    private static final Pattern E164_PATTERN = Pattern.compile("^\\+[1-9]\\d{6,18}$");
 
     private final ACI selfAci;
     private final PNI selfPni;

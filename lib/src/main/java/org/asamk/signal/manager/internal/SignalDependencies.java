@@ -5,6 +5,7 @@ import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.libsignal.net.Network;
+import org.signal.libsignal.protocol.UsePqRatchet;
 import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -326,7 +327,8 @@ public class SignalDependencies {
                         Optional.empty(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
-                        () -> true));
+                        () -> true,
+                        UsePqRatchet.NO));
     }
 
     public List<SecureValueRecovery> getSecureValueRecovery() {
