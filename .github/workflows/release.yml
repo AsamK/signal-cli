@@ -182,7 +182,7 @@ jobs:
           tar xf ./"${ARCHIVE_DIR}"/*.tar.gz
           rm -r signal-cli-archive-* signal-cli-native
           mkdir -p build/install/
-          mv ./signal-cli-*/ build/install/signal-cli
+          mv ./signal-cli-"${GITHUB_REF_NAME#v}"/ build/install/signal-cli
 
       - name: Build Image
         id: build_image
