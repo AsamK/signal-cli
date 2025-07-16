@@ -1,6 +1,22 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.18] - 2025-07-16
+
+Requires libsignal-client version 0.76.3.
+
+### Added
+
+- Added `--view-once` parameter to send command to send view once images
+
+### Fixed
+
+- Handle rate limit exception correctly when querying usernames
+
+### Improved
+
+- Shut down when dbus daemon connection goes away unexpectedly
+- In daemon mode, exit immediately if account check fails at startup
+- Improve behavior when sending to devices that have no available prekeys
 
 ## [0.13.17] - 2025-06-28
 
