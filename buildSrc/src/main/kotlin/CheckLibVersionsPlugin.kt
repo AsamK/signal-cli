@@ -1,12 +1,10 @@
 @file:Suppress("DEPRECATION")
 
-import groovy.util.XmlSlurper
-import groovy.util.slurpersupport.GPathResult
-import org.codehaus.groovy.runtime.ResourceGroovyMethods
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
+import javax.xml.parsers.DocumentBuilderFactory
 
 class CheckLibVersionsPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -28,10 +26,10 @@ class CheckLibVersionsPlugin : Plugin<Project> {
         val name = dependency.name
         val metaDataUrl = "https://repo1.maven.org/maven2/$path/$name/maven-metadata.xml"
         try {
-            val url = ResourceGroovyMethods.toURL(metaDataUrl)
-            val metaDataText = ResourceGroovyMethods.getText(url)
-            val metadata = XmlSlurper().parseText(metaDataText)
-            val newest = (metadata.getProperty("versioning") as GPathResult).getProperty("latest")
+            val dbf = DocumentBuilderFactory.newInstance()
+            val db = dbf.newDocumentBuilder()
+            val doc = db.parse(metaDataUrl);
+            val newest = doc.getElementsByTagName("latest").item(0).textContent
             if (version != newest.toString()) {
                 println("UPGRADE {\"group\": \"$group\", \"name\": \"$name\", \"current\": \"$version\", \"latest\": \"$newest\"}")
             }
