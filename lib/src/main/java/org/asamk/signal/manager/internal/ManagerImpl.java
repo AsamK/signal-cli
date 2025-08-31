@@ -91,6 +91,7 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.MimeUtils;
 import org.asamk.signal.manager.util.PhoneNumberFormatter;
 import org.asamk.signal.manager.util.StickerUtils;
+import org.signal.core.util.Base64;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.slf4j.Logger;
@@ -100,6 +101,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.ServiceId.PNI;
@@ -113,10 +115,12 @@ import org.whispersystems.signalservice.internal.util.Hex;
 import org.whispersystems.signalservice.internal.util.Util;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -474,12 +478,30 @@ public class ManagerImpl implements Manager {
                     logger.debug("Failed to decrypt device name, maybe plain text?", e);
                 }
             }
+            final var createdAt = getPlaintextCreatedAt(d);
             return new Device(d.getId(),
                     deviceName,
-                    d.getCreated(),
+                    createdAt == null ? 0 : createdAt,
                     d.getLastSeen(),
                     d.getId() == account.getDeviceId());
         }).toList();
+    }
+
+    private Long getPlaintextCreatedAt(DeviceInfo d) {
+        final var DECRYPTION_INFO = "deviceCreatedAt";
+        var identityKey = account.getAciIdentityKeyPair().getPrivateKey();
+        try {
+
+            var associatedData = new ByteArrayOutputStream();
+            associatedData.write(d.getId());
+            associatedData.write(ByteBuffer.allocate(4).putInt(d.getRegistrationId()).array());
+            var createdAtPlaintext = identityKey.open(Base64.decode(d.getCreatedAtCiphertext()
+                    .getBytes(StandardCharsets.UTF_8)), DECRYPTION_INFO, associatedData.toByteArray());
+            return ByteBuffer.wrap(createdAtPlaintext).getLong();
+        } catch (Exception e) {
+            logger.warn("Failed while reading the protobuf.", e);
+            return null;
+        }
     }
 
     @Override

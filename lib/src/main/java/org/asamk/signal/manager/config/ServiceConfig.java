@@ -28,10 +28,9 @@ public class ServiceConfig {
     public static final long UNREGISTERED_LIFESPAN = TimeUnit.DAYS.toMillis(30);
 
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
-        final var deleteSync = !isPrimaryDevice;
-        final var storageEncryptionV2 = !isPrimaryDevice;
         final var attachmentBackfill = !isPrimaryDevice;
-        return new AccountAttributes.Capabilities(true, deleteSync, true, storageEncryptionV2, attachmentBackfill);
+        final var spqr = !isPrimaryDevice;
+        return new AccountAttributes.Capabilities(true, true, attachmentBackfill, spqr);
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(

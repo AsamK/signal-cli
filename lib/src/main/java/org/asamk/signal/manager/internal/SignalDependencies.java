@@ -328,7 +328,8 @@ public class SignalDependencies {
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
                         () -> true,
-                        UsePqRatchet.NO));
+                        UsePqRatchet.NO,
+                        Optional.empty()));
     }
 
     public List<SecureValueRecovery> getSecureValueRecovery() {
