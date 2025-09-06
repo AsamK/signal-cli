@@ -48,7 +48,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStre
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
-import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.exceptions.ConflictException;
 
@@ -238,7 +237,7 @@ public class GroupHelper {
 
         final var result = sendGroupMessage(messageBuilder,
                 gv2.getMembersIncludingPendingWithout(selfRecipientId),
-                gv2.getDistributionId());
+                gv2);
         context.getJobExecutor().enqueueJob(new SyncStorageJob());
         return new Pair<>(gv2.getGroupId(), result);
     }
@@ -409,7 +408,7 @@ public class GroupHelper {
         var messageBuilder = SignalServiceDataMessage.newBuilder().asGroupMessage(group.build());
 
         // Send group info request message to the recipient who sent us a message with this groupId
-        return sendGroupMessage(messageBuilder, Set.of(recipientId), null);
+        return sendGroupMessage(messageBuilder, Set.of(recipientId), new GroupInfoV1(groupId));
     }
 
     public SendGroupMessageResults sendGroupInfoMessage(
@@ -430,7 +429,7 @@ public class GroupHelper {
         var messageBuilder = getGroupUpdateMessageBuilder(g);
 
         // Send group message only to the recipient who requested it
-        return sendGroupMessage(messageBuilder, Set.of(recipientId), null);
+        return sendGroupMessage(messageBuilder, Set.of(recipientId), g);
     }
 
     private GroupInfo getGroup(GroupId groupId, boolean forceUpdate) {
@@ -606,7 +605,7 @@ public class GroupHelper {
         var messageBuilder = getGroupUpdateMessageBuilder(gv1);
         return sendGroupMessage(messageBuilder,
                 gv1.getMembersIncludingPendingWithout(account.getSelfRecipientId()),
-                gv1.getDistributionId());
+                gv1);
     }
 
     private void updateGroupV1Details(
@@ -842,7 +841,7 @@ public class GroupHelper {
         account.getGroupStore().updateGroup(groupInfoV1);
         return sendGroupMessage(messageBuilder,
                 groupInfoV1.getMembersIncludingPendingWithout(account.getSelfRecipientId()),
-                groupInfoV1.getDistributionId());
+                groupInfoV1);
     }
 
     private SendGroupMessageResults quitGroupV2(
@@ -867,7 +866,7 @@ public class GroupHelper {
                 handleGroupChangeResponse(groupInfoV2, groupGroupChangePair.second()).encode());
         return sendGroupMessage(messageBuilder,
                 groupInfoV2.getMembersIncludingPendingWithout(account.getSelfRecipientId()),
-                groupInfoV2.getDistributionId());
+                groupInfoV2);
     }
 
     private SignalServiceDataMessage.Builder getGroupUpdateMessageBuilder(GroupInfoV1 g) throws AttachmentInvalidException {
@@ -912,17 +911,17 @@ public class GroupHelper {
         account.getGroupStore().updateGroup(group);
 
         final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChange.encode());
-        return sendGroupMessage(messageBuilder, members, group.getDistributionId());
+        return sendGroupMessage(messageBuilder, members, group);
     }
 
     private SendGroupMessageResults sendGroupMessage(
             final SignalServiceDataMessage.Builder messageBuilder,
             final Set<RecipientId> members,
-            final DistributionId distributionId
+            final GroupInfo groupInfo
     ) throws IOException {
         final var timestamp = System.currentTimeMillis();
         messageBuilder.withTimestamp(timestamp);
-        final var results = context.getSendHelper().sendGroupMessage(messageBuilder.build(), members, distributionId);
+        final var results = context.getSendHelper().sendGroupMessage(messageBuilder.build(), members, groupInfo);
         return new SendGroupMessageResults(timestamp,
                 results.stream()
                         .map(sendMessageResult -> SendMessageResult.from(sendMessageResult,

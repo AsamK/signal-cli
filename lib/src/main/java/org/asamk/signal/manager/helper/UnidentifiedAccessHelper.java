@@ -15,7 +15,10 @@ import org.whispersystems.signalservice.api.crypto.SealedSenderAccess;
 import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.asamk.signal.manager.util.Utils.handleResponseException;
@@ -56,8 +59,15 @@ public class UnidentifiedAccessHelper {
         return SealedSenderAccess.forIndividual(getAccessFor(recipient, noRefresh));
     }
 
-    public List<UnidentifiedAccess> getAccessFor(List<RecipientId> recipients) {
-        return recipients.stream().map(this::getAccessFor).toList();
+    public Map<RecipientId, UnidentifiedAccess> getAccessFor(Collection<RecipientId> recipients) {
+        final var result = new HashMap<RecipientId, UnidentifiedAccess>();
+        for (final var recipient : recipients) {
+            final var access = this.getAccessFor(recipient);
+            if (access != null) {
+                result.put(recipient, access);
+            }
+        }
+        return result;
     }
 
     private @Nullable UnidentifiedAccess getAccessFor(RecipientId recipient) {
