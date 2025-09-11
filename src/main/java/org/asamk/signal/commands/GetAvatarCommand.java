@@ -43,7 +43,7 @@ public class GetAvatarCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var contactRecipient = ns.getString("contact");
         final var profileRecipient = ns.getString("profile");
-        final var groupId = ns.getString("groupId");
+        final var groupId = ns.getString("group-id");
 
         final InputStream data;
         try {
