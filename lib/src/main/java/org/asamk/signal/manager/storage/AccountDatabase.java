@@ -33,7 +33,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 27;
+    private static final long DATABASE_VERSION = 28;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -605,6 +605,21 @@ public class AccountDatabase extends Database {
             try (final var statement = connection.createStatement()) {
                 statement.executeUpdate("""
                                         ALTER TABLE recipient ADD expiration_time_version INTEGER DEFAULT 1 NOT NULL;
+                                        """);
+            }
+        }
+        if (oldVersion < 28) {
+            logger.debug("Updating database: Adding group endorsements");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE group_v2 ADD endorsement_expiration_time INTEGER DEFAULT 0 NOT NULL;
+                                        CREATE TABLE group_v2_member (
+                                          _id INTEGER PRIMARY KEY,
+                                          group_id INTEGER NOT NULL REFERENCES group_v2 (_id) ON DELETE CASCADE,
+                                          recipient_id INTEGER NOT NULL REFERENCES recipient (_id) ON DELETE CASCADE,
+                                          endorsement BLOB NOT NULL,
+                                          UNIQUE(group_id, recipient_id)
+                                        ) STRICT;
                                         """);
             }
         }

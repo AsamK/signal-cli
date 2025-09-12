@@ -5,20 +5,23 @@ import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogEntry;
-import org.jetbrains.annotations.Nullable;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.InvalidRegistrationIdException;
 import org.signal.libsignal.protocol.NoSessionException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
+import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
+import org.signal.libsignal.zkgroup.groupsend.GroupSendEndorsement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
@@ -35,6 +38,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.DistributionId;
+import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
 import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException;
@@ -45,6 +49,7 @@ import org.whispersystems.signalservice.internal.push.http.PartialSendCompleteLi
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -479,12 +484,18 @@ public class SendHelper {
         final var addressesMap = recipientIds.stream()
                 .collect(Collectors.toMap(id -> id, context.getRecipientHelper()::resolveSignalServiceAddress));
         final var unidentifiedAccessesMap = context.getUnidentifiedAccessHelper().getAccessFor(recipientIds);
-        final GroupSendEndorsements groupSendEndorsements = null; //TODO
+        final var groupSendEndorsements = getGroupSendEndorsements(groupInfo);
+        final var groupSecretParams = groupInfo instanceof GroupInfoV2 gv2
+                ? GroupSecretParams.deriveFromMasterKey((gv2.getMasterKey()))
+                : null;
 
-        Set<RecipientId> senderKeyTargets = groupInfo.getDistributionId() == null
+        Set<RecipientId> senderKeyTargets = groupInfo.getDistributionId() == null || groupSendEndorsements == null
                 ? Set.of()
                 : recipientIds.stream()
-                        .filter(s -> this.isSenderKeyCapable(addressesMap.get(s), unidentifiedAccessesMap.get(s)))
+                        .filter(s -> this.isSenderKeyCapable(s,
+                                addressesMap.get(s),
+                                unidentifiedAccessesMap.get(s),
+                                groupSendEndorsements.second()))
                         .collect(Collectors.toSet());
         if (senderKeyTargets.size() < 2) {
             logger.debug("Too few sender-key-capable users ({}). Doing all legacy sends.", senderKeyTargets.size());
@@ -495,11 +506,23 @@ public class SendHelper {
 
         final var allResults = new ArrayList<SendMessageResult>(recipientIds.size());
         if (!senderKeyTargets.isEmpty()) {
+            final var senderCertificate = this.context.getUnidentifiedAccessHelper().getSenderCertificateFor(null);
+            final var addresses = senderKeyTargets.stream().map(addressesMap::get).toList();
+            final var targets = senderKeyTargets;
+            final var requiredGroupSendEndorsements = new GroupSendEndorsements(groupSendEndorsements.first(),
+                    groupSendEndorsements.second()
+                            .entrySet()
+                            .stream()
+                            .filter(entry -> targets.contains(entry.getKey()))
+                            .collect(Collectors.toMap(entry -> (ACI) addressesMap.get(entry.getKey()).getServiceId(),
+                                    Map.Entry::getValue)),
+                    senderCertificate,
+                    groupSecretParams);
             final var results = sendGroupMessageInternalWithSenderKey(senderKeySender,
                     groupInfo.getDistributionId(),
-                    senderKeyTargets.stream().map(addressesMap::get).toList(),
+                    addresses,
                     senderKeyTargets.stream().map(unidentifiedAccessesMap::get).toList(),
-                    groupSendEndorsements,
+                    requiredGroupSendEndorsements,
                     isRecipientUpdate);
 
             if (results == null) {
@@ -536,8 +559,16 @@ public class SendHelper {
                     .findFirst()
                     .map(UnidentifiedAccess::getUnidentifiedCertificate)
                     .orElse(null);
-            final var groupSendTokens = groupSendEndorsements != null
-                    ? groupSendEndorsements.forIndividuals(addresses)
+            final var groupSendTokens = groupSendEndorsements != null ? groupSendEndorsements.second()
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> legacyTargets.contains(entry.getKey()))
+                    .map(Map.Entry::getValue)
+                    .map(e -> e == null || groupSecretParams == null
+                            ? null
+                            : e.toFullToken(groupSecretParams, Instant.ofEpochMilli(groupSendEndorsements.first())))
+                    .toList()
+
                     : null;
             final var sealedSenderAccesses = SealedSenderAccess.forFanOutGroupSend(groupSendTokens,
                     senderCertificate,
@@ -553,16 +584,45 @@ public class SendHelper {
         return allResults;
     }
 
-    private boolean isSenderKeyCapable(final SignalServiceAddress address, final UnidentifiedAccess access) {
-        if (access == null) {
+    private Pair<Long, Map<RecipientId, GroupSendEndorsement>> getGroupSendEndorsements(final GroupInfo groupInfo) {
+        if (!(groupInfo instanceof GroupInfoV2 groupInfoV2)) {
+            return null;
+        }
+
+        var groupSendEndorsementMap = account.getGroupStore().getGroupEndorsements(groupInfoV2.getGroupId());
+        var groupSendEndorsementExpirationMs = account.getGroupStore()
+                .getGroupEndorsementExpirationMs(groupInfoV2.getGroupId());
+        if (groupSendEndorsementMap.isEmpty()
+                || groupSendEndorsementExpirationMs - TimeUnit.HOURS.toMillis(2) < System.currentTimeMillis()) {
+            logger.debug("No group send endorsements available, trying to update");
+            this.context.getGroupHelper().updateGroupSendEndorsements(groupInfoV2.getGroupId());
+            groupSendEndorsementMap = account.getGroupStore().getGroupEndorsements(groupInfoV2.getGroupId());
+            groupSendEndorsementExpirationMs = account.getGroupStore()
+                    .getGroupEndorsementExpirationMs(groupInfoV2.getGroupId());
+            if (groupSendEndorsementMap.isEmpty()
+                    || groupSendEndorsementExpirationMs - TimeUnit.HOURS.toMillis(2) < System.currentTimeMillis()) {
+                logger.debug("Updating group send endorsements was not successful");
+                return null;
+            }
+        }
+        return new Pair(groupSendEndorsementExpirationMs, groupSendEndorsementMap);
+    }
+
+    private boolean isSenderKeyCapable(
+            final RecipientId recipientId,
+            final SignalServiceAddress address,
+            final UnidentifiedAccess access,
+            final Map<RecipientId, GroupSendEndorsement> groupSendEndorsements
+    ) {
+        if (access == null || !address.hasValidServiceId() || !(address.getServiceId() instanceof ACI aci)) {
             return false;
         }
 
-        if (!address.hasValidServiceId()) {
+        if (!groupSendEndorsements.containsKey(recipientId)) {
             return false;
         }
 
-        final var identity = account.getIdentityKeyStore().getIdentityInfo(address.getServiceId());
+        final var identity = account.getIdentityKeyStore().getIdentityInfo(aci);
         if (identity == null || !identity.getTrustLevel().isTrusted()) {
             return false;
         }
@@ -771,7 +831,7 @@ public class SendHelper {
         SendMessageResult send(
                 SignalServiceMessageSender messageSender,
                 SignalServiceAddress address,
-                @Nullable SealedSenderAccess unidentifiedAccess,
+                SealedSenderAccess unidentifiedAccess,
                 boolean includePniSignature
         ) throws IOException, UnregisteredUserException, ProofRequiredException, RateLimitException, org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
     }
