@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardProtocolFamily;
@@ -46,13 +45,7 @@ public class IOUtils {
     }
 
     public static String readAll(InputStream in, Charset charset) throws IOException {
-        var output = new StringWriter();
-        var buffer = new byte[4096];
-        int n;
-        while (-1 != (n = in.read(buffer))) {
-            output.write(new String(buffer, 0, n, charset));
-        }
-        return output.toString();
+        return new String(in.readAllBytes(), charset);
     }
 
     public static void createPrivateDirectories(File file) throws IOException {
