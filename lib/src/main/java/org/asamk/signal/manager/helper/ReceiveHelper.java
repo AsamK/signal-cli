@@ -134,7 +134,7 @@ public class ReceiveHelper {
             SignalServiceEnvelope envelope;
             final CachedMessage[] cachedMessage = {null};
             final var nowMillis = System.currentTimeMillis();
-            if (nowMillis - account.getLastReceiveTimestamp() > 60000) {
+            if (nowMillis - account.getLastReceiveTimestamp() > 4 * 60 * 60 * 1000) {
                 account.setLastReceiveTimestamp(nowMillis);
             }
             logger.debug("Checking for new message from server");
