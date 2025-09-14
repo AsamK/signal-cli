@@ -1137,7 +1137,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"number","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
+  "methods":[{"name":"number","parameterTypes":[] }, {"name":"username","parameterTypes":[] }, {"name":"uuid","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonRemoteDelete",

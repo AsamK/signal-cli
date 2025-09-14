@@ -95,7 +95,10 @@ public class RecipientHelper {
             try {
                 return resolveRecipientByUsernameOrLink(username, false);
             } catch (Exception e) {
-                return null;
+                throw new UnregisteredRecipientException(new org.asamk.signal.manager.api.RecipientAddress(null,
+                        null,
+                        null,
+                        username));
             }
         }
         throw new AssertionError("Unexpected RecipientIdentifier: " + recipient);
