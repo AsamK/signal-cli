@@ -162,6 +162,8 @@ public interface Manager extends Closeable {
 
     List<Group> getGroups();
 
+    List<Group> getGroups(Collection<GroupId> groupIds);
+
     SendGroupMessageResults quitGroup(
             GroupId groupId,
             Set<RecipientIdentifier.Single> groupAdmins

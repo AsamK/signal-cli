@@ -92,6 +92,16 @@ public class GroupHelper {
         return groups;
     }
 
+    public List<GroupInfo> getGroups(Collection<GroupId> groupIds) {
+        final var groups = account.getGroupStore()
+                .getGroups()
+                .stream()
+                .filter(g -> groupIds.contains(g.getGroupId()))
+                .toList();
+        groups.forEach(group -> fillOrUpdateGroup(group, true));
+        return groups;
+    }
+
     public boolean isGroupBlocked(final GroupId groupId) {
         var group = getGroup(groupId);
         return group != null && group.isBlocked();

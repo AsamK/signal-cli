@@ -273,6 +273,16 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public List<Group> getGroups(final Collection<GroupId> groupIds) {
+        final var groups = signal.listGroups();
+        return groups.stream()
+                .map(Signal.StructGroup::getObjectPath)
+                .map(this::getGroup)
+                .filter(g -> groupIds.contains(g.groupId()))
+                .toList();
+    }
+
+    @Override
     public SendGroupMessageResults quitGroup(
             final GroupId groupId,
             final Set<RecipientIdentifier.Single> groupAdmins

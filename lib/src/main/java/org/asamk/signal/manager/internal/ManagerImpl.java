@@ -541,6 +541,11 @@ public class ManagerImpl implements Manager {
         return context.getGroupHelper().getGroups().stream().map(this::toGroup).toList();
     }
 
+    @Override
+    public List<Group> getGroups(Collection<GroupId> groupIds) {
+        return context.getGroupHelper().getGroups(groupIds).stream().map(this::toGroup).toList();
+    }
+
     private Group toGroup(final GroupInfo groupInfo) {
         if (groupInfo == null) {
             return null;

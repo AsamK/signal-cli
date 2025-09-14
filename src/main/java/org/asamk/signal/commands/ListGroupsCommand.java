@@ -81,13 +81,9 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             final Manager m,
             final OutputWriter outputWriter
     ) throws CommandException {
-        var groups = m.getGroups();
-
         final var groupIdStrings = ns.<String>getList("group-id");
         final var groupIds = CommandUtil.getGroupIds(groupIdStrings);
-        if (!groupIds.isEmpty()) {
-            groups = groups.stream().filter(g -> groupIds.contains(g.groupId())).toList();
-        }
+        var groups = groupIds.isEmpty() ? m.getGroups() : m.getGroups(groupIds);
 
         switch (outputWriter) {
             case JsonWriter jsonWriter -> {
