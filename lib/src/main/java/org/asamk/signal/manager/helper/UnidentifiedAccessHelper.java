@@ -94,16 +94,17 @@ public class UnidentifiedAccessHelper {
         }
 
         try {
-            return new UnidentifiedAccess(recipientUnidentifiedAccessKey, senderCertificate, false);
+            return new UnidentifiedAccess(recipientUnidentifiedAccessKey, senderCertificate.getSerialized(), false);
         } catch (InvalidCertificateException e) {
             return null;
         }
     }
 
-    private byte[] getSenderCertificateFor(final RecipientId recipientId) {
+    public SenderCertificate getSenderCertificateFor(final RecipientId recipientId) {
         final var sharingMode = account.getConfigurationStore().getPhoneNumberSharingMode();
         if (sharingMode == PhoneNumberSharingMode.EVERYBODY || (
-                sharingMode == PhoneNumberSharingMode.CONTACTS
+                recipientId != null
+                        && sharingMode == PhoneNumberSharingMode.CONTACTS
                         && account.getContactStore().getContact(recipientId) != null
         )) {
             logger.trace("Using normal sender certificate for message to {}", recipientId);
@@ -114,33 +115,33 @@ public class UnidentifiedAccessHelper {
         }
     }
 
-    private byte[] getSenderCertificateForPhoneNumberPrivacy() {
+    private SenderCertificate getSenderCertificateForPhoneNumberPrivacy() {
         if (privacySenderCertificate != null && System.currentTimeMillis() < (
                 privacySenderCertificate.getExpiration() - CERTIFICATE_EXPIRATION_BUFFER
         )) {
-            return privacySenderCertificate.getSerialized();
+            return privacySenderCertificate;
         }
         try {
             final var certificate = handleResponseException(dependencies.getCertificateApi()
                     .getSenderCertificateForPhoneNumberPrivacy());
             privacySenderCertificate = new SenderCertificate(certificate);
-            return certificate;
+            return privacySenderCertificate;
         } catch (IOException | InvalidCertificateException e) {
             logger.warn("Failed to get sender certificate (pnp), ignoring: {}", e.getMessage());
             return null;
         }
     }
 
-    private byte[] getSenderCertificate() {
+    private SenderCertificate getSenderCertificate() {
         if (senderCertificate != null && System.currentTimeMillis() < (
                 senderCertificate.getExpiration() - CERTIFICATE_EXPIRATION_BUFFER
         )) {
-            return senderCertificate.getSerialized();
+            return senderCertificate;
         }
         try {
             final var certificate = handleResponseException(dependencies.getCertificateApi().getSenderCertificate());
             this.senderCertificate = new SenderCertificate(certificate);
-            return certificate;
+            return senderCertificate;
         } catch (IOException | InvalidCertificateException e) {
             logger.warn("Failed to get sender certificate, ignoring: {}", e.getMessage());
             return null;
