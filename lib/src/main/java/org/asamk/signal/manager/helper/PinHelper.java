@@ -27,8 +27,7 @@ public class PinHelper {
             try {
                 final var backupResponse = secureValueRecovery.setPin(pin, masterKey).execute();
                 switch (backupResponse) {
-                    case SecureValueRecovery.BackupResponse.Success success -> {
-                    }
+                    case SecureValueRecovery.BackupResponse.Success success -> logger.trace("PIN set successfully");
                     case SecureValueRecovery.BackupResponse.ServerRejected serverRejected ->
                             logger.warn("Backup svr failed: ServerRejected");
                     case SecureValueRecovery.BackupResponse.EnclaveNotFound enclaveNotFound ->
