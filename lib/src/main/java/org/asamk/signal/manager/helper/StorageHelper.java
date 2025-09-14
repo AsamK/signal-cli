@@ -18,6 +18,7 @@ import org.signal.core.util.SetUtil;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
 import org.whispersystems.signalservice.api.storage.RecordIkm;
 import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
@@ -348,8 +349,12 @@ public class StorageHelper {
     ) throws IOException, RetryLaterException {
         logger.debug("Force pushing local state to remote storage");
 
-        final var currentVersion = handleResponseException(dependencies.getStorageServiceRepository()
-                .getManifestVersion());
+        long currentVersion;
+        try {
+            currentVersion = handleResponseException(dependencies.getStorageServiceRepository().getManifestVersion());
+        } catch (NotFoundException e) {
+            currentVersion = 0;
+        }
         final var newVersion = currentVersion + 1;
         final var newStorageRecords = new ArrayList<SignalStorageRecord>();
         final Map<RecipientId, StorageId> newContactStorageIds;
