@@ -11,7 +11,7 @@ clap = { version = "4", features = ["cargo", "derive", "wrap_help"] }
 serde = "1"
 serde_json = "1"
 tokio = { version = "1", features = ["rt", "macros", "net", "rt-multi-thread"] }
-jsonrpsee = { version = "0.25", features = [
+jsonrpsee = { version = "0.26", features = [
     "macros",
     "async-client",
     "http-client",
