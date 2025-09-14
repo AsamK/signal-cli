@@ -58,9 +58,10 @@ public class UnknownStorageIdStore {
     }
 
     public void addUnknownStorageIds(Connection connection, Collection<StorageId> storageIds) throws SQLException {
+        deleteUnknownStorageIds(connection, storageIds);
         final var sql = (
                 """
-                INSERT OR REPLACE INTO %s (type, storage_id)
+                INSERT INTO %s (type, storage_id)
                 VALUES (?, ?)
                 """
         ).formatted(TABLE_STORAGE_ID);

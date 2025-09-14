@@ -351,8 +351,9 @@ public class SessionStore implements SignalServiceSessionStore {
         }
 
         final var sql = """
-                        INSERT OR REPLACE INTO %s (account_id_type, address, device_id, record)
+                        INSERT INTO %s (account_id_type, address, device_id, record)
                         VALUES (?, ?, ?, ?)
+                        ON CONFLICT (account_id_type, address, device_id) DO UPDATE SET record=excluded.record
                         """.formatted(TABLE_SESSION);
         try (final var statement = connection.prepareStatement(sql)) {
             statement.setInt(1, accountIdType);

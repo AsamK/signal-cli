@@ -171,27 +171,11 @@ public class SenderKeyRecordStore implements SenderKeyStore {
             final Key key,
             final SenderKeyRecord senderKeyRecord
     ) throws SQLException {
-        final var sqlUpdate = """
-                              UPDATE %s
-                              SET record = ?
-                              WHERE address = ? AND device_id = ? and distribution_id = ?
-                              """.formatted(TABLE_SENDER_KEY);
-        try (final var statement = connection.prepareStatement(sqlUpdate)) {
-            statement.setBytes(1, senderKeyRecord.serialize());
-            statement.setString(2, key.address());
-            statement.setLong(3, key.deviceId());
-            statement.setBytes(4, UuidUtil.toByteArray(key.distributionId()));
-            final var rows = statement.executeUpdate();
-            if (rows > 0) {
-                return;
-            }
-        }
-
-        // Record doesn't exist yet, creating a new one
         final var sqlInsert = (
                 """
-                INSERT OR REPLACE INTO %s (address, device_id, distribution_id, record, created_timestamp)
+                INSERT INTO %s (address, device_id, distribution_id, record, created_timestamp)
                 VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (address, device_id, distribution_id) DO UPDATE SET record=excluded.record
                 """
         ).formatted(TABLE_SENDER_KEY);
         try (final var statement = connection.prepareStatement(sqlInsert)) {

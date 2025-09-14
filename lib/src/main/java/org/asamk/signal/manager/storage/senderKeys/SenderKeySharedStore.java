@@ -197,8 +197,9 @@ public class SenderKeySharedStore {
     ) throws SQLException {
         final var sql = (
                 """
-                INSERT OR REPLACE INTO %s (address, device_id, distribution_id, timestamp)
+                INSERT INTO %s (address, device_id, distribution_id, timestamp)
                 VALUES (?, ?, ?, ?)
+                ON CONFLICT (address, device_id, distribution_id) DO UPDATE SET timestamp=excluded.timestamp
                 """
         ).formatted(TABLE_SENDER_KEY_SHARED);
         try (final var statement = connection.prepareStatement(sql)) {

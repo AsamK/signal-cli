@@ -165,8 +165,9 @@ public class GroupStore {
 
             if (endorsements != null) {
                 final var sqlInsertMember = """
-                                            INSERT OR REPLACE INTO %s (group_id, recipient_id, endorsement)
+                                            INSERT INTO %s (group_id, recipient_id, endorsement)
                                             VALUES (?, ?, ?)
+                                            ON CONFLICT (group_id, recipient_id) DO UPDATE SET endorsement=excluded.endorsement
                                             """.formatted(TABLE_GROUP_V2_MEMBER);
                 try (final var statement = connection.prepareStatement(sqlInsertMember)) {
                     for (final var entry : endorsements.entrySet()) {
@@ -612,8 +613,9 @@ public class GroupStore {
                 }
             }
             final var sql = """
-                            INSERT OR REPLACE INTO %s (_id, group_id, group_id_v2, name, color, expiration_time, blocked, archived, storage_id)
+                            INSERT INTO %s (_id, group_id, group_id_v2, name, color, expiration_time, blocked, archived, storage_id)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON CONFLICT (_id) DO UPDATE SET group_id=excluded.group_id, group_id_v2=excluded.group_id_v2, name=excluded.name, color=excluded.color, expiration_time=excluded.expiration_time, blocked=excluded.blocked, archived=excluded.archived, storage_id=excluded.storage_id
                             RETURNING _id
                             """.formatted(TABLE_GROUP_V1);
             try (final var statement = connection.prepareStatement(sql)) {
@@ -641,8 +643,9 @@ public class GroupStore {
                 }
             }
             final var sqlInsertMember = """
-                                        INSERT OR REPLACE INTO %s (group_id, recipient_id)
+                                        INSERT INTO %s (group_id, recipient_id)
                                         VALUES (?, ?)
+                                        ON CONFLICT (group_id, recipient_id) DO NOTHING
                                         """.formatted(TABLE_GROUP_V1_MEMBER);
             try (final var statement = connection.prepareStatement(sqlInsertMember)) {
                 for (final var recipient : groupV1.getMembers()) {

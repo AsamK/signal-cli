@@ -280,8 +280,9 @@ public class IdentityKeyStore {
                 identityInfo.getDateAddedTimestamp());
         final var sql = (
                 """
-                INSERT OR REPLACE INTO %s (address, identity_key, added_timestamp, trust_level)
+                INSERT INTO %s (address, identity_key, added_timestamp, trust_level)
                 VALUES (?, ?, ?, ?)
+                ON CONFLICT (address) DO UPDATE SET identity_key=excluded.identity_key, added_timestamp=excluded.added_timestamp, trust_level=excluded.trust_level
                 """
         ).formatted(TABLE_IDENTITY);
         try (final var statement = connection.prepareStatement(sql)) {
