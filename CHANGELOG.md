@@ -1,6 +1,21 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.19] - 2025-09-15
+
+Requires libsignal-client version 0.80.2.
+
+### Fixed
+
+- Fixed hiding contacts (with `removeContact --hide`)
+- Prevent splitting UTF-8 chars when reading message from stdin
+- Handle unregistered username correctly when sending message
+
+### Changed
+
+- Update to signal service changes, mainly new group endorsements for group sending
+- Reduced frequency of updating last received timstamp on disk
+- Handle missing storage manifest version correctly
+- Force a group refresh when using listGroups command with groupId
 
 ## [0.13.18] - 2025-07-16
 
