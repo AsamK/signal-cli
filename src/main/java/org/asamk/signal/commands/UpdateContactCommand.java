@@ -60,13 +60,7 @@ public class UpdateContactCommand implements JsonRpcLocalCommand {
             var nickGivenName = ns.getString("nick-given-name");
             var nickFamilyName = ns.getString("nick-family-name");
             var note = ns.getString("note");
-            if (givenName != null
-                    || familyName != null
-                    || nickGivenName != null
-                    || nickFamilyName != null
-                    || note != null) {
-                m.setContactName(recipient, givenName, familyName, nickGivenName, nickFamilyName, note);
-            }
+            m.setContactName(recipient, givenName, familyName, nickGivenName, nickFamilyName, note);
         } catch (IOException e) {
             throw new IOErrorException("Update contact error: " + e.getMessage(), e);
         } catch (NotPrimaryDeviceException e) {

@@ -841,7 +841,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 UPDATE %s
-                SET given_name = ?, family_name = ?, nick_name = ?, expiration_time = ?, expiration_time_version = ?, mute_until = ?, hide_story = ?, profile_sharing = ?, color = ?, blocked = ?, archived = ?, unregistered_timestamp = ?, nick_name_given_name = ?, nick_name_family_name = ?, note = ?
+                SET given_name = ?, family_name = ?, nick_name = ?, expiration_time = ?, expiration_time_version = ?, mute_until = ?, hide_story = ?, profile_sharing = ?, color = ?, blocked = ?, archived = ?, unregistered_timestamp = ?, nick_name_given_name = ?, nick_name_family_name = ?, note = ?, hidden = ?
                 WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
@@ -865,7 +865,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
             statement.setString(13, contact == null ? null : contact.nickNameGivenName());
             statement.setString(14, contact == null ? null : contact.nickNameFamilyName());
             statement.setString(15, contact == null ? null : contact.note());
-            statement.setLong(16, recipientId.id());
+            statement.setBoolean(16, contact != null && contact.isHidden());
+            statement.setLong(17, recipientId.id());
             statement.executeUpdate();
         }
         if (contact != null && contact.unregisteredTimestamp() != null) {
