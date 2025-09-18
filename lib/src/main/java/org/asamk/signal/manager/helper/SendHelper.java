@@ -484,18 +484,24 @@ public class SendHelper {
         final var addressesMap = recipientIds.stream()
                 .collect(Collectors.toMap(id -> id, context.getRecipientHelper()::resolveSignalServiceAddress));
         final var unidentifiedAccessesMap = context.getUnidentifiedAccessHelper().getAccessFor(recipientIds);
-        final var groupSendEndorsements = getGroupSendEndorsements(groupInfo);
+        final var groupSendEndorsementsResult = getGroupSendEndorsements(groupInfo);
         final var groupSecretParams = groupInfo instanceof GroupInfoV2 gv2
                 ? GroupSecretParams.deriveFromMasterKey((gv2.getMasterKey()))
                 : null;
 
+        final var groupSendEndorsements = groupSendEndorsementsResult == null
+                ? null
+                : groupSendEndorsementsResult.second();
+        final var groupSendEndorsementsExpirationMs = groupSendEndorsementsResult == null
+                ? 0
+                : groupSendEndorsementsResult.first();
         Set<RecipientId> senderKeyTargets = groupInfo.getDistributionId() == null || groupSendEndorsements == null
                 ? Set.of()
                 : recipientIds.stream()
                         .filter(s -> this.isSenderKeyCapable(s,
                                 addressesMap.get(s),
                                 unidentifiedAccessesMap.get(s),
-                                groupSendEndorsements.second()))
+                                groupSendEndorsements))
                         .collect(Collectors.toSet());
         if (senderKeyTargets.size() < 2) {
             logger.debug("Too few sender-key-capable users ({}). Doing all legacy sends.", senderKeyTargets.size());
@@ -508,14 +514,10 @@ public class SendHelper {
         if (!senderKeyTargets.isEmpty()) {
             final var senderCertificate = this.context.getUnidentifiedAccessHelper().getSenderCertificateFor(null);
             final var addresses = senderKeyTargets.stream().map(addressesMap::get).toList();
-            final var targets = senderKeyTargets;
-            final var requiredGroupSendEndorsements = new GroupSendEndorsements(groupSendEndorsements.first(),
-                    groupSendEndorsements.second()
-                            .entrySet()
-                            .stream()
-                            .filter(entry -> targets.contains(entry.getKey()))
-                            .collect(Collectors.toMap(entry -> (ACI) addressesMap.get(entry.getKey()).getServiceId(),
-                                    Map.Entry::getValue)),
+            final var requiredGroupSendEndorsements = new GroupSendEndorsements(groupSendEndorsementsExpirationMs,
+                    senderKeyTargets.stream()
+                            .collect(Collectors.toMap(recipientId -> (ACI) addressesMap.get(recipientId).getServiceId(),
+                                    groupSendEndorsements::get)),
                     senderCertificate,
                     groupSecretParams);
             final var results = sendGroupMessageInternalWithSenderKey(senderKeySender,
@@ -559,16 +561,14 @@ public class SendHelper {
                     .findFirst()
                     .map(UnidentifiedAccess::getUnidentifiedCertificate)
                     .orElse(null);
-            final var groupSendTokens = groupSendEndorsements != null ? groupSendEndorsements.second()
-                    .entrySet()
-                    .stream()
-                    .filter(entry -> legacyTargets.contains(entry.getKey()))
-                    .map(Map.Entry::getValue)
-                    .map(e -> e == null || groupSecretParams == null
-                            ? null
-                            : e.toFullToken(groupSecretParams, Instant.ofEpochMilli(groupSendEndorsements.first())))
+            final var expirationMs = Instant.ofEpochMilli(groupSendEndorsementsExpirationMs);
+            final var groupSendTokens = groupSendEndorsements != null && groupSecretParams != null
+                    ? legacyTargets.stream()
+                    .map(groupSendEndorsements::get)
+                    .map(endorsement -> Optional.ofNullable(endorsement)
+                            .map(e -> e.toFullToken(groupSecretParams, expirationMs))
+                            .orElse(null))
                     .toList()
-
                     : null;
             final var sealedSenderAccesses = SealedSenderAccess.forFanOutGroupSend(groupSendTokens,
                     senderCertificate,
@@ -605,7 +605,7 @@ public class SendHelper {
                 return null;
             }
         }
-        return new Pair(groupSendEndorsementExpirationMs, groupSendEndorsementMap);
+        return new Pair<>(groupSendEndorsementExpirationMs, groupSendEndorsementMap);
     }
 
     private boolean isSenderKeyCapable(
