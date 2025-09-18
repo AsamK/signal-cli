@@ -27,6 +27,8 @@ class LiveConfig {
 
     private static final byte[] UNIDENTIFIED_SENDER_TRUST_ROOT = Base64.getDecoder()
             .decode("BXu6QIKVz5MA8gstzfOgRQGqyLqOwNKHL6INkv3IHWMF");
+    private static final byte[] UNIDENTIFIED_SENDER_TRUST_ROOT2 = Base64.getDecoder()
+            .decode("BUkY0I+9+oPgDCn4+Ac6Iu813yvqkDr/ga8DzLxFxuk6");
     private static final String CDSI_MRENCLAVE = "0f6fd79cdfdaa5b2e6337f534d3baf999318b0c462a7ac1f41297a3e4b424a57";
     private static final String SVR2_MRENCLAVE_LEGACY = "093be9ea32405e85ae28dbb48eb668aebeb7dbe29517b9b86ad4bec4dfe0e6a6";
     private static final String SVR2_MRENCLAVE = "29cd63c87bea751e3bfd0fbd401279192e2e5c99948b4ee9437eafc4968355fb";
@@ -77,9 +79,10 @@ class LiveConfig {
                 false);
     }
 
-    static ECPublicKey getUnidentifiedSenderTrustRoot() {
+    static List<ECPublicKey> getUnidentifiedSenderTrustRoots() {
         try {
-            return new ECPublicKey(UNIDENTIFIED_SENDER_TRUST_ROOT);
+            return List.of(new ECPublicKey(UNIDENTIFIED_SENDER_TRUST_ROOT),
+                    new ECPublicKey(UNIDENTIFIED_SENDER_TRUST_ROOT2));
         } catch (InvalidKeyException e) {
             throw new AssertionError(e);
         }
@@ -89,7 +92,7 @@ class LiveConfig {
         return new ServiceEnvironmentConfig(LIVE,
                 LIBSIGNAL_NET_ENV,
                 createDefaultServiceConfiguration(interceptors),
-                getUnidentifiedSenderTrustRoot(),
+                getUnidentifiedSenderTrustRoots(),
                 CDSI_MRENCLAVE,
                 List.of(SVR2_MRENCLAVE, SVR2_MRENCLAVE_LEGACY));
     }

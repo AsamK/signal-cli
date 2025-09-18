@@ -356,7 +356,7 @@ public class SignalDependencies {
     }
 
     public SignalServiceCipher getCipher(ServiceIdType serviceIdType) {
-        final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.unidentifiedSenderTrustRoot());
+        final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.unidentifiedSenderTrustRoots());
         final var address = new SignalServiceAddress(credentialsProvider.getAci(), credentialsProvider.getE164());
         final var deviceId = credentialsProvider.getDeviceId();
         return new SignalServiceCipher(address,

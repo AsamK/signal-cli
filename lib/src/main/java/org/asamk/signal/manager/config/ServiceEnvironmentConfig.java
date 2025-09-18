@@ -11,7 +11,7 @@ public record ServiceEnvironmentConfig(
         ServiceEnvironment type,
         Network.Environment netEnvironment,
         SignalServiceConfiguration signalServiceConfiguration,
-        ECPublicKey unidentifiedSenderTrustRoot,
+        List<ECPublicKey> unidentifiedSenderTrustRoots,
         String cdsiMrenclave,
         List<String> svr2Mrenclaves
 ) {}
