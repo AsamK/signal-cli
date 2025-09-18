@@ -116,7 +116,8 @@ public class RecipientHelper {
         }
         if (forceRefresh) {
             try {
-                final var aci = handleResponseException(dependencies.getUsernameApi().getAciByUsername(finalUsername));
+                final var aci = (ACI) handleResponseException(dependencies.getUsernameApi()
+                        .getAciByUsername(finalUsername));
                 return account.getRecipientStore().resolveRecipientTrusted(aci, finalUsername.getUsername());
             } catch (NonSuccessfulResponseCodeException e) {
                 if (e.code == 404) {
@@ -131,7 +132,7 @@ public class RecipientHelper {
         }
         return account.getRecipientStore().resolveRecipientByUsername(finalUsername.getUsername(), () -> {
             try {
-                return handleResponseException(dependencies.getUsernameApi().getAciByUsername(finalUsername));
+                return (ACI) handleResponseException(dependencies.getUsernameApi().getAciByUsername(finalUsername));
             } catch (Exception e) {
                 return null;
             }

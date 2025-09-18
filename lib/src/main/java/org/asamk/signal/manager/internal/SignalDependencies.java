@@ -39,7 +39,7 @@ import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.SignalWebSocket;
 import org.whispersystems.signalservice.internal.push.PushServiceSocket;
-import org.whispersystems.signalservice.internal.websocket.OkHttpWebSocketConnection;
+import org.whispersystems.signalservice.internal.websocket.LibSignalChatConnection;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -284,13 +284,12 @@ public class SignalDependencies {
             final var timer = new UptimeSleepTimer();
             final var healthMonitor = new SignalWebSocketHealthMonitor(timer);
 
-            authenticatedSignalWebSocket = new SignalWebSocket.AuthenticatedWebSocket(() -> new OkHttpWebSocketConnection(
+            authenticatedSignalWebSocket = new SignalWebSocket.AuthenticatedWebSocket(() -> new LibSignalChatConnection(
                     "normal",
-                    serviceEnvironmentConfig.signalServiceConfiguration(),
-                    Optional.of(credentialsProvider),
-                    userAgent,
-                    healthMonitor,
-                    allowStories), () -> true, timer, TimeUnit.SECONDS.toMillis(10));
+                    getLibSignalNetwork(),
+                    credentialsProvider,
+                    allowStories,
+                    healthMonitor), () -> true, timer, TimeUnit.SECONDS.toMillis(10));
             healthMonitor.monitor(authenticatedSignalWebSocket);
         });
     }
@@ -300,13 +299,12 @@ public class SignalDependencies {
             final var timer = new UptimeSleepTimer();
             final var healthMonitor = new SignalWebSocketHealthMonitor(timer);
 
-            unauthenticatedSignalWebSocket = new SignalWebSocket.UnauthenticatedWebSocket(() -> new OkHttpWebSocketConnection(
+            unauthenticatedSignalWebSocket = new SignalWebSocket.UnauthenticatedWebSocket(() -> new LibSignalChatConnection(
                     "unidentified",
-                    serviceEnvironmentConfig.signalServiceConfiguration(),
-                    Optional.empty(),
-                    userAgent,
-                    healthMonitor,
-                    allowStories), () -> true, timer, TimeUnit.SECONDS.toMillis(10));
+                    getLibSignalNetwork(),
+                    null,
+                    allowStories,
+                    healthMonitor), () -> true, timer, TimeUnit.SECONDS.toMillis(10));
             healthMonitor.monitor(unauthenticatedSignalWebSocket);
         });
     }
@@ -328,8 +326,7 @@ public class SignalDependencies {
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
                         () -> true,
-                        UsePqRatchet.NO,
-                        Optional.empty()));
+                        UsePqRatchet.NO));
     }
 
     public List<SecureValueRecovery> getSecureValueRecovery() {

@@ -3,6 +3,9 @@
   "name":"[B"
 },
 {
+  "name":"[Ljava.lang.String;"
+},
+{
   "name":"[Z"
 },
 {
@@ -77,10 +80,16 @@
   "methods":[{"name":"<init>","parameterTypes":["long","long"] }, {"name":"getLeastSignificantBits","parameterTypes":[] }, {"name":"getMostSignificantBits","parameterTypes":[] }]
 },
 {
+  "name":"java.util.concurrent.ForkJoinWorkerThread"
+},
+{
   "name":"jdk.internal.loader.ClassLoaders$AppClassLoader"
 },
 {
   "name":"jdk.internal.loader.ClassLoaders$PlatformClassLoader"
+},
+{
+  "name":"org.asamk.signal.manager.internal.SignalWebSocketHealthMonitor$KeepAliveSender"
 },
 {
   "name":"org.asamk.signal.manager.storage.protocol.SignalProtocolStore",
@@ -111,6 +120,14 @@
   "methods":[{"name":"<init>","parameterTypes":["byte[]","byte[]"] }]
 },
 {
+  "name":"org.signal.libsignal.net.ChatConnection$ListenerBridge",
+  "methods":[{"name":"onConnectionInterrupted","parameterTypes":["java.lang.Throwable"] }, {"name":"onIncomingMessage","parameterTypes":["byte[]","long","long"] }, {"name":"onQueueEmpty","parameterTypes":[] }, {"name":"onReceivedAlerts","parameterTypes":["java.lang.String[]"] }]
+},
+{
+  "name":"org.signal.libsignal.net.ChatConnection$Response",
+  "methods":[{"name":"<init>","parameterTypes":["int","java.lang.String","java.util.Map","byte[]"] }]
+},
+{
   "name":"org.signal.libsignal.net.ChatService"
 },
 {
@@ -129,6 +146,9 @@
 {
   "name":"org.signal.libsignal.net.RetryLaterException",
   "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.signal.libsignal.net.internal.BridgeChatListener"
 },
 {
   "name":"org.signal.libsignal.protocol.DuplicateMessageException",
@@ -308,5 +328,8 @@
   "name":"org.sqlite.core.NativeDB",
   "fields":[{"name":"busyHandler"}, {"name":"commitListener"}, {"name":"pointer"}, {"name":"progressHandler"}, {"name":"updateListener"}],
   "methods":[{"name":"stringToUtf8ByteArray","parameterTypes":["java.lang.String"] }, {"name":"throwex","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.whispersystems.signalservice.api.websocket.SignalWebSocket$DelayedDisconnectThread"
 }
 ]

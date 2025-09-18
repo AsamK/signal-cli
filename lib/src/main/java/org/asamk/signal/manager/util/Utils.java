@@ -1,6 +1,8 @@
 package org.asamk.signal.manager.util;
 
 import org.asamk.signal.manager.api.Pair;
+import org.signal.libsignal.net.BadRequestError;
+import org.signal.libsignal.net.RequestResult;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.fingerprint.Fingerprint;
 import org.signal.libsignal.protocol.fingerprint.NumericFingerprintGenerator;
@@ -156,6 +158,24 @@ public class Utils {
 
     public static <T> T handleResponseException(final NetworkResult<T> response) throws IOException {
         return NetworkResultUtil.toBasicLegacy(response);
+    }
+
+    public static <T, E extends BadRequestError> T handleResponseException(final RequestResult<T, E> result) throws IOException {
+        if (result instanceof RequestResult.Success) {
+            return ((RequestResult.Success<T>) result).getResult();
+        } else if (result instanceof RequestResult.ApplicationError e) {
+            final var cause = e.getCause();
+            switch (cause) {
+                case IOException io -> throw io;
+                case RuntimeException rt -> throw rt;
+                default -> throw new RuntimeException(cause);
+            }
+        } else if (result instanceof RequestResult.RetryableNetworkError e) {
+            throw e.getNetworkError();
+        } else if (result instanceof RequestResult.NonSuccess) {
+            throw new AssertionError();
+        }
+        throw new IllegalStateException("Unexpected value: " + result);
     }
 
     public static ByteString firstNonEmpty(ByteString... strings) {
