@@ -1339,7 +1339,7 @@ public class ManagerImpl implements Manager {
             Optional<Integer> maxMessages,
             ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException {
-        receiveMessages(timeout.orElse(Duration.ofMinutes(1)), timeout.isPresent(), maxMessages.orElse(null), handler);
+        receiveMessages(timeout, maxMessages.orElse(null), handler);
     }
 
     @Override
@@ -1357,8 +1357,7 @@ public class ManagerImpl implements Manager {
     }
 
     private void receiveMessages(
-            Duration timeout,
-            boolean returnOnTimeout,
+            Optional<Duration> timeout,
             Integer maxMessages,
             ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException {
@@ -1370,7 +1369,7 @@ public class ManagerImpl implements Manager {
             receiveThread = Thread.currentThread();
         }
         try {
-            context.getReceiveHelper().receiveMessages(timeout, returnOnTimeout, maxMessages, (envelope, e) -> {
+            context.getReceiveHelper().receiveMessages(timeout, maxMessages, (envelope, e) -> {
                 passReceivedMessageToHandlers(envelope, e);
                 handler.handleMessage(envelope, e);
             });

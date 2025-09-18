@@ -42,7 +42,6 @@ public class KeyValueStore {
     public <T> T getEntry(KeyValueEntry<T> key) {
         synchronized (cache) {
             if (cache.containsKey(key)) {
-                logger.trace("Got entry for key {} from cache", key.key());
                 return (T) cache.get(key);
             }
         }
