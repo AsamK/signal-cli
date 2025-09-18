@@ -123,10 +123,20 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
 
     @Override
     public void close() {
+        final List<Thread> closeThreads;
         synchronized (managers) {
-            for (var m : new ArrayList<>(managers)) {
-                m.close();
+            closeThreads = new ArrayList<>(managers).stream()
+                    .map(m -> Thread.ofPlatform().name("manager-close-" + m.getSelfNumber()).start(m::close))
+                    .toList();
+        }
+
+        for (final var t : closeThreads) {
+            try {
+                t.join();
+            } catch (InterruptedException ignored) {
             }
+        }
+        synchronized (managers) {
             managers.clear();
         }
     }
