@@ -243,12 +243,7 @@ public class GroupHelper {
                 .createGroup(name == null ? "" : name, members == null ? Set.of() : members, avatarBytes);
 
         if (gv2Pair == null) {
-            // Failed to create v2 group, creating v1 group instead
-            var gv1 = new GroupInfoV1(GroupIdV1.createRandom());
-            gv1.setProfileSharingEnabled(true);
-            gv1.addMembers(List.of(selfRecipientId));
-            final var result = updateGroupV1(gv1, name, members, avatarBytes);
-            return new Pair<>(gv1.getGroupId(), result);
+            throw new IOException("Failed to create group");
         }
 
         final var gv2 = gv2Pair.first();
@@ -272,6 +267,19 @@ public class GroupHelper {
                 gv2);
         context.getJobExecutor().enqueueJob(new SyncStorageJob());
         return new Pair<>(gv2.getGroupId(), result);
+    }
+
+    private Pair<GroupId, SendGroupMessageResults> createGroupV1(
+            final String name,
+            final Set<RecipientId> members,
+            final byte[] avatarBytes
+    ) throws IOException, AttachmentInvalidException {
+        final var selfRecipientId = account.getSelfRecipientId();
+        var gv1 = new GroupInfoV1(GroupIdV1.createRandom());
+        gv1.setProfileSharingEnabled(true);
+        gv1.addMembers(List.of(selfRecipientId));
+        final var result = updateGroupV1(gv1, name, members, avatarBytes);
+        return new Pair<>(gv1.getGroupId(), result);
     }
 
     public SendGroupMessageResults updateGroup(
