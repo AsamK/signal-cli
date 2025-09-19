@@ -116,7 +116,7 @@ public class RecipientHelper {
         }
         if (forceRefresh) {
             try {
-                final var aci = (ACI) handleResponseException(dependencies.getUsernameApi()
+                @SuppressWarnings("unchecked") final var aci = (ACI) handleResponseException(dependencies.getUsernameApi()
                         .getAciByUsername(finalUsername));
                 return account.getRecipientStore().resolveRecipientTrusted(aci, finalUsername.getUsername());
             } catch (NonSuccessfulResponseCodeException e) {
@@ -132,7 +132,9 @@ public class RecipientHelper {
         }
         return account.getRecipientStore().resolveRecipientByUsername(finalUsername.getUsername(), () -> {
             try {
-                return (ACI) handleResponseException(dependencies.getUsernameApi().getAciByUsername(finalUsername));
+                @SuppressWarnings("unchecked") final var result = (ACI) handleResponseException(dependencies.getUsernameApi()
+                        .getAciByUsername(finalUsername));
+                return result;
             } catch (Exception e) {
                 return null;
             }
