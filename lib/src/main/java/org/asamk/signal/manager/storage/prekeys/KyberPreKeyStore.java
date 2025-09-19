@@ -4,6 +4,8 @@ import org.asamk.signal.manager.storage.Database;
 import org.asamk.signal.manager.storage.Utils;
 import org.signal.libsignal.protocol.InvalidKeyIdException;
 import org.signal.libsignal.protocol.InvalidMessageException;
+import org.signal.libsignal.protocol.ReusedBaseKeyException;
+import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +134,16 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
     }
 
     @Override
-    public void markKyberPreKeyUsed(final int keyId) {
+    public void markKyberPreKeyUsed(
+            final int kyberPreKeyId,
+            final int signedPreKeyId,
+            final ECPublicKey baseKey
+    ) throws ReusedBaseKeyException {
+        // TODO implement correct handling for last resort keys:
+        //  If it's a last-resort pre-key, check whether this specific
+        //  (kyberPreKeyId, signedPreKeyId, baseKey) tuple has been seen before, and throw an
+        //  exception if so. If not, record it for later. Entries can be removed when either the Kyber key
+        //  or the last-resort key is deleted (not just rotated).
         final var sql = (
                 """
                 DELETE FROM %s AS p
@@ -142,7 +153,7 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
         try (final var connection = database.getConnection()) {
             try (final var statement = connection.prepareStatement(sql)) {
                 statement.setInt(1, accountIdType);
-                statement.setInt(2, keyId);
+                statement.setInt(2, kyberPreKeyId);
                 statement.executeUpdate();
             }
         } catch (SQLException e) {

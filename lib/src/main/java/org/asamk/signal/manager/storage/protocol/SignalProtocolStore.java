@@ -4,7 +4,9 @@ import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyIdException;
 import org.signal.libsignal.protocol.NoSessionException;
+import org.signal.libsignal.protocol.ReusedBaseKeyException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
+import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.signal.libsignal.protocol.state.IdentityKeyStore;
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
@@ -228,8 +230,12 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     }
 
     @Override
-    public void markKyberPreKeyUsed(final int kyberPreKeyId) {
-        kyberPreKeyStore.markKyberPreKeyUsed(kyberPreKeyId);
+    public void markKyberPreKeyUsed(
+            final int kyberPreKeyId,
+            final int signedPreKeyId,
+            final ECPublicKey baseKey
+    ) throws ReusedBaseKeyException {
+        kyberPreKeyStore.markKyberPreKeyUsed(kyberPreKeyId, signedPreKeyId, baseKey);
     }
 
     @Override
