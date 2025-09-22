@@ -129,13 +129,32 @@ public class SignalJsonRpcCommandHandler {
 
     private RegistrationManager getRegistrationManagerFromParams(final ContainerNode<?> params) {
         if (params != null && params.has("account")) {
+            final var number = params.get("account").asText();
             try {
-                final var registrationManager = c.getNewRegistrationManager(params.get("account").asText());
+                final var registrationManager = c.getNewRegistrationManager(number);
                 ((ObjectNode) params).remove("account");
                 return registrationManager;
             } catch (OverlappingFileLockException e) {
-                logger.warn("Account is already in use");
-                return null;
+                logger.warn("Account is already in use, attempting to close existing manager and retry: {}", number);
+                try {
+                    final var existingManager = c.getManager(number);
+                    if (existingManager != null) {
+                        existingManager.close();
+                    }
+                } catch (Throwable closeError) {
+                    logger.warn("Failed to close existing manager for {}: {}", number, closeError.getMessage());
+                }
+                try {
+                    final var registrationManager = c.getNewRegistrationManager(number);
+                    ((ObjectNode) params).remove("account");
+                    return registrationManager;
+                } catch (OverlappingFileLockException e2) {
+                    logger.warn("Account still in use after closing manager: {}", number);
+                    return null;
+                } catch (IOException | IllegalStateException e2) {
+                    logger.warn("Failed to load registration manager after retry", e2);
+                    return null;
+                }
             } catch (IOException | IllegalStateException e) {
                 logger.warn("Failed to load registration manager", e);
                 return null;
