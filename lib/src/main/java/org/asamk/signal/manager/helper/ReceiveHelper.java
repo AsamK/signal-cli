@@ -142,8 +142,8 @@ public class ReceiveHelper {
             logger.trace("Checking for new message from server");
             try {
                 isWaitingForMessage = true;
-                final var timeoutMs = timeoutInstant.isPresent() ? Math.min(10_000,
-                        Duration.between(Instant.now(), timeoutInstant.get()).toMillis()) : 10_000L;
+                final var timeoutMs = timeoutInstant.isPresent() ? Math.min(60_000,
+                        Duration.between(Instant.now(), timeoutInstant.get()).toMillis()) : 60_000L;
                 if (timeoutMs <= 0L) {
                     return;
                 }
