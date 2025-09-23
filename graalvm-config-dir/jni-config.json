@@ -93,7 +93,7 @@
 },
 {
   "name":"org.asamk.signal.manager.storage.protocol.SignalProtocolStore",
-  "methods":[{"name":"getIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress"] }, {"name":"getIdentityKeyPair","parameterTypes":[] }, {"name":"getLocalRegistrationId","parameterTypes":[] }, {"name":"isTrustedIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.IdentityKey","org.signal.libsignal.protocol.state.IdentityKeyStore$Direction"] }, {"name":"loadKyberPreKey","parameterTypes":["int"] }, {"name":"loadPreKey","parameterTypes":["int"] }, {"name":"loadSenderKey","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","java.util.UUID"] }, {"name":"loadSession","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress"] }, {"name":"loadSignedPreKey","parameterTypes":["int"] }, {"name":"markKyberPreKeyUsed","parameterTypes":["int"] }, {"name":"removePreKey","parameterTypes":["int"] }, {"name":"saveIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.IdentityKey"] }, {"name":"storeSenderKey","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","java.util.UUID","org.signal.libsignal.protocol.groups.state.SenderKeyRecord"] }, {"name":"storeSession","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.state.SessionRecord"] }]
+  "methods":[{"name":"getIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress"] }, {"name":"getIdentityKeyPair","parameterTypes":[] }, {"name":"getLocalRegistrationId","parameterTypes":[] }, {"name":"isTrustedIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.IdentityKey","org.signal.libsignal.protocol.state.IdentityKeyStore$Direction"] }, {"name":"loadKyberPreKey","parameterTypes":["int"] }, {"name":"loadPreKey","parameterTypes":["int"] }, {"name":"loadSenderKey","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","java.util.UUID"] }, {"name":"loadSession","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress"] }, {"name":"loadSignedPreKey","parameterTypes":["int"] }, {"name":"markKyberPreKeyUsed","parameterTypes":["int"] }, {"name":"markKyberPreKeyUsed","parameterTypes":["int","int","org.signal.libsignal.protocol.ecc.ECPublicKey"] }, {"name":"removePreKey","parameterTypes":["int"] }, {"name":"saveIdentity","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.IdentityKey"] }, {"name":"storeSenderKey","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","java.util.UUID","org.signal.libsignal.protocol.groups.state.SenderKeyRecord"] }, {"name":"storeSession","parameterTypes":["org.signal.libsignal.protocol.SignalProtocolAddress","org.signal.libsignal.protocol.state.SessionRecord"] }]
 },
 {
   "name":"org.asamk.signal.manager.storage.senderKeys.SenderKeyStore",
@@ -140,6 +140,10 @@
   "name":"org.signal.libsignal.net.ChatService$ResponseAndDebugInfo"
 },
 {
+  "name":"org.signal.libsignal.net.DeviceDeregisteredException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.signal.libsignal.net.NetworkException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
@@ -184,6 +188,10 @@
 {
   "name":"org.signal.libsignal.protocol.UntrustedIdentityException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"org.signal.libsignal.protocol.ecc.ECPublicKey",
+  "methods":[{"name":"<init>","parameterTypes":["long"] }]
 },
 {
   "name":"org.signal.libsignal.protocol.fingerprint.FingerprintParsingException",
