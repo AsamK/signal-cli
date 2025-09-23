@@ -925,7 +925,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String"] }, {"name":"captcha","parameterTypes":[] }, {"name":"voice","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String"] }, {"name":"<init>","parameterTypes":["java.lang.Boolean","java.lang.String","java.lang.Boolean"] }, {"name":"captcha","parameterTypes":[] }, {"name":"voice","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.commands.StartLinkCommand$JsonLink",
