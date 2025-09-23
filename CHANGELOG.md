@@ -1,6 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.20] - 2025-09-23
+
+Requires libsignal-client version 0.81.0.
+
+### Fixed
+
+- Fix sending group message to legacy targets without group send endorsements
+- Fix registration commands in daemon mode for already registered accounts (Thanks @AntonKun)
+
+### Improved
+
+- Faster shutdown performance when using multiple accounts
 
 ## [0.13.19] - 2025-09-15
 
