@@ -21,6 +21,7 @@ import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.RegistrationManager;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.output.JsonWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,18 +73,26 @@ public class SignalJsonRpcCommandHandler {
                 return runCommand(objectMapper, params, new MultiCommandRunnerImpl<>(c, jsonRpcCommand));
             }
             if (command instanceof JsonRpcRegistrationCommand<?> jsonRpcCommand) {
-                try (var manager = getRegistrationManagerFromParams(params)) {
-                    if (manager != null) {
-                        return runCommand(objectMapper,
-                                params,
-                                new RegistrationCommandRunnerImpl<>(manager, c, jsonRpcCommand));
-                    } else {
-                        throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
-                                "Method requires valid account parameter",
-                                null));
+                final var pair = getRegistrationManagerFromParams(params);
+                if (pair == null) {
+                    throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
+                            "Method requires account parameter",
+                            null));
+                } else {
+                    final var account = pair.first();
+                    try (var manager = pair.second()) {
+                        if (manager != null) {
+                            return runCommand(objectMapper,
+                                    params,
+                                    new RegistrationCommandRunnerImpl<>(manager, c, jsonRpcCommand));
+                        } else {
+                            throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
+                                    "Failed to load the given account",
+                                    null));
+                        }
+                    } catch (IOException e) {
+                        logger.warn("Failed to close registration manager", e);
                     }
-                } catch (IOException e) {
-                    logger.warn("Failed to close registration manager", e);
                 }
             }
         }
@@ -127,37 +136,34 @@ public class SignalJsonRpcCommandHandler {
         return null;
     }
 
-    private RegistrationManager getRegistrationManagerFromParams(final ContainerNode<?> params) {
+    private Pair<String, RegistrationManager> getRegistrationManagerFromParams(final ContainerNode<?> params) {
         if (params != null && params.has("account")) {
-            final var number = params.get("account").asText();
+            final var account = params.get("account").asText();
+            ((ObjectNode) params).remove("account");
             try {
-                final var registrationManager = c.getNewRegistrationManager(number);
-                ((ObjectNode) params).remove("account");
-                return registrationManager;
+                return new Pair<>(account, c.getNewRegistrationManager(account));
             } catch (OverlappingFileLockException e) {
-                logger.warn("Account is already in use, attempting to close existing manager and retry: {}", number);
+                logger.warn("Account is already in use, attempting to close existing manager and retry: {}", account);
                 try {
-                    final var existingManager = c.getManager(number);
+                    final var existingManager = c.getManager(account);
                     if (existingManager != null) {
                         existingManager.close();
                     }
                 } catch (Throwable closeError) {
-                    logger.warn("Failed to close existing manager for {}: {}", number, closeError.getMessage());
+                    logger.warn("Failed to close existing manager for {}: {}", account, closeError.getMessage());
                 }
                 try {
-                    final var registrationManager = c.getNewRegistrationManager(number);
-                    ((ObjectNode) params).remove("account");
-                    return registrationManager;
+                    return new Pair<>(account, c.getNewRegistrationManager(account));
                 } catch (OverlappingFileLockException e2) {
-                    logger.warn("Account still in use after closing manager: {}", number);
-                    return null;
+                    logger.warn("Account still in use after closing manager: {}", account);
+                    return new Pair<>(account, null);
                 } catch (IOException | IllegalStateException e2) {
                     logger.warn("Failed to load registration manager after retry", e2);
-                    return null;
+                    return new Pair<>(account, null);
                 }
             } catch (IOException | IllegalStateException e) {
                 logger.warn("Failed to load registration manager", e);
-                return null;
+                return new Pair<>(account, null);
             }
         }
         return null;
