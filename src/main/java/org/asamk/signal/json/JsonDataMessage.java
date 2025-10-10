@@ -11,6 +11,7 @@ record JsonDataMessage(
         long timestamp,
         String message,
         Integer expiresInSeconds,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean isExpirationUpdate,
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean viewOnce,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonReaction reaction,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonQuote quote,
@@ -35,6 +36,7 @@ record JsonDataMessage(
                 : null;
         final var message = dataMessage.body().orElse(null);
         final var expiresInSeconds = dataMessage.expiresInSeconds();
+        final var isExpirationUpdate = dataMessage.isExpirationUpdate();
         final var viewOnce = dataMessage.isViewOnce();
         final var reaction = dataMessage.reaction().map(JsonReaction::from).orElse(null);
         final var quote = dataMessage.quote().isPresent() ? JsonQuote.from(dataMessage.quote().get()) : null;
@@ -67,6 +69,7 @@ record JsonDataMessage(
         return new JsonDataMessage(timestamp,
                 message,
                 expiresInSeconds,
+                isExpirationUpdate,
                 viewOnce,
                 reaction,
                 quote,
