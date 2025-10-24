@@ -172,6 +172,10 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             e164 = firstNonEmpty(remote.e164, local.e164);
         }
 
+        final var remoteProfileKey = remote.profileKey.size() == 0
+                || KeyUtils.profileKeyOrNull(remote.profileKey.toByteArray()) == null
+                ? ByteString.EMPTY
+                : remote.profileKey;
         final var mergedBuilder = remote.newBuilder()
                 .aci(local.aci.isEmpty() ? remote.aci : local.aci)
                 .e164(e164)
@@ -181,7 +185,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .systemGivenName(account.isPrimaryDevice() ? local.systemGivenName : remote.systemGivenName)
                 .systemFamilyName(account.isPrimaryDevice() ? local.systemFamilyName : remote.systemFamilyName)
                 .systemNickname(remote.systemNickname)
-                .profileKey(firstNonEmpty(remote.profileKey, local.profileKey))
+                .profileKey(firstNonEmpty(remoteProfileKey, local.profileKey))
                 .username(firstNonEmpty(remote.username, local.username))
                 .identityState(identityState)
                 .identityKey(identityKey)

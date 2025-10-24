@@ -96,6 +96,17 @@ public class KeyUtils {
         }
     }
 
+    public static ProfileKey profileKeyOrNull(byte[] profileKey) {
+        if (profileKey == null) {
+            return null;
+        }
+        try {
+            return new ProfileKey(profileKey);
+        } catch (InvalidInputException e) {
+            return null;
+        }
+    }
+
     public static String createPassword() {
         return getSecret(18);
     }
