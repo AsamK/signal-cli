@@ -285,6 +285,9 @@ public class AccountHelper {
         }
 
         final var sessionId = account.getSessionId(newNumber);
+        if (sessionId == null) {
+            throw new IOException("No change number verification session active");
+        }
         final var result = NumberVerificationUtils.verifyNumber(sessionId,
                 verificationCode,
                 pin,

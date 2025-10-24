@@ -161,7 +161,11 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
         final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
         final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
-        final var result = NumberVerificationUtils.verifyNumber(account.getSessionId(account.getNumber()),
+        final var sessionId = account.getSessionId(account.getNumber());
+        if (sessionId == null) {
+            throw new IOException("No registration verification session active");
+        }
+        final var result = NumberVerificationUtils.verifyNumber(sessionId,
                 verificationCode,
                 pin,
                 pinHelper,
