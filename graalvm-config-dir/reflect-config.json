@@ -1093,7 +1093,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"attachments","parameterTypes":[] }, {"name":"contacts","parameterTypes":[] }, {"name":"expiresInSeconds","parameterTypes":[] }, {"name":"groupInfo","parameterTypes":[] }, {"name":"mentions","parameterTypes":[] }, {"name":"message","parameterTypes":[] }, {"name":"payment","parameterTypes":[] }, {"name":"previews","parameterTypes":[] }, {"name":"quote","parameterTypes":[] }, {"name":"reaction","parameterTypes":[] }, {"name":"remoteDelete","parameterTypes":[] }, {"name":"sticker","parameterTypes":[] }, {"name":"storyContext","parameterTypes":[] }, {"name":"textStyles","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"viewOnce","parameterTypes":[] }]
+  "methods":[{"name":"attachments","parameterTypes":[] }, {"name":"contacts","parameterTypes":[] }, {"name":"expiresInSeconds","parameterTypes":[] }, {"name":"groupInfo","parameterTypes":[] }, {"name":"isExpirationUpdate","parameterTypes":[] }, {"name":"mentions","parameterTypes":[] }, {"name":"message","parameterTypes":[] }, {"name":"payment","parameterTypes":[] }, {"name":"previews","parameterTypes":[] }, {"name":"quote","parameterTypes":[] }, {"name":"reaction","parameterTypes":[] }, {"name":"remoteDelete","parameterTypes":[] }, {"name":"sticker","parameterTypes":[] }, {"name":"storyContext","parameterTypes":[] }, {"name":"textStyles","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"viewOnce","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonEditMessage",

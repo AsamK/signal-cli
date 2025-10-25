@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.21] - 2025-10-25
+
+Requires libsignal-client version 0.84.0.
+
+### Changed
+
+- Add isExpirationUpdate to json message output
+- Improve error message when using verify without registering before
 
 ## [0.13.20] - 2025-09-23
 
