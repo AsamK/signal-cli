@@ -30,6 +30,7 @@ dependencies {
     implementation(libs.hikari)
 
     testImplementation(libs.junit.jupiter)
+    testImplementation(platform(libs.junit.jupiter.bom))
     testRuntimeOnly(libs.junit.launcher)
 }
 
