@@ -85,7 +85,12 @@ public class LegacyJsonIdentityKeyStore {
             JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
             var localRegistrationId = node.get("registrationId").asInt();
-            var identityKeyPair = new IdentityKeyPair(Base64.getDecoder().decode(node.get("identityKey").asText()));
+            IdentityKeyPair identityKeyPair = null;
+            try {
+                identityKeyPair = new IdentityKeyPair(Base64.getDecoder().decode(node.get("identityKey").asText()));
+            } catch (InvalidKeyException e) {
+                throw new IOException("Invalid stored identity key pair", e);
+            }
 
             var identities = new ArrayList<LegacyIdentityInfo>();
 

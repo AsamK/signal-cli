@@ -86,7 +86,7 @@ public class SyncHelper {
                 .sendSyncMessage(SignalServiceSyncMessage.forFetchLatest(SignalServiceSyncMessage.FetchType.STORAGE_MANIFEST));
     }
 
-    public void sendSyncReceiptMessage(ServiceId sender, SignalServiceReceiptMessage receiptMessage) {
+    public void sendSyncReceiptMessage(ServiceId.ACI sender, SignalServiceReceiptMessage receiptMessage) {
         if (receiptMessage.isReadReceipt()) {
             final var readMessages = receiptMessage.getTimestamps()
                     .stream()

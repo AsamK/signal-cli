@@ -760,11 +760,9 @@ public class ManagerImpl implements Manager {
             final var recipientId = context.getRecipientHelper().resolveRecipient(sender);
             final var result = context.getSendHelper().sendReceiptMessage(receiptMessage, recipientId);
 
-            final var serviceId = account.getRecipientAddressResolver()
-                    .resolveRecipientAddress(recipientId)
-                    .serviceId();
-            if (serviceId.isPresent()) {
-                context.getSyncHelper().sendSyncReceiptMessage(serviceId.get(), receiptMessage);
+            final var aci = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId).aci();
+            if (aci.isPresent()) {
+                context.getSyncHelper().sendSyncReceiptMessage(aci.get(), receiptMessage);
             }
             return new SendMessageResults(timestamp, Map.of(sender, List.of(toSendMessageResult(result))));
         } catch (UnregisteredRecipientException e) {
