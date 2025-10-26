@@ -20,7 +20,6 @@ import org.whispersystems.signalservice.api.websocket.WebSocketUnavailableExcept
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -123,7 +122,6 @@ public class ReceiveHelper {
             Manager.ReceiveMessageHandler handler,
             final Map<HandleAction, HandleAction> queuedActions
     ) throws IOException {
-        final var timeoutInstant = timeout.map(t -> Instant.now().plus(t));
         int remainingMessages = maxMessages == null ? -1 : maxMessages;
         var backOffCounter = 0;
         isWaitingForMessage = false;
@@ -142,8 +140,7 @@ public class ReceiveHelper {
             logger.trace("Checking for new message from server");
             try {
                 isWaitingForMessage = true;
-                final var timeoutMs = timeoutInstant.isPresent() ? Math.min(60_000,
-                        Duration.between(Instant.now(), timeoutInstant.get()).toMillis()) : 60_000L;
+                final var timeoutMs = timeout.orElseGet(() -> Duration.ofMinutes(1)).toMillis();
                 if (timeoutMs <= 0L) {
                     return;
                 }
@@ -212,7 +209,7 @@ public class ReceiveHelper {
                 throw e;
             } catch (TimeoutException e) {
                 backOffCounter = 0;
-                if (timeoutInstant.isPresent() && timeoutInstant.get().isBefore(Instant.now())) {
+                if (timeout.isPresent()) {
                     return;
                 }
                 continue;
