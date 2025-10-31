@@ -148,7 +148,7 @@ public class Utils {
         var params = query.split("&");
         var map = new HashMap<String, String>();
         for (var param : params) {
-            final var paramParts = param.split("=");
+            final var paramParts = param.split("=", 2);
             var name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
             var value = paramParts.length == 1 ? null : URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
             map.put(name, value);
