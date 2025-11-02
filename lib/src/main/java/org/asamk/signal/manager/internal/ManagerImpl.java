@@ -1059,6 +1059,51 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public SendMessageResults sendPollCreateMessage(
+            final String question,
+            final boolean allowMultiple,
+            final List<String> options,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        final var pollCreate = new SignalServiceDataMessage.PollCreate(question, allowMultiple, options);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withPollCreate(pollCreate);
+        return sendMessage(messageBuilder, recipients, notifySelf);
+    }
+
+    @Override
+    public SendMessageResults sendPollVoteMessage(
+            final RecipientIdentifier.Single targetAuthor,
+            final long targetSentTimestamp,
+            final List<Integer> optionIndexes,
+            final int voteCount,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        final var targetAuthorRecipientId = context.getRecipientHelper().resolveRecipient(targetAuthor);
+        final var authorServiceId = context.getRecipientHelper()
+                .resolveSignalServiceAddress(targetAuthorRecipientId)
+                .getServiceId();
+        final var pollVote = new SignalServiceDataMessage.PollVote(authorServiceId,
+                targetSentTimestamp,
+                optionIndexes,
+                voteCount);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withPollVote(pollVote);
+        return sendMessage(messageBuilder, recipients, notifySelf);
+    }
+
+    @Override
+    public SendMessageResults sendPollTerminateMessage(
+            final long targetSentTimestamp,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        final var pollTerminate = new SignalServiceDataMessage.PollTerminate(targetSentTimestamp);
+        final var messageBuilder = SignalServiceDataMessage.newBuilder().withPollTerminate(pollTerminate);
+        return sendMessage(messageBuilder, recipients, notifySelf);
+    }
+
+    @Override
     public void hideRecipient(final RecipientIdentifier.Single recipient) {
         final var recipientIdOptional = context.getRecipientHelper().resolveRecipientOptional(recipient);
         if (recipientIdOptional.isPresent()) {

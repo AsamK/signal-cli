@@ -1093,7 +1093,7 @@
   "allDeclaredFields":true,
   "allDeclaredMethods":true,
   "allDeclaredConstructors":true,
-  "methods":[{"name":"attachments","parameterTypes":[] }, {"name":"contacts","parameterTypes":[] }, {"name":"expiresInSeconds","parameterTypes":[] }, {"name":"groupInfo","parameterTypes":[] }, {"name":"isExpirationUpdate","parameterTypes":[] }, {"name":"mentions","parameterTypes":[] }, {"name":"message","parameterTypes":[] }, {"name":"payment","parameterTypes":[] }, {"name":"previews","parameterTypes":[] }, {"name":"quote","parameterTypes":[] }, {"name":"reaction","parameterTypes":[] }, {"name":"remoteDelete","parameterTypes":[] }, {"name":"sticker","parameterTypes":[] }, {"name":"storyContext","parameterTypes":[] }, {"name":"textStyles","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"viewOnce","parameterTypes":[] }]
+  "methods":[{"name":"attachments","parameterTypes":[] }, {"name":"contacts","parameterTypes":[] }, {"name":"expiresInSeconds","parameterTypes":[] }, {"name":"groupInfo","parameterTypes":[] }, {"name":"isExpirationUpdate","parameterTypes":[] }, {"name":"mentions","parameterTypes":[] }, {"name":"message","parameterTypes":[] }, {"name":"payment","parameterTypes":[] }, {"name":"pollCreate","parameterTypes":[] }, {"name":"pollTerminate","parameterTypes":[] }, {"name":"pollVote","parameterTypes":[] }, {"name":"previews","parameterTypes":[] }, {"name":"quote","parameterTypes":[] }, {"name":"reaction","parameterTypes":[] }, {"name":"remoteDelete","parameterTypes":[] }, {"name":"sticker","parameterTypes":[] }, {"name":"storyContext","parameterTypes":[] }, {"name":"textStyles","parameterTypes":[] }, {"name":"timestamp","parameterTypes":[] }, {"name":"viewOnce","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonEditMessage",
@@ -1136,6 +1136,27 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"note","parameterTypes":[] }, {"name":"receipt","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.json.JsonPollCreate",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"allowMultiple","parameterTypes":[] }, {"name":"options","parameterTypes":[] }, {"name":"question","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.json.JsonPollTerminate",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"targetSentTimestamp","parameterTypes":[] }]
+},
+{
+  "name":"org.asamk.signal.json.JsonPollVote",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"author","parameterTypes":[] }, {"name":"authorNumber","parameterTypes":[] }, {"name":"authorUuid","parameterTypes":[] }, {"name":"optionIndexes","parameterTypes":[] }, {"name":"targetSentTimestamp","parameterTypes":[] }, {"name":"voteCount","parameterTypes":[] }]
 },
 {
   "name":"org.asamk.signal.json.JsonPreview",

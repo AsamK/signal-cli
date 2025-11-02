@@ -22,6 +22,9 @@ record JsonDataMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSticker sticker,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonRemoteDelete remoteDelete,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonSharedContact> contacts,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonPollCreate pollCreate,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonPollVote pollVote,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonPollTerminate pollTerminate,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonTextStyle> textStyles,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonGroupInfo groupInfo,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryContext storyContext
@@ -61,6 +64,9 @@ record JsonDataMessage(
                 .stream()
                 .map(JsonSharedContact::from)
                 .toList() : null;
+        final var pollCreate = dataMessage.pollCreate().map(JsonPollCreate::from).orElse(null);
+        final var pollVote = dataMessage.pollVote().map(JsonPollVote::from).orElse(null);
+        final var pollTerminate = dataMessage.pollTerminate().map(JsonPollTerminate::from).orElse(null);
         final var textStyles = !dataMessage.textStyles().isEmpty() ? dataMessage.textStyles()
                 .stream()
                 .map(JsonTextStyle::from)
@@ -80,6 +86,9 @@ record JsonDataMessage(
                 sticker,
                 remoteDelete,
                 contacts,
+                pollCreate,
+                pollVote,
+                pollTerminate,
                 textStyles,
                 groupInfo,
                 storyContext);

@@ -193,6 +193,27 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 printAttachment(writer.indentedWriter(), attachment);
             }
         }
+        if (!message.pollCreate().isEmpty()) {
+            final var pollCreate = message.pollCreate().get();
+            writer.println("Poll Create: \"{}\" ({})",
+                    pollCreate.question(),
+                    pollCreate.allowMultiple() ? "multi" : "single");
+            for (final var option : pollCreate.options()) {
+                writer.println("- {}", option);
+            }
+        }
+        if (!message.pollVote().isEmpty()) {
+            final var pollVote = message.pollVote().get();
+            writer.println("Poll Vote: \"{}\" ({}) selected {} (vote #{})",
+                    formatContact(pollVote.targetAuthor()),
+                    DateUtils.formatTimestamp(pollVote.targetSentTimestamp()),
+                    pollVote.optionIndexes().stream().map(Object::toString).collect(Collectors.joining(",")),
+                    pollVote.voteCount());
+        }
+        if (!message.pollTerminate().isEmpty()) {
+            final var pollTerminate = message.pollTerminate().get();
+            writer.println("Poll Terminate: {}", DateUtils.formatTimestamp(pollTerminate.targetSentTimestamp()));
+        }
     }
 
     private void printEditMessage(PlainTextWriter writer, MessageEnvelope.Edit message) {

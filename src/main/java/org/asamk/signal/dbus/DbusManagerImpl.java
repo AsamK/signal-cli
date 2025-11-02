@@ -509,6 +509,38 @@ public class DbusManagerImpl implements Manager {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public SendMessageResults sendPollCreateMessage(
+            final String question,
+            final boolean allowMultiple,
+            final List<String> options,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SendMessageResults sendPollVoteMessage(
+            final RecipientIdentifier.Single targetAuthor,
+            final long targetSentTimestamp,
+            final List<Integer> optionIndexes,
+            final int voteCount,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SendMessageResults sendPollTerminateMessage(
+            final long targetSentTimestamp,
+            final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+        throw new UnsupportedOperationException();
+    }
+
     public void hideRecipient(final RecipientIdentifier.Single recipient) {
         throw new UnsupportedOperationException();
     }
@@ -932,6 +964,9 @@ public class DbusManagerImpl implements Manager {
                                 Optional.empty(),
                                 Optional.empty(),
                                 List.of(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
                                 getMentions(extras),
                                 List.of(),
                                 List.of())),
@@ -975,6 +1010,9 @@ public class DbusManagerImpl implements Manager {
                                         Optional.empty(),
                                         Optional.empty(),
                                         List.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
                                         getMentions(extras),
                                         List.of(),
                                         List.of()))),
@@ -1050,6 +1088,9 @@ public class DbusManagerImpl implements Manager {
                                         Optional.empty(),
                                         Optional.empty(),
                                         List.of(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
                                         getMentions(extras),
                                         List.of(),
                                         List.of())),
