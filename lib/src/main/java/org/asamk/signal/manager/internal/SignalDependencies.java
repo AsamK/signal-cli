@@ -328,7 +328,8 @@ public class SignalDependencies {
                         Optional.empty(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
-                        () -> true));
+                        () -> true,
+                        false));
     }
 
     public List<SecureValueRecovery> getSecureValueRecovery() {
