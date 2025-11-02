@@ -295,7 +295,10 @@ RECIPIENT::
 Specify the recipients.
 
 *--note-to-self*::
-Send the message to self without notification.
+Send the message to self.
+
+*--notify-self*::
+If self is part of recipients/groups send a normal message, not a sync message.
 
 *-g* GROUP, *--group-id* GROUP::
 Specify the recipient group ID in base64 encoding.

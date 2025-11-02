@@ -961,6 +961,7 @@ public class ManagerImpl implements Manager {
             RecipientIdentifier.Single targetAuthor,
             long targetSentTimestamp,
             Set<RecipientIdentifier> recipients,
+            final boolean notifySelf,
             final boolean isStory
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
         var targetAuthorRecipientId = context.getRecipientHelper().resolveRecipient(targetAuthor);
@@ -973,7 +974,7 @@ public class ManagerImpl implements Manager {
             messageBuilder.withStoryContext(new SignalServiceDataMessage.StoryContext(authorServiceId,
                     targetSentTimestamp));
         }
-        return sendMessage(messageBuilder, recipients, false);
+        return sendMessage(messageBuilder, recipients, notifySelf);
     }
 
     @Override

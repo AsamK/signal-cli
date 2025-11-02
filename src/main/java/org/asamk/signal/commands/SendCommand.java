@@ -48,9 +48,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.").nargs("*");
         subparser.addArgument("-u", "--username").help("Specify the recipient username or username link.").nargs("*");
-        subparser.addArgument("--note-to-self")
-                .help("Send the message to self without notification.")
-                .action(Arguments.storeTrue());
+        subparser.addArgument("--note-to-self").help("Send the message to self.").action(Arguments.storeTrue());
         subparser.addArgument("--notify-self")
                 .help("If self is part of recipients/groups send a normal message, not a sync message.")
                 .action(Arguments.storeTrue());

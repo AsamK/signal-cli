@@ -464,6 +464,7 @@ public class DbusManagerImpl implements Manager {
             final RecipientIdentifier.Single targetAuthor,
             final long targetSentTimestamp,
             final Set<RecipientIdentifier> recipients,
+            final boolean notifySelf,
             final boolean isStory
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return handleMessage(recipients,

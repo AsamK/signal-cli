@@ -309,6 +309,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                     getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                             .map(RecipientIdentifier.class::cast)
                             .collect(Collectors.toSet()),
+                    false,
                     false);
             checkSendMessageResults(results);
             return results.timestamp();
@@ -511,6 +512,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                     getSingleRecipientIdentifier(targetAuthor, m.getSelfNumber()),
                     targetSentTimestamp,
                     Set.of(getGroupRecipientIdentifier(groupId)),
+                    false,
                     false);
             checkSendMessageResults(results);
             return results.timestamp();

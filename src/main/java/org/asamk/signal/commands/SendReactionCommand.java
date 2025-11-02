@@ -33,9 +33,11 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
         subparser.addArgument("-g", "--group-id", "--group").help("Specify the recipient group ID.").nargs("*");
         subparser.addArgument("recipient").help("Specify the recipients' phone number.").nargs("*");
         subparser.addArgument("-u", "--username").help("Specify the recipient username or username link.").nargs("*");
-        subparser.addArgument("--note-to-self")
-                .help("Send the reaction to self without notification.")
+        subparser.addArgument("--note-to-self").help("Send the reaction to self.").action(Arguments.storeTrue());
+        subparser.addArgument("--notify-self")
+                .help("If self is part of recipients/groups send a normal message, not a sync message.")
                 .action(Arguments.storeTrue());
+
         subparser.addArgument("-e", "--emoji")
                 .required(true)
                 .help("Specify the emoji, should be a single unicode grapheme cluster.");
@@ -58,6 +60,7 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
             final Manager m,
             final OutputWriter outputWriter
     ) throws CommandException {
+        final var notifySelf = Boolean.TRUE.equals(ns.getBoolean("notify-self"));
         final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
         final var recipientStrings = ns.<String>getList("recipient");
         final var groupIdStrings = ns.<String>getList("group-id");
@@ -89,6 +92,7 @@ public class SendReactionCommand implements JsonRpcLocalCommand {
                     targetAuthorIdentifier,
                     targetTimestamp,
                     recipientIdentifiers,
+                    notifySelf,
                     isStory);
             outputResult(outputWriter, results);
         } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
