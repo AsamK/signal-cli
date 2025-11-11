@@ -35,8 +35,8 @@ System requirements:
 See [latest version](https://github.com/AsamK/signal-cli/releases).
 
 ```sh
-VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed 's/.*\///' | sed 's/^.//') ;
-wget -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}"-Linux-native.tar.gz ;
+VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/.*\///' -e 's/^.//') ;
+curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}"-Linux-native.tar.gz
 sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt ;
 sudo ln -sf /opt/signal-cli /usr/local/bin/ 
 ```
