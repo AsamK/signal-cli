@@ -35,10 +35,10 @@ System requirements:
 See [latest version](https://github.com/AsamK/signal-cli/releases).
 
 ```sh
-export VERSION=<latest version, format "x.y.z">
-wget https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
-sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
-sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
+VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed 's/.*\///' | sed 's/^.//') ;
+wget -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}"-Linux-native.tar.gz ;
+sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt ;
+sudo ln -sf /opt/signal-cli /usr/local/bin/ 
 ```
 
 You can find further instructions on the Wiki:
