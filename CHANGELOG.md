@@ -1,6 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.22] - 2025-11-14
+
+Requires libsignal-client version 0.86.1.
+
+### Fixed
+
+- Fix timeout handling for receive command
+- Fix device link URI parsing for unencoded trailing =
+- Adapt setPin command to server changes
 
 ## [0.13.21] - 2025-10-25
 
