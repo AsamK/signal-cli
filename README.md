@@ -30,15 +30,24 @@ System requirements:
   systems/architectures
   see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)
 
-### Install system-wide on Linux
+### Install system-wide on Linux [ Default Binary ]
 
 See [latest version](https://github.com/AsamK/signal-cli/releases).
 
 ```sh
-VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/.*\///' -e 's/^.//') ;
-curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}"-Linux-native.tar.gz ;
-sudo tar xf signal-cli-"${VERSION}"-Linux-native.tar.gz -C /opt ;
-sudo ln -sf /opt/signal-cli /usr/local/bin/ 
+VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//')
+curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
+sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
+sudo ln -sf /opt/signal-cli /usr/local/bin/
+```
+
+### Install system-wide on Linux [ Binary with Pre-built Native libraries ]
+
+```sh
+VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//')
+curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}"-Linux-native.tar.gz
+sudo tar xf signal-cli-"${VERSION}"-Linux-native.tar.gz -C /opt
+sudo ln -sf /opt/signal-cli /usr/local/bin/
 ```
 
 You can find further instructions on the Wiki:
