@@ -30,7 +30,7 @@ System requirements:
   systems/architectures
   see: [Provide native lib for libsignal](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal)
 
-### Install system-wide on Linux [ Default Binary ]
+### Install system-wide on Linux [ JVM build ]
 
 See [latest version](https://github.com/AsamK/signal-cli/releases).
 
@@ -38,10 +38,10 @@ See [latest version](https://github.com/AsamK/signal-cli/releases).
 VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//')
 curl -L -O https://github.com/AsamK/signal-cli/releases/download/v"${VERSION}"/signal-cli-"${VERSION}".tar.gz
 sudo tar xf signal-cli-"${VERSION}".tar.gz -C /opt
-sudo ln -sf /opt/signal-cli /usr/local/bin/
+sudo ln -sf /opt/signal-cli-"${VERSION}"/bin/signal-cli /usr/local/bin/
 ```
 
-### Install system-wide on Linux [ Binary with Pre-built Native libraries ]
+### Install system-wide on Linux [ GraalVM native build ]
 
 ```sh
 VERSION=$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//')
