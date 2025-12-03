@@ -145,7 +145,9 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
         try {
             final var provisioningManager = c.getProvisioningManagerFor(new URI(deviceLinkUri));
             return provisioningManager.finishDeviceLink(newDeviceName);
-        } catch (TimeoutException | IOException | UserAlreadyExistsException | URISyntaxException e) {
+        } catch (UserAlreadyExistsException e) {
+            throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getNumber());
+        } catch (TimeoutException | IOException | URISyntaxException e) {
             throw new SignalControl.Error.Failure(e.getClass().getSimpleName() + " " + e.getMessage());
         }
     }
