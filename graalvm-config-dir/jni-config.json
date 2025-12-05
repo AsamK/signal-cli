@@ -140,6 +140,10 @@
   "name":"org.signal.libsignal.net.ChatService$ResponseAndDebugInfo"
 },
 {
+  "name":"org.signal.libsignal.net.ChatServiceException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.signal.libsignal.net.DeviceDeregisteredException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },

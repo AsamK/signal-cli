@@ -64,7 +64,7 @@ public class SignalAccountFiles {
         return accountsStore.getAllNumbers();
     }
 
-    public MultiAccountManager initMultiAccountManager() throws IOException, AccountCheckException {
+    public MultiAccountManager initMultiAccountManager() throws IOException {
         final var managerPairs = accountsStore.getAllAccounts().parallelStream().map(a -> {
             try {
                 return new Pair<Manager, Throwable>(initManager(a.number(), a.path()), null);
@@ -80,12 +80,13 @@ public class SignalAccountFiles {
         for (final var pair : managerPairs) {
             if (pair.second() instanceof IOException e) {
                 throw e;
-            } else if (pair.second() instanceof AccountCheckException e) {
-                throw e;
             }
         }
 
-        final var managers = managerPairs.stream().map(Pair::first).toList();
+        final var managers = managerPairs.stream()
+                .filter(p -> p != null && p.first() != null)
+                .map(Pair::first)
+                .toList();
         return new MultiAccountManagerImpl(managers, this);
     }
 
@@ -132,7 +133,7 @@ public class SignalAccountFiles {
             manager.checkAccountState();
         } catch (DeprecatedVersionException e) {
             manager.close();
-            throw new AccountCheckException("signal-cli version is too old for the Signal-Server, please update.");
+            throw new IOException("signal-cli version is too old for the Signal-Server, please update.");
         } catch (IOException e) {
             manager.close();
             throw new AccountCheckException("Error while checking account " + number + ": " + e.getMessage(), e);
