@@ -315,6 +315,7 @@ public class AccountHelper {
                             Utils.mapKeys(pniRegistrationIds, Object::toString))));
                 });
 
+        account.clearSessionId();
         final var updatePni = PNI.parseOrThrow(result.first().getPni());
         if (updatePni.equals(account.getPni())) {
             logger.debug("PNI is unchanged after change number");

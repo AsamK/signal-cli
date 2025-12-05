@@ -376,6 +376,7 @@ public class SignalAccount implements Closeable {
         trustSelfIdentity(ServiceIdType.ACI);
         trustSelfIdentity(ServiceIdType.PNI);
         getKeyValueStore().storeEntry(lastRecipientsRefresh, null);
+        clearSessionId();
     }
 
     public void initDatabase() {
@@ -1483,6 +1484,12 @@ public class SignalAccount implements Closeable {
         final var keyValueStore = getKeyValueStore();
         keyValueStore.storeEntry(verificationSessionNumber, sessionNumber);
         keyValueStore.storeEntry(verificationSessionId, sessionId);
+    }
+
+    public void clearSessionId() {
+        final var keyValueStore = getKeyValueStore();
+        keyValueStore.storeEntry(verificationSessionNumber, null);
+        keyValueStore.storeEntry(verificationSessionId, null);
     }
 
     public void setEncryptedDeviceName(final String encryptedDeviceName) {
