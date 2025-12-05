@@ -82,16 +82,9 @@ public class AccountHelper {
     }
 
     public void checkAccountState() throws IOException {
-        if (account.getLastReceiveTimestamp() == 0) {
-            logger.info("The Signal protocol expects that incoming messages are regularly received.");
-        } else {
-            var diffInMilliseconds = System.currentTimeMillis() - account.getLastReceiveTimestamp();
-            long days = TimeUnit.DAYS.convert(diffInMilliseconds, TimeUnit.MILLISECONDS);
-            if (days > 7) {
-                logger.warn(
-                        "Messages have been last received {} days ago. The Signal protocol expects that incoming messages are regularly received.",
-                        days);
-            }
+        if (account.getAci() == null) {
+            account.setRegistered(false);
+            throw new IOException("Account without ACI");
         }
         try {
             updateAccountAttributes();
@@ -100,7 +93,7 @@ public class AccountHelper {
             } else {
                 context.getPreKeyHelper().refreshPreKeysIfNecessary();
             }
-            if (account.getAci() == null || account.getPni() == null) {
+            if (account.getPni() == null) {
                 checkWhoAmiI();
             }
             if (!account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
@@ -124,6 +117,17 @@ public class AccountHelper {
         } catch (AuthorizationFailedException e) {
             account.setRegistered(false);
             throw e;
+        }
+        if (account.getLastReceiveTimestamp() == 0) {
+            logger.info("The Signal protocol expects that incoming messages are regularly received.");
+        } else {
+            var diffInMilliseconds = System.currentTimeMillis() - account.getLastReceiveTimestamp();
+            long days = TimeUnit.DAYS.convert(diffInMilliseconds, TimeUnit.MILLISECONDS);
+            if (days > 7) {
+                logger.warn(
+                        "Messages have been last received {} days ago. The Signal protocol expects that incoming messages are regularly received.",
+                        days);
+            }
         }
     }
 
