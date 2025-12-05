@@ -385,6 +385,89 @@ Clear session state and send end session message.
 *--edit-timestamp*::
 Specify the timestamp of a previous message with the recipient or group to send an edited message.
 
+=== sendPollCreate
+
+Send a poll create message to another user or group.
+
+RECIPIENT::
+Specify the recipients.
+
+*--note-to-self*::
+Send the message to self.
+
+*--notify-self*::
+If self is part of recipients/groups send a normal message, not a sync message.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
+*-q* QUESTION, *--question* QUESTION::
+Specify the poll question.
+
+*--no-multi*::
+Allow only one option to be selected by each recipient.
+By default, recipients can select multiple options.
+
+*-o* OPTION [OPTION ...], *--option* OPTION [OPTION ...]*::
+The options for the poll.
+
+=== sendPollVote
+
+Send a poll vote message to another user or group, to vote on a previously created vote.
+
+RECIPIENT::
+Specify the recipients.
+
+*--note-to-self*::
+Send the message to self.
+
+*--notify-self*::
+If self is part of recipients/groups send a normal message, not a sync message.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
+*--poll-author* POLL_AUTHOR::
+Specify the number or uuid of the author of the poll message.
+
+*--poll-timestamp* POLL_TIMESTAMP::
+Specify the timestamp of the original poll create message.
+
+*-o* [OPTION [OPTION ...]], *--option* [OPTION [OPTION ...]]::
+The option indexes of the poll to vote for.
+For none multi polls, only one option may be specified.
+
+*--vote-count: VOTE_COUNT::
+Specify the number of this vote (increase by one for every time you vote).
+
+=== sendPollTerminate
+
+Send a poll terminate message to another user or group, to close on a previously created vote.
+
+RECIPIENT::
+Specify the recipients.
+
+*--note-to-self*::
+Send the message to self.
+
+*--notify-self*::
+If self is part of recipients/groups send a normal message, not a sync message.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the recipient group ID in base64 encoding.
+
+*-u* USERNAME, *--username* USERNAME::
+Specify the recipient username or username link.
+
+*--poll-timestamp* POLL_TIMESTAMP::
+Specify the timestamp of the original poll create message.
+
 === sendMessageRequestResponse
 
 Send response to a message request to linked devices.
