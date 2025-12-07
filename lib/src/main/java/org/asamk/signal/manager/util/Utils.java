@@ -160,9 +160,10 @@ public class Utils {
         return NetworkResultUtil.toBasicLegacy(response);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T, E extends BadRequestError> T handleResponseException(final RequestResult<T, E> result) throws IOException {
-        if (result instanceof RequestResult.Success) {
-            return ((RequestResult.Success<T>) result).getResult();
+        if (result instanceof RequestResult.Success<?> success) {
+            return ((RequestResult.Success<T>) success).getResult();
         } else if (result instanceof RequestResult.ApplicationError e) {
             final var cause = e.getCause();
             switch (cause) {
