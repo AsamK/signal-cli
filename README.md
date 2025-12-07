@@ -23,7 +23,7 @@ Windows. There's also a [docker image and some Linux packages](https://github.co
 
 System requirements:
 
-- at least Java Runtime Environment (JRE) 21
+- at least Java Runtime Environment (JRE) 25
 - native library: libsignal-client
 
   The native libs are bundled for x86_64 Linux (with recent enough glibc), Windows and MacOS. For other

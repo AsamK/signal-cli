@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '21', '25' ]
+        java: [ '25' ]
 
     steps:
       - uses: actions/checkout@v4
@@ -58,9 +58,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
         with:
-          distribution: 'graalvm-community'
-          version: '21.0.2'
-          java-version: '21'
+          distribution: 'graalvm'
+          java-version: '25'
           cache: 'gradle'
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build with Gradle

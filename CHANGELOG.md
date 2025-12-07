@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+**Attention**: Now requires Java 25
+
 ### Breaking changes
 
 - Remove isRegistered method without parameters from Signal dbus interface, which always returned `true`

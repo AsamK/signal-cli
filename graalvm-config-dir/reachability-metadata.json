@@ -308,6 +308,14 @@
           "parameterTypes": []
         },
         {
+          "name": "getCredentialsProvider",
+          "parameterTypes": []
+        },
+        {
+          "name": "getCredentialsProviderClassName",
+          "parameterTypes": []
+        },
+        {
           "name": "getDataSource",
           "parameterTypes": []
         },
@@ -493,6 +501,18 @@
           "name": "setCredentials",
           "parameterTypes": [
             "com.zaxxer.hikari.util.Credentials"
+          ]
+        },
+        {
+          "name": "setCredentialsProvider",
+          "parameterTypes": [
+            "com.zaxxer.hikari.HikariCredentialsProvider"
+          ]
+        },
+        {
+          "name": "setCredentialsProviderClassName",
+          "parameterTypes": [
+            "java.lang.String"
           ]
         },
         {
@@ -811,7 +831,13 @@
     {
       "type": "java.lang.Enum",
       "allDeclaredMethods": true,
-      "jniAccessible": true
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "ordinal",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "java.lang.Float",
@@ -930,6 +956,10 @@
         },
         {
           "name": "getStackTrace",
+          "parameterTypes": []
+        },
+        {
+          "name": "isVirtual",
           "parameterTypes": []
         }
       ]
@@ -1879,6 +1909,10 @@
       "type": "org.asamk.signal.Main",
       "jniAccessible": true,
       "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
         {
           "name": "main",
           "parameterTypes": [
@@ -4517,6 +4551,33 @@
       ]
     },
     {
+      "type": "org.bouncycastle.jcajce.provider.kdf.HKDF$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.kdf.PBEPBKDF2$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.kdf.SCRYPT$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.bouncycastle.jcajce.provider.keystore.BC$Mappings",
       "methods": [
         {
@@ -4701,6 +4762,15 @@
     },
     {
       "type": "org.bouncycastle.jcajce.provider.symmetric.HC256$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.HKDF$Mappings",
       "methods": [
         {
           "name": "<init>",
@@ -5147,6 +5217,50 @@
       ]
     },
     {
+      "type": "org.signal.core.models.ServiceId",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.signal.libsignal.protocol.ServiceId"
+          ]
+        },
+        {
+          "name": "equals",
+          "parameterTypes": [
+            "java.lang.Object"
+          ]
+        },
+        {
+          "name": "hashCode",
+          "parameterTypes": []
+        },
+        {
+          "name": "logString",
+          "parameterTypes": []
+        },
+        {
+          "name": "toByteArray",
+          "parameterTypes": []
+        },
+        {
+          "name": "toByteString",
+          "parameterTypes": []
+        },
+        {
+          "name": "toProtocolAddress",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "toString",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.internal.CompletableFuture",
       "jniAccessible": true,
       "methods": [
@@ -5215,6 +5329,12 @@
       "jniAccessible": true,
       "methods": [
         {
+          "name": "connectionInterrupted",
+          "parameterTypes": [
+            "java.lang.Throwable"
+          ]
+        },
+        {
           "name": "onConnectionInterrupted",
           "parameterTypes": [
             "java.lang.Throwable"
@@ -5237,6 +5357,24 @@
           "parameterTypes": [
             "java.lang.String[]"
           ]
+        },
+        {
+          "name": "receivedAlerts",
+          "parameterTypes": [
+            "java.lang.String[]"
+          ]
+        },
+        {
+          "name": "receivedIncomingMessage",
+          "parameterTypes": [
+            "byte[]",
+            "long",
+            "long"
+          ]
+        },
+        {
+          "name": "receivedQueueEmpty",
+          "parameterTypes": []
         }
       ]
     },
@@ -5280,6 +5418,18 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.net.ChatServiceInactiveException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.net.DeviceDeregisteredException",
       "jniAccessible": true,
       "methods": [
@@ -5311,6 +5461,18 @@
           "name": "<init>",
           "parameterTypes": [
             "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.TransportFailureException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
           ]
         }
       ]
@@ -6832,6 +6994,22 @@
       ]
     },
     {
+      "type": "org.whispersystems.signalservice.api.link.SetDeviceNameRequest",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "getDeviceName",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.whispersystems.signalservice.api.messages.calls.HangupMessage",
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
@@ -6894,7 +7072,7 @@
       "allDeclaredFields": true
     },
     {
-      "type": "org.signal.core.models.ServiceId",
+      "type": "org.whispersystems.signalservice.api.push.ServiceId",
       "allDeclaredFields": true,
       "methods": [
         {
