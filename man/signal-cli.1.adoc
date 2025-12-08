@@ -285,7 +285,7 @@ In json mode this is outputted as a list of objects.
 One or more numbers to check.
 
 [--username [USERNAME ...]]::
-One or more usernames to check.
+One or more usernames or username links to check.
 
 === send
 
@@ -759,6 +759,7 @@ If the contact doesn't exist yet, it will be added.
 
 RECIPIENT::
 Specify the recipient.
+Use "u:" prefix to specify a username or username link.
 
 *--given-name* GIVEN_NAME, *--name* NAME::
 New system given name.
@@ -998,6 +999,9 @@ signal-cli -a ACCOUNT verify CODE
 
 Send a message to one or more recipients::
 signal-cli -a ACCOUNT send -m "This is a message" [RECIPIENT [RECIPIENT ...]] [-a [ATTACHMENT [ATTACHMENT ...]]]
+
+Send a message to a username (or username link)::
+signal-cli -a ACCOUNT send u:someusername.000 -m "This is a message"
 
 Pipe the message content from another process::
 uname -a | signal-cli -a ACCOUNT send --message-from-stdin [RECIPIENT [RECIPIENT ...]]
