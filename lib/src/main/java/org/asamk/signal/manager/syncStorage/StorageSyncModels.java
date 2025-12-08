@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.syncStorage;
 
+import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.TrustLevel;
 import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
@@ -104,10 +105,7 @@ public final class StorageSyncModels {
             builder.systemGivenName(emptyIfNull(recipient.getContact().givenName()))
                     .systemFamilyName(emptyIfNull(recipient.getContact().familyName()))
                     .systemNickname(emptyIfNull(recipient.getContact().nickName()))
-                    .nickname(new ContactRecord.Name.Builder().given(emptyIfNull(recipient.getContact()
-                                    .nickNameGivenName()))
-                            .family(emptyIfNull(recipient.getContact().nickNameFamilyName()))
-                            .build())
+                    .nickname(getNicknameRemoteRecord(recipient.getContact()))
                     .note(emptyIfNull(recipient.getContact().note()))
                     .blocked(recipient.getContact().isBlocked())
                     .whitelisted(recipient.getContact().isProfileSharingEnabled())
@@ -124,6 +122,15 @@ public final class StorageSyncModels {
                     .identityState(localToRemote(identity.getTrustLevel()));
         }
         return builder.build();
+    }
+
+    private static ContactRecord.Name getNicknameRemoteRecord(final Contact contact) {
+        final var given = emptyIfNull(contact.nickNameGivenName());
+        final var family = emptyIfNull(contact.nickNameFamilyName());
+        if (given.isEmpty() && family.isEmpty()) {
+            return null;
+        }
+        return new ContactRecord.Name.Builder().given(given).family(family).build();
     }
 
     public static GroupV1Record localToRemoteRecord(GroupInfoV1 group) {
