@@ -271,7 +271,7 @@ public interface Manager extends Closeable {
             final String nickGivenName,
             final String nickFamilyName,
             final String note
-    ) throws NotPrimaryDeviceException, UnregisteredRecipientException;
+    ) throws UnregisteredRecipientException;
 
     void setContactsBlocked(
             Collection<RecipientIdentifier.Single> recipient,

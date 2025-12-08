@@ -1138,10 +1138,7 @@ public class ManagerImpl implements Manager {
             final String nickGivenName,
             final String nickFamilyName,
             final String note
-    ) throws NotPrimaryDeviceException, UnregisteredRecipientException {
-        if (!account.isPrimaryDevice()) {
-            throw new NotPrimaryDeviceException();
-        }
+    ) throws UnregisteredRecipientException {
         context.getContactHelper()
                 .setContactName(context.getRecipientHelper().resolveRecipient(recipient),
                         givenName,
