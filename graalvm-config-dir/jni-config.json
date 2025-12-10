@@ -144,6 +144,10 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"org.signal.libsignal.net.ChatServiceInactiveException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.signal.libsignal.net.DeviceDeregisteredException",
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
@@ -154,6 +158,10 @@
 {
   "name":"org.signal.libsignal.net.RetryLaterException",
   "methods":[{"name":"<init>","parameterTypes":["long"] }]
+},
+{
+  "name":"org.signal.libsignal.net.TransportFailureException",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"org.signal.libsignal.net.internal.BridgeChatListener"

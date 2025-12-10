@@ -63,8 +63,8 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
     @Override
     protected boolean isInvalid(SignalContactRecord remoteRecord) {
         final var remote = remoteRecord.getProto();
-        final var aci = ACI.parseOrNull(remote.aci);
-        final var pni = PNI.parseOrNull(remote.pni);
+        final var aci = ACI.parseOrNull(remote.aci, remote.aciBinary);
+        final var pni = PNI.parseOrNull(remote.pni, remote.pniBinary);
         final var e164 = nullIfEmpty(remote.e164);
         boolean hasAci = aci != null && aci.isValid();
         boolean hasPni = pni != null && pni.isValid();
@@ -129,7 +129,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             identityKey = local.identityKey.size() > 0 ? local.identityKey : ByteString.EMPTY;
         }
 
-        if (!local.aci.isEmpty()
+        if ((!local.aci.isEmpty() || local.aciBinary.size() > 0)
                 && local.identityKey.size() > 0
                 && remote.identityKey.size() > 0
                 && !local.identityKey.equals(remote.identityKey)) {
@@ -327,8 +327,8 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
     }
 
     private static RecipientAddress getRecipientAddress(final ContactRecord contactRecord) {
-        return new RecipientAddress(ACI.parseOrNull(contactRecord.aci),
-                PNI.parseOrNull(contactRecord.pni),
+        return new RecipientAddress(ACI.parseOrNull(contactRecord.aci, contactRecord.aciBinary),
+                PNI.parseOrNull(contactRecord.pni, contactRecord.pniBinary),
                 nullIfEmpty(contactRecord.e164),
                 nullIfEmpty(contactRecord.username));
     }

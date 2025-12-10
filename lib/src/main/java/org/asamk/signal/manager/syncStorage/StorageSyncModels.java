@@ -33,6 +33,9 @@ import static org.signal.core.util.StringExtensionsKt.emptyIfNull;
 
 public final class StorageSyncModels {
 
+    private final static boolean useBinaryId = false;
+    private final static boolean useStringId = true;
+
     private StorageSyncModels() {
     }
 
@@ -90,13 +93,19 @@ public final class StorageSyncModels {
     public static ContactRecord localToRemoteRecord(Recipient recipient, IdentityInfo identity) {
         final var address = recipient.getAddress();
         final var builder = SignalContactRecord.Companion.newBuilder(recipient.getStorageRecord())
-                .aci(address.aci().map(ACI::toString).orElse(""))
                 .e164(address.number().orElse(""))
-                .pni(address.pni().map(PNI::toStringWithoutPrefix).orElse(""))
                 .username(address.username().orElse(""))
                 .profileKey(recipient.getProfileKey() == null
                         ? ByteString.EMPTY
                         : ByteString.of(recipient.getProfileKey().serialize()));
+        if (useBinaryId) {
+            builder.aciBinary(address.aci().map(ACI::toByteString).orElse(ByteString.EMPTY))
+                    .pniBinary(address.pni().map(PNI::toByteString).orElse(ByteString.EMPTY));
+        }
+        if (useStringId) {
+            builder.aci(address.aci().map(ACI::toString).orElse(""))
+                    .pni(address.pni().map(PNI::toStringWithoutPrefix).orElse(""));
+        }
         if (recipient.getProfile() != null) {
             builder.givenName(emptyIfNull(recipient.getProfile().getGivenName()))
                     .familyName(emptyIfNull(recipient.getProfile().getFamilyName()));
