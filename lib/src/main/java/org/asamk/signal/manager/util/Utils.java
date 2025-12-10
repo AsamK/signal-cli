@@ -1,6 +1,7 @@
 package org.asamk.signal.manager.util;
 
 import org.asamk.signal.manager.api.Pair;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.net.BadRequestError;
 import org.signal.libsignal.net.RequestResult;
 import org.signal.libsignal.protocol.IdentityKey;
@@ -10,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.NetworkResult;
 import org.whispersystems.signalservice.api.NetworkResultUtil;
-import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 
 import java.io.ByteArrayInputStream;

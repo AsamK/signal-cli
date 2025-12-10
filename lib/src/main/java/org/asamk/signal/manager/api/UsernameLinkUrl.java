@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.api;
 
 import org.signal.core.util.Base64;
+import org.signal.core.util.UuidUtil;
 import org.whispersystems.signalservice.api.push.UsernameLinkComponents;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -36,7 +36,7 @@ public final class UsernameLinkUrl {
 
         final var entropy = Arrays.copyOfRange(allBytes, 0, 32);
         final var serverId = Arrays.copyOfRange(allBytes, 32, allBytes.length);
-        final var serverIdUuid = UuidUtil.parseOrNull(serverId);
+        final var serverIdUuid = UuidUtil.INSTANCE.parseOrNull(serverId);
         if (serverIdUuid == null) {
             throw new InvalidUsernameLinkException("Invalid serverId");
         }

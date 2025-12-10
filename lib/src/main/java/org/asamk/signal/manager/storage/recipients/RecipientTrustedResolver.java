@@ -1,7 +1,7 @@
 package org.asamk.signal.manager.storage.recipients;
 
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.push.ServiceId.PNI;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.models.ServiceId.PNI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.Optional;

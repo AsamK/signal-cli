@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.storage.recipients;
 
-import org.whispersystems.signalservice.api.push.ServiceId;
+import org.signal.core.models.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
 import java.util.function.Supplier;

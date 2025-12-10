@@ -1,11 +1,11 @@
 package org.asamk.signal.manager.util;
 
+import org.signal.core.models.ServiceId;
+import org.signal.core.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
-import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.push.Envelope;
 
 import java.io.DataInputStream;

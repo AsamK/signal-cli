@@ -1,8 +1,8 @@
 package org.asamk.signal.manager.storage.identities;
 
 import org.asamk.signal.manager.api.TrustLevel;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.protocol.IdentityKey;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 public class IdentityInfo {
 

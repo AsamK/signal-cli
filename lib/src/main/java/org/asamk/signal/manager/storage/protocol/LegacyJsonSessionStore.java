@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public class LegacyJsonSessionStore {
             if (node.isArray()) {
                 for (var session : node) {
                     var sessionName = session.hasNonNull("name") ? session.get("name").asText() : null;
-                    if (UuidUtil.isUuid(sessionName)) {
+                    if (UuidUtil.INSTANCE.isUuid(sessionName)) {
                         // Ignore sessions that were incorrectly created with UUIDs as name
                         continue;
                     }

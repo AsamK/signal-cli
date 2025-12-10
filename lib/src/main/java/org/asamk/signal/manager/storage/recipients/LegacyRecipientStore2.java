@@ -3,12 +3,12 @@ package org.asamk.signal.manager.storage.recipients;
 import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.storage.Utils;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.io.File;
 import java.io.FileInputStream;

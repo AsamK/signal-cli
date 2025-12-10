@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.util.IOUtils;
 import org.asamk.signal.manager.util.Utils;
+import org.signal.core.util.Hex;
 import org.whispersystems.signalservice.api.util.StreamDetails;
-import org.whispersystems.signalservice.internal.util.Hex;
 
 import java.io.BufferedWriter;
 import java.io.File;

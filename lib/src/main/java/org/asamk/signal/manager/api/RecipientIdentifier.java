@@ -1,9 +1,9 @@
 package org.asamk.signal.manager.api;
 
 import org.asamk.signal.manager.util.PhoneNumberFormatter;
+import org.signal.core.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.util.UUID;
 
@@ -24,13 +24,13 @@ public sealed interface RecipientIdentifier {
     sealed interface Single extends RecipientIdentifier {
 
         static Single fromString(String identifier, String localNumber) throws InvalidNumberException {
-            if (UuidUtil.isUuid(identifier)) {
+            if (UuidUtil.INSTANCE.isUuid(identifier)) {
                 return new Uuid(UUID.fromString(identifier));
             }
 
             if (identifier.startsWith("PNI:")) {
                 final var pni = identifier.substring(4);
-                if (!UuidUtil.isUuid(pni)) {
+                if (!UuidUtil.INSTANCE.isUuid(pni)) {
                     throw new InvalidNumberException("Invalid PNI");
                 }
                 return new Pni(UUID.fromString(pni));

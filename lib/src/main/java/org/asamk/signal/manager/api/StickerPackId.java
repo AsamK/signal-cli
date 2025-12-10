@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.api;
 
-import org.whispersystems.signalservice.internal.util.Hex;
+import org.signal.core.util.Hex;
 
 import java.util.Arrays;
 

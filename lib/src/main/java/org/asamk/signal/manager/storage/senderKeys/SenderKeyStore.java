@@ -2,11 +2,11 @@ package org.asamk.signal.manager.storage.senderKeys;
 
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.Database;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.whispersystems.signalservice.api.SignalServiceSenderKeyStore;
 import org.whispersystems.signalservice.api.push.DistributionId;
-import org.whispersystems.signalservice.api.push.ServiceId;
 
 import java.util.Collection;
 import java.util.Map;

@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.helper;
 
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
+import org.signal.core.models.ServiceId.ACI;
 
 public interface AccountFileUpdater {
 

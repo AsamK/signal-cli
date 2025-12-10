@@ -1,6 +1,6 @@
 package org.asamk.signal.manager.api;
 
-import org.whispersystems.signalservice.api.util.UuidUtil;
+import org.signal.core.util.UuidUtil;
 
 import java.util.Optional;
 import java.util.UUID;

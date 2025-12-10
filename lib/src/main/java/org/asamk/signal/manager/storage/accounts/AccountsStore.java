@@ -8,9 +8,9 @@ import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.util.IOUtils;
+import org.signal.core.models.ServiceId.ACI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

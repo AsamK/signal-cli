@@ -2,10 +2,10 @@ package org.asamk.signal.manager.jobs;
 
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.helper.Context;
+import org.signal.core.util.Hex;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.internal.util.Hex;
 
 import java.io.IOException;
 

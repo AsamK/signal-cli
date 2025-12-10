@@ -16,11 +16,11 @@ import org.asamk.signal.manager.storage.senderKeys.SenderKeyRecordStore;
 import org.asamk.signal.manager.storage.senderKeys.SenderKeySharedStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
+import org.signal.core.models.ServiceId;
+import org.signal.core.models.ServiceId.ACI;
+import org.signal.core.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.push.ServiceId;
-import org.whispersystems.signalservice.api.push.ServiceId.ACI;
-import org.whispersystems.signalservice.api.util.UuidUtil;
 
 import java.io.File;
 import java.sql.Connection;
@@ -646,9 +646,10 @@ public class AccountDatabase extends Database {
         try (final var preparedStatement = connection.prepareStatement(sql)) {
             try (var result = Utils.executeQueryForStream(preparedStatement, (resultSet) -> {
                 final var pni = Optional.ofNullable(resultSet.getBytes("pni"))
-                        .map(UuidUtil::parseOrNull)
+                        .map(UuidUtil.INSTANCE::parseOrNull)
                         .map(ServiceId.PNI::from);
-                final var serviceIdUuid = Optional.ofNullable(resultSet.getBytes("uuid")).map(UuidUtil::parseOrNull);
+                final var serviceIdUuid = Optional.ofNullable(resultSet.getBytes("uuid"))
+                        .map(UuidUtil.INSTANCE::parseOrNull);
                 final var serviceId = serviceIdUuid.isPresent() && pni.isPresent() && serviceIdUuid.get()
                         .equals(pni.get().getRawUuid())
                         ? pni.<ServiceId>map(p -> p)
