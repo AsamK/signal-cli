@@ -275,10 +275,13 @@ public final class ProfileHelper {
     private Profile decryptProfileAndDownloadAvatar(
             final RecipientId recipientId,
             final ProfileKey profileKey,
-            final SignalServiceProfile encryptedProfile
+            final SignalServiceProfile encryptedProfile,
+            final boolean ignoreAvatars
     ) {
         final var avatarPath = encryptedProfile.getAvatar();
-        downloadProfileAvatar(recipientId, avatarPath, profileKey);
+        if (!ignoreAvatars) {
+            downloadProfileAvatar(recipientId, avatarPath, profileKey, ignoreAvatars);
+        }
 
         return ProfileUtils.decryptProfile(profileKey, encryptedProfile);
     }
@@ -286,8 +289,12 @@ public final class ProfileHelper {
     public void downloadProfileAvatar(
             final RecipientId recipientId,
             final String avatarPath,
-            final ProfileKey profileKey
+            final ProfileKey profileKey,
+            final boolean ignoreAvatars
     ) {
+        if (ignoreAvatars) {
+            return;
+        }
         var profile = account.getProfileStore().getProfile(recipientId);
         if (profile == null || !Objects.equals(avatarPath, profile.getAvatarUrlPath())) {
             logger.trace("Downloading profile avatar for {}", recipientId);
@@ -341,7 +348,7 @@ public final class ProfileHelper {
             Profile newProfile = null;
             if (profileKey.isPresent()) {
                 logger.trace("Decrypting profile");
-                newProfile = decryptProfileAndDownloadAvatar(recipientId, profileKey.get(), encryptedProfile);
+                newProfile = decryptProfileAndDownloadAvatar(recipientId, profileKey.get(), encryptedProfile, false);
             }
 
             if (newProfile == null) {

@@ -293,7 +293,7 @@ public class SyncHelper {
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forConfiguration(configurationMessage));
     }
 
-    public void handleSyncDeviceGroups(final InputStream input) {
+    public void handleSyncDeviceGroups(final InputStream input, final boolean ignoreAvatars) {
         final var s = new DeviceGroupsInputStream(input);
         DeviceGroup g;
         while (true) {
@@ -327,7 +327,7 @@ public class SyncHelper {
                 }
 
                 if (g.getAvatar().isPresent()) {
-                    context.getGroupHelper().downloadGroupAvatar(syncGroup.getGroupId(), g.getAvatar().get());
+                    context.getGroupHelper().downloadGroupAvatar(syncGroup.getGroupId(), g.getAvatar().get(), ignoreAvatars);
                 }
                 syncGroup.archived = g.isArchived();
                 account.getGroupStore().updateGroup(syncGroup);
@@ -335,7 +335,7 @@ public class SyncHelper {
         }
     }
 
-    public void handleSyncDeviceContacts(final InputStream input) throws IOException {
+    public void handleSyncDeviceContacts(final InputStream input, final boolean ignoreAvatars) throws IOException {
         final var s = new DeviceContactsInputStream(input);
         DeviceContact c;
         while (true) {
@@ -381,7 +381,7 @@ public class SyncHelper {
             account.getContactStore().storeContact(recipientId, builder.build());
 
             if (c.getAvatar().isPresent()) {
-                storeContactAvatar(c.getAvatar().get(), address);
+                storeContactAvatar(c.getAvatar().get(), address, ignoreAvatars);
             }
         }
     }
@@ -430,7 +430,10 @@ public class SyncHelper {
                 streamDetails.getContentType()));
     }
 
-    private void storeContactAvatar(DeviceContactAvatar avatar, RecipientAddress address) {
+    private void storeContactAvatar(DeviceContactAvatar avatar, RecipientAddress address, boolean ignoreAvatars) {
+        if (ignoreAvatars) {
+            return;
+        }
         try {
             context.getAvatarStore()
                     .storeContactAvatar(address,

@@ -18,6 +18,8 @@ Requires libsignal-client version 0.86.12.
 
 - Add sendPollCreate, sendPollVote, sendPollTerminate commands for polls
 - Add updateDevice command to set device name of linked devices
+- Add --ignore-avatars flag to prevent downloading avatars
+- Add --ignore-stickers flag to prevent downloading sticker packs
 
 ### Changed
 

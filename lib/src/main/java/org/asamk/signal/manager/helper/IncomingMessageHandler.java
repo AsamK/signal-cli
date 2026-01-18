@@ -369,7 +369,7 @@ public final class IncomingMessageHandler {
                     false,
                     senderDeviceAddress,
                     destination,
-                    receiveConfig.ignoreAttachments()));
+                    receiveConfig));
         }
 
         if (content.getStoryMessage().isPresent()) {
@@ -382,7 +382,7 @@ public final class IncomingMessageHandler {
             actions.addAll(handleSyncMessage(envelope,
                     syncMessage,
                     senderDeviceAddress,
-                    receiveConfig.ignoreAttachments()));
+                    receiveConfig));
         }
 
         return actions;
@@ -475,7 +475,7 @@ public final class IncomingMessageHandler {
             final SignalServiceEnvelope envelope,
             final SignalServiceSyncMessage syncMessage,
             final DeviceAddress sender,
-            final boolean ignoreAttachments
+            final ReceiveConfig receiveConfig
     ) {
         var actions = new ArrayList<HandleAction>();
         account.setMultiDevice(true);
@@ -491,12 +491,12 @@ public final class IncomingMessageHandler {
                                 : new DeviceAddress(account.getRecipientResolver().resolveRecipient(destination),
                                         destination.getServiceId(),
                                         0),
-                        ignoreAttachments));
+                        receiveConfig));
             }
             if (message.getStoryMessage().isPresent()) {
                 actions.addAll(handleSignalServiceStoryMessage(message.getStoryMessage().get(),
                         sender.recipientId(),
-                        ignoreAttachments));
+                        receiveConfig.ignoreAttachments()));
             }
         }
         if (syncMessage.getRequest().isPresent() && account.isPrimaryDevice()) {
@@ -522,7 +522,7 @@ public final class IncomingMessageHandler {
             try {
                 final var groupsMessage = syncMessage.getGroups().get();
                 context.getAttachmentHelper()
-                        .retrieveAttachment(groupsMessage, context.getSyncHelper()::handleSyncDeviceGroups);
+                        .retrieveAttachment(groupsMessage, input -> context.getSyncHelper().handleSyncDeviceGroups(input, receiveConfig.ignoreAvatars()));
             } catch (Exception e) {
                 logger.warn("Failed to handle received sync groups, ignoring: {}", e.getMessage());
             }
@@ -550,7 +550,7 @@ public final class IncomingMessageHandler {
                 final var contactsMessage = syncMessage.getContacts().get();
                 context.getAttachmentHelper()
                         .retrieveAttachment(contactsMessage.getContactsStream(),
-                                context.getSyncHelper()::handleSyncDeviceContacts);
+                                input -> context.getSyncHelper().handleSyncDeviceContacts(input, receiveConfig.ignoreAvatars()));
             } catch (Exception e) {
                 logger.warn("Failed to handle received sync contacts, ignoring: {}", e.getMessage());
             }
@@ -576,7 +576,7 @@ public final class IncomingMessageHandler {
                 final var sticker = context.getStickerHelper()
                         .addOrUpdateStickerPack(stickerPackId, stickerPackKey, installed);
 
-                if (sticker != null && installed) {
+                if (sticker != null && installed && !receiveConfig.ignoreStickers()) {
                     context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, sticker.packKey()));
                 }
             }
@@ -738,7 +738,7 @@ public final class IncomingMessageHandler {
             boolean isSync,
             DeviceAddress source,
             DeviceAddress destination,
-            boolean ignoreAttachments
+            ReceiveConfig receiveConfig
     ) {
         var actions = new ArrayList<HandleAction>();
         if (message.getGroupContext().isPresent()) {
@@ -757,7 +757,7 @@ public final class IncomingMessageHandler {
 
                             if (groupInfo.getAvatar().isPresent()) {
                                 var avatar = groupInfo.getAvatar().get();
-                                context.getGroupHelper().downloadGroupAvatar(groupV1.getGroupId(), avatar);
+                                context.getGroupHelper().downloadGroupAvatar(groupV1.getGroupId(), avatar, receiveConfig.ignoreAvatars());
                             }
 
                             if (groupInfo.getName().isPresent()) {
@@ -830,7 +830,7 @@ public final class IncomingMessageHandler {
                                 message.getExpireTimerVersion());
             }
         }
-        if (!ignoreAttachments) {
+        if (!receiveConfig.ignoreAttachments()) {
             if (message.getAttachments().isPresent()) {
                 for (var attachment : message.getAttachments().get()) {
                     context.getAttachmentHelper().downloadAttachment(attachment);
@@ -878,7 +878,9 @@ public final class IncomingMessageHandler {
                 sticker = new StickerPack(stickerPackId, messageSticker.getPackKey());
                 account.getStickerStore().addStickerPack(sticker);
             }
-            context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
+            if (!receiveConfig.ignoreStickers()) {
+                context.getJobExecutor().enqueueJob(new RetrieveStickerPackJob(stickerPackId, messageSticker.getPackKey()));
+            }
         }
         return actions;
     }
