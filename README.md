@@ -8,7 +8,7 @@ For registering you need a phone number where you can receive SMS or incoming ca
 
 signal-cli is primarily intended to be used on servers to notify admins of important events.
 For this use-case, it has a daemon mode with JSON-RPC interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-jsonrpc.5.adoc))
-and D-BUS interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)) .
+and D-BUS interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-dbus.5.adoc)).
 For the JSON-RPC interface there's also a simple [example client](https://github.com/AsamK/signal-cli/tree/master/client), written in Rust.
 
 signal-cli needs to be kept up-to-date to keep up with Signal-Server changes.
