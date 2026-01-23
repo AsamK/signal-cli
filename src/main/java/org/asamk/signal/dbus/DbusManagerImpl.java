@@ -247,6 +247,14 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void updateLinkedDevice(
+            final int deviceId,
+            final String name
+    ) throws IOException, NotPrimaryDeviceException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void removeLinkedDevices(final int deviceId) throws IOException {
         final var devicePath = signal.getDevice(deviceId);
         getRemoteObject(devicePath, Signal.Device.class).removeDevice();

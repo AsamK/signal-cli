@@ -52,6 +52,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import okio.ByteString;
+
 public class SyncHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(SyncHelper.class);
@@ -404,6 +406,11 @@ public class SyncHelper {
         final var response = MessageRequestResponseMessage.forIndividual(address.serviceId().get(),
                 localToRemoteType(type));
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forMessageRequestResponse(response));
+    }
+
+    public SendMessageResult sendDeviceNameChange(final int deviceId) {
+        final var deviceNameChange = new SyncMessage.DeviceNameChange(deviceId, ByteString.EMPTY);
+        return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forDeviceNameChange(deviceNameChange));
     }
 
     private SendMessageResult requestSyncData(final SyncMessage.Request.Type type) {

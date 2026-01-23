@@ -487,6 +487,21 @@ public class ManagerImpl implements Manager {
         }).toList();
     }
 
+    @Override
+    public void updateLinkedDevice(
+            final int deviceId,
+            final String name
+    ) throws IOException, NotPrimaryDeviceException {
+        if (deviceId == account.getDeviceId()) {
+            context.getAccountHelper().setDeviceName(name);
+        } else {
+            if (!account.isPrimaryDevice()) {
+                throw new NotPrimaryDeviceException();
+            }
+            context.getAccountHelper().setDeviceName(deviceId, name);
+        }
+    }
+
     private Long getPlaintextCreatedAt(DeviceInfo d) {
         final var DECRYPTION_INFO = "deviceCreatedAt";
         var identityKey = account.getAciIdentityKeyPair().getPrivateKey();

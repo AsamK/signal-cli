@@ -522,6 +522,22 @@ public class AccountHelper {
         account.setEncryptedDeviceName(encryptedDeviceName);
     }
 
+    public void setDeviceName(int deviceId, String deviceName) throws IOException {
+        final var privateKey = account.getAciIdentityKeyPair().getPrivateKey();
+        final var encryptedDeviceName = DeviceNameUtil.encryptDeviceName(deviceName, privateKey);
+        handleResponseException(dependencies.getLinkDeviceApi().setDeviceName(encryptedDeviceName, deviceId));
+        context.getSyncHelper().sendDeviceNameChange(deviceId);
+    }
+
+    public void refreshDeviceName() throws IOException {
+        final var devices = handleResponseException(dependencies.getLinkDeviceApi().getDevices());
+        final var deviceId = account.getDeviceId();
+        final var device = devices.stream().filter(d -> d.id == deviceId).findFirst();
+        if (device.isPresent()) {
+            account.setEncryptedDeviceName(device.get().name);
+        }
+    }
+
     public void updateAccountAttributes() throws IOException {
         handleResponseException(dependencies.getAccountApi().setAccountAttributes(account.getAccountAttributes(null)));
     }

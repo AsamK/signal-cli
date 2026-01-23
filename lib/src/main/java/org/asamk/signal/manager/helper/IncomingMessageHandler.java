@@ -5,6 +5,7 @@ import org.asamk.signal.manager.actions.HandleAction;
 import org.asamk.signal.manager.actions.RefreshPreKeysAction;
 import org.asamk.signal.manager.actions.RenewSessionAction;
 import org.asamk.signal.manager.actions.ResendMessageAction;
+import org.asamk.signal.manager.actions.RetrieveDeviceNameAction;
 import org.asamk.signal.manager.actions.RetrieveProfileAction;
 import org.asamk.signal.manager.actions.SendGroupInfoAction;
 import org.asamk.signal.manager.actions.SendGroupInfoRequestAction;
@@ -631,6 +632,12 @@ public final class IncomingMessageHandler {
             if (updatedPniString != null && !updatedPniString.isEmpty()) {
                 final var updatedPni = ServiceId.PNI.parseOrThrow(updatedPniString);
                 context.getAccountHelper().handlePniChangeNumberMessage(pniChangeNumber, updatedPni);
+            }
+        }
+        if (syncMessage.getDeviceNameChange().isPresent()) {
+            final var deviceNameChange = syncMessage.getDeviceNameChange().get();
+            if (deviceNameChange.deviceId != null && deviceNameChange.deviceId == account.getDeviceId()) {
+                actions.add(RetrieveDeviceNameAction.create());
             }
         }
         return actions;

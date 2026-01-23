@@ -58,6 +58,7 @@ public class Commands {
         addCommand(new UpdateAccountCommand());
         addCommand(new UpdateConfigurationCommand());
         addCommand(new UpdateContactCommand());
+        addCommand(new UpdateDeviceCommand());
         addCommand(new UpdateGroupCommand());
         addCommand(new UpdateProfileCommand());
         addCommand(new UploadStickerPackCommand());
