@@ -20,7 +20,7 @@ public class JobExecutor implements AutoCloseable {
 
     public JobExecutor(final Context context) {
         this.context = context;
-        this.executorService = Executors.newCachedThreadPool();
+        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
     }
 
     public void enqueueJob(Job job) {

@@ -63,7 +63,7 @@ public class SocketHandler implements AutoCloseable {
         logger.debug("Starting JSON-RPC server on {}", address);
 
         listenerThread = Thread.ofPlatform().name("daemon-listener").start(() -> {
-            try (final var executor = Executors.newCachedThreadPool()) {
+            try (final var executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 logger.info("Started JSON-RPC server on {}", address);
                 while (true) {
                     final var connectionId = threadNumber.getAndIncrement();

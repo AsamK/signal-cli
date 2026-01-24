@@ -157,7 +157,7 @@ public class ManagerImpl implements Manager {
     private final SignalDependencies dependencies;
     private final Context context;
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     private Thread receiveThread;
     private boolean isReceivingSynchronous;

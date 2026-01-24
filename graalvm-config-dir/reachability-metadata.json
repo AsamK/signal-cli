@@ -213,6 +213,17 @@
       ]
     },
     {
+      "type": "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA384",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "javax.crypto.KDFParameters"
+          ]
+        }
+      ]
+    },
+    {
       "type": "com.sun.crypto.provider.HmacCore$HmacSHA256",
       "methods": [
         {
@@ -1005,6 +1016,9 @@
           ]
         }
       ]
+    },
+    {
+      "type": "java.lang.VirtualThread"
     },
     {
       "type": "java.lang.annotation.Retention",

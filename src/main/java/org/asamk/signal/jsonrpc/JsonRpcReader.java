@@ -55,7 +55,7 @@ public class JsonRpcReader {
             return;
         }
 
-        try (final var executor = Executors.newCachedThreadPool()) {
+        try (final var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             while (!Thread.interrupted()) {
                 final var input = lineSupplier.get();
                 if (input == null) {
@@ -91,7 +91,7 @@ public class JsonRpcReader {
             case JsonRpcBatchMessage jsonRpcBatchMessage -> {
                 final var messages = jsonRpcBatchMessage.getMessages();
                 final var responseList = new ArrayList<JsonRpcResponse>(messages.size());
-                try (final var executor = Executors.newCachedThreadPool()) {
+                try (final var executor = Executors.newVirtualThreadPerTaskExecutor()) {
                     final var lock = new ReentrantLock();
                     messages.forEach(jsonNode -> {
                         final JsonRpcRequest request;

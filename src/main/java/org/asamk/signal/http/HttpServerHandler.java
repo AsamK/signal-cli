@@ -59,7 +59,7 @@ public class HttpServerHandler implements AutoCloseable {
         logger.debug("Starting HTTP server on {}", address);
 
         server = HttpServer.create(address, 0);
-        server.setExecutor(Executors.newCachedThreadPool());
+        server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
         server.createContext("/api/v1/rpc", this::handleRpcEndpoint);
         server.createContext("/api/v1/events", this::handleEventsEndpoint);
