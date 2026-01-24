@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -8,7 +6,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 class CheckLibVersionsPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        project.task("checkLibVersions") {
+        project.tasks.register("checkLibVersions") {
             description =
                 "Find any 3rd party libraries which have released new versions to the central Maven repo since we last upgraded."
             doLast {
@@ -28,7 +26,7 @@ class CheckLibVersionsPlugin : Plugin<Project> {
         try {
             val dbf = DocumentBuilderFactory.newInstance()
             val db = dbf.newDocumentBuilder()
-            val doc = db.parse(metaDataUrl);
+            val doc = db.parse(metaDataUrl)
             val newest = doc.getElementsByTagName("latest").item(0).textContent
             if (version != newest.toString()) {
                 println("UPGRADE {\"group\": \"$group\", \"name\": \"$name\", \"current\": \"$version\", \"latest\": \"$newest\"}")
