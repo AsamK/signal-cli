@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Breaking changes
+
+- Remove isRegistered method without parameters from Signal dbus interface, which always returned `true`
+- Remove `sandbox` value for --service-environment parameter, use `staging` instead
+- The `daemon` command now requires at least one channel parameter (`--socket`, `--dbus`, ...) and no longer defaults to dbus
+
 ## [0.13.23] - 2026-01-24
 
 Requires libsignal-client version 0.86.12.

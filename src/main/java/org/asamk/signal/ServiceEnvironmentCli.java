@@ -13,10 +13,4 @@ public enum ServiceEnvironmentCli {
             return "staging";
         }
     },
-    @Deprecated SANDBOX {
-        @Override
-        public String toString() {
-            return "sandbox";
-        }
-    },
 }

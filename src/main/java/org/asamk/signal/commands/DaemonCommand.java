@@ -10,6 +10,7 @@ import org.asamk.signal.ReceiveMessageHandler;
 import org.asamk.signal.Shutdown;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
+import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.dbus.DbusHandler;
 import org.asamk.signal.http.HttpServerHandler;
 import org.asamk.signal.json.JsonReceiveMessageHandler;
@@ -201,9 +202,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 && tcpAddress == null
                 && httpAddress == null
                 && inheritedChannel == null) {
-            logger.warn(
-                    "Running daemon command without explicit mode is deprecated. Use 'daemon --dbus' to use the dbus interface.");
-            daemonHandler.runDbus(false, DbusConfig.getBusname());
+            throw new UserErrorException("At least one channel parameter is required, e.g. --socket or --dbus.");
         }
     }
 

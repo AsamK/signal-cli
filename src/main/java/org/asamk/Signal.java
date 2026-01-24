@@ -143,9 +143,6 @@ public interface Signal extends DBusInterface {
             String avatar
     ) throws Error.AttachmentInvalid, Error.Failure, Error.InvalidNumber, Error.GroupNotFound, Error.InvalidGroupId;
 
-    @Deprecated
-    boolean isRegistered() throws Error.Failure, Error.InvalidNumber;
-
     boolean isRegistered(String number) throws Error.Failure, Error.InvalidNumber;
 
     List<Boolean> isRegistered(List<String> numbers) throws Error.Failure, Error.InvalidNumber;
