@@ -34,10 +34,10 @@ import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
 import org.signal.libsignal.zkgroup.groupsend.GroupSendEndorsementsResponse;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.signal.storageservice.protos.groups.GroupChangeResponse;
-import org.signal.storageservice.protos.groups.local.DecryptedGroup;
-import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
-import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
+import org.signal.storageservice.storage.protos.groups.GroupChangeResponse;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedGroup;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedGroupChange;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedGroupJoinInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupChangeLog;
@@ -192,9 +192,9 @@ public class GroupHelper {
             final GroupInfoV2 groupInfoV2,
             final GroupChangeResponse groupChangeResponse
     ) {
-        if (groupChangeResponse.groupSendEndorsementsResponse.size() > 0) {
+        if (groupChangeResponse.group_send_endorsements_response.size() > 0) {
             try {
-                final var groupSendEndorsementsResponse = new GroupSendEndorsementsResponse(groupChangeResponse.groupSendEndorsementsResponse.toByteArray());
+                final var groupSendEndorsementsResponse = new GroupSendEndorsementsResponse(groupChangeResponse.group_send_endorsements_response.toByteArray());
 
                 updateGroupEndorsements(groupInfoV2.getGroupId(),
                         groupInfoV2.getMasterKey(),
@@ -391,7 +391,7 @@ public class GroupHelper {
                 .joinGroup(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword(), groupJoinInfo);
         final var group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
                 groupJoinInfo.revision + 1,
-                changeResponse.groupChange == null ? null : changeResponse.groupChange.encode());
+                changeResponse.group_change == null ? null : changeResponse.group_change.encode());
 
         if (group.getGroup() == null) {
             // Only requested member, can't send update to group members
@@ -873,10 +873,10 @@ public class GroupHelper {
 
         final var groupChangeResponse = groupGroupChangePair.second();
         handleGroupChangeResponse(groupInfoV2, groupChangeResponse);
-        if (groupChangeResponse.groupChange == null) {
+        if (groupChangeResponse.group_change == null) {
             throw new AssertionError("groupChange is null");
         }
-        var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupChangeResponse.groupChange.encode());
+        var messageBuilder = getGroupUpdateMessageBuilder(groupInfoV2, groupChangeResponse.group_change.encode());
         return sendGroupMessage(messageBuilder,
                 groupInfoV2.getMembersIncludingPendingWithout(account.getSelfRecipientId()),
                 groupInfoV2);
@@ -924,10 +924,10 @@ public class GroupHelper {
         members.addAll(group.getMembersIncludingPendingWithout(selfRecipientId));
         account.getGroupStore().updateGroup(group);
 
-        if (groupChangeResponse.groupChange == null) {
+        if (groupChangeResponse.group_change == null) {
             throw new AssertionError("groupChange is null");
         }
-        final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChangeResponse.groupChange.encode());
+        final var messageBuilder = getGroupUpdateMessageBuilder(group, groupChangeResponse.group_change.encode());
         return sendGroupMessage(messageBuilder, members, group);
     }
 

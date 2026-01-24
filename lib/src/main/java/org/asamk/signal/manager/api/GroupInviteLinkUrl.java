@@ -4,8 +4,8 @@ import org.asamk.signal.manager.groups.GroupLinkPassword;
 import org.signal.core.util.Base64;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
-import org.signal.storageservice.protos.groups.GroupInviteLink;
-import org.signal.storageservice.protos.groups.local.DecryptedGroup;
+import org.signal.storageservice.storage.protos.groups.GroupInviteLink;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedGroup;
 
 import java.io.IOException;
 import java.net.URI;
@@ -52,8 +52,8 @@ public final class GroupInviteLinkUrl {
             var bytes = Base64.decode(encoding);
             GroupInviteLink groupInviteLink = GroupInviteLink.ADAPTER.decode(bytes);
 
-            if (groupInviteLink.v1Contents != null) {
-                var groupInviteLinkContentsV1 = groupInviteLink.v1Contents;
+            if (groupInviteLink.contentsV1 != null) {
+                var groupInviteLinkContentsV1 = groupInviteLink.contentsV1;
                 var groupMasterKey = new GroupMasterKey(groupInviteLinkContentsV1.groupMasterKey.toByteArray());
                 var password = GroupLinkPassword.fromBytes(groupInviteLinkContentsV1.inviteLinkPassword.toByteArray());
 
@@ -90,7 +90,7 @@ public final class GroupInviteLinkUrl {
     }
 
     private static String createUrl(GroupMasterKey groupMasterKey, GroupLinkPassword password) {
-        var groupInviteLink = new GroupInviteLink.Builder().v1Contents(new GroupInviteLink.GroupInviteLinkContentsV1.Builder().groupMasterKey(
+        var groupInviteLink = new GroupInviteLink.Builder().contentsV1(new GroupInviteLink.GroupInviteLinkContentsV1.Builder().groupMasterKey(
                         ByteString.of(groupMasterKey.serialize()))
                 .inviteLinkPassword(ByteString.of(password.serialize()))
                 .build()).build();

@@ -21,15 +21,15 @@ import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.libsignal.zkgroup.groups.GroupSecretParams;
 import org.signal.libsignal.zkgroup.groups.UuidCiphertext;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.signal.storageservice.protos.groups.AccessControl;
-import org.signal.storageservice.protos.groups.GroupChange;
-import org.signal.storageservice.protos.groups.GroupChangeResponse;
-import org.signal.storageservice.protos.groups.Member;
-import org.signal.storageservice.protos.groups.local.DecryptedGroup;
-import org.signal.storageservice.protos.groups.local.DecryptedGroupChange;
-import org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo;
-import org.signal.storageservice.protos.groups.local.DecryptedMember;
-import org.signal.storageservice.protos.groups.local.DecryptedPendingMember;
+import org.signal.storageservice.storage.protos.groups.AccessControl;
+import org.signal.storageservice.storage.protos.groups.GroupChange;
+import org.signal.storageservice.storage.protos.groups.GroupChangeResponse;
+import org.signal.storageservice.storage.protos.groups.Member;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedGroup;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedGroupChange;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedGroupJoinInfo;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedMember;
+import org.signal.storageservice.storage.protos.groups.local.DecryptedPendingMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.groupsv2.DecryptChangeVerificationMode;
@@ -225,7 +225,7 @@ class GroupV2Helper {
             change.modifyAvatar(new GroupChange.Actions.ModifyAvatarAction.Builder().avatar(avatarCdnKey).build());
         }
 
-        change.sourceServiceId(getSelfAci().toByteString());
+        change.sourceUserId(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -252,7 +252,7 @@ class GroupV2Helper {
         final var aci = getSelfAci();
         final var change = groupOperations.createModifyGroupMembershipChange(candidates, bannedUuids, aci);
 
-        change.sourceServiceId(getSelfAci().toByteString());
+        change.sourceUserId(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -343,7 +343,7 @@ class GroupV2Helper {
                 false,
                 groupInfoV2.getGroup().bannedMembers);
 
-        change.sourceServiceId(getSelfAci().toByteString());
+        change.sourceUserId(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -360,7 +360,7 @@ class GroupV2Helper {
 
         final var change = groupOperations.createUnbanServiceIdsChange(serviceIds);
 
-        change.sourceServiceId(getSelfAci().toByteString());
+        change.sourceUserId(getSelfAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -436,7 +436,7 @@ class GroupV2Helper {
 
         final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
         final var change = groupOperations.createUpdateProfileKeyCredentialChange(profileKeyCredential);
-        change.sourceServiceId(getSelfAci().toByteString());
+        change.sourceUserId(getSelfAci().toByteString());
         return commitChange(groupInfoV2, change);
     }
 
@@ -459,7 +459,7 @@ class GroupV2Helper {
                 ? groupOperations.createGroupJoinRequest(profileKeyCredential)
                 : groupOperations.createGroupJoinDirect(profileKeyCredential);
 
-        change.sourceServiceId(context.getRecipientHelper()
+        change.sourceUserId(context.getRecipientHelper()
                 .resolveSignalServiceAddress(selfRecipientId)
                 .getServiceId()
                 .toByteString());
@@ -479,7 +479,7 @@ class GroupV2Helper {
         final var change = groupOperations.createAcceptInviteChange(profileKeyCredential);
 
         final var aci = context.getRecipientHelper().resolveSignalServiceAddress(selfRecipientId).getServiceId();
-        change.sourceServiceId(aci.toByteString());
+        change.sourceUserId(aci.toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -585,7 +585,7 @@ class GroupV2Helper {
         final var groupOperations = dependencies.getGroupsV2Operations().forGroup(groupSecretParams);
         final var previousGroupState = groupInfoV2.getGroup();
         final var nextRevision = previousGroupState.revision + 1;
-        final var changeActions = change.revision(nextRevision).build();
+        final var changeActions = change.version(nextRevision).build();
         final DecryptedGroupChange decryptedChange;
         final DecryptedGroup decryptedGroupState;
 
@@ -611,7 +611,7 @@ class GroupV2Helper {
             GroupLinkPassword password
     ) throws IOException {
         final var nextRevision = currentRevision + 1;
-        final var changeActions = change.revision(nextRevision).build();
+        final var changeActions = change.version(nextRevision).build();
 
         return dependencies.getGroupsV2Api()
                 .patchGroup(changeActions,
@@ -621,6 +621,9 @@ class GroupV2Helper {
 
     Pair<ServiceId, ProfileKey> getAuthoritativeProfileKeyFromChange(final DecryptedGroupChange change) {
         UUID editor = UuidUtil.fromByteStringOrNull(change.editorServiceIdBytes);
+        if (editor == null) {
+            return null;
+        }
         final var editorProfileKeyBytes = Stream.concat(Stream.of(change.newMembers.stream(),
                                 change.promotePendingMembers.stream(),
                                 change.modifiedProfileKeys.stream())

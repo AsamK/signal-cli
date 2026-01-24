@@ -121,7 +121,7 @@
 },
 {
   "name":"org.signal.libsignal.net.ChatConnection$ListenerBridge",
-  "methods":[{"name":"onConnectionInterrupted","parameterTypes":["java.lang.Throwable"] }, {"name":"onIncomingMessage","parameterTypes":["byte[]","long","long"] }, {"name":"onQueueEmpty","parameterTypes":[] }, {"name":"onReceivedAlerts","parameterTypes":["java.lang.String[]"] }]
+  "methods":[{"name":"connectionInterrupted","parameterTypes":["java.lang.Throwable"] }, {"name":"onConnectionInterrupted","parameterTypes":["java.lang.Throwable"] }, {"name":"onIncomingMessage","parameterTypes":["byte[]","long","long"] }, {"name":"onQueueEmpty","parameterTypes":[] }, {"name":"onReceivedAlerts","parameterTypes":["java.lang.String[]"] }, {"name":"receivedAlerts","parameterTypes":["java.lang.String[]"] }, {"name":"receivedIncomingMessage","parameterTypes":["byte[]","long","long"] }, {"name":"receivedQueueEmpty","parameterTypes":[] }]
 },
 {
   "name":"org.signal.libsignal.net.ChatConnection$Response",

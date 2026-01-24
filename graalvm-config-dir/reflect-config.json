@@ -1833,6 +1833,15 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.bouncycastle.jcajce.provider.kdf.HKDF$Mappings"
+},
+{
+  "name":"org.bouncycastle.jcajce.provider.kdf.PBEPBKDF2$Mappings"
+},
+{
+  "name":"org.bouncycastle.jcajce.provider.kdf.SCRYPT$Mappings"
+},
+{
   "name":"org.bouncycastle.jcajce.provider.keystore.BC$Mappings",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -1917,6 +1926,10 @@
 },
 {
   "name":"org.bouncycastle.jcajce.provider.symmetric.HC256$Mappings",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.bouncycastle.jcajce.provider.symmetric.HKDF$Mappings",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -2172,199 +2185,199 @@
   "queryAllDeclaredConstructors":true
 },
 {
-  "name":"org.signal.storageservice.protos.groups.AccessControl",
+  "name":"org.signal.storageservice.storage.protos.groups.AccessControl",
   "fields":[{"name":"addFromInviteLink_"}, {"name":"attributes_"}, {"name":"members_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.AvatarUploadAttributes",
+  "name":"org.signal.storageservice.storage.protos.groups.AvatarUploadAttributes",
   "fields":[{"name":"acl_"}, {"name":"algorithm_"}, {"name":"credential_"}, {"name":"date_"}, {"name":"key_"}, {"name":"policy_"}, {"name":"signature_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.BannedMember",
+  "name":"org.signal.storageservice.storage.protos.groups.BannedMember",
   "fields":[{"name":"timestamp_"}, {"name":"userId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.Group",
+  "name":"org.signal.storageservice.storage.protos.groups.Group",
   "fields":[{"name":"accessControl_"}, {"name":"announcementsOnly_"}, {"name":"avatar_"}, {"name":"bannedMembers_"}, {"name":"description_"}, {"name":"disappearingMessagesTimer_"}, {"name":"inviteLinkPassword_"}, {"name":"members_"}, {"name":"pendingMembers_"}, {"name":"publicKey_"}, {"name":"requestingMembers_"}, {"name":"revision_"}, {"name":"title_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupAttributeBlob",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupAttributeBlob",
   "fields":[{"name":"contentCase_"}, {"name":"content_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange",
   "fields":[{"name":"actions_"}, {"name":"changeEpoch_"}, {"name":"serverSignature_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions",
   "fields":[{"name":"addBannedMembers_"}, {"name":"addMembers_"}, {"name":"addPendingMembers_"}, {"name":"addRequestingMembers_"}, {"name":"deleteBannedMembers_"}, {"name":"deleteMembers_"}, {"name":"deletePendingMembers_"}, {"name":"deleteRequestingMembers_"}, {"name":"modifyAddFromInviteLinkAccess_"}, {"name":"modifyAnnouncementsOnly_"}, {"name":"modifyAttributesAccess_"}, {"name":"modifyAvatar_"}, {"name":"modifyDescription_"}, {"name":"modifyDisappearingMessagesTimer_"}, {"name":"modifyInviteLinkPassword_"}, {"name":"modifyMemberAccess_"}, {"name":"modifyMemberProfileKeys_"}, {"name":"modifyMemberRoles_"}, {"name":"modifyTitle_"}, {"name":"promotePendingMembers_"}, {"name":"promotePendingPniAciMembers_"}, {"name":"promoteRequestingMembers_"}, {"name":"revision_"}, {"name":"sourceServiceId_"}, {"name":"sourceUuid_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddBannedMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$AddBannedMemberAction",
   "fields":[{"name":"added_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$AddMemberAction",
   "fields":[{"name":"added_"}, {"name":"joinFromInviteLink_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddPendingMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$AddPendingMemberAction",
   "fields":[{"name":"added_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$AddRequestingMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$AddRequestingMemberAction",
   "fields":[{"name":"added_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeleteBannedMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$DeleteBannedMemberAction",
   "fields":[{"name":"deletedUserId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeleteMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$DeleteMemberAction",
   "fields":[{"name":"deletedUserId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeletePendingMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$DeletePendingMemberAction",
   "fields":[{"name":"deletedUserId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$DeleteRequestingMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$DeleteRequestingMemberAction",
   "fields":[{"name":"deletedUserId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAddFromInviteLinkAccessControlAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyAddFromInviteLinkAccessControlAction",
   "fields":[{"name":"addFromInviteLinkAccess_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAnnouncementsOnlyAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyAnnouncementsOnlyAction",
   "fields":[{"name":"announcementsOnly_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAttributesAccessControlAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyAttributesAccessControlAction",
   "fields":[{"name":"attributesAccess_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyAvatarAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyAvatarAction",
   "fields":[{"name":"avatar_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyDescriptionAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyDescriptionAction",
   "fields":[{"name":"description_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyDisappearingMessagesTimerAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyDisappearingMessagesTimerAction",
   "fields":[{"name":"timer_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyInviteLinkPasswordAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyInviteLinkPasswordAction",
   "fields":[{"name":"inviteLinkPassword_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMemberProfileKeyAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyMemberProfileKeyAction",
   "fields":[{"name":"presentation_"}, {"name":"profileKey_"}, {"name":"userId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMemberRoleAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyMemberRoleAction",
   "fields":[{"name":"role_"}, {"name":"userId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyMembersAccessControlAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyMembersAccessControlAction",
   "fields":[{"name":"membersAccess_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$ModifyTitleAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$ModifyTitleAction",
   "fields":[{"name":"title_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$PromotePendingMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$PromotePendingMemberAction",
   "fields":[{"name":"presentation_"}, {"name":"profileKey_"}, {"name":"userId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$PromotePendingPniAciMemberProfileKeyAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$PromotePendingPniAciMemberProfileKeyAction",
   "fields":[{"name":"pni_"}, {"name":"presentation_"}, {"name":"profileKey_"}, {"name":"userId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChange$Actions$PromoteRequestingMemberAction",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChange$Actions$PromoteRequestingMemberAction",
   "fields":[{"name":"role_"}, {"name":"userId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChanges",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChanges",
   "fields":[{"name":"groupChanges_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupChanges$GroupChangeState",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupChanges$GroupChangeState",
   "fields":[{"name":"groupChange_"}, {"name":"groupState_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupInviteLink",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupInviteLink",
   "fields":[{"name":"contentsCase_"}, {"name":"contents_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupInviteLink$GroupInviteLinkContentsV1",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupInviteLink$GroupInviteLinkContentsV1",
   "fields":[{"name":"groupMasterKey_"}, {"name":"inviteLinkPassword_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.GroupJoinInfo",
+  "name":"org.signal.storageservice.storage.protos.groups.GroupJoinInfo",
   "fields":[{"name":"addFromInviteLink_"}, {"name":"avatar_"}, {"name":"description_"}, {"name":"memberCount_"}, {"name":"pendingAdminApproval_"}, {"name":"publicKey_"}, {"name":"revision_"}, {"name":"title_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.Member",
+  "name":"org.signal.storageservice.storage.protos.groups.Member",
   "fields":[{"name":"joinedAtRevision_"}, {"name":"presentation_"}, {"name":"profileKey_"}, {"name":"role_"}, {"name":"userId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.PendingMember",
+  "name":"org.signal.storageservice.storage.protos.groups.PendingMember",
   "fields":[{"name":"addedByUserId_"}, {"name":"member_"}, {"name":"timestamp_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.RequestingMember",
+  "name":"org.signal.storageservice.storage.protos.groups.RequestingMember",
   "fields":[{"name":"presentation_"}, {"name":"profileKey_"}, {"name":"timestamp_"}, {"name":"userId_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedApproveMember",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedApproveMember",
   "fields":[{"name":"role_"}, {"name":"uuid_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedBannedMember",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedBannedMember",
   "fields":[{"name":"serviceIdBinary_"}, {"name":"serviceIdBytes_"}, {"name":"timestamp_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedGroup",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedGroup",
   "fields":[{"name":"accessControl_"}, {"name":"avatar_"}, {"name":"bannedMembers_"}, {"name":"description_"}, {"name":"disappearingMessagesTimer_"}, {"name":"inviteLinkPassword_"}, {"name":"isAnnouncementGroup_"}, {"name":"members_"}, {"name":"pendingMembers_"}, {"name":"requestingMembers_"}, {"name":"revision_"}, {"name":"title_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedGroupChange",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedGroupChange",
   "fields":[{"name":"deleteBannedMembers_"}, {"name":"deleteMembers_"}, {"name":"deletePendingMembers_"}, {"name":"deleteRequestingMembers_"}, {"name":"editorServiceIdBytes_"}, {"name":"editor_"}, {"name":"modifiedProfileKeys_"}, {"name":"modifyMemberRoles_"}, {"name":"newAttributeAccess_"}, {"name":"newAvatar_"}, {"name":"newBannedMembers_"}, {"name":"newDescription_"}, {"name":"newInviteLinkAccess_"}, {"name":"newInviteLinkPassword_"}, {"name":"newIsAnnouncementGroup_"}, {"name":"newMemberAccess_"}, {"name":"newMembers_"}, {"name":"newPendingMembers_"}, {"name":"newRequestingMembers_"}, {"name":"newTimer_"}, {"name":"newTitle_"}, {"name":"promotePendingMembers_"}, {"name":"promotePendingPniAciMembers_"}, {"name":"promoteRequestingMembers_"}, {"name":"revision_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedGroupJoinInfo",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedGroupJoinInfo",
   "fields":[{"name":"addFromInviteLink_"}, {"name":"avatar_"}, {"name":"description_"}, {"name":"isAnnouncementGroup_"}, {"name":"memberCount_"}, {"name":"pendingAdminApproval_"}, {"name":"revision_"}, {"name":"title_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedMember",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedMember",
   "fields":[{"name":"aciBytes_"}, {"name":"joinedAtRevision_"}, {"name":"pniBytes_"}, {"name":"pni_"}, {"name":"profileKey_"}, {"name":"role_"}, {"name":"uuid_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedModifyMemberRole",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedModifyMemberRole",
   "fields":[{"name":"role_"}, {"name":"uuid_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMember",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedPendingMember",
   "fields":[{"name":"addedByAci_"}, {"name":"addedByUuid_"}, {"name":"role_"}, {"name":"serviceIdBinary_"}, {"name":"serviceIdBytes_"}, {"name":"serviceIdCipherText_"}, {"name":"timestamp_"}, {"name":"uuidCipherText_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedPendingMemberRemoval",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedPendingMemberRemoval",
   "fields":[{"name":"uuidCipherText_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedRequestingMember",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedRequestingMember",
   "fields":[{"name":"aciBytes_"}, {"name":"profileKey_"}, {"name":"timestamp_"}, {"name":"uuid_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedString",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedString",
   "fields":[{"name":"value_"}]
 },
 {
-  "name":"org.signal.storageservice.protos.groups.local.DecryptedTimer",
+  "name":"org.signal.storageservice.storage.protos.groups.local.DecryptedTimer",
   "fields":[{"name":"duration_"}]
 },
 {
@@ -3075,6 +3088,7 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.AccountRecord",
   "allDeclaredFields":true,
+  "fields":[{"name":"avatarColor"}, {"name":"avatarUrlPath"}, {"name":"backupSubscriberData"}, {"name":"backupTier"}, {"name":"backupTierHistory"}, {"name":"displayBadgesOnProfile"}, {"name":"familyName"}, {"name":"givenName"}, {"name":"hasBackup"}, {"name":"hasCompletedUsernameOnboarding"}, {"name":"hasSeenGroupStoryEducationSheet"}, {"name":"hasSetMyStoriesPrivacy"}, {"name":"hasViewedOnboardingStory"}, {"name":"keepMutedChatsArchived"}, {"name":"linkPreviews"}, {"name":"noteToSelfArchived"}, {"name":"noteToSelfMarkedUnread"}, {"name":"notificationProfileManualOverride"}, {"name":"payments"}, {"name":"phoneNumberSharingMode"}, {"name":"pinnedConversations"}, {"name":"preferContactAvatars"}, {"name":"preferredReactionEmoji"}, {"name":"primarySendsSms"}, {"name":"profileKey"}, {"name":"readReceipts"}, {"name":"sealedSenderIndicators"}, {"name":"storiesDisabled"}, {"name":"storyViewReceiptsEnabled"}, {"name":"subscriberCurrencyCode"}, {"name":"subscriberId"}, {"name":"subscriptionManuallyCancelled"}, {"name":"typingIndicators"}, {"name":"universalExpireTimer"}, {"name":"unlistedPhoneNumber"}, {"name":"username"}, {"name":"usernameLink"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {
@@ -3113,6 +3127,7 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.ContactRecord",
   "allDeclaredFields":true,
+  "fields":[{"name":"aci"}, {"name":"aciBinary"}, {"name":"archived"}, {"name":"avatarColor"}, {"name":"blocked"}, {"name":"e164"}, {"name":"familyName"}, {"name":"givenName"}, {"name":"hidden"}, {"name":"hideStory"}, {"name":"identityKey"}, {"name":"identityState"}, {"name":"markedUnread"}, {"name":"mutedUntilTimestamp"}, {"name":"nickname"}, {"name":"note"}, {"name":"pni"}, {"name":"pniBinary"}, {"name":"pniSignatureVerified"}, {"name":"profileKey"}, {"name":"systemFamilyName"}, {"name":"systemGivenName"}, {"name":"systemNickname"}, {"name":"unregisteredAtTimestamp"}, {"name":"username"}, {"name":"whitelisted"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {
@@ -3143,6 +3158,7 @@
 {
   "name":"org.whispersystems.signalservice.internal.storage.protos.GroupV2Record",
   "allDeclaredFields":true,
+  "fields":[{"name":"archived"}, {"name":"avatarColor"}, {"name":"blocked"}, {"name":"dontNotifyForMentionsIfMuted"}, {"name":"hideStory"}, {"name":"markedUnread"}, {"name":"masterKey"}, {"name":"mutedUntilTimestamp"}, {"name":"storySendMode"}, {"name":"whitelisted"}],
   "methods":[{"name":"adapter","parameterTypes":[] }, {"name":"unknownFields","parameterTypes":[] }]
 },
 {
