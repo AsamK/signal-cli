@@ -1,6 +1,21 @@
 # Changelog
 
-## [Unreleased]
+## [0.13.23] - 2026-01-24
+
+Requires libsignal-client version 0.86.12.
+
+### Added
+
+- Add sendPollCreate, sendPollVote, sendPollTerminate commands for polls
+- Add updateDevice command to set device name of linked devices
+
+### Changed
+
+- Allow updating contact names from linked devices
+
+### Fixed
+
+- Start multi account mode even if some accounts have authorization failures
 
 ## [0.13.22] - 2025-11-14
 
