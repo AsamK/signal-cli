@@ -16,6 +16,7 @@ import org.asamk.signal.output.JsonWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedCollection;
 
 public class DeleteLocalAccountDataCommand implements RegistrationCommand, JsonRpcRegistrationCommand<Map<String, Object>> {
 
@@ -54,7 +55,7 @@ public class DeleteLocalAccountDataCommand implements RegistrationCommand, JsonR
     }
 
     @Override
-    public List<OutputType> getSupportedOutputTypes() {
+    public SequencedCollection<OutputType> getSupportedOutputTypes() {
         return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 

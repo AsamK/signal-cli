@@ -11,6 +11,7 @@ import org.asamk.signal.output.JsonWriter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedCollection;
 
 public interface JsonRpcMultiLocalCommand extends JsonRpcMultiCommand<Map<String, Object>>, MultiLocalCommand {
 
@@ -27,7 +28,7 @@ public interface JsonRpcMultiLocalCommand extends JsonRpcMultiCommand<Map<String
         handleCommand(commandNamespace, c, jsonWriter);
     }
 
-    default List<OutputType> getSupportedOutputTypes() {
+    default SequencedCollection<OutputType> getSupportedOutputTypes() {
         return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 }

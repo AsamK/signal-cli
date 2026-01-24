@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.channels.Channels;
 import java.util.List;
+import java.util.SequencedCollection;
 import java.util.function.Supplier;
 
 import static org.asamk.signal.util.CommandUtil.getReceiveConfig;
@@ -53,7 +54,7 @@ public class JsonRpcDispatcherCommand implements LocalCommand, MultiLocalCommand
     }
 
     @Override
-    public List<OutputType> getSupportedOutputTypes() {
+    public SequencedCollection<OutputType> getSupportedOutputTypes() {
         return List.of(OutputType.JSON);
     }
 

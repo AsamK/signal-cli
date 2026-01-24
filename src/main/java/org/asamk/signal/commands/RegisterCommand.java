@@ -21,6 +21,7 @@ import org.asamk.signal.util.CommandUtil;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.SequencedCollection;
 
 public class RegisterCommand implements RegistrationCommand, JsonRpcRegistrationCommand<RegisterCommand.RegistrationParams> {
 
@@ -57,7 +58,7 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
     }
 
     @Override
-    public List<OutputType> getSupportedOutputTypes() {
+    public SequencedCollection<OutputType> getSupportedOutputTypes() {
         return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 

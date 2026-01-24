@@ -16,6 +16,7 @@ import org.asamk.signal.output.PlainTextWriter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedCollection;
 
 public class VersionCommand implements JsonRpcLocalCommand, JsonRpcMultiLocalCommand {
 
@@ -25,7 +26,7 @@ public class VersionCommand implements JsonRpcLocalCommand, JsonRpcMultiLocalCom
     }
 
     @Override
-    public List<OutputType> getSupportedOutputTypes() {
+    public SequencedCollection<OutputType> getSupportedOutputTypes() {
         return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 

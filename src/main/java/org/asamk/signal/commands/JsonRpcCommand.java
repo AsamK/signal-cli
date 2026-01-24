@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.asamk.signal.OutputType;
 
 import java.util.List;
+import java.util.SequencedCollection;
 
 public interface JsonRpcCommand<T> extends Command {
 
@@ -12,7 +13,7 @@ public interface JsonRpcCommand<T> extends Command {
         return null;
     }
 
-    default List<OutputType> getSupportedOutputTypes() {
+    default SequencedCollection<OutputType> getSupportedOutputTypes() {
         return List.of(OutputType.JSON);
     }
 }

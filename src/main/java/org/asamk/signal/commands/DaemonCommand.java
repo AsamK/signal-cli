@@ -32,6 +32,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SequencedCollection;
 
 import static org.asamk.signal.util.CommandUtil.getReceiveConfig;
 
@@ -87,7 +88,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
     }
 
     @Override
-    public List<OutputType> getSupportedOutputTypes() {
+    public SequencedCollection<OutputType> getSupportedOutputTypes() {
         return List.of(OutputType.PLAIN_TEXT, OutputType.JSON);
     }
 
