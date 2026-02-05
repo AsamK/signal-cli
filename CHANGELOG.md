@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.13.24] - 2026-02-05
+
+Requires libsignal-client version 0.87.0.
+
+### Improved
+
+- Improve performance of first send to large group
+- Improve envelope validation
+
 ## [0.13.23] - 2026-01-24
 
 Requires libsignal-client version 0.86.12.
