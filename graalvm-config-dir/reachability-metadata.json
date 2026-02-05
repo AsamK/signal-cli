@@ -842,13 +842,7 @@
     {
       "type": "java.lang.Enum",
       "allDeclaredMethods": true,
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "ordinal",
-          "parameterTypes": []
-        }
-      ]
+      "jniAccessible": true
     },
     {
       "type": "java.lang.Float",
@@ -1303,24 +1297,7 @@
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
       "allDeclaredConstructors": true,
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "long",
-            "long"
-          ]
-        },
-        {
-          "name": "getLeastSignificantBits",
-          "parameterTypes": []
-        },
-        {
-          "name": "getMostSignificantBits",
-          "parameterTypes": []
-        }
-      ]
+      "jniAccessible": true
     },
     {
       "type": "java.util.concurrent.ForkJoinTask",
@@ -5275,6 +5252,15 @@
       ]
     },
     {
+      "type": "org.signal.core.models.ServiceId$ACI"
+    },
+    {
+      "type": "org.signal.core.models.ServiceId$Companion"
+    },
+    {
+      "type": "org.signal.core.models.ServiceId$PNI"
+    },
+    {
       "type": "org.signal.libsignal.internal.CompletableFuture",
       "jniAccessible": true,
       "methods": [
@@ -5583,6 +5569,24 @@
       "allDeclaredFields": true
     },
     {
+      "type": "org.signal.libsignal.protocol.SessionCipher$1",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "loadPreKey",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "removePreKey",
+          "parameterTypes": [
+            "int"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.protocol.SignalProtocolAddress",
       "jniAccessible": true,
       "methods": [
@@ -5826,6 +5830,10 @@
     {
       "type": "org.signal.libsignal.protocol.state.SignedPreKeyStore",
       "allDeclaredMethods": true,
+      "jniAccessible": true
+    },
+    {
+      "type": "org.signal.libsignal.protocol.state.internal.PreKeyStore",
       "jniAccessible": true
     },
     {
