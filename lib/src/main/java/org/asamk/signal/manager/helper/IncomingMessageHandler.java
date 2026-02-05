@@ -200,7 +200,10 @@ public final class IncomingMessageHandler {
     ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException, InvalidMessageStructureException {
         final var content = cipherResult.getContent();
         final var envelopeMetadata = cipherResult.getMetadata();
-        final var validationResult = EnvelopeContentValidator.INSTANCE.validate(envelope, content, account.getAci());
+        final var validationResult = EnvelopeContentValidator.INSTANCE.validate(envelope,
+                content,
+                account.getAci(),
+                cipherResult.getMetadata().getCiphertextMessageType());
 
         if (validationResult instanceof EnvelopeContentValidator.Result.Invalid v) {
             logger.warn("Invalid content! {}", v.getReason(), v.getThrowable());
