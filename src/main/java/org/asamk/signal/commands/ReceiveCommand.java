@@ -55,6 +55,12 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
         subparser.addArgument("--ignore-stories")
                 .help("Don’t receive story messages from the server.")
                 .action(Arguments.storeTrue());
+        subparser.addArgument("--ignore-avatars")
+                .help("Don't download avatars of received messages.")
+                .action(Arguments.storeTrue());
+        subparser.addArgument("--ignore-stickers")
+                .help("Don't download sticker packs of received messages.")
+                .action(Arguments.storeTrue());
         subparser.addArgument("--send-read-receipts")
                 .help("Send read receipts for all incoming data messages (in addition to the default delivery receipts)")
                 .action(Arguments.storeTrue());
@@ -76,8 +82,10 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
         final var maxMessagesRaw = ns.getInt("max-messages");
         final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
         final var ignoreStories = Boolean.TRUE.equals(ns.getBoolean("ignore-stories"));
+        final var ignoreAvatars = Boolean.TRUE.equals(ns.getBoolean("ignore-avatars"));
+        final var ignoreStickers = Boolean.TRUE.equals(ns.getBoolean("ignore-stickers"));
         final var sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
-        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments, ignoreStories, sendReadReceipts));
+        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments, ignoreStories, ignoreAvatars, ignoreStickers, sendReadReceipts));
         try {
             final var handler = switch (outputWriter) {
                 case JsonWriter writer -> new JsonReceiveMessageHandler(m, writer);

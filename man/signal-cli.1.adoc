@@ -587,6 +587,12 @@ Don’t download attachments of received messages.
 *--ignore-stories*::
 Don’t receive story messages from the server.
 
+*--ignore-avatars*::
+Don't download avatars of received messages.
+
+*--ignore-stickers*::
+Don't download sticker packs of received messages.
+
 
 *--send-read-receipts*::
 Send read receipts for all incoming data messages (in addition to the default delivery receipts)
@@ -950,6 +956,12 @@ Don’t download attachments of received messages.
 *--ignore-stories*::
 Don’t receive story messages from the server.
 
+*--ignore-avatars*::
+Don't download avatars of received messages.
+
+*--ignore-stickers*::
+Don't download sticker packs of received messages.
+
 *--send-read-receipts*::
 Send read receipts for all incoming data messages (in addition to the default delivery receipts)
 
@@ -970,6 +982,12 @@ Don’t download attachments of received messages.
 
 *--ignore-stories*::
 Don’t receive story messages from the server.
+
+*--ignore-avatars*::
+Don't download avatars of received messages.
+
+*--ignore-stickers*::
+Don't download sticker packs of received messages.
 
 *--send-read-receipts*::
 Send read receipts for all incoming data messages (in addition to the default delivery receipts)

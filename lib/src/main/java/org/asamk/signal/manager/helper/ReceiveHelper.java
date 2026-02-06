@@ -40,7 +40,7 @@ public class ReceiveHelper {
     private final SignalDependencies dependencies;
     private final Context context;
 
-    private ReceiveConfig receiveConfig = new ReceiveConfig(false, false, false);
+    private ReceiveConfig receiveConfig = new ReceiveConfig(false, false, false, false, false);
     private boolean hasCaughtUpWithOldMessages = false;
     private boolean isWaitingForMessage = false;
     private boolean shouldStop = false;

@@ -18,6 +18,6 @@ public class DownloadProfileAvatarJob implements Job {
         logger.trace("Downloading profile avatar {}", avatarPath);
         final var account = context.getAccount();
         context.getProfileHelper()
-                .downloadProfileAvatar(account.getSelfRecipientId(), avatarPath, account.getProfileKey());
+                .downloadProfileAvatar(account.getSelfRecipientId(), avatarPath, account.getProfileKey(), false);
     }
 }

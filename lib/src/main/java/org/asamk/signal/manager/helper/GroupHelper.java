@@ -107,7 +107,10 @@ public class GroupHelper {
         return group != null && group.isBlocked();
     }
 
-    public void downloadGroupAvatar(GroupIdV1 groupId, SignalServiceAttachment avatar) {
+    public void downloadGroupAvatar(GroupIdV1 groupId, SignalServiceAttachment avatar, boolean ignoreAvatars) {
+        if (ignoreAvatars) {
+            return;
+        }
         try {
             context.getAvatarStore()
                     .storeGroupAvatar(groupId,
@@ -167,7 +170,7 @@ public class GroupHelper {
                 storeProfileKeysFromMembers(group);
                 final var avatar = group.avatar;
                 if (!avatar.isEmpty()) {
-                    downloadGroupAvatar(groupId, groupSecretParams, avatar);
+                    downloadGroupAvatar(groupId, groupSecretParams, avatar, false);
                 }
             }
             groupInfoV2.setGroup(group);
@@ -506,13 +509,16 @@ public class GroupHelper {
         storeProfileKeysFromMembers(decryptedGroup);
         final var avatar = decryptedGroup.avatar;
         if (!avatar.isEmpty()) {
-            downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar);
+            downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar, false);
         }
         groupInfoV2.setGroup(decryptedGroup);
         account.getGroupStore().updateGroup(group);
     }
 
-    private void downloadGroupAvatar(GroupIdV2 groupId, GroupSecretParams groupSecretParams, String cdnKey) {
+    private void downloadGroupAvatar(GroupIdV2 groupId, GroupSecretParams groupSecretParams, String cdnKey, boolean ignoreAvatars) {
+        if (ignoreAvatars) {
+            return;
+        }
         try {
             context.getAvatarStore()
                     .storeGroupAvatar(groupId,

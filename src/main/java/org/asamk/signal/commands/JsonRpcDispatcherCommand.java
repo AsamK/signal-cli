@@ -44,6 +44,12 @@ public class JsonRpcDispatcherCommand implements LocalCommand, MultiLocalCommand
         subparser.addArgument("--ignore-stories")
                 .help("Don’t receive story messages from the server.")
                 .action(Arguments.storeTrue());
+        subparser.addArgument("--ignore-avatars")
+                .help("Don't download avatars of received messages.")
+                .action(Arguments.storeTrue());
+        subparser.addArgument("--ignore-stickers")
+                .help("Don't download sticker packs of received messages.")
+                .action(Arguments.storeTrue());
         subparser.addArgument("--send-read-receipts")
                 .help("Send read receipts for all incoming data messages (in addition to the default delivery receipts)")
                 .action(Arguments.storeTrue());
