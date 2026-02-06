@@ -194,6 +194,10 @@
   "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
 },
 {
+  "name":"org.signal.libsignal.protocol.SessionCipher$1",
+  "methods":[{"name":"loadPreKey","parameterTypes":["int"] }, {"name":"removePreKey","parameterTypes":["int"] }]
+},
+{
   "name":"org.signal.libsignal.protocol.SignalProtocolAddress",
   "methods":[{"name":"<init>","parameterTypes":["long"] }, {"name":"<init>","parameterTypes":["java.lang.String","int"] }]
 },
@@ -278,6 +282,9 @@
 },
 {
   "name":"org.signal.libsignal.protocol.state.SignedPreKeyStore"
+},
+{
+  "name":"org.signal.libsignal.protocol.state.internal.PreKeyStore"
 },
 {
   "name":"org.signal.libsignal.usernames.BadDiscriminatorCharacterException",
