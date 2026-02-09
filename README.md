@@ -79,7 +79,10 @@ of all country codes.)
      ```
 
   Registering may require solving a CAPTCHA
-  challenge: [Registration with captcha](https://github.com/AsamK/signal-cli/wiki/Registration-with-captcha)
+  challenge: [Registration with captcha](https://github.com/AsamK/signal-cli/wiki/Registration-with-captcha).
+  In this case, provide the captcha token with the `--captcha` flag:
+
+      signal-cli -a ACCOUNT register --captcha CAPTCHA_TOKEN
 
 * Verify the number using the code received via SMS or voice, optionally add `--pin PIN_CODE` if you've added a pin code
   to your account
