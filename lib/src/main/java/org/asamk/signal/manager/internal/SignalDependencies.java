@@ -15,6 +15,7 @@ import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.account.AccountApi;
 import org.whispersystems.signalservice.api.attachment.AttachmentApi;
+import org.whispersystems.signalservice.api.calling.CallingApi;
 import org.whispersystems.signalservice.api.cds.CdsApi;
 import org.whispersystems.signalservice.api.certificate.CertificateApi;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
@@ -76,6 +77,7 @@ public class SignalDependencies {
     private StorageServiceApi storageServiceApi;
     private CertificateApi certificateApi;
     private AttachmentApi attachmentApi;
+    private CallingApi callingApi;
     private MessageApi messageApi;
     private KeysApi keysApi;
     private GroupsV2Operations groupsV2Operations;
@@ -253,6 +255,13 @@ public class SignalDependencies {
     public AttachmentApi getAttachmentApi() {
         return getOrCreate(() -> attachmentApi,
                 () -> attachmentApi = new AttachmentApi(getAuthenticatedSignalWebSocket(), getPushServiceSocket()));
+    }
+
+    public CallingApi getCallingApi() {
+        return getOrCreate(() -> callingApi,
+                () -> callingApi = new CallingApi(getAuthenticatedSignalWebSocket(),
+                        getUnauthenticatedSignalWebSocket(),
+                        getPushServiceSocket()));
     }
 
     public MessageApi getMessageApi() {
