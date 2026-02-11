@@ -1,0 +1,32 @@
+// RingRTC signaling protobuf definitions
+// These define the structure of the opaque blobs inside Signal call Offer/Answer messages.
+// signal-cli hand-codes the parsing in SignalingProtobuf.java rather than using protoc.
+syntax = "proto2";
+
+package signaling;
+
+option java_package = "org.asamk.signal.manager.calling.proto";
+option java_outer_classname = "SignalingProtos";
+
+message VideoCodec {
+    enum Type {
+        VP8  = 0;
+        H264 = 1;
+        VP9  = 2;
+    }
+    optional Type type  = 1;
+    optional uint32 level = 2;
+}
+
+message ConnectionParametersV4 {
+    optional bytes  public_key          = 1;  // x25519 public key (32 bytes)
+    optional string ice_ufrag           = 2;
+    optional string ice_pwd             = 3;
+    repeated VideoCodec receive_video_codecs = 4;
+    optional uint64 max_bitrate_bps     = 5;
+}
+
+// The top-level opaque blob inside an OfferMessage or AnswerMessage
+message Opaque {
+    optional ConnectionParametersV4 connection_parameters_v4 = 1;
+}

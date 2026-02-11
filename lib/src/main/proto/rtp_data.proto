@@ -1,0 +1,32 @@
+// In-call control messages carried over the RTP data channel.
+// signal-cli hand-codes the parsing in RtpDataProtobuf.java rather than using protoc.
+syntax = "proto2";
+
+package rtp_data;
+
+option java_package = "org.asamk.signal.manager.calling.proto";
+option java_outer_classname = "RtpDataProtos";
+
+message Accepted {}
+
+message Hangup {
+    optional uint32 id = 1;
+}
+
+message SenderStatus {
+    optional bool audio_enabled = 1;
+    optional bool video_enabled = 2;
+    optional bool sharing_screen = 3;
+}
+
+message Receiver {
+    optional uint32 id = 1;
+}
+
+// Top-level RTP data message
+message Data {
+    optional Accepted accepted = 1;
+    optional Hangup hangup = 2;
+    optional SenderStatus sender_status = 3;
+    optional Receiver receiver = 4;
+}
