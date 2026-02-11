@@ -1948,6 +1948,40 @@
       ]
     },
     {
+      "type": "org.asamk.signal.commands.AcceptCallCommand$JsonCallInfo",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "channels",
+          "parameterTypes": []
+        },
+        {
+          "name": "codec",
+          "parameterTypes": []
+        },
+        {
+          "name": "mediaSocketPath",
+          "parameterTypes": []
+        },
+        {
+          "name": "ptimeMs",
+          "parameterTypes": []
+        },
+        {
+          "name": "sampleRate",
+          "parameterTypes": []
+        },
+        {
+          "name": "state",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.commands.FinishLinkCommand$FinishLinkParams",
       "allDeclaredFields": true,
       "methods": [
@@ -1985,6 +2019,20 @@
       "allDeclaredConstructors": true
     },
     {
+      "type": "org.asamk.signal.commands.HangupCallCommand$JsonResult",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "status",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.commands.ListAccountsCommand$JsonAccount",
       "allDeclaredFields": true,
       "methods": [
@@ -1993,6 +2041,39 @@
           "parameterTypes": []
         }
       ]
+    },
+    {
+      "type": "org.asamk.signal.commands.ListCallsCommand$JsonCall",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "isOutgoing",
+          "parameterTypes": []
+        },
+        {
+          "name": "mediaSocketPath",
+          "parameterTypes": []
+        },
+        {
+          "name": "number",
+          "parameterTypes": []
+        },
+        {
+          "name": "state",
+          "parameterTypes": []
+        },
+        {
+          "name": "uuid",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.signal.commands.ListCallsCommand$JsonCall[]"
     },
     {
       "type": "org.asamk.signal.commands.ListContactsCommand$JsonContact",
@@ -2155,6 +2236,54 @@
         },
         {
           "name": "voice",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.signal.commands.RejectCallCommand$JsonResult",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "status",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.signal.commands.StartCallCommand$JsonCallInfo",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "channels",
+          "parameterTypes": []
+        },
+        {
+          "name": "codec",
+          "parameterTypes": []
+        },
+        {
+          "name": "mediaSocketPath",
+          "parameterTypes": []
+        },
+        {
+          "name": "ptimeMs",
+          "parameterTypes": []
+        },
+        {
+          "name": "sampleRate",
+          "parameterTypes": []
+        },
+        {
+          "name": "state",
           "parameterTypes": []
         }
       ]

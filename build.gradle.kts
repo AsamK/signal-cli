@@ -91,6 +91,14 @@ dependencies {
     implementation(libs.logback)
     implementation(libs.zxing)
     implementation(project(":libsignal-cli"))
+
+    testImplementation(libs.junit.jupiter)
+    testImplementation(platform(libs.junit.jupiter.bom))
+    testRuntimeOnly(libs.junit.launcher)
+}
+
+tasks.named<Test>("test") {
+    useJUnitPlatform()
 }
 
 configurations {
