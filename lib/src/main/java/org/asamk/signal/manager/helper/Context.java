@@ -23,6 +23,7 @@ public class Context implements AutoCloseable {
 
     private AccountHelper accountHelper;
     private AttachmentHelper attachmentHelper;
+    private CallManager callManager;
     private ContactHelper contactHelper;
     private GroupHelper groupHelper;
     private GroupV2Helper groupV2Helper;
@@ -90,6 +91,10 @@ public class Context implements AutoCloseable {
 
     public AttachmentHelper getAttachmentHelper() {
         return getOrCreate(() -> attachmentHelper, () -> attachmentHelper = new AttachmentHelper(this));
+    }
+
+    public CallManager getCallManager() {
+        return getOrCreate(() -> callManager, () -> callManager = new CallManager(this));
     }
 
     public ContactHelper getContactHelper() {
@@ -172,6 +177,9 @@ public class Context implements AutoCloseable {
 
     @Override
     public void close() {
+        if (callManager != null) {
+            callManager.close();
+        }
         jobExecutor.close();
     }
 
