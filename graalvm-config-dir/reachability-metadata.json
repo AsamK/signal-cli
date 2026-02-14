@@ -9500,6 +9500,12 @@
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
     },
     {
+      "glob": "ch/qos/logback/classic/logback-classic-version.properties"
+    },
+    {
+      "glob": "ch/qos/logback/core/logback-core-version.properties"
+    },
+    {
       "glob": "com/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_*"
     },
     {
@@ -9525,6 +9531,9 @@
     },
     {
       "glob": "org/asamk/signal/manager/config/whisper.store"
+    },
+    {
+      "glob": "org/slf4j/impl/StaticLoggerBinder.class"
     },
     {
       "glob": "org/sqlite/native/Linux/x86_64/libsqlitejdbc.so"
