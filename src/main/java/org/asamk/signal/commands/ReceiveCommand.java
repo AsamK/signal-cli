@@ -15,7 +15,6 @@ import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.json.JsonReceiveMessageHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AlreadyReceivingException;
-import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
 import org.asamk.signal.output.PlainTextWriter;
@@ -28,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.SequencedCollection;
+
+import static org.asamk.signal.util.CommandUtil.getReceiveConfig;
 
 public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<ReceiveCommand.ReceiveParams> {
 
@@ -80,12 +81,7 @@ public class ReceiveCommand implements LocalCommand, JsonRpcSingleCommand<Receiv
         Shutdown.installHandler();
         final var timeout = ns.getDouble("timeout");
         final var maxMessagesRaw = ns.getInt("max-messages");
-        final var ignoreAttachments = Boolean.TRUE.equals(ns.getBoolean("ignore-attachments"));
-        final var ignoreStories = Boolean.TRUE.equals(ns.getBoolean("ignore-stories"));
-        final var ignoreAvatars = Boolean.TRUE.equals(ns.getBoolean("ignore-avatars"));
-        final var ignoreStickers = Boolean.TRUE.equals(ns.getBoolean("ignore-stickers"));
-        final var sendReadReceipts = Boolean.TRUE.equals(ns.getBoolean("send-read-receipts"));
-        m.setReceiveConfig(new ReceiveConfig(ignoreAttachments, ignoreStories, ignoreAvatars, ignoreStickers, sendReadReceipts));
+        m.setReceiveConfig(getReceiveConfig(ns));
         try {
             final var handler = switch (outputWriter) {
                 case JsonWriter writer -> new JsonReceiveMessageHandler(m, writer);

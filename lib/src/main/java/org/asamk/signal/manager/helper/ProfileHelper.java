@@ -116,7 +116,8 @@ public final class ProfileHelper {
                 .filter(recipientId -> !ExpiringProfileCredentialUtil.isValid(account.getProfileStore()
                         .getExpiringProfileKeyCredential(recipientId)))
                 .map(recipientId -> retrieveProfile(recipientId,
-                        SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL).onErrorComplete());
+                        SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL,
+                        false).onErrorComplete());
         Maybe.merge(profileFetches, 10).blockingSubscribe();
 
         return recipientIds.stream().map(r -> account.getProfileStore().getExpiringProfileKeyCredential(r)).toList();
@@ -129,7 +130,9 @@ public final class ProfileHelper {
         }
 
         try {
-            blockingGetProfile(retrieveProfile(recipientId, SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL));
+            blockingGetProfile(retrieveProfile(recipientId,
+                    SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL,
+                    false));
         } catch (IOException e) {
             logger.warn("Failed to retrieve profile key credential, ignoring: {}", e.getMessage());
             return null;
@@ -241,7 +244,8 @@ public final class ProfileHelper {
         final var profileFetches = Flowable.fromIterable(recipientIds)
                 .filter(recipientId -> force || isProfileRefreshRequired(profileStore.getProfile(recipientId)))
                 .map(recipientId -> retrieveProfile(recipientId,
-                        SignalServiceProfile.RequestType.PROFILE).onErrorComplete());
+                        SignalServiceProfile.RequestType.PROFILE,
+                        false).onErrorComplete());
         Maybe.merge(profileFetches, 10).blockingSubscribe();
 
         return recipientIds.stream().map(profileStore::getProfile).toList();
@@ -255,7 +259,7 @@ public final class ProfileHelper {
         }
 
         try {
-            blockingGetProfile(retrieveProfile(recipientId, SignalServiceProfile.RequestType.PROFILE));
+            blockingGetProfile(retrieveProfile(recipientId, SignalServiceProfile.RequestType.PROFILE, false));
         } catch (IOException e) {
             logger.warn("Failed to retrieve profile, ignoring: {}", e.getMessage());
         }
@@ -272,29 +276,11 @@ public final class ProfileHelper {
         return now - profile.getLastUpdateTimestamp() >= 6 * 60 * 60 * 1000;
     }
 
-    private Profile decryptProfileAndDownloadAvatar(
-            final RecipientId recipientId,
-            final ProfileKey profileKey,
-            final SignalServiceProfile encryptedProfile,
-            final boolean ignoreAvatars
-    ) {
-        final var avatarPath = encryptedProfile.getAvatar();
-        if (!ignoreAvatars) {
-            downloadProfileAvatar(recipientId, avatarPath, profileKey, ignoreAvatars);
-        }
-
-        return ProfileUtils.decryptProfile(profileKey, encryptedProfile);
-    }
-
     public void downloadProfileAvatar(
             final RecipientId recipientId,
             final String avatarPath,
-            final ProfileKey profileKey,
-            final boolean ignoreAvatars
+            final ProfileKey profileKey
     ) {
-        if (ignoreAvatars) {
-            return;
-        }
         var profile = account.getProfileStore().getProfile(recipientId);
         if (profile == null || !Objects.equals(avatarPath, profile.getAvatarUrlPath())) {
             logger.trace("Downloading profile avatar for {}", recipientId);
@@ -322,7 +308,8 @@ public final class ProfileHelper {
 
     private Single<ProfileAndCredential> retrieveProfile(
             RecipientId recipientId,
-            SignalServiceProfile.RequestType requestType
+            SignalServiceProfile.RequestType requestType,
+            final boolean ignoreAvatars
     ) {
         var unidentifiedAccess = getUnidentifiedAccess(recipientId);
         var profileKey = Optional.ofNullable(account.getProfileStore().getProfileKey(recipientId));
@@ -348,7 +335,12 @@ public final class ProfileHelper {
             Profile newProfile = null;
             if (profileKey.isPresent()) {
                 logger.trace("Decrypting profile");
-                newProfile = decryptProfileAndDownloadAvatar(recipientId, profileKey.get(), encryptedProfile, false);
+                final var avatarPath = encryptedProfile.getAvatar();
+                if (!ignoreAvatars) {
+                    downloadProfileAvatar(recipientId, avatarPath, profileKey.get());
+                }
+
+                newProfile = ProfileUtils.decryptProfile(profileKey.get(), encryptedProfile);
             }
 
             if (newProfile == null) {

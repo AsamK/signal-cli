@@ -62,6 +62,14 @@ public class IOUtils {
         }
     }
 
+    /**
+     * Read and discard all data from the input stream.
+     * This is useful to ensure that all data is read and any resources are released, without needing to store the data in memory.
+     */
+    public static void discardStream(InputStream input) throws IOException {
+        copyStream(input, OutputStream.nullOutputStream());
+    }
+
     public static void copyStream(InputStream input, OutputStream output) throws IOException {
         copyStream(input, output, 4096);
     }

@@ -107,10 +107,7 @@ public class GroupHelper {
         return group != null && group.isBlocked();
     }
 
-    public void downloadGroupAvatar(GroupIdV1 groupId, SignalServiceAttachment avatar, boolean ignoreAvatars) {
-        if (ignoreAvatars) {
-            return;
-        }
+    public void downloadGroupAvatar(GroupIdV1 groupId, SignalServiceAttachment avatar) {
         try {
             context.getAvatarStore()
                     .storeGroupAvatar(groupId,
@@ -133,7 +130,8 @@ public class GroupHelper {
     public GroupInfoV2 getOrMigrateGroup(
             final GroupMasterKey groupMasterKey,
             final int revision,
-            final byte[] signedGroupChange
+            final byte[] signedGroupChange,
+            final boolean ignoreAvatars
     ) {
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupMasterKey);
 
@@ -169,8 +167,8 @@ public class GroupHelper {
             if (group != null) {
                 storeProfileKeysFromMembers(group);
                 final var avatar = group.avatar;
-                if (!avatar.isEmpty()) {
-                    downloadGroupAvatar(groupId, groupSecretParams, avatar, false);
+                if (!avatar.isEmpty() && !ignoreAvatars) {
+                    downloadGroupAvatar(groupId, groupSecretParams, avatar);
                 }
             }
             groupInfoV2.setGroup(group);
@@ -394,7 +392,8 @@ public class GroupHelper {
                 .joinGroup(inviteLinkUrl.getGroupMasterKey(), inviteLinkUrl.getPassword(), groupJoinInfo);
         final var group = getOrMigrateGroup(inviteLinkUrl.getGroupMasterKey(),
                 groupJoinInfo.revision + 1,
-                changeResponse.group_change == null ? null : changeResponse.group_change.encode());
+                changeResponse.group_change == null ? null : changeResponse.group_change.encode(),
+                false);
 
         if (group.getGroup() == null) {
             // Only requested member, can't send update to group members
@@ -509,16 +508,13 @@ public class GroupHelper {
         storeProfileKeysFromMembers(decryptedGroup);
         final var avatar = decryptedGroup.avatar;
         if (!avatar.isEmpty()) {
-            downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar, false);
+            downloadGroupAvatar(groupInfoV2.getGroupId(), groupSecretParams, avatar);
         }
         groupInfoV2.setGroup(decryptedGroup);
         account.getGroupStore().updateGroup(group);
     }
 
-    private void downloadGroupAvatar(GroupIdV2 groupId, GroupSecretParams groupSecretParams, String cdnKey, boolean ignoreAvatars) {
-        if (ignoreAvatars) {
-            return;
-        }
+    private void downloadGroupAvatar(GroupIdV2 groupId, GroupSecretParams groupSecretParams, String cdnKey) {
         try {
             context.getAvatarStore()
                     .storeGroupAvatar(groupId,

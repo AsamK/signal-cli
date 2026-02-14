@@ -326,8 +326,8 @@ public class SyncHelper {
                     syncGroup.color = g.getColor().get();
                 }
 
-                if (g.getAvatar().isPresent()) {
-                    context.getGroupHelper().downloadGroupAvatar(syncGroup.getGroupId(), g.getAvatar().get(), ignoreAvatars);
+                if (g.getAvatar().isPresent() && !ignoreAvatars) {
+                    context.getGroupHelper().downloadGroupAvatar(syncGroup.getGroupId(), g.getAvatar().get());
                 }
                 syncGroup.archived = g.isArchived();
                 account.getGroupStore().updateGroup(syncGroup);
@@ -381,7 +381,11 @@ public class SyncHelper {
             account.getContactStore().storeContact(recipientId, builder.build());
 
             if (c.getAvatar().isPresent()) {
-                storeContactAvatar(c.getAvatar().get(), address, ignoreAvatars);
+                if (!ignoreAvatars) {
+                    storeContactAvatar(c.getAvatar().get(), address);
+                } else {
+                    IOUtils.discardStream(c.getAvatar().get().getInputStream());
+                }
             }
         }
     }
@@ -430,10 +434,7 @@ public class SyncHelper {
                 streamDetails.getContentType()));
     }
 
-    private void storeContactAvatar(DeviceContactAvatar avatar, RecipientAddress address, boolean ignoreAvatars) {
-        if (ignoreAvatars) {
-            return;
-        }
+    private void storeContactAvatar(DeviceContactAvatar avatar, RecipientAddress address) {
         try {
             context.getAvatarStore()
                     .storeContactAvatar(address,
