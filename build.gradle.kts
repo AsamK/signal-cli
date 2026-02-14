@@ -123,6 +123,7 @@ tasks.register("fatJar", type = Jar::class) {
     archiveBaseName.set("${project.name}-fat")
     exclude(
         "META-INF/*.SF",
+        "META-INF/**/*.MF",
         "META-INF/*.DSA",
         "META-INF/*.RSA",
         "META-INF/NOTICE*",
