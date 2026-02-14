@@ -1533,42 +1533,7 @@
     },
     {
       "type": "kotlin.reflect.jvm.internal.impl.resolve.scopes.DescriptorKindFilter",
-      "allPublicFields": true,
-      "fields": [
-        {
-          "name": "ALL"
-        },
-        {
-          "name": "CALLABLES"
-        },
-        {
-          "name": "CLASSIFIERS"
-        },
-        {
-          "name": "Companion"
-        },
-        {
-          "name": "FUNCTIONS"
-        },
-        {
-          "name": "NON_SINGLETON_CLASSIFIERS"
-        },
-        {
-          "name": "PACKAGES"
-        },
-        {
-          "name": "SINGLETON_CLASSIFIERS"
-        },
-        {
-          "name": "TYPE_ALIASES"
-        },
-        {
-          "name": "VALUES"
-        },
-        {
-          "name": "VARIABLES"
-        }
-      ]
+      "allPublicFields": true
     },
     {
       "type": "kotlinx.coroutines.CancellableContinuationImpl",
@@ -9418,6 +9383,12 @@
       "type": "sun.text.resources.BreakIteratorResources"
     },
     {
+      "type": "sun.text.resources.BreakIteratorResources_en"
+    },
+    {
+      "type": "sun.text.resources.BreakIteratorResources_en_US"
+    },
+    {
       "type": "sun.text.resources.CollationData"
     },
     {
@@ -9476,6 +9447,9 @@
       "glob": "META-INF/services/java.nio.channels.spi.SelectorProvider"
     },
     {
+      "glob": "META-INF/services/java.nio.file.spi.FileTypeDetector"
+    },
+    {
       "glob": "META-INF/services/java.sql.Driver"
     },
     {
@@ -9509,6 +9483,12 @@
       "glob": "com/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_*"
     },
     {
+      "glob": "com/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_DE"
+    },
+    {
+      "glob": "com/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_US"
+    },
+    {
       "glob": "kotlin/collections/collections.kotlin_builtins"
     },
     {
@@ -9522,6 +9502,12 @@
     },
     {
       "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_*.properties"
+    },
+    {
+      "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_en.properties"
+    },
+    {
+      "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_en_US.properties"
     },
     {
       "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_fr.properties"
@@ -9553,6 +9539,14 @@
     {
       "module": "java.base",
       "glob": "sun/net/idn/uidna.spp"
+    },
+    {
+      "module": "java.base",
+      "glob": "sun/net/www/content-types.properties"
+    },
+    {
+      "module": "java.base",
+      "glob": "sun/text/resources/LineBreakIteratorData"
     },
     {
       "bundle": "net.sourceforge.argparse4j.internal.ArgumentParserImpl"
