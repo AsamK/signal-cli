@@ -30,7 +30,6 @@ application {
 graalvmNative {
     binaries {
         this["main"].run {
-            buildArgs.add("--install-exit-handlers")
             buildArgs.add("-Dfile.encoding=UTF-8")
             buildArgs.add("-J-Dfile.encoding=UTF-8")
             buildArgs.add("-march=compatibility")

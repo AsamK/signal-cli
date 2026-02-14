@@ -5150,6 +5150,9 @@
       "allPublicConstructors": true
     },
     {
+      "type": "org.freedesktop.dbus.transport.jre.NativeTransportProvider"
+    },
+    {
       "type": "org.graalvm.jniutils.JNIExceptionWrapperEntryPoints",
       "jniAccessible": true,
       "methods": [
@@ -9415,6 +9418,9 @@
       "type": "sun.text.resources.BreakIteratorResources"
     },
     {
+      "type": "sun.text.resources.CollationData"
+    },
+    {
       "type": "sun.text.resources.cldr.FormatData"
     },
     {
@@ -9432,6 +9438,115 @@
           "java.sql.Connection"
         ]
       }
+    },
+    {
+      "type": {
+        "proxy": [
+          "org.freedesktop.dbus.interfaces.DBus"
+        ]
+      }
+    }
+  ],
+  "resources": [
+    {
+      "glob": "*signal_jni.*"
+    },
+    {
+      "glob": "*signal_jni_aarch64.*"
+    },
+    {
+      "glob": "*signal_jni_amd64.*"
+    },
+    {
+      "glob": "META-INF/maven/org.xerial/sqlite-jdbc/pom.properties"
+    },
+    {
+      "glob": "META-INF/services/ch.qos.logback.classic.spi.Configurator"
+    },
+    {
+      "glob": "META-INF/services/com.sun.net.httpserver.spi.HttpServerProvider"
+    },
+    {
+      "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"
+    },
+    {
+      "glob": "META-INF/services/java.net.spi.URLStreamHandlerProvider"
+    },
+    {
+      "glob": "META-INF/services/java.nio.channels.spi.SelectorProvider"
+    },
+    {
+      "glob": "META-INF/services/java.sql.Driver"
+    },
+    {
+      "glob": "META-INF/services/java.time.zone.ZoneRulesProvider"
+    },
+    {
+      "glob": "META-INF/services/java.util.spi.ResourceBundleControlProvider"
+    },
+    {
+      "glob": "META-INF/services/kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition"
+    },
+    {
+      "glob": "META-INF/services/kotlin.reflect.jvm.internal.impl.util.ModuleVisibilityHelper"
+    },
+    {
+      "glob": "META-INF/services/org.freedesktop.dbus.spi.message.ISocketProvider"
+    },
+    {
+      "glob": "META-INF/services/org.freedesktop.dbus.spi.transport.ITransportProvider"
+    },
+    {
+      "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
+    },
+    {
+      "glob": "com/google/i18n/phonenumbers/data/PhoneNumberMetadataProto_*"
+    },
+    {
+      "glob": "kotlin/collections/collections.kotlin_builtins"
+    },
+    {
+      "glob": "kotlin/kotlin.kotlin_builtins"
+    },
+    {
+      "glob": "libsignal_jni_amd64.so"
+    },
+    {
+      "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl.properties"
+    },
+    {
+      "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_*.properties"
+    },
+    {
+      "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_fr.properties"
+    },
+    {
+      "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_fr_FR.properties"
+    },
+    {
+      "glob": "org/asamk/signal/manager/config/whisper.store"
+    },
+    {
+      "glob": "org/sqlite/native/Linux/x86_64/libsqlitejdbc.so"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/nfc.nrm"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/uprops.icu"
+    },
+    {
+      "module": "java.base",
+      "glob": "sun/net/idn/uidna.spp"
+    },
+    {
+      "bundle": "net.sourceforge.argparse4j.internal.ArgumentParserImpl"
     }
   ]
 }

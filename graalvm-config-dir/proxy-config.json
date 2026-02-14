@@ -1,1 +1,0 @@
-[{"interfaces":["java.sql.Connection"]},{"interfaces":["org.asamk.Signal"]},{"interfaces":["org.asamk.Signal$Configuration"]},{"interfaces":["org.asamk.Signal$Device"]},{"interfaces":["org.asamk.Signal$Group"]},{"interfaces":["org.asamk.Signal$Identity"]},{"interfaces":["org.asamk.SignalControl"]},{"interfaces":["org.freedesktop.dbus.interfaces.DBus"]}]
