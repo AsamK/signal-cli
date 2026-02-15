@@ -1847,6 +1847,12 @@
       ]
     },
     {
+      "type": "org.asamk.Signal.Error$Failure"
+    },
+    {
+      "type": "org.asamk.Signal.Error.Failure"
+    },
+    {
       "type": "org.asamk.SignalControl",
       "allDeclaredMethods": true
     },
@@ -1860,6 +1866,23 @@
           ]
         }
       ]
+    },
+    {
+      "type": "org.asamk.SignalControl$Error$InvalidNumber",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.SignalControl.Error$InvalidNumber"
+    },
+    {
+      "type": "org.asamk.SignalControl.Error.InvalidNumber"
     },
     {
       "type": "org.asamk.signal.Main",
@@ -9407,6 +9430,41 @@
       "type": {
         "proxy": [
           "java.sql.Connection"
+        ]
+      }
+    },
+    {
+      "type": {
+        "proxy": [
+          "org.asamk.Signal"
+        ]
+      }
+    },
+    {
+      "type": {
+        "proxy": [
+          "org.asamk.Signal$Device"
+        ]
+      }
+    },
+    {
+      "type": {
+        "proxy": [
+          "org.asamk.Signal$Group"
+        ]
+      }
+    },
+    {
+      "type": {
+        "proxy": [
+          "org.asamk.Signal$Identity"
+        ]
+      }
+    },
+    {
+      "type": {
+        "proxy": [
+          "org.asamk.SignalControl"
         ]
       }
     },

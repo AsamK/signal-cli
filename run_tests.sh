@@ -11,6 +11,7 @@ NUMBER_2="$2"
 TEST_PIN_1=456test_pin_foo123
 NATIVE=0
 JSON_RPC=0
+DBUS=0
 TEST_REGISTER=0
 
 PATH_TEST_CONFIG="$PWD/test-config"
@@ -41,6 +42,8 @@ run() {
   set -x
   if [ "$JSON_RPC" -eq 1 ]; then
     "$SIGNAL_CLI" $@
+  elif [ "$DBUS" -eq 1 ]; then
+    "$SIGNAL_CLI" --dbus --verbose --verbose $@ | grep -v '^Warning:' | grep -v 'at org'
   else
     "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@ | grep -v '^Warning:' | grep -v 'at org'
   fi
