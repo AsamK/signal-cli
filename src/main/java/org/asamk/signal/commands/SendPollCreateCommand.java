@@ -70,7 +70,7 @@ public class SendPollCreateCommand implements JsonRpcLocalCommand {
         final var noMulti = Boolean.TRUE.equals(ns.getBoolean("no-multi"));
         final var options = ns.<String>getList("option");
         if (options.size() < 2) {
-            throw new UserErrorException("Poll needs at least tow options");
+            throw new UserErrorException("Poll needs at least two options");
         }
 
         try {
