@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.helper;
 
+import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.CallInfo;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +50,7 @@ public class CallManager implements AutoCloseable {
     private final SignalAccount account;
     private final SignalDependencies dependencies;
     private final Map<Long, CallState> activeCalls = new ConcurrentHashMap<>();
+    private final List<Manager.CallEventListener> callEventListeners = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
         var t = new Thread(r, "call-timeout-scheduler");
         t.setDaemon(true);
@@ -58,6 +61,25 @@ public class CallManager implements AutoCloseable {
         this.context = context;
         this.account = context.getAccount();
         this.dependencies = context.getDependencies();
+    }
+
+    public void addCallEventListener(Manager.CallEventListener listener) {
+        callEventListeners.add(listener);
+    }
+
+    public void removeCallEventListener(Manager.CallEventListener listener) {
+        callEventListeners.remove(listener);
+    }
+
+    private void fireCallEvent(CallState state, String reason) {
+        var callInfo = state.toCallInfo();
+        for (var listener : callEventListeners) {
+            try {
+                listener.handleCallEvent(callInfo, reason);
+            } catch (Throwable e) {
+                logger.warn("Call event listener failed, ignoring", e);
+            }
+        }
     }
 
     public CallInfo startOutgoingCall(
@@ -85,6 +107,7 @@ public class CallManager implements AutoCloseable {
                 controlSocketPath,
                 callDir);
         activeCalls.put(callId, state);
+        fireCallEvent(state, null);
 
         // Spawn call tunnel binary and connect control channel
         spawnMediaTunnel(state);
@@ -122,6 +145,7 @@ public class CallManager implements AutoCloseable {
         sendAcceptIfReady(state);
 
         state.state = CallInfo.State.CONNECTING;
+        fireCallEvent(state, null);
 
         logger.info("Accepted incoming call {}", callId);
         return state.toCallInfo();
@@ -282,6 +306,7 @@ public class CallManager implements AutoCloseable {
                 + "}");
 
         state.state = CallInfo.State.CONNECTING;
+        fireCallEvent(state, null);
 
         logger.info("Received answer for call {}", callId);
     }
@@ -568,6 +593,7 @@ public class CallManager implements AutoCloseable {
             // Cleanup, no-op
             return;
         }
+        fireCallEvent(state, reason);
     }
 
     private void sendAcceptIfReady(CallState state) {
@@ -705,6 +731,7 @@ public class CallManager implements AutoCloseable {
         if (state == null) return;
 
         state.state = CallInfo.State.ENDED;
+        fireCallEvent(state, reason);
         logger.info("Call {} ended: {}", callId, reason);
 
         // Send Signal protocol hangup to remote peer (unless they initiated the end)

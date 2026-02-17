@@ -172,6 +172,7 @@ public class ManagerImpl implements Manager {
     private boolean isReceivingSynchronous;
     private final Set<ReceiveMessageHandler> weakHandlers = new HashSet<>();
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
+    private final Set<CallEventListener> callEventListeners = new HashSet<>();
     private final List<Runnable> closedListeners = new ArrayList<>();
     private final List<Runnable> addressChangedListeners = new ArrayList<>();
     private final CompositeDisposable disposable = new CompositeDisposable();
@@ -1712,6 +1713,22 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public void addCallEventListener(final CallEventListener listener) {
+        synchronized (callEventListeners) {
+            callEventListeners.add(listener);
+        }
+        context.getCallManager().addCallEventListener(listener);
+    }
+
+    @Override
+    public void removeCallEventListener(final CallEventListener listener) {
+        synchronized (callEventListeners) {
+            callEventListeners.remove(listener);
+        }
+        context.getCallManager().removeCallEventListener(listener);
+    }
+
+    @Override
     public InputStream retrieveAttachment(final String id) throws IOException {
         return context.getAttachmentHelper().retrieveAttachment(id).getStream();
     }
@@ -1905,6 +1922,12 @@ public class ManagerImpl implements Manager {
         }
         if (thread != null) {
             stopReceiveThread(thread);
+        }
+        synchronized (callEventListeners) {
+            for (var listener : callEventListeners) {
+                context.getCallManager().removeCallEventListener(listener);
+            }
+            callEventListeners.clear();
         }
         context.close();
         executor.close();
