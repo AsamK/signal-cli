@@ -913,6 +913,16 @@ public class DbusManagerImpl implements Manager {
         }
     }
 
+    @Override
+    public void addCallEventListener(final CallEventListener listener) {
+        // Not supported over DBus
+    }
+
+    @Override
+    public void removeCallEventListener(final CallEventListener listener) {
+        // Not supported over DBus
+    }
+
     // --- Voice call methods (not supported over DBus) ---
 
     @Override

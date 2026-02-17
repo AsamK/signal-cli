@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ public class SignalJsonRpcDispatcherHandler {
     private final boolean noReceiveOnStart;
 
     private final Map<Integer, List<Pair<Manager, Manager.ReceiveMessageHandler>>> receiveHandlers = new HashMap<>();
+    private final List<Pair<Manager, Manager.CallEventListener>> callEventHandlers = new ArrayList<>();
     private SignalJsonRpcCommandHandler commandHandler;
 
     public SignalJsonRpcDispatcherHandler(
@@ -62,6 +64,11 @@ public class SignalJsonRpcDispatcherHandler {
             c.addOnManagerRemovedHandler(this::unsubscribeReceive);
         }
 
+        for (var m : c.getManagers()) {
+            subscribeCallEvents(m);
+        }
+        c.addOnManagerAddedHandler(this::subscribeCallEvents);
+
         handleConnection();
     }
 
@@ -72,10 +79,31 @@ public class SignalJsonRpcDispatcherHandler {
             subscribeReceive(m, true);
         }
 
+        subscribeCallEvents(m);
+
         final var currentThread = Thread.currentThread();
         m.addClosedListener(currentThread::interrupt);
 
         handleConnection();
+    }
+
+    private void subscribeCallEvents(final Manager manager) {
+        Manager.CallEventListener listener = (callInfo, reason) -> {
+            final var params = new ObjectNode(objectMapper.getNodeFactory());
+            params.set("account", params.textNode(manager.getSelfNumber()));
+            params.set("callEvent", objectMapper.valueToTree(
+                    org.asamk.signal.json.JsonCallEvent.from(callInfo, reason)));
+            final var jsonRpcRequest = JsonRpcRequest.forNotification("callEvent", params, null);
+            try {
+                jsonRpcSender.sendRequest(jsonRpcRequest);
+            } catch (AssertionError e) {
+                if (e.getCause() instanceof ClosedChannelException) {
+                    logger.debug("Call event channel closed, removing listener");
+                }
+            }
+        };
+        manager.addCallEventListener(listener);
+        callEventHandlers.add(new Pair<>(manager, listener));
     }
 
     private static final AtomicInteger nextSubscriptionId = new AtomicInteger(0);
@@ -141,6 +169,10 @@ public class SignalJsonRpcDispatcherHandler {
         } finally {
             receiveHandlers.forEach((_subscriptionId, handlers) -> handlers.forEach(this::unsubscribeReceiveHandler));
             receiveHandlers.clear();
+            for (var pair : callEventHandlers) {
+                pair.first().removeCallEventListener(pair.second());
+            }
+            callEventHandlers.clear();
         }
     }
 

@@ -444,11 +444,20 @@ public interface Manager extends Closeable {
     @Override
     void close();
 
+    void addCallEventListener(CallEventListener listener);
+
+    void removeCallEventListener(CallEventListener listener);
+
     interface ReceiveMessageHandler {
 
         ReceiveMessageHandler EMPTY = (envelope, e) -> {
         };
 
         void handleMessage(MessageEnvelope envelope, Throwable e);
+    }
+
+    interface CallEventListener {
+
+        void handleCallEvent(CallInfo callInfo, String reason);
     }
 }
