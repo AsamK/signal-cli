@@ -7,6 +7,7 @@ bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.83"
 jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.20.2"
 argparse4j = "net.sourceforge.argparse4j:argparse4j:0.9.0"
 dbusjava = "com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.0.0"
+zxing = "com.google.zxing:core:3.5.4"
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 logback = "ch.qos.logback:logback-classic:1.5.29"
