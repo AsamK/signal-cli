@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.jul)
     implementation(libs.logback)
+    implementation(libs.zxing)
     implementation(project(":libsignal-cli"))
 }
 
