@@ -242,7 +242,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                     Optional.empty(),
                     List.of(),
                     Optional.empty(),
-                    List.of());
+                    List.of(),
+                    false);
             final var recipientIdentifiers = getSingleRecipientIdentifiers(recipients, m.getSelfNumber()).stream()
                     .map(RecipientIdentifier.class::cast)
                     .collect(Collectors.toSet());
@@ -407,7 +408,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                     Optional.empty(),
                     List.of(),
                     Optional.empty(),
-                    List.of());
+                    List.of(),
+                    false);
             final var results = m.sendMessage(message, Set.of(RecipientIdentifier.NoteToSelf.INSTANCE), false);
             checkSendMessageResults(results);
             return results.timestamp();
@@ -453,7 +455,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                     Optional.empty(),
                     List.of(),
                     Optional.empty(),
-                    List.of());
+                    List.of(),
+                    false);
             var results = m.sendMessage(message, Set.of(getGroupRecipientIdentifier(groupId)), false);
             checkSendMessageResults(results);
             return results.timestamp();

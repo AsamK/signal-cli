@@ -12,7 +12,8 @@ public record Message(
         Optional<Sticker> sticker,
         List<Preview> previews,
         Optional<StoryReply> storyReply,
-        List<TextStyle> textStyles
+        List<TextStyle> textStyles,
+        boolean noPush
 ) {
 
     public record Mention(RecipientIdentifier.Single recipient, int start, int length) {}

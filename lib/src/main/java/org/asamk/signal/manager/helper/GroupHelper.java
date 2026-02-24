@@ -682,7 +682,7 @@ public class GroupHelper {
 
     private void sendExpirationTimerUpdate(GroupIdV1 groupId) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var messageBuilder = SignalServiceDataMessage.newBuilder().asExpirationUpdate();
-        context.getSendHelper().sendAsGroupMessage(messageBuilder, groupId, false, Optional.empty());
+        context.getSendHelper().sendAsGroupMessage(messageBuilder, groupId, false, Optional.empty(), true);
     }
 
     private SendGroupMessageResults updateGroupV2(

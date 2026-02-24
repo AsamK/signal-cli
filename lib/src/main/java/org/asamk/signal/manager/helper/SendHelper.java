@@ -84,7 +84,8 @@ public class SendHelper {
     public SendMessageResult sendMessage(
             final SignalServiceDataMessage.Builder messageBuilder,
             final RecipientId recipientId,
-            Optional<Long> editTargetTimestamp
+            Optional<Long> editTargetTimestamp,
+            boolean urgent
     ) {
         var contact = account.getContactStore().getContact(recipientId);
         if (contact == null || !contact.isProfileSharingEnabled() || contact.isHidden()) {
@@ -102,7 +103,7 @@ public class SendHelper {
         }
 
         final var message = messageBuilder.build();
-        return sendMessage(message, recipientId, editTargetTimestamp);
+        return sendMessage(message, recipientId, editTargetTimestamp, urgent);
     }
 
     /**
@@ -113,10 +114,11 @@ public class SendHelper {
             final SignalServiceDataMessage.Builder messageBuilder,
             final GroupId groupId,
             final boolean includeSelf,
-            final Optional<Long> editTargetTimestamp
+            final Optional<Long> editTargetTimestamp,
+            boolean urgent
     ) throws IOException, GroupNotFoundException, NotAGroupMemberException, GroupSendingNotAllowedException {
         final var g = getGroupForSending(groupId);
-        return sendAsGroupMessage(messageBuilder, g, includeSelf, editTargetTimestamp);
+        return sendAsGroupMessage(messageBuilder, g, includeSelf, editTargetTimestamp, urgent);
     }
 
     /**
@@ -128,7 +130,7 @@ public class SendHelper {
             final Set<RecipientId> recipientIds,
             final GroupInfo groupInfo
     ) throws IOException {
-        return sendGroupMessage(message, recipientIds, groupInfo, ContentHint.IMPLICIT, Optional.empty());
+        return sendGroupMessage(message, recipientIds, groupInfo, ContentHint.IMPLICIT, Optional.empty(), true);
     }
 
     public SendMessageResult sendReceiptMessage(
@@ -311,7 +313,8 @@ public class SendHelper {
             final SignalServiceDataMessage.Builder messageBuilder,
             final GroupInfo g,
             final boolean includeSelf,
-            final Optional<Long> editTargetTimestamp
+            final Optional<Long> editTargetTimestamp,
+            boolean urgent
     ) throws IOException, GroupSendingNotAllowedException {
         GroupUtils.setGroupContext(messageBuilder, g);
         messageBuilder.withExpiration(g.getMessageExpirationTimer());
@@ -330,7 +333,7 @@ public class SendHelper {
             }
         }
 
-        return sendGroupMessage(message, recipients, g, ContentHint.RESENDABLE, editTargetTimestamp);
+        return sendGroupMessage(message, recipients, g, ContentHint.RESENDABLE, editTargetTimestamp, urgent);
     }
 
     private List<SendMessageResult> sendGroupMessage(
@@ -338,13 +341,13 @@ public class SendHelper {
             final Set<RecipientId> recipientIds,
             final GroupInfo groupInfo,
             final ContentHint contentHint,
-            final Optional<Long> editTargetTimestamp
+            final Optional<Long> editTargetTimestamp,
+            boolean urgent
     ) throws IOException {
         final var messageSender = dependencies.getMessageSender();
         final var messageSendLogStore = account.getMessageSendLogStore();
         final AtomicLong entryId = new AtomicLong(-1);
 
-        final var urgent = true;
         final PartialSendCompleteListener partialSendCompleteListener = sendResult -> {
             logger.trace("Partial message send result: {}", sendResult.isSuccess());
             synchronized (entryId) {
@@ -712,10 +715,10 @@ public class SendHelper {
     private SendMessageResult sendMessage(
             SignalServiceDataMessage message,
             RecipientId recipientId,
-            Optional<Long> editTargetTimestamp
+            Optional<Long> editTargetTimestamp,
+            boolean urgent
     ) {
         final var messageSendLogStore = account.getMessageSendLogStore();
-        final var urgent = true;
         final var result = handleSendMessage(recipientId,
                 editTargetTimestamp.isEmpty()
                         ? (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendDataMessage(
