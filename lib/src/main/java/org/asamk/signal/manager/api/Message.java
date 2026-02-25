@@ -13,7 +13,7 @@ public record Message(
         List<Preview> previews,
         Optional<StoryReply> storyReply,
         List<TextStyle> textStyles,
-        boolean noPush
+        boolean noUrgent
 ) {
 
     public record Mention(RecipientIdentifier.Single recipient, int start, int length) {}

@@ -105,9 +105,9 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--edit-timestamp")
                 .type(long.class)
                 .help("Specify the timestamp of a previous message with the recipient or group to send an edited message.");
-        subparser.addArgument("--no-push")
+        subparser.addArgument("--no-urgent")
                 .action(Arguments.storeTrue())
-                .help("Send the message without triggering a push notification for the recipient. "
+                .help("Send the message without the urgent flag, so no push notification is triggered for the recipient. "
                         + "The message will still be delivered in real-time if the recipient's app is active.");
     }
 
@@ -119,7 +119,7 @@ public class SendCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
         final var notifySelf = Boolean.TRUE.equals(ns.getBoolean("notify-self"));
         final var isNoteToSelf = Boolean.TRUE.equals(ns.getBoolean("note-to-self"));
-        final var noPush = Boolean.TRUE.equals(ns.getBoolean("no-push"));
+        final var noUrgent = Boolean.TRUE.equals(ns.getBoolean("no-urgent"));
         final var recipientStrings = ns.<String>getList("recipient");
         final var groupIdStrings = ns.<String>getList("group-id");
         final var usernameStrings = ns.<String>getList("username");
@@ -253,7 +253,7 @@ public class SendCommand implements JsonRpcLocalCommand {
                     previews,
                     Optional.ofNullable((storyReply)),
                     textStyles,
-                    noPush);
+                    noUrgent);
             var results = editTimestamp != null
                     ? m.sendEditMessage(message, recipientIdentifiers, editTimestamp)
                     : m.sendMessage(message, recipientIdentifiers, notifySelf);
