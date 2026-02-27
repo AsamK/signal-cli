@@ -132,6 +132,7 @@ public record MessageEnvelope(
             return new Data(dataMessage.getTimestamp(),
                     dataMessage.getGroupContext().map(GroupContext::from),
                     dataMessage.getStoryContext()
+                            .filter(s -> s.getAuthorServiceId() != null)
                             .map((SignalServiceDataMessage.StoryContext storyContext) -> StoryContext.from(storyContext,
                                     recipientResolver,
                                     addressResolver)),
@@ -143,9 +144,10 @@ public record MessageEnvelope(
                     dataMessage.isEndSession(),
                     dataMessage.isProfileKeyUpdate(),
                     dataMessage.getProfileKey().isPresent(),
-                    dataMessage.getReaction().map(r -> Reaction.from(r, recipientResolver, addressResolver)),
+                    dataMessage.getReaction()
+                            .filter(r -> r.getTargetAuthor() != null)
+                            .map(r -> Reaction.from(r, recipientResolver, addressResolver)),
                     dataMessage.getQuote()
-                            .filter(q -> q.getAuthor() != null && q.getAuthor().isValid())
                             .map(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider)),
                     dataMessage.getPayment().map(p -> p.getPaymentNotification().isPresent() ? Payment.from(p) : null),
                     dataMessage.getAttachments()
@@ -159,10 +161,15 @@ public record MessageEnvelope(
                                     .toList())
                             .orElse(List.of()),
                     dataMessage.getPollCreate().map(PollCreate::from),
-                    dataMessage.getPollVote().map(p -> PollVote.from(p, recipientResolver, addressResolver)),
+                    dataMessage.getPollVote()
+                            .filter(p -> p.getTargetAuthor() != null)
+                            .map(p -> PollVote.from(p, recipientResolver, addressResolver)),
                     dataMessage.getPollTerminate().map(PollTerminate::from),
                     dataMessage.getMentions()
-                            .map(a -> a.stream().map(m -> Mention.from(m, recipientResolver, addressResolver)).toList())
+                            .map(a -> a.stream()
+                                    .filter(m -> m.getServiceId() != null)
+                                    .map(m -> Mention.from(m, recipientResolver, addressResolver))
+                                    .toList())
                             .orElse(List.of()),
                     dataMessage.getPreviews()
                             .map(a -> a.stream().map(preview -> Preview.from(preview, fileProvider)).toList())
@@ -241,10 +248,13 @@ public record MessageEnvelope(
                     RecipientAddressResolver addressResolver,
                     final AttachmentFileProvider fileProvider
             ) {
+                final var author = quote.getAuthor() != null && quote.getAuthor().isValid()
+                        ? addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor()))
+                                .toApiRecipientAddress()
+                        : new RecipientAddress(RecipientAddress.UNKNOWN_UUID);
                 return new Quote(quote.getId(),
-                        addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor()))
-                                .toApiRecipientAddress(),
-                        Optional.of(quote.getText()),
+                        author,
+                        Optional.ofNullable(quote.getText()),
                         quote.getMentions() == null
                                 ? List.of()
                                 : quote.getMentions()
