@@ -145,7 +145,6 @@ public record MessageEnvelope(
                     dataMessage.getProfileKey().isPresent(),
                     dataMessage.getReaction().map(r -> Reaction.from(r, recipientResolver, addressResolver)),
                     dataMessage.getQuote()
-                            .filter(q -> q.getAuthor() != null && q.getAuthor().isValid())
                             .map(q -> Quote.from(q, recipientResolver, addressResolver, fileProvider)),
                     dataMessage.getPayment().map(p -> p.getPaymentNotification().isPresent() ? Payment.from(p) : null),
                     dataMessage.getAttachments()
@@ -242,9 +241,11 @@ public record MessageEnvelope(
                     final AttachmentFileProvider fileProvider
             ) {
                 return new Quote(quote.getId(),
-                        addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor()))
-                                .toApiRecipientAddress(),
-                        Optional.of(quote.getText()),
+                        quote.getAuthor() != null && quote.getAuthor().isValid()
+                                ? addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(quote.getAuthor()))
+                                        .toApiRecipientAddress()
+                                : new RecipientAddress(RecipientAddress.UNKNOWN_UUID),
+                        Optional.ofNullable(quote.getText()),
                         quote.getMentions() == null
                                 ? List.of()
                                 : quote.getMentions()
