@@ -14,7 +14,13 @@ class JsonOpenApiController {
 
     @GetMapping("/models")
     @Operation(summary = "Signal JSON model schema catalog")
-    @ApiResponse(responseCode = "200", description = "Catalog of Signal JSON model schemas", content = @Content(mediaType = "application/json", schema = @Schema(implementation = JsonSchemaCatalog.class)))
+    @ApiResponse(
+                responseCode = "200", description = "Catalog of Signal JSON model schemas", 
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = JsonSchemaCatalog.class)
+                    )
+                )
     JsonSchemaCatalog getModels() {
         return new JsonSchemaCatalog();
     }
