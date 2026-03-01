@@ -90,6 +90,8 @@ dependencies {
     implementation(libs.slf4j.jul)
     implementation(libs.logback)
     implementation(libs.zxing)
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
     implementation(project(":libsignal-cli"))
 }
 
@@ -137,4 +139,11 @@ tasks.register("fatJar", type = Jar::class) {
         from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     }
     with(tasks.jar.get())
+}
+
+tasks.register<JavaExec>("openApiDocs") {
+    group = "application"
+    description = "Run OpenAPI documentation server for JSON models"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("org.asamk.signal.openapi.OpenApiDocumentationApplication")
 }

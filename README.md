@@ -148,6 +148,19 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
       ./gradlew run --args="--help"
       ```
 
+### Documentation
+
+1. Run OpenAPI documentation server for JSON models (`src/main/java/org/asamk/signal/json`):
+
+    ```sh
+    ./gradlew openApiDocs
+    ```
+
+2. Open:
+
+    - `http://localhost:8080/swagger-ui/index.html` (Swagger UI)
+    - `http://localhost:8080/v3/api-docs/json-models` (OpenAPI JSON)
+
 ### Building a native binary with GraalVM (EXPERIMENTAL)
 
 It is possible to build a native binary with [GraalVM](https://www.graalvm.org). This is still experimental and will not
