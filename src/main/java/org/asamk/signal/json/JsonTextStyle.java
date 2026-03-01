@@ -1,7 +1,9 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.api.TextStyle;
 
+@Schema(name = "TextStyle")
 public record JsonTextStyle(String style, int start, int length) {
 
     static JsonTextStyle from(TextStyle textStyle) {

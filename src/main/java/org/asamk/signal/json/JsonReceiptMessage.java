@@ -1,9 +1,11 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 
+@Schema(name = "ReceiptMessage")
 record JsonReceiptMessage(long when, boolean isDelivery, boolean isRead, boolean isViewed, List<Long> timestamps) {
 
     static JsonReceiptMessage from(MessageEnvelope.Receipt receiptMessage) {

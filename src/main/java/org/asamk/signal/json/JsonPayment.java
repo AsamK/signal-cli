@@ -1,7 +1,9 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
+@Schema(name = "Payment")
 public record JsonPayment(String note, byte[] receipt) {
 
     static JsonPayment from(MessageEnvelope.Data.Payment payment) {

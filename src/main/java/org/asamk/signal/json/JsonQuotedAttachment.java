@@ -1,9 +1,11 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
+@Schema(name = "QuotedAttachment")
 public record JsonQuotedAttachment(
         String contentType, String filename, @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment thumbnail
 ) {

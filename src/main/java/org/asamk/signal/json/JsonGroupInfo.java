@@ -1,8 +1,10 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
+@Schema(name = "GroupInfo")
 record JsonGroupInfo(String groupId, String groupName, int revision, String type) {
 
     static JsonGroupInfo from(MessageEnvelope.Data.GroupContext groupContext, Manager m) {

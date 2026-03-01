@@ -1,7 +1,9 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
+@Schema(name = "SchemaCatalog")
 public class JsonSchemaCatalog {
 
     public JsonAdminDelete adminDelete;

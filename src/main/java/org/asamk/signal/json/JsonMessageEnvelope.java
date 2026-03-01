@@ -1,6 +1,7 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
@@ -10,6 +11,7 @@ import org.asamk.signal.manager.api.UntrustedIdentityException;
 
 import java.util.UUID;
 
+@Schema(name = "MessageEnvelope")
 public record JsonMessageEnvelope(
         @Deprecated String source,
         String sourceNumber,

@@ -1,9 +1,11 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
+@Schema(name = "Mention")
 public record JsonMention(@Deprecated String name, String number, String uuid, int start, int length) {
 
     static JsonMention from(MessageEnvelope.Data.Mention mention) {

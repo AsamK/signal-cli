@@ -1,12 +1,14 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 import java.util.UUID;
 
+@Schema(name = "Quote")
 public record JsonQuote(
         long id,
         @Deprecated String author,

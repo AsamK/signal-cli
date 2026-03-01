@@ -9,12 +9,15 @@ import org.asamk.signal.manager.api.RecipientAddress;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 enum JsonSyncMessageType {
     CONTACTS_SYNC,
     GROUPS_SYNC,
     REQUEST_SYNC
 }
 
+@Schema(name = "SyncMessage")
 record JsonSyncMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSyncDataMessage sentMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonSyncStoryMessage sentStoryMessage,

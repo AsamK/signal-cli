@@ -1,8 +1,10 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Util;
 
+@Schema(name = "ContactAddress")
 public record JsonContactAddress(
         String type,
         String label,

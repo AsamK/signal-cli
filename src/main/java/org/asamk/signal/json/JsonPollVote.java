@@ -1,10 +1,12 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 import java.util.UUID;
 
+@Schema(name = "PollVote")
 public record JsonPollVote(
         @Deprecated String author,
         String authorNumber,

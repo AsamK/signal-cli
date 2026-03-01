@@ -1,12 +1,14 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 
+@Schema(name = "DataMessage")
 record JsonDataMessage(
         long timestamp,
         String message,

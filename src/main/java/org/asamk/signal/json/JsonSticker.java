@@ -1,8 +1,10 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Hex;
 
+@Schema(name = "Sticker")
 public record JsonSticker(String packId, int stickerId) {
 
     static JsonSticker from(MessageEnvelope.Data.Sticker sticker) {

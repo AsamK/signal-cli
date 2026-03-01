@@ -1,9 +1,11 @@
 package org.asamk.signal.json;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
+@Schema(name = "StoryContext")
 record JsonStoryContext(
         String authorNumber, String authorUuid, long sentTimestamp
 ) {

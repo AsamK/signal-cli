@@ -1,9 +1,11 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
+@Schema(name = "Contact")
 public record JsonContact(
         String number,
         String uuid,
@@ -25,6 +27,7 @@ public record JsonContact(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonInternal internal
 ) {
 
+    @Schema(name = "Profile")
     public record JsonProfile(
             long lastUpdateTimestamp,
             String givenName,
@@ -35,6 +38,7 @@ public record JsonContact(
             String mobileCoinAddress
     ) {}
 
+    @Schema(name = "Internal")
     public record JsonInternal(
             List<String> capabilities,
             String unidentifiedAccessMode,
