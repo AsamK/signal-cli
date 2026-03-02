@@ -148,9 +148,9 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
       ./gradlew run --args="--help"
       ```
 
-### Documentation
+### JSON-RPC schemas
 
-1. Run OpenAPI documentation server for JSON models (`src/main/java/org/asamk/signal/json`):
+1. Run documentation server for all the JSON-RPC schemas (`src/main/java/org/asamk/signal/json`):
 
     ```sh
     ./gradlew openApiDocs
