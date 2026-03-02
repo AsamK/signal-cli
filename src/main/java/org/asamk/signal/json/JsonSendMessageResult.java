@@ -8,9 +8,9 @@ import org.asamk.signal.manager.api.SendMessageResult;
 
 @Schema(name = "SendMessageResult")
 public record JsonSendMessageResult(
-        JsonRecipientAddress recipientAddress,
+        @Schema(required = true) JsonRecipientAddress recipientAddress,
         @JsonInclude(JsonInclude.Include.NON_NULL) String groupId,
-        Type type,
+        @Schema(required = true) Type type,
         @JsonInclude(JsonInclude.Include.NON_NULL) String token,
         @JsonInclude(JsonInclude.Include.NON_NULL) Long retryAfterSeconds
 ) {

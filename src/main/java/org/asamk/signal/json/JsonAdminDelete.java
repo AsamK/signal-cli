@@ -7,7 +7,10 @@ import java.util.UUID;
 
 @Schema(name = "AdminDelete")
 public record JsonAdminDelete(
-        @Deprecated String targetAuthor, String targetAuthorNumber, String targetAuthorUuid, long targetSentTimestamp
+        @Schema(required = true) @Deprecated String targetAuthor,
+        @Schema(required = true) String targetAuthorNumber,
+        @Schema(required = true) String targetAuthorUuid,
+        @Schema(required = true) long targetSentTimestamp
 ) {
 
     static JsonAdminDelete from(MessageEnvelope.Data.AdminDelete adminDelete) {

@@ -7,11 +7,11 @@ import java.util.UUID;
 
 @Schema(name = "PinMessage")
 public record JsonPinMessage(
-        @Deprecated String targetAuthor,
-        String targetAuthorNumber,
-        String targetAuthorUuid,
-        long targetSentTimestamp,
-        long pinDurationSeconds
+        @Schema(required = true) @Deprecated String targetAuthor,
+        @Schema(required = true) String targetAuthorNumber,
+        @Schema(required = true) String targetAuthorUuid,
+        @Schema(required = true) long targetSentTimestamp,
+        @Schema(required = true) long pinDurationSeconds
 ) {
 
     static JsonPinMessage from(MessageEnvelope.Data.PinMessage pinMessage) {

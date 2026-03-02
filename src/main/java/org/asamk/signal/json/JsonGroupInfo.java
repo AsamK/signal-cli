@@ -5,7 +5,12 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 @Schema(name = "GroupInfo")
-record JsonGroupInfo(String groupId, String groupName, int revision, String type) {
+record JsonGroupInfo(
+        @Schema(required = true) String groupId,
+        @Schema(required = true) String groupName,
+        @Schema(required = true) int revision,
+        @Schema(required = true) String type
+) {
 
     static JsonGroupInfo from(MessageEnvelope.Data.GroupContext groupContext, Manager m) {
         return new JsonGroupInfo(groupContext.groupId().toBase64(),

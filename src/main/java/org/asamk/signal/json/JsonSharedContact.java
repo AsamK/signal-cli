@@ -9,12 +9,12 @@ import java.util.List;
 
 @Schema(name = "SharedContact")
 public record JsonSharedContact(
-        JsonContactName name,
+        @Schema(required = true) JsonContactName name,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonContactAvatar avatar,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactPhone> phone,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactEmail> email,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactAddress> address,
-        String organization
+        @Schema(required = true) String organization
 ) {
 
     static JsonSharedContact from(MessageEnvelope.Data.SharedContact contact) {

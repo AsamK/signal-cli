@@ -5,7 +5,11 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Util;
 
 @Schema(name = "ContactPhone")
-public record JsonContactPhone(String value, String type, String label) {
+public record JsonContactPhone(
+        @Schema(required = true) String value,
+        @Schema(required = true) String type,
+        @Schema(required = true) String label
+) {
 
     static JsonContactPhone from(MessageEnvelope.Data.SharedContact.Phone phone) {
         return new JsonContactPhone(phone.value(), phone.type().name(), Util.getStringIfNotBlank(phone.label()));

@@ -11,7 +11,7 @@ import java.util.List;
 
 @Schema(name = "StoryMessage")
 record JsonStoryMessage(
-        boolean allowsReplies,
+        @Schema(required = true) boolean allowsReplies,
         @JsonInclude(JsonInclude.Include.NON_NULL) String groupId,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment fileAttachment,
         @JsonInclude(JsonInclude.Include.NON_NULL) TextAttachment textAttachment
@@ -25,7 +25,7 @@ record JsonStoryMessage(
     }
 
     public record TextAttachment(
-            String text,
+            @Schema(required = true) String text,
             @JsonInclude(JsonInclude.Include.NON_NULL) String style,
             @JsonInclude(JsonInclude.Include.NON_NULL) String textForegroundColor,
             @JsonInclude(JsonInclude.Include.NON_NULL) String textBackgroundColor,
@@ -45,7 +45,11 @@ record JsonStoryMessage(
         }
 
         public record Gradient(
-                String startColor, String endColor, List<String> colors, List<Float> positions, Integer angle
+                @Schema(required = true) String startColor,
+                @Schema(required = true) String endColor,
+                @Schema(required = true) List<String> colors,
+                @Schema(required = true) List<Float> positions,
+                @Schema(required = true) Integer angle
         ) {
 
             static Gradient from(MessageEnvelope.Story.TextAttachment.Gradient gradient) {

@@ -12,11 +12,11 @@ import java.util.UUID;
 
 @Schema(name = "SyncDataMessage")
 record JsonSyncDataMessage(
-        @Deprecated String destination,
-        String destinationNumber,
-        String destinationUuid,
+        @Schema(required = true) @Deprecated String destination,
+        @Schema(required = true) String destinationNumber,
+        @Schema(required = true) String destinationUuid,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonEditMessage editMessage,
-        @JsonUnwrapped JsonDataMessage dataMessage
+        @Schema(required = true) @JsonUnwrapped JsonDataMessage dataMessage
 ) {
 
     static JsonSyncDataMessage from(MessageEnvelope.Sync.Sent transcriptMessage, Manager m) {

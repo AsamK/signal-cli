@@ -5,14 +5,14 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 @Schema(name = "Attachment")
 record JsonAttachment(
-        String contentType,
-        String filename,
-        String id,
-        Long size,
-        Integer width,
-        Integer height,
-        String caption,
-        Long uploadTimestamp
+        @Schema(required = true) String contentType,
+        @Schema(required = true) String filename,
+        @Schema(required = true) String id,
+        @Schema(required = true) Long size,
+        @Schema(required = true) Integer width,
+        @Schema(required = true) Integer height,
+        @Schema(required = true) String caption,
+        @Schema(required = true) Long uploadTimestamp
 ) {
 
     static JsonAttachment from(MessageEnvelope.Data.Attachment attachment) {

@@ -8,12 +8,12 @@ import java.util.UUID;
 
 @Schema(name = "PollVote")
 public record JsonPollVote(
-        @Deprecated String author,
-        String authorNumber,
-        String authorUuid,
-        long targetSentTimestamp,
-        List<Integer> optionIndexes,
-        int voteCount
+        @Schema(required = true) @Deprecated String author,
+        @Schema(required = true) String authorNumber,
+        @Schema(required = true) String authorUuid,
+        @Schema(required = true) long targetSentTimestamp,
+        @Schema(required = true) List<Integer> optionIndexes,
+        @Schema(required = true) int voteCount
 ) {
 
     static JsonPollVote from(MessageEnvelope.Data.PollVote pollVote) {

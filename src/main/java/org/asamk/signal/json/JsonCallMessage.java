@@ -25,35 +25,49 @@ record JsonCallMessage(
                 callMessage.iceUpdate().stream().map(IceUpdate::from).toList());
     }
 
-    record Offer(long id, String type, String opaque) {
+    record Offer(
+            @Schema(required = true) long id,
+            @Schema(required = true) String type,
+            @Schema(required = true) String opaque
+    ) {
 
         public static Offer from(final MessageEnvelope.Call.Offer offer) {
             return new Offer(offer.id(), offer.type().name(), Base64.getEncoder().encodeToString(offer.opaque()));
         }
     }
 
-    public record Answer(long id, String opaque) {
+    public record Answer(
+            @Schema(required = true) long id,
+            @Schema(required = true) String opaque
+    ) {
 
         public static Answer from(final MessageEnvelope.Call.Answer answer) {
             return new Answer(answer.id(), Base64.getEncoder().encodeToString(answer.opaque()));
         }
     }
 
-    public record Busy(long id) {
+    public record Busy(@Schema(required = true) long id) {
 
         public static Busy from(final MessageEnvelope.Call.Busy busy) {
             return new Busy(busy.id());
         }
     }
 
-    public record Hangup(long id, String type, int deviceId) {
+    public record Hangup(
+            @Schema(required = true) long id,
+            @Schema(required = true) String type,
+            @Schema(required = true) int deviceId
+    ) {
 
         public static Hangup from(final MessageEnvelope.Call.Hangup hangup) {
             return new Hangup(hangup.id(), hangup.type().name(), hangup.deviceId());
         }
     }
 
-    public record IceUpdate(long id, String opaque) {
+    public record IceUpdate(
+            @Schema(required = true) long id,
+            @Schema(required = true) String opaque
+    ) {
 
         public static IceUpdate from(final MessageEnvelope.Call.IceUpdate iceUpdate) {
             return new IceUpdate(iceUpdate.id(), Base64.getEncoder().encodeToString(iceUpdate.opaque()));

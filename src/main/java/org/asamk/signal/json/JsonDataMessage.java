@@ -10,9 +10,9 @@ import java.util.List;
 
 @Schema(name = "DataMessage")
 record JsonDataMessage(
-        long timestamp,
-        String message,
-        Integer expiresInSeconds,
+        @Schema(required = true) long timestamp,
+        @Schema(required = true) String message,
+        @Schema(required = true) Integer expiresInSeconds,
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean isExpirationUpdate,
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean viewOnce,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonReaction reaction,

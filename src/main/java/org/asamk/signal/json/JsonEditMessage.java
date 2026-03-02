@@ -5,7 +5,10 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 @Schema(name = "EditMessage")
-record JsonEditMessage(long targetSentTimestamp, JsonDataMessage dataMessage) {
+record JsonEditMessage(
+        @Schema(required = true) long targetSentTimestamp,
+        @Schema(required = true) JsonDataMessage dataMessage
+) {
 
     static JsonEditMessage from(MessageEnvelope.Edit editMessage, Manager m) {
         return new JsonEditMessage(editMessage.targetSentTimestamp(),

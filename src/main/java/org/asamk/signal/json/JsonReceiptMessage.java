@@ -6,7 +6,13 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 import java.util.List;
 
 @Schema(name = "ReceiptMessage")
-record JsonReceiptMessage(long when, boolean isDelivery, boolean isRead, boolean isViewed, List<Long> timestamps) {
+record JsonReceiptMessage(
+        @Schema(required = true) long when,
+        @Schema(required = true) boolean isDelivery,
+        @Schema(required = true) boolean isRead,
+        @Schema(required = true) boolean isViewed,
+        @Schema(required = true) List<Long> timestamps
+) {
 
     static JsonReceiptMessage from(MessageEnvelope.Receipt receiptMessage) {
         final var when = receiptMessage.when();

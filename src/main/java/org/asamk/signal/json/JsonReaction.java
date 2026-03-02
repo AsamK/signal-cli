@@ -7,12 +7,12 @@ import java.util.UUID;
 
 @Schema(name = "Reaction")
 public record JsonReaction(
-        String emoji,
-        @Deprecated String targetAuthor,
-        String targetAuthorNumber,
-        String targetAuthorUuid,
-        long targetSentTimestamp,
-        boolean isRemove
+        @Schema(required = true) String emoji,
+        @Schema(required = true) @Deprecated String targetAuthor,
+        @Schema(required = true) String targetAuthorNumber,
+        @Schema(required = true) String targetAuthorUuid,
+        @Schema(required = true) long targetSentTimestamp,
+        @Schema(required = true) boolean isRemove
 ) {
 
     static JsonReaction from(MessageEnvelope.Data.Reaction reaction) {

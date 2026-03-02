@@ -6,7 +6,11 @@ import org.asamk.signal.manager.api.RecipientAddress;
 import java.util.UUID;
 
 @Schema(name = "RecipientAddress")
-public record JsonRecipientAddress(String uuid, String number, String username) {
+public record JsonRecipientAddress(
+        @Schema(required = true) String uuid,
+        @Schema(required = true) String number,
+        @Schema(required = true) String username
+) {
 
     public static JsonRecipientAddress from(RecipientAddress address) {
         return new JsonRecipientAddress(address.uuid().map(UUID::toString).orElse(null),

@@ -7,7 +7,9 @@ import java.util.UUID;
 
 @Schema(name = "StoryContext")
 record JsonStoryContext(
-        String authorNumber, String authorUuid, long sentTimestamp
+        @Schema(required = true) String authorNumber,
+        @Schema(required = true) String authorUuid,
+        @Schema(required = true) long sentTimestamp
 ) {
 
     static JsonStoryContext from(MessageEnvelope.Data.StoryContext storyContext) {
