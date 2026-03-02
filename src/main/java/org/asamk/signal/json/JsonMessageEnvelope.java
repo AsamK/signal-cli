@@ -13,14 +13,14 @@ import java.util.UUID;
 
 @Schema(name = "MessageEnvelope")
 public record JsonMessageEnvelope(
-        @Deprecated String source,
-        String sourceNumber,
-        String sourceUuid,
-        String sourceName,
-        Integer sourceDevice,
-        long timestamp,
-        long serverReceivedTimestamp,
-        long serverDeliveredTimestamp,
+        @Schema(required = true) @Deprecated String source,
+        @Schema(required = true) String sourceNumber,
+        @Schema(required = true) String sourceUuid,
+        @Schema(required = true) String sourceName,
+        @Schema(required = true) Integer sourceDevice,
+        @Schema(required = true) long timestamp,
+        @Schema(required = true) long serverReceivedTimestamp,
+        @Schema(required = true) long serverDeliveredTimestamp,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonDataMessage dataMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonEditMessage editMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryMessage storyMessage,

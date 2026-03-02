@@ -8,7 +8,9 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 @Schema(name = "TypingMessage")
 record JsonTypingMessage(
-        String action, long timestamp, @JsonInclude(JsonInclude.Include.NON_NULL) String groupId
+    @Schema(required = true) String action,
+    @Schema(required = true) long timestamp,
+    @JsonInclude(JsonInclude.Include.NON_NULL) String groupId
 ) {
 
     static JsonTypingMessage from(MessageEnvelope.Typing typingMessage) {
