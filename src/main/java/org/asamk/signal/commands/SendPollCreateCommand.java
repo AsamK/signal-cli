@@ -24,6 +24,7 @@ import static org.asamk.signal.util.SendMessageResultUtils.outputResult;
 public class SendPollCreateCommand implements JsonRpcLocalCommand {
 
     private static final Logger logger = LoggerFactory.getLogger(SendPollCreateCommand.class);
+    private static final int MAX_POLL_OPTIONS = 10;
 
     @Override
     public String getName() {
@@ -71,6 +72,9 @@ public class SendPollCreateCommand implements JsonRpcLocalCommand {
         final var options = ns.<String>getList("option");
         if (options.size() < 2) {
             throw new UserErrorException("Poll needs at least two options");
+        }
+        if (options.size() > MAX_POLL_OPTIONS) {
+            throw new UserErrorException("Poll cannot have more than " + MAX_POLL_OPTIONS + " options");
         }
 
         try {
