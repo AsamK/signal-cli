@@ -144,6 +144,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                             contact.nickNameFamilyName(),
                             contact.note(),
                             contact.color(),
+                            contact.isArchived(),
                             contact.isBlocked(),
                             contact.isHidden(),
                             contact.messageExpirationTime(),

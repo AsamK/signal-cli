@@ -16,6 +16,7 @@ public record JsonContact(
         String nickFamilyName,
         String note,
         String color,
+        boolean isArchived,
         boolean isBlocked,
         boolean isHidden,
         int messageExpirationTime,
