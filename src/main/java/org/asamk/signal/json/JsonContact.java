@@ -20,6 +20,7 @@ public record JsonContact(
         @JsonProperty(required = true) String nickFamilyName,
         @JsonProperty(required = true) String note,
         @JsonProperty(required = true) String color,
+        @JsonProperty(required = true) boolean isArchived,
         @JsonProperty(required = true) boolean isBlocked,
         @JsonProperty(required = true) boolean isHidden,
         @JsonProperty(required = true) int messageExpirationTime,
