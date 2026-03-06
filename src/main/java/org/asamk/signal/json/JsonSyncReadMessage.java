@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Schema(name = "SyncReadMessage")
 record JsonSyncReadMessage(
-    @Schema(required = true) @Deprecated String sender,
+    @Deprecated String sender,
     @Schema(required = true) String senderNumber,
     @Schema(required = true) String senderUuid,
     @Schema(required = true) long timestamp

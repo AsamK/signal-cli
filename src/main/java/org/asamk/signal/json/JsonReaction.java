@@ -8,7 +8,7 @@ import java.util.UUID;
 @Schema(name = "Reaction")
 public record JsonReaction(
         @Schema(required = true) String emoji,
-        @Schema(required = true) @Deprecated String targetAuthor,
+        @Deprecated String targetAuthor,
         @Schema(required = true) String targetAuthorNumber,
         @Schema(required = true) String targetAuthorUuid,
         @Schema(required = true) long targetSentTimestamp,

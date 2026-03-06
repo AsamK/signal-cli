@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Schema(name = "PollVote")
 public record JsonPollVote(
-        @Schema(required = true) @Deprecated String author,
+        @Deprecated String author,
         @Schema(required = true) String authorNumber,
         @Schema(required = true) String authorUuid,
         @Schema(required = true) long targetSentTimestamp,

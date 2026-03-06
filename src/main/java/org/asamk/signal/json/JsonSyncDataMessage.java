@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Schema(name = "SyncDataMessage")
 record JsonSyncDataMessage(
-        @Schema(required = true) @Deprecated String destination,
+        @Deprecated String destination,
         @Schema(required = true) String destinationNumber,
         @Schema(required = true) String destinationUuid,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonEditMessage editMessage,

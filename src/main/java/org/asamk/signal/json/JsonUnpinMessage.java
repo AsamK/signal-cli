@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Schema(name = "UnpinMessage")
 public record JsonUnpinMessage(
-        @Schema(required = true) @Deprecated String targetAuthor,
+        @Deprecated String targetAuthor,
         @Schema(required = true) String targetAuthorNumber,
         @Schema(required = true) String targetAuthorUuid,
         @Schema(required = true) long targetSentTimestamp

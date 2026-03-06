@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Schema(name = "Mention")
 public record JsonMention(
-        @Schema(required = true) @Deprecated String name,
+        @Deprecated String name,
         @Schema(required = true) String number,
         @Schema(required = true) String uuid,
         @Schema(required = true) int start,

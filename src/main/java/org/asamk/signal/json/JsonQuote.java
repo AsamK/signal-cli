@@ -11,7 +11,7 @@ import java.util.UUID;
 @Schema(name = "Quote")
 public record JsonQuote(
         @Schema(required = true) long id,
-        @Schema(required = true) @Deprecated String author,
+        @Deprecated String author,
         @Schema(required = true) String authorNumber,
         @Schema(required = true) String authorUuid,
         @Schema(required = true) String text,

@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @Schema(name = "MessageEnvelope")
 public record JsonMessageEnvelope(
-        @Schema(required = true) @Deprecated String source,
+        @Deprecated String source,
         @Schema(required = true) String sourceNumber,
         @Schema(required = true) String sourceUuid,
         @Schema(required = true) String sourceName,
