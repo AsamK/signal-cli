@@ -8,8 +8,8 @@ import org.asamk.signal.util.Hex;
 
 @JsonSchema(title = "Sticker")
 public record JsonSticker(
-        @JsonProperty(required = true) String packId,
-        @JsonProperty(required = true) int stickerId
+        String packId,
+        int stickerId
 ) {
 
     static JsonSticker from(MessageEnvelope.Data.Sticker sticker) {

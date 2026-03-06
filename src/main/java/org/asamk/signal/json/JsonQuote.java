@@ -11,13 +11,13 @@ import java.util.UUID;
 
 @JsonSchema(title = "Quote")
 public record JsonQuote(
-        @JsonProperty(required = true) long id,
+        long id,
         @Deprecated String author,
-        @JsonProperty(required = true) String authorNumber,
-        @JsonProperty(required = true) String authorUuid,
-        @JsonProperty(required = true) String text,
+        String authorNumber,
+        String authorUuid,
+        String text,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonMention> mentions,
-        @JsonProperty(required = true) List<JsonQuotedAttachment> attachments,
+        List<JsonQuotedAttachment> attachments,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonTextStyle> textStyles
 ) {
 

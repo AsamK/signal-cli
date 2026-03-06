@@ -9,9 +9,9 @@ import java.util.UUID;
 
 @JsonSchema(title = "RecipientAddress")
 public record JsonRecipientAddress(
-        @JsonProperty(required = true) String uuid,
-        @JsonProperty(required = true) String number,
-        @JsonProperty(required = true) String username
+        String uuid,
+        String number,
+        String username
 ) {
 
     public static JsonRecipientAddress from(RecipientAddress address) {

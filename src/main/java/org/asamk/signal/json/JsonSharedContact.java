@@ -10,12 +10,12 @@ import java.util.List;
 
 @JsonSchema(title = "SharedContact")
 public record JsonSharedContact(
-        @JsonProperty(required = true) JsonContactName name,
+        JsonContactName name,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonContactAvatar avatar,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactPhone> phone,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactEmail> email,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactAddress> address,
-        @JsonProperty(required = true) String organization
+        String organization
 ) {
 
     static JsonSharedContact from(MessageEnvelope.Data.SharedContact contact) {

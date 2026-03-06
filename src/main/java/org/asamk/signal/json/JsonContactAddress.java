@@ -8,15 +8,15 @@ import org.asamk.signal.util.Util;
 
 @JsonSchema(title = "ContactAddress")
 public record JsonContactAddress(
-        @JsonProperty(required = true) String type,
-        @JsonProperty(required = true) String label,
-        @JsonProperty(required = true) String street,
-        @JsonProperty(required = true) String pobox,
-        @JsonProperty(required = true) String neighborhood,
-        @JsonProperty(required = true) String city,
-        @JsonProperty(required = true) String region,
-        @JsonProperty(required = true) String postcode,
-        @JsonProperty(required = true) String country
+        String type,
+        String label,
+        String street,
+        String pobox,
+        String neighborhood,
+        String city,
+        String region,
+        String postcode,
+        String country
 ) {
 
     static JsonContactAddress from(MessageEnvelope.Data.SharedContact.Address address) {

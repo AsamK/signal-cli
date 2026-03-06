@@ -7,14 +7,14 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 @JsonSchema(title = "Attachment")
 record JsonAttachment(
-        @JsonProperty(required = true) String contentType,
-        @JsonProperty(required = true) String filename,
-        @JsonProperty(required = true) String id,
-        @JsonProperty(required = true) Long size,
-        @JsonProperty(required = true) Integer width,
-        @JsonProperty(required = true) Integer height,
-        @JsonProperty(required = true) String caption,
-        @JsonProperty(required = true) Long uploadTimestamp
+        String contentType,
+        String filename,
+        String id,
+        Long size,
+        Integer width,
+        Integer height,
+        String caption,
+        Long uploadTimestamp
 ) {
 
     static JsonAttachment from(MessageEnvelope.Data.Attachment attachment) {

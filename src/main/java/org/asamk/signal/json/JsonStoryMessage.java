@@ -12,7 +12,7 @@ import java.util.List;
 
 @JsonSchema(title = "StoryMessage")
 record JsonStoryMessage(
-        @JsonProperty(required = true) boolean allowsReplies,
+        boolean allowsReplies,
         @JsonInclude(JsonInclude.Include.NON_NULL) String groupId,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment fileAttachment,
         @JsonInclude(JsonInclude.Include.NON_NULL) TextAttachment textAttachment
@@ -26,7 +26,7 @@ record JsonStoryMessage(
     }
 
     public record TextAttachment(
-            @JsonProperty(required = true) String text,
+            String text,
             @JsonInclude(JsonInclude.Include.NON_NULL) String style,
             @JsonInclude(JsonInclude.Include.NON_NULL) String textForegroundColor,
             @JsonInclude(JsonInclude.Include.NON_NULL) String textBackgroundColor,
@@ -46,11 +46,11 @@ record JsonStoryMessage(
         }
 
         public record Gradient(
-                @JsonProperty(required = true) String startColor,
-                @JsonProperty(required = true) String endColor,
-                @JsonProperty(required = true) List<String> colors,
-                @JsonProperty(required = true) List<Float> positions,
-                @JsonProperty(required = true) Integer angle
+                String startColor,
+                String endColor,
+                List<String> colors,
+                List<Float> positions,
+                Integer angle
         ) {
 
             static Gradient from(MessageEnvelope.Story.TextAttachment.Gradient gradient) {

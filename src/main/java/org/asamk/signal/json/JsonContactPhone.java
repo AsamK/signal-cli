@@ -8,9 +8,9 @@ import org.asamk.signal.util.Util;
 
 @JsonSchema(title = "ContactPhone")
 public record JsonContactPhone(
-        @JsonProperty(required = true) String value,
-        @JsonProperty(required = true) String type,
-        @JsonProperty(required = true) String label
+        String value,
+        String type,
+        String label
 ) {
 
     static JsonContactPhone from(MessageEnvelope.Data.SharedContact.Phone phone) {

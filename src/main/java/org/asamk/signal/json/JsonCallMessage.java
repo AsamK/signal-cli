@@ -27,9 +27,9 @@ record JsonCallMessage(
     }
 
     record Offer(
-            @JsonProperty(required = true) long id,
-            @JsonProperty(required = true) String type,
-            @JsonProperty(required = true) String opaque
+            long id,
+            String type,
+            String opaque
     ) {
 
         public static Offer from(final MessageEnvelope.Call.Offer offer) {
@@ -38,8 +38,8 @@ record JsonCallMessage(
     }
 
     public record Answer(
-            @JsonProperty(required = true) long id,
-            @JsonProperty(required = true) String opaque
+            long id,
+            String opaque
     ) {
 
         public static Answer from(final MessageEnvelope.Call.Answer answer) {
@@ -47,7 +47,7 @@ record JsonCallMessage(
         }
     }
 
-    public record Busy(@JsonProperty(required = true) long id) {
+    public record Busy(long id) {
 
         public static Busy from(final MessageEnvelope.Call.Busy busy) {
             return new Busy(busy.id());
@@ -55,9 +55,9 @@ record JsonCallMessage(
     }
 
     public record Hangup(
-            @JsonProperty(required = true) long id,
-            @JsonProperty(required = true) String type,
-            @JsonProperty(required = true) int deviceId
+            long id,
+            String type,
+            int deviceId
     ) {
 
         public static Hangup from(final MessageEnvelope.Call.Hangup hangup) {
@@ -66,8 +66,8 @@ record JsonCallMessage(
     }
 
     public record IceUpdate(
-            @JsonProperty(required = true) long id,
-            @JsonProperty(required = true) String opaque
+            long id,
+            String opaque
     ) {
 
         public static IceUpdate from(final MessageEnvelope.Call.IceUpdate iceUpdate) {

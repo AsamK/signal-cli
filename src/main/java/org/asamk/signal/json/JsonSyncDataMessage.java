@@ -14,10 +14,10 @@ import java.util.UUID;
 @JsonSchema(title = "SyncDataMessage")
 record JsonSyncDataMessage(
         @Deprecated String destination,
-        @JsonProperty(required = true) String destinationNumber,
-        @JsonProperty(required = true) String destinationUuid,
+        String destinationNumber,
+        String destinationUuid,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonEditMessage editMessage,
-        @JsonProperty(required = true) @JsonUnwrapped JsonDataMessage dataMessage
+        @JsonUnwrapped JsonDataMessage dataMessage
 ) {
 
     static JsonSyncDataMessage from(MessageEnvelope.Sync.Sent transcriptMessage, Manager m) {

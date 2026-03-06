@@ -8,8 +8,8 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 @JsonSchema(title = "QuotedAttachment")
 public record JsonQuotedAttachment(
-        @JsonProperty(required = true) String contentType,
-        @JsonProperty(required = true) String filename,
+        String contentType,
+        String filename,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment thumbnail
 ) {
 

@@ -10,10 +10,10 @@ import java.util.UUID;
 @JsonSchema(title = "Mention")
 public record JsonMention(
         @Deprecated String name,
-        @JsonProperty(required = true) String number,
-        @JsonProperty(required = true) String uuid,
-        @JsonProperty(required = true) int start,
-        @JsonProperty(required = true) int length
+        String number,
+        String uuid,
+        int start,
+        int length
 ) {
 
     static JsonMention from(MessageEnvelope.Data.Mention mention) {

@@ -11,11 +11,11 @@ import java.util.UUID;
 @JsonSchema(title = "PollVote")
 public record JsonPollVote(
         @Deprecated String author,
-        @JsonProperty(required = true) String authorNumber,
-        @JsonProperty(required = true) String authorUuid,
-        @JsonProperty(required = true) long targetSentTimestamp,
-        @JsonProperty(required = true) List<Integer> optionIndexes,
-        @JsonProperty(required = true) int voteCount
+        String authorNumber,
+        String authorUuid,
+        long targetSentTimestamp,
+        List<Integer> optionIndexes,
+        int voteCount
 ) {
 
     static JsonPollVote from(MessageEnvelope.Data.PollVote pollVote) {

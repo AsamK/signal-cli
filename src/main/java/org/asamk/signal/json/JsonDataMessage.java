@@ -12,9 +12,9 @@ import java.util.List;
 
 @JsonSchema(title = "DataMessage")
 record JsonDataMessage(
-        @JsonProperty(required = true) long timestamp,
-        @JsonProperty(required = true) String message,
-        @JsonProperty(required = true) Integer expiresInSeconds,
+        long timestamp,
+        String message,
+        Integer expiresInSeconds,
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean isExpirationUpdate,
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean viewOnce,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonReaction reaction,

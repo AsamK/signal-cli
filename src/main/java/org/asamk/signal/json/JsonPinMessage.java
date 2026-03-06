@@ -10,10 +10,10 @@ import java.util.UUID;
 @JsonSchema(title = "PinMessage")
 public record JsonPinMessage(
         @Deprecated String targetAuthor,
-        @JsonProperty(required = true) String targetAuthorNumber,
-        @JsonProperty(required = true) String targetAuthorUuid,
-        @JsonProperty(required = true) long targetSentTimestamp,
-        @JsonProperty(required = true) long pinDurationSeconds
+        String targetAuthorNumber,
+        String targetAuthorUuid,
+        long targetSentTimestamp,
+        long pinDurationSeconds
 ) {
 
     static JsonPinMessage from(MessageEnvelope.Data.PinMessage pinMessage) {

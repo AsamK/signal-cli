@@ -8,10 +8,10 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 @JsonSchema(title = "GroupInfo")
 record JsonGroupInfo(
-        @JsonProperty(required = true) String groupId,
-        @JsonProperty(required = true) String groupName,
-        @JsonProperty(required = true) int revision,
-        @JsonProperty(required = true) String type
+        String groupId,
+        String groupName,
+        int revision,
+        String type
 ) {
 
     static JsonGroupInfo from(MessageEnvelope.Data.GroupContext groupContext, Manager m) {

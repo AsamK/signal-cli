@@ -8,12 +8,12 @@ import org.asamk.signal.util.Util;
 
 @JsonSchema(title = "ContactName")
 public record JsonContactName(
-        @JsonProperty(required = true) String nickname,
-        @JsonProperty(required = true) String given,
-        @JsonProperty(required = true) String family,
-        @JsonProperty(required = true) String prefix,
-        @JsonProperty(required = true) String suffix,
-        @JsonProperty(required = true) String middle
+        String nickname,
+        String given,
+        String family,
+        String prefix,
+        String suffix,
+        String middle
 ) {
 
     static JsonContactName from(MessageEnvelope.Data.SharedContact.Name name) {

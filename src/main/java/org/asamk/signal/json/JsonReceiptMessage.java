@@ -9,11 +9,11 @@ import java.util.List;
 
 @JsonSchema(title = "ReceiptMessage")
 record JsonReceiptMessage(
-        @JsonProperty(required = true) long when,
-        @JsonProperty(required = true) boolean isDelivery,
-        @JsonProperty(required = true) boolean isRead,
-        @JsonProperty(required = true) boolean isViewed,
-        @JsonProperty(required = true) List<Long> timestamps
+        long when,
+        boolean isDelivery,
+        boolean isRead,
+        boolean isViewed,
+        List<Long> timestamps
 ) {
 
     static JsonReceiptMessage from(MessageEnvelope.Receipt receiptMessage) {

@@ -7,9 +7,9 @@ import org.asamk.signal.manager.api.TextStyle;
 
 @JsonSchema(title = "TextStyle")
 public record JsonTextStyle(
-        @JsonProperty(required = true) String style,
-        @JsonProperty(required = true) int start,
-        @JsonProperty(required = true) int length
+        String style,
+        int start,
+        int length
 ) {
 
     static JsonTextStyle from(TextStyle textStyle) {

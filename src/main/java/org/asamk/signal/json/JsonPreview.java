@@ -7,10 +7,10 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 @JsonSchema(title = "Preview")
 public record JsonPreview(
-        @JsonProperty(required = true) String url,
-        @JsonProperty(required = true) String title,
-        @JsonProperty(required = true) String description,
-        @JsonProperty(required = true) JsonAttachment image
+        String url,
+        String title,
+        String description,
+        JsonAttachment image
 ) {
 
     static JsonPreview from(MessageEnvelope.Data.Preview preview) {

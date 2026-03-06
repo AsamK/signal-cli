@@ -8,8 +8,8 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 @JsonSchema(title = "EditMessage")
 record JsonEditMessage(
-        @JsonProperty(required = true) long targetSentTimestamp,
-        @JsonProperty(required = true) JsonDataMessage dataMessage
+        long targetSentTimestamp,
+        JsonDataMessage dataMessage
 ) {
 
     static JsonEditMessage from(MessageEnvelope.Edit editMessage, Manager m) {
