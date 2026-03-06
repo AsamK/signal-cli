@@ -14,8 +14,8 @@ all: $(MANPAGESRC)
 .PHONY: install
 install: all
 	$(MKDIR) -p man1 man5
-	for f in *.1; do $(GZIP) < "$$f" > man1/"$$f".gz ; done
-	for f in *.5; do $(GZIP) < "$$f" > man5/"$$f".gz ; done
+	for f in *.1; do $(GZIP) -n < "$$f" > man1/"$$f".gz ; done
+	for f in *.5; do $(GZIP) -n < "$$f" > man5/"$$f".gz ; done
 
 .PHONY: clean
 clean:

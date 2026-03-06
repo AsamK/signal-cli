@@ -5,8 +5,7 @@ on:
     tags:
       - v*
 
-permissions:
-  contents: write # to fetch code (actions/checkout) and create release
+permissions: {}
 
 env:
   IMAGE_NAME: signal-cli
@@ -15,96 +14,25 @@ env:
   REGISTRY_PASSWORD: ${{ github.token }}
 
 jobs:
+  build:
+    uses: AsamK/signal-cli/.github/workflows/build.yml@master
 
-  ci_wf:
-    permissions:
-      contents: write
-    uses: AsamK/signal-cli/.github/workflows/ci.yml@master
-    # ${{ github.repository }} not accepted here
-
-  lib_to_jar:
-    needs: ci_wf
+  release:
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     outputs:
-      signal_cli_version: ${{ steps.cli_ver.outputs.version }}
-      release_id: ${{ steps.create_release.outputs.id }}
-
+      version: ${{ steps.version.outputs.version }}
     steps:
-
       - name: Download signal-cli build from CI workflow
         uses: actions/download-artifact@v8
 
       - name: Get signal-cli version
-        id: cli_ver
+        id: version
         run: |
-          ver="${GITHUB_REF_NAME#v}"
-          echo "version=${ver}" >> $GITHUB_OUTPUT
-
-      - name: Extract archive
-        run: |
-          tree .
-          ARCHIVE_DIR=$(ls signal-cli-archive-*/ -d | tail -n1)
-          tar -xzf ./"${ARCHIVE_DIR}"/*.tar.gz
-          mv ./"${ARCHIVE_DIR}"/*.tar.gz signal-cli-${{ steps.cli_ver.outputs.version }}.tar.gz
-          rm -rf signal-cli-archive-*/
-
-#      - name: Get signal-client jar version
-#        id: lib_ver
-#        run: |
-#          JAR_PREFIX=libsignal-client-
-#          jar_file=$(find ./signal-cli-*/lib/ -name "$JAR_PREFIX*.jar")
-#          jar_version=$(echo "$jar_file" | xargs basename | sed "s/$JAR_PREFIX//; s/.jar//")
-#          echo "$jar_version"
-#          echo "signal_client_version=${jar_version}" >> $GITHUB_OUTPUT
-#
-#      - name: Download signal-client builds
-#        env:
-#          RELEASES_URL: https://github.com/signalapp/libsignal/releases/download/
-#          FILE_NAMES: signal_jni.dll libsignal_jni.dylib
-#          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
-#        run: |
-#          for file_name in $FILE_NAMES; do
-#            curl -sOL "${RELEASES_URL}/v${SIGNAL_CLIENT_VER}/${file_name}"  # note: added v
-#          done
-#          tree .
-
-      - name: Compress native app
-        env:
-          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
-        run: |
-          chmod +x signal-cli-native/signal-cli
-          tar -czf signal-cli-${SIGNAL_CLI_VER}-Linux-native.tar.gz -C signal-cli-native signal-cli
-          rm -rf signal-cli-native/
-
-      - name: Compress client app
-        env:
-          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
-        run: |
-          chmod +x signal-cli-client-ubuntu/signal-cli-client
-          tar -czf signal-cli-${SIGNAL_CLI_VER}-Linux-client.tar.gz -C signal-cli-client-ubuntu signal-cli-client
-          rm -rf signal-cli-client-ubuntu/
-
-#      - name: Replace Windows lib
-#        env:
-#          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
-#          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
-#        run: |
-#          mv signal_jni.dll libsignal_jni.so
-#          zip -u ./signal-cli-*/lib/libsignal-client-${SIGNAL_CLIENT_VER}.jar  ./libsignal_jni.so
-#          tar -czf signal-cli-${SIGNAL_CLI_VER}-Windows.tar.gz signal-cli-*/
-#
-#      - name: Replace macOS lib
-#        env:
-#          SIGNAL_CLI_VER: ${{ steps.cli_ver.outputs.version }}
-#          SIGNAL_CLIENT_VER: ${{ steps.lib_ver.outputs.signal_client_version }}
-#        run: |
-#          jar_file=./signal-cli-*/lib/libsignal-client-${SIGNAL_CLIENT_VER}.jar
-#          zip -d $jar_file libsignal_jni.so
-#          zip $jar_file libsignal_jni.dylib
-#          tar -czf signal-cli-${SIGNAL_CLI_VER}-macOS.tar.gz signal-cli-*/
+          mv ./signal-cli-build/* .
+          echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
 
       - name: Create release
         id: create_release
@@ -112,8 +40,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.cli_ver.outputs.version }}  # note: added `v`
-          release_name: v${{ steps.cli_ver.outputs.version }}  # note: added `v`
+          tag_name: v${{ steps.version.outputs.version }} # note: added `v`
+          release_name: v${{ steps.version.outputs.version }} # note: added `v`
           draft: true
 
       - name: Upload archive
@@ -122,19 +50,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}.tar.gz
-          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}.tar.gz
-          asset_content_type: application/x-compressed-tar  # .tar.gz
-
-#      - name: Upload Linux archive
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux.tar.gz
-#          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux.tar.gz
-#          asset_content_type: application/x-compressed-tar  # .tar.gz
+          asset_path: signal-cli-${{ steps.version.outputs.version }}.tar.gz
+          asset_name: signal-cli-${{ steps.version.outputs.version }}.tar.gz
+          asset_content_type: application/x-compressed-tar # .tar.gz
 
       - name: Upload Linux native archive
         uses: actions/upload-release-asset@v1
@@ -142,9 +60,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux-native.tar.gz
-          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux-native.tar.gz
-          asset_content_type: application/x-compressed-tar  # .tar.gz
+          asset_path: signal-cli-${{ steps.version.outputs.version }}-Linux-native.tar.gz
+          asset_name: signal-cli-${{ steps.version.outputs.version }}-Linux-native.tar.gz
+          asset_content_type: application/x-compressed-tar # .tar.gz
 
       - name: Upload Linux client archive
         uses: actions/upload-release-asset@v1
@@ -152,35 +70,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux-client.tar.gz
-          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Linux-client.tar.gz
-          asset_content_type: application/x-compressed-tar  # .tar.gz
-
-#      - name: Upload windows archive
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-Windows.tar.gz
-#          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-Windows.tar.gz
-#          asset_content_type: application/x-compressed-tar  # .tar.gz
-#
-#      - name: Upload macos archive
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: signal-cli-${{ steps.cli_ver.outputs.version }}-macOS.tar.gz
-#          asset_name: signal-cli-${{ steps.cli_ver.outputs.version }}-macOS.tar.gz
-#          asset_content_type: application/x-compressed-tar  # .tar.gz
+          asset_path: signal-cli-${{ steps.version.outputs.version }}-Linux-client.tar.gz
+          asset_name: signal-cli-${{ steps.version.outputs.version }}-Linux-client.tar.gz
+          asset_content_type: application/x-compressed-tar # .tar.gz
 
   build-container:
-    needs: ci_wf
+    needs: release
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       packages: write
 
     steps:
@@ -188,28 +85,19 @@ jobs:
       - name: Download signal-cli build from CI workflow
         uses: actions/download-artifact@v8
 
-      - name: Get signal-cli version
-        id: cli_ver
-        run: |
-          ver="${GITHUB_REF_NAME#v}"
-          echo "version=${ver}" >> $GITHUB_OUTPUT
-
       - name: Move archive file
         run: |
-          ARCHIVE_DIR=$(ls signal-cli-archive-*/ -d | tail -n1)
-          tar xf ./"${ARCHIVE_DIR}"/*.tar.gz
-          rm -r signal-cli-archive-* signal-cli-native
+          tar xf ./signal-cli-build/signal-cli-${{ needs.release.outputs.version }}.tar.gz
           mkdir -p build/install/
-          mv ./signal-cli-"${GITHUB_REF_NAME#v}"/ build/install/signal-cli
+          mv ./signal-cli-"${{ needs.release.outputs.version }}"/ build/install/signal-cli
 
       - name: Build Image
         id: build_image
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.IMAGE_NAME }}
-          tags: latest ${{ github.sha }} ${{ steps.cli_ver.outputs.version }}
-          containerfiles:
-            ./Containerfile
+          tags: latest ${{ github.sha }} ${{ needs.release.outputs.version }}
+          containerfiles: ./Containerfile
           oci: true
 
       - name: Push To GHCR
@@ -227,10 +115,9 @@ jobs:
           echo "${{ toJSON(steps.push.outputs) }}"
 
   build-container-native:
-    needs: ci_wf
+    needs: release
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       packages: write
 
     steps:
@@ -238,26 +125,20 @@ jobs:
       - name: Download signal-cli build from CI workflow
         uses: actions/download-artifact@v8
 
-      - name: Get signal-cli version
-        id: cli_ver
-        run: |
-          ver="${GITHUB_REF_NAME#v}"
-          echo "version=${ver}" >> $GITHUB_OUTPUT
-
       - name: Move archive file
         run: |
+          tar xf ./signal-cli-build/signal-cli-${{ needs.release.outputs.version }}-Linux-native.tar.gz
           mkdir -p build/native/nativeCompile/
-          chmod +x ./signal-cli-native/signal-cli
-          mv ./signal-cli-native/signal-cli build/native/nativeCompile/
+          mv signal-cli build/native/nativeCompile/
+          chmod +x build/native/nativeCompile/signal-cli
 
       - name: Build Image
         id: build_image
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.IMAGE_NAME }}
-          tags: latest-native ${{ github.sha }}-native ${{ steps.cli_ver.outputs.version }}-native
-          containerfiles:
-            ./native.Containerfile
+          tags: latest-native ${{ github.sha }}-native ${{ needs.release.outputs.version }}-native
+          containerfiles: ./native.Containerfile
           oci: true
 
       - name: Push To GHCR
@@ -275,10 +156,9 @@ jobs:
           echo "${{ toJSON(steps.push.outputs) }}"
 
   build-container-client:
-    needs: ci_wf
+    needs: release
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       packages: write
 
     steps:
@@ -286,26 +166,20 @@ jobs:
       - name: Download signal-cli build from CI workflow
         uses: actions/download-artifact@v8
 
-      - name: Get signal-cli version
-        id: cli_ver
-        run: |
-          ver="${GITHUB_REF_NAME#v}"
-          echo "version=${ver}" >> $GITHUB_OUTPUT
-
       - name: Move archive file
         run: |
+          tar xf ./signal-cli-build/signal-cli-${{ needs.release.outputs.version }}-Linux-client.tar.gz
           mkdir -p client/target/release/
-          chmod +x ./signal-cli-client-ubuntu/signal-cli-client
-          mv ./signal-cli-client-ubuntu/signal-cli-client client/target/release/
+          mv signal-cli-client client/target/release/
+          chmod +x client/target/release/signal-cli-client
 
       - name: Build Image
         id: build_image
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.IMAGE_NAME }}
-          tags: latest-client ${{ github.sha }}-client ${{ steps.cli_ver.outputs.version }}-client
-          containerfiles:
-            ./client.Containerfile
+          tags: latest-client ${{ github.sha }}-client ${{ needs.release.outputs.version }}-client
+          containerfiles: ./client.Containerfile
           oci: true
 
       - name: Push To GHCR
