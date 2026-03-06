@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/sync-data-message.schema.json",
+  "title": "SyncDataMessage",
+  "type": "object",
+  "properties": {
+    "adminDelete": {
+      "$ref": "https://example.com/schemas/admin-delete.schema.json"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "$ref": "https://example.com/schemas/attachment.schema.json"
+      }
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "$ref": "https://example.com/schemas/shared-contact.schema.json"
+      }
+    },
+    "destination": {
+      "type": "string"
+    },
+    "destinationNumber": {
+      "type": "string"
+    },
+    "destinationUuid": {
+      "type": "string"
+    },
+    "editMessage": {
+      "$ref": "https://example.com/schemas/edit-message.schema.json"
+    },
+    "expiresInSeconds": {
+      "type": "integer"
+    },
+    "groupInfo": {
+      "$ref": "https://example.com/schemas/group-info.schema.json"
+    },
+    "isExpirationUpdate": {
+      "type": "boolean"
+    },
+    "mentions": {
+      "type": "array",
+      "items": {
+        "$ref": "https://example.com/schemas/mention.schema.json"
+      }
+    },
+    "message": {
+      "type": "string"
+    },
+    "payment": {
+      "$ref": "https://example.com/schemas/payment.schema.json"
+    },
+    "pinMessage": {
+      "$ref": "https://example.com/schemas/pin-message.schema.json"
+    },
+    "pollCreate": {
+      "$ref": "https://example.com/schemas/poll-create.schema.json"
+    },
+    "pollTerminate": {
+      "$ref": "https://example.com/schemas/poll-terminate.schema.json"
+    },
+    "pollVote": {
+      "$ref": "https://example.com/schemas/poll-vote.schema.json"
+    },
+    "previews": {
+      "type": "array",
+      "items": {
+        "$ref": "https://example.com/schemas/preview.schema.json"
+      }
+    },
+    "quote": {
+      "$ref": "https://example.com/schemas/quote.schema.json"
+    },
+    "reaction": {
+      "$ref": "https://example.com/schemas/reaction.schema.json"
+    },
+    "remoteDelete": {
+      "$ref": "https://example.com/schemas/remote-delete.schema.json"
+    },
+    "sticker": {
+      "$ref": "https://example.com/schemas/sticker.schema.json"
+    },
+    "storyContext": {
+      "$ref": "https://example.com/schemas/story-context.schema.json"
+    },
+    "textStyles": {
+      "type": "array",
+      "items": {
+        "$ref": "https://example.com/schemas/text-style.schema.json"
+      }
+    },
+    "timestamp": {
+      "type": "integer"
+    },
+    "unpinMessage": {
+      "$ref": "https://example.com/schemas/unpin-message.schema.json"
+    },
+    "viewOnce": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "destinationNumber",
+    "destinationUuid",
+    "message",
+    "expiresInSeconds",
+    "timestamp"
+  ]
+}

@@ -72,6 +72,11 @@ val excludePatterns = mapOf(
     )
 )
 
+val schemaAnnotationProcessor by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
 dependencies {
     registerTransform(JarFileExcluder::class) {
         from.attribute(minified, false).attribute(artifactType, "jar")
@@ -82,8 +87,8 @@ dependencies {
         }
     }
 
-    annotationProcessor(libs.micronaut.json.schema.processor)
-    annotationProcessor(libs.micronaut.inject.java)
+    schemaAnnotationProcessor(libs.micronaut.json.schema.processor)
+    schemaAnnotationProcessor(libs.micronaut.inject.java)
 
     implementation(libs.bouncycastle)
     implementation(libs.jackson.databind)
@@ -112,14 +117,6 @@ tasks.withType<AbstractArchiveTask>().configureEach {
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
-    options.compilerArgs.addAll(
-        listOf(
-            "-Amicronaut.processing.group=org.asamk",
-            "-Amicronaut.processing.module=signal-cli",
-            "-Amicronaut.processing.annotations=org.asamk.signal.json.*",
-            "-Amicronaut.jsonschema.baseUri=https://example.com/schemas",
-        )
-    )
 }
 
 tasks.withType<Jar> {
@@ -152,8 +149,42 @@ tasks.register("fatJar", type = Jar::class) {
     with(tasks.jar.get())
 }
 
+val compileJsonSchemas by tasks.registering(JavaCompile::class) {
+    dependsOn(tasks.compileJava)
+    
+    source = sourceSets.main.get().java
+    include("org/asamk/signal/json/**/*.java")
+    
+    // Exclude files with @JsonUnwrapped and files that reference them
+    exclude("org/asamk/signal/json/JsonSyncDataMessage.java")
+    exclude("org/asamk/signal/json/JsonSyncStoryMessage.java")
+    exclude("org/asamk/signal/json/JsonSyncMessage.java")
+
+    classpath = sourceSets.main.get().compileClasspath + files(sourceSets.main.get().java.destinationDirectory)
+    destinationDirectory.set(layout.buildDirectory.dir("classes/java/schemas"))
+    
+    options.annotationProcessorPath = schemaAnnotationProcessor
+    options.compilerArgs.addAll(
+        listOf(
+            "-Amicronaut.processing.group=org.asamk",
+            "-Amicronaut.processing.module=signal-cli",
+            "-Amicronaut.processing.annotations=org.asamk.signal.json.*",
+            "-Amicronaut.jsonschema.baseUri=https://example.com/schemas",
+        )
+    )
+    
+    doLast {
+        // Copy manual schemas for classes with @JsonUnwrapped
+        copy {
+            from("src/main/resources/META-INF/schemas")
+            into(destinationDirectory.get().dir("META-INF/schemas"))
+            include("*.schema.json")
+        }
+    }
+}
+
 tasks.register("genJsonSchemas") {
     group = "application"
     description = "Generate JSON schemas using annotation processing"
-    dependsOn(tasks.compileJava)
+    dependsOn(compileJsonSchemas)
 }

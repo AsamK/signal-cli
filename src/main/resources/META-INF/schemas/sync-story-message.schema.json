@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/sync-story-message.schema.json",
+  "title": "SyncStoryMessage",
+  "type": "object",
+  "properties": {
+    "allowsReplies": {
+      "type": "boolean"
+    },
+    "destinationNumber": {
+      "type": "string"
+    },
+    "destinationUuid": {
+      "type": "string"
+    },
+    "fileAttachment": {
+      "$ref": "https://example.com/schemas/attachment.schema.json"
+    },
+    "groupId": {
+      "type": "string"
+    },
+    "textAttachment": {
+      "type": "object",
+      "properties": {
+        "backgroundColor": {
+          "type": "string"
+        },
+        "backgroundGradient": {
+          "type": "object"
+        },
+        "preview": {
+          "$ref": "https://example.com/schemas/preview.schema.json"
+        },
+        "style": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "textBackgroundColor": {
+          "type": "string"
+        },
+        "textForegroundColor": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    }
+  },
+  "required": [
+    "destinationNumber",
+    "destinationUuid",
+    "allowsReplies"
+  ]
+}
