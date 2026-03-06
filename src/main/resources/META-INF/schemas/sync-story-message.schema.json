@@ -4,14 +4,14 @@
   "title": "SyncStoryMessage",
   "type": "object",
   "properties": {
-    "allowsReplies": {
-      "type": "boolean"
-    },
     "destinationNumber": {
       "type": "string"
     },
     "destinationUuid": {
       "type": "string"
+    },
+    "allowsReplies": {
+      "type": "boolean"
     },
     "fileAttachment": {
       "$ref": "https://example.com/schemas/attachment.schema.json"
@@ -20,13 +20,38 @@
       "type": "string"
     },
     "textAttachment": {
+      "title": "JsonStoryMessage.TextAttachment",
       "type": "object",
       "properties": {
         "backgroundColor": {
           "type": "string"
         },
         "backgroundGradient": {
-          "type": "object"
+          "title": "JsonStoryMessage.TextAttachment.Gradient",
+          "type": "object",
+          "properties": {
+            "angle": {
+              "type": "integer"
+            },
+            "colors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "endColor": {
+              "type": "string"
+            },
+            "positions": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "startColor": {
+              "type": "string"
+            }
+          }
         },
         "preview": {
           "$ref": "https://example.com/schemas/preview.schema.json"
@@ -43,10 +68,7 @@
         "textForegroundColor": {
           "type": "string"
         }
-      },
-      "required": [
-        "text"
-      ]
+      }
     }
   },
   "required": [
