@@ -1,17 +1,19 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 
-@Schema(name = "ReceiptMessage")
+@JsonSchema(title = "ReceiptMessage")
 record JsonReceiptMessage(
-        @Schema(required = true) long when,
-        @Schema(required = true) boolean isDelivery,
-        @Schema(required = true) boolean isRead,
-        @Schema(required = true) boolean isViewed,
-        @Schema(required = true) List<Long> timestamps
+        @JsonProperty(required = true) long when,
+        @JsonProperty(required = true) boolean isDelivery,
+        @JsonProperty(required = true) boolean isRead,
+        @JsonProperty(required = true) boolean isViewed,
+        @JsonProperty(required = true) List<Long> timestamps
 ) {
 
     static JsonReceiptMessage from(MessageEnvelope.Receipt receiptMessage) {

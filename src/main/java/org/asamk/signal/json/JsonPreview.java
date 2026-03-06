@@ -1,14 +1,16 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "Preview")
+@JsonSchema(title = "Preview")
 public record JsonPreview(
-        @Schema(required = true) String url,
-        @Schema(required = true) String title,
-        @Schema(required = true) String description,
-        @Schema(required = true) JsonAttachment image
+        @JsonProperty(required = true) String url,
+        @JsonProperty(required = true) String title,
+        @JsonProperty(required = true) String description,
+        @JsonProperty(required = true) JsonAttachment image
 ) {
 
     static JsonPreview from(MessageEnvelope.Data.Preview preview) {

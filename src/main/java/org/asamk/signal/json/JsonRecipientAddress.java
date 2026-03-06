@@ -1,15 +1,17 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.RecipientAddress;
 
 import java.util.UUID;
 
-@Schema(name = "RecipientAddress")
+@JsonSchema(title = "RecipientAddress")
 public record JsonRecipientAddress(
-        @Schema(required = true) String uuid,
-        @Schema(required = true) String number,
-        @Schema(required = true) String username
+        @JsonProperty(required = true) String uuid,
+        @JsonProperty(required = true) String number,
+        @JsonProperty(required = true) String username
 ) {
 
     public static JsonRecipientAddress from(RecipientAddress address) {

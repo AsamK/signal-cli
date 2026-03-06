@@ -1,13 +1,15 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "EditMessage")
+@JsonSchema(title = "EditMessage")
 record JsonEditMessage(
-        @Schema(required = true) long targetSentTimestamp,
-        @Schema(required = true) JsonDataMessage dataMessage
+        @JsonProperty(required = true) long targetSentTimestamp,
+        @JsonProperty(required = true) JsonDataMessage dataMessage
 ) {
 
     static JsonEditMessage from(MessageEnvelope.Edit editMessage, Manager m) {

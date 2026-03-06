@@ -1,13 +1,15 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.TextStyle;
 
-@Schema(name = "TextStyle")
+@JsonSchema(title = "TextStyle")
 public record JsonTextStyle(
-        @Schema(required = true) String style,
-        @Schema(required = true) int start,
-        @Schema(required = true) int length
+        @JsonProperty(required = true) String style,
+        @JsonProperty(required = true) int start,
+        @JsonProperty(required = true) int length
 ) {
 
     static JsonTextStyle from(TextStyle textStyle) {

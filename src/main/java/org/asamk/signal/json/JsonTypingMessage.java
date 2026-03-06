@@ -1,15 +1,16 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "TypingMessage")
+@JsonSchema(title = "TypingMessage")
 record JsonTypingMessage(
-    @Schema(required = true) String action,
-    @Schema(required = true) long timestamp,
+    @JsonProperty(required = true) String action,
+    @JsonProperty(required = true) long timestamp,
     @JsonInclude(JsonInclude.Include.NON_NULL) String groupId
 ) {
 

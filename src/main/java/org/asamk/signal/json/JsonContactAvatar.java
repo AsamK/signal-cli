@@ -1,12 +1,14 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "ContactAvatar")
+@JsonSchema(title = "ContactAvatar")
 public record JsonContactAvatar(
-        @Schema(required = true) JsonAttachment attachment,
-        @Schema(required = true) boolean isProfile
+        @JsonProperty(required = true) JsonAttachment attachment,
+        @JsonProperty(required = true) boolean isProfile
 ) {
 
     static JsonContactAvatar from(MessageEnvelope.Data.SharedContact.Avatar avatar) {

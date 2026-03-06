@@ -1,7 +1,8 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.Color;
 import org.asamk.signal.manager.api.GroupId;
@@ -9,9 +10,9 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 
-@Schema(name = "StoryMessage")
+@JsonSchema(title = "StoryMessage")
 record JsonStoryMessage(
-        @Schema(required = true) boolean allowsReplies,
+        @JsonProperty(required = true) boolean allowsReplies,
         @JsonInclude(JsonInclude.Include.NON_NULL) String groupId,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment fileAttachment,
         @JsonInclude(JsonInclude.Include.NON_NULL) TextAttachment textAttachment
@@ -25,7 +26,7 @@ record JsonStoryMessage(
     }
 
     public record TextAttachment(
-            @Schema(required = true) String text,
+            @JsonProperty(required = true) String text,
             @JsonInclude(JsonInclude.Include.NON_NULL) String style,
             @JsonInclude(JsonInclude.Include.NON_NULL) String textForegroundColor,
             @JsonInclude(JsonInclude.Include.NON_NULL) String textBackgroundColor,
@@ -45,11 +46,11 @@ record JsonStoryMessage(
         }
 
         public record Gradient(
-                @Schema(required = true) String startColor,
-                @Schema(required = true) String endColor,
-                @Schema(required = true) List<String> colors,
-                @Schema(required = true) List<Float> positions,
-                @Schema(required = true) Integer angle
+                @JsonProperty(required = true) String startColor,
+                @JsonProperty(required = true) String endColor,
+                @JsonProperty(required = true) List<String> colors,
+                @JsonProperty(required = true) List<Float> positions,
+                @JsonProperty(required = true) Integer angle
         ) {
 
             static Gradient from(MessageEnvelope.Story.TextAttachment.Gradient gradient) {

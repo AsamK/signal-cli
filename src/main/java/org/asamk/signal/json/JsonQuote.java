@@ -1,22 +1,23 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 import java.util.UUID;
 
-@Schema(name = "Quote")
+@JsonSchema(title = "Quote")
 public record JsonQuote(
-        @Schema(required = true) long id,
+        @JsonProperty(required = true) long id,
         @Deprecated String author,
-        @Schema(required = true) String authorNumber,
-        @Schema(required = true) String authorUuid,
-        @Schema(required = true) String text,
+        @JsonProperty(required = true) String authorNumber,
+        @JsonProperty(required = true) String authorUuid,
+        @JsonProperty(required = true) String text,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonMention> mentions,
-        @Schema(required = true) List<JsonQuotedAttachment> attachments,
+        @JsonProperty(required = true) List<JsonQuotedAttachment> attachments,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonTextStyle> textStyles
 ) {
 

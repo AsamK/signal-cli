@@ -1,20 +1,21 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 
-@Schema(name = "SharedContact")
+@JsonSchema(title = "SharedContact")
 public record JsonSharedContact(
-        @Schema(required = true) JsonContactName name,
+        @JsonProperty(required = true) JsonContactName name,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonContactAvatar avatar,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactPhone> phone,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactEmail> email,
         @JsonInclude(JsonInclude.Include.NON_NULL) List<JsonContactAddress> address,
-        @Schema(required = true) String organization
+        @JsonProperty(required = true) String organization
 ) {
 
     static JsonSharedContact from(MessageEnvelope.Data.SharedContact contact) {

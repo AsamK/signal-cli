@@ -1,17 +1,19 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
-@Schema(name = "PinMessage")
+@JsonSchema(title = "PinMessage")
 public record JsonPinMessage(
         @Deprecated String targetAuthor,
-        @Schema(required = true) String targetAuthorNumber,
-        @Schema(required = true) String targetAuthorUuid,
-        @Schema(required = true) long targetSentTimestamp,
-        @Schema(required = true) long pinDurationSeconds
+        @JsonProperty(required = true) String targetAuthorNumber,
+        @JsonProperty(required = true) String targetAuthorUuid,
+        @JsonProperty(required = true) long targetSentTimestamp,
+        @JsonProperty(required = true) long pinDurationSeconds
 ) {
 
     static JsonPinMessage from(MessageEnvelope.Data.PinMessage pinMessage) {

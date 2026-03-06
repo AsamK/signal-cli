@@ -1,16 +1,17 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.SendMessageResult;
 
-@Schema(name = "SendMessageResult")
+@JsonSchema(title = "SendMessageResult")
 public record JsonSendMessageResult(
-        @Schema(required = true) JsonRecipientAddress recipientAddress,
+        @JsonProperty(required = true) JsonRecipientAddress recipientAddress,
         @JsonInclude(JsonInclude.Include.NON_NULL) String groupId,
-        @Schema(required = true) Type type,
+        @JsonProperty(required = true) Type type,
         @JsonInclude(JsonInclude.Include.NON_NULL) String token,
         @JsonInclude(JsonInclude.Include.NON_NULL) Long retryAfterSeconds
 ) {

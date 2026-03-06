@@ -1,17 +1,18 @@
 package org.asamk.signal.json;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
-@Schema(name = "SyncStoryMessage")
+@JsonSchema(title = "SyncStoryMessage")
 record JsonSyncStoryMessage(
-        @Schema(required = true) String destinationNumber,
-        @Schema(required = true) String destinationUuid,
-        @Schema(required = true) @JsonUnwrapped JsonStoryMessage dataMessage
+        @JsonProperty(required = true) String destinationNumber,
+        @JsonProperty(required = true) String destinationUuid,
+        @JsonProperty(required = true) @JsonUnwrapped JsonStoryMessage dataMessage
 ) {
 
     static JsonSyncStoryMessage from(MessageEnvelope.Sync.Sent transcriptMessage) {

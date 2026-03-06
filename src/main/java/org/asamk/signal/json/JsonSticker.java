@@ -1,13 +1,15 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Hex;
 
-@Schema(name = "Sticker")
+@JsonSchema(title = "Sticker")
 public record JsonSticker(
-        @Schema(required = true) String packId,
-        @Schema(required = true) int stickerId
+        @JsonProperty(required = true) String packId,
+        @JsonProperty(required = true) int stickerId
 ) {
 
     static JsonSticker from(MessageEnvelope.Data.Sticker sticker) {

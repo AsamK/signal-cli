@@ -1,14 +1,15 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.Base64;
 import java.util.List;
 
-@Schema(name = "CallMessage")
+@JsonSchema(title = "CallMessage")
 record JsonCallMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) Offer offerMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) Answer answerMessage,
@@ -26,9 +27,9 @@ record JsonCallMessage(
     }
 
     record Offer(
-            @Schema(required = true) long id,
-            @Schema(required = true) String type,
-            @Schema(required = true) String opaque
+            @JsonProperty(required = true) long id,
+            @JsonProperty(required = true) String type,
+            @JsonProperty(required = true) String opaque
     ) {
 
         public static Offer from(final MessageEnvelope.Call.Offer offer) {
@@ -37,8 +38,8 @@ record JsonCallMessage(
     }
 
     public record Answer(
-            @Schema(required = true) long id,
-            @Schema(required = true) String opaque
+            @JsonProperty(required = true) long id,
+            @JsonProperty(required = true) String opaque
     ) {
 
         public static Answer from(final MessageEnvelope.Call.Answer answer) {
@@ -46,7 +47,7 @@ record JsonCallMessage(
         }
     }
 
-    public record Busy(@Schema(required = true) long id) {
+    public record Busy(@JsonProperty(required = true) long id) {
 
         public static Busy from(final MessageEnvelope.Call.Busy busy) {
             return new Busy(busy.id());
@@ -54,9 +55,9 @@ record JsonCallMessage(
     }
 
     public record Hangup(
-            @Schema(required = true) long id,
-            @Schema(required = true) String type,
-            @Schema(required = true) int deviceId
+            @JsonProperty(required = true) long id,
+            @JsonProperty(required = true) String type,
+            @JsonProperty(required = true) int deviceId
     ) {
 
         public static Hangup from(final MessageEnvelope.Call.Hangup hangup) {
@@ -65,8 +66,8 @@ record JsonCallMessage(
     }
 
     public record IceUpdate(
-            @Schema(required = true) long id,
-            @Schema(required = true) String opaque
+            @JsonProperty(required = true) long id,
+            @JsonProperty(required = true) String opaque
     ) {
 
         public static IceUpdate from(final MessageEnvelope.Call.IceUpdate iceUpdate) {

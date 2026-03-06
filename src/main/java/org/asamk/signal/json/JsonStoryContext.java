@@ -1,15 +1,17 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
-@Schema(name = "StoryContext")
+@JsonSchema(title = "StoryContext")
 record JsonStoryContext(
-        @Schema(required = true) String authorNumber,
-        @Schema(required = true) String authorUuid,
-        @Schema(required = true) long sentTimestamp
+        @JsonProperty(required = true) String authorNumber,
+        @JsonProperty(required = true) String authorUuid,
+        @JsonProperty(required = true) long sentTimestamp
 ) {
 
     static JsonStoryContext from(MessageEnvelope.Data.StoryContext storyContext) {

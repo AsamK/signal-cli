@@ -1,17 +1,19 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Util;
 
-@Schema(name = "ContactName")
+@JsonSchema(title = "ContactName")
 public record JsonContactName(
-        @Schema(required = true) String nickname,
-        @Schema(required = true) String given,
-        @Schema(required = true) String family,
-        @Schema(required = true) String prefix,
-        @Schema(required = true) String suffix,
-        @Schema(required = true) String middle
+        @JsonProperty(required = true) String nickname,
+        @JsonProperty(required = true) String given,
+        @JsonProperty(required = true) String family,
+        @JsonProperty(required = true) String prefix,
+        @JsonProperty(required = true) String suffix,
+        @JsonProperty(required = true) String middle
 ) {
 
     static JsonContactName from(MessageEnvelope.Data.SharedContact.Name name) {

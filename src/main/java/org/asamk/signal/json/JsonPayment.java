@@ -1,12 +1,14 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "Payment")
+@JsonSchema(title = "Payment")
 public record JsonPayment(
-        @Schema(required = true) String note,
-        @Schema(required = true) byte[] receipt
+        @JsonProperty(required = true) String note,
+        @JsonProperty(required = true) byte[] receipt
 ) {
 
     static JsonPayment from(MessageEnvelope.Data.Payment payment) {

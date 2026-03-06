@@ -1,8 +1,10 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
-@Schema(name = "AttachmentData")
+
+@JsonSchema(title = "AttachmentData")
 public record JsonAttachmentData(
-        @Schema(required = true) String data
+        @JsonProperty(required = true) String data
 ) {}

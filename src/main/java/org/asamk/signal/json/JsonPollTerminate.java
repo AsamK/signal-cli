@@ -1,10 +1,12 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "PollTerminate")
-public record JsonPollTerminate(@Schema(required = true) long targetSentTimestamp) {
+@JsonSchema(title = "PollTerminate")
+public record JsonPollTerminate(@JsonProperty(required = true) long targetSentTimestamp) {
 
     static JsonPollTerminate from(MessageEnvelope.Data.PollTerminate pollTerminate) {
         final var targetSentTimestamp = pollTerminate.targetSentTimestamp();

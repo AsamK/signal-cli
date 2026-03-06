@@ -1,7 +1,9 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
@@ -11,16 +13,16 @@ import org.asamk.signal.manager.api.UntrustedIdentityException;
 
 import java.util.UUID;
 
-@Schema(name = "MessageEnvelope")
+@JsonSchema(title = "MessageEnvelope")
 public record JsonMessageEnvelope(
         @Deprecated String source,
-        @Schema(required = true) String sourceNumber,
-        @Schema(required = true) String sourceUuid,
-        @Schema(required = true) String sourceName,
-        @Schema(required = true) Integer sourceDevice,
-        @Schema(required = true) long timestamp,
-        @Schema(required = true) long serverReceivedTimestamp,
-        @Schema(required = true) long serverDeliveredTimestamp,
+        @JsonProperty(required = true) String sourceNumber,
+        @JsonProperty(required = true) String sourceUuid,
+        @JsonProperty(required = true) String sourceName,
+        @JsonProperty(required = true) Integer sourceDevice,
+        @JsonProperty(required = true) long timestamp,
+        @JsonProperty(required = true) long serverReceivedTimestamp,
+        @JsonProperty(required = true) long serverDeliveredTimestamp,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonDataMessage dataMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonEditMessage editMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonStoryMessage storyMessage,

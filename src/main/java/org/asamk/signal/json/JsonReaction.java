@@ -1,18 +1,20 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
-@Schema(name = "Reaction")
+@JsonSchema(title = "Reaction")
 public record JsonReaction(
-        @Schema(required = true) String emoji,
+        @JsonProperty(required = true) String emoji,
         @Deprecated String targetAuthor,
-        @Schema(required = true) String targetAuthorNumber,
-        @Schema(required = true) String targetAuthorUuid,
-        @Schema(required = true) long targetSentTimestamp,
-        @Schema(required = true) boolean isRemove
+        @JsonProperty(required = true) String targetAuthorNumber,
+        @JsonProperty(required = true) String targetAuthorUuid,
+        @JsonProperty(required = true) long targetSentTimestamp,
+        @JsonProperty(required = true) boolean isRemove
 ) {
 
     static JsonReaction from(MessageEnvelope.Data.Reaction reaction) {

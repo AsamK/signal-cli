@@ -1,15 +1,17 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 
-@Schema(name = "PollCreate")
+@JsonSchema(title = "PollCreate")
 public record JsonPollCreate(
-        @Schema(required = true) String question,
-        @Schema(required = true) boolean allowMultiple,
-        @Schema(required = true) List<String> options
+        @JsonProperty(required = true) String question,
+        @JsonProperty(required = true) boolean allowMultiple,
+        @JsonProperty(required = true) List<String> options
 ) {
 
     static JsonPollCreate from(MessageEnvelope.Data.PollCreate pollCreate) {

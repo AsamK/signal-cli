@@ -1,18 +1,20 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "Attachment")
+@JsonSchema(title = "Attachment")
 record JsonAttachment(
-        @Schema(required = true) String contentType,
-        @Schema(required = true) String filename,
-        @Schema(required = true) String id,
-        @Schema(required = true) Long size,
-        @Schema(required = true) Integer width,
-        @Schema(required = true) Integer height,
-        @Schema(required = true) String caption,
-        @Schema(required = true) Long uploadTimestamp
+        @JsonProperty(required = true) String contentType,
+        @JsonProperty(required = true) String filename,
+        @JsonProperty(required = true) String id,
+        @JsonProperty(required = true) Long size,
+        @JsonProperty(required = true) Integer width,
+        @JsonProperty(required = true) Integer height,
+        @JsonProperty(required = true) String caption,
+        @JsonProperty(required = true) Long uploadTimestamp
 ) {
 
     static JsonAttachment from(MessageEnvelope.Data.Attachment attachment) {

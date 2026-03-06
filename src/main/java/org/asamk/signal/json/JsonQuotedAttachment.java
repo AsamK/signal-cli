@@ -1,14 +1,15 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "QuotedAttachment")
+@JsonSchema(title = "QuotedAttachment")
 public record JsonQuotedAttachment(
-        @Schema(required = true) String contentType,
-        @Schema(required = true) String filename,
+        @JsonProperty(required = true) String contentType,
+        @JsonProperty(required = true) String filename,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment thumbnail
 ) {
 

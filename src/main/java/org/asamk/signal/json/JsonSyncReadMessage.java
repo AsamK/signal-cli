@@ -1,16 +1,18 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
-@Schema(name = "SyncReadMessage")
+@JsonSchema(title = "SyncReadMessage")
 record JsonSyncReadMessage(
     @Deprecated String sender,
-    @Schema(required = true) String senderNumber,
-    @Schema(required = true) String senderUuid,
-    @Schema(required = true) long timestamp
+    @JsonProperty(required = true) String senderNumber,
+    @JsonProperty(required = true) String senderUuid,
+    @JsonProperty(required = true) long timestamp
 ) {
 
     static JsonSyncReadMessage from(MessageEnvelope.Sync.Read readMessage) {

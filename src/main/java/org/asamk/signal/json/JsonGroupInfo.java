@@ -1,15 +1,17 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
 
-@Schema(name = "GroupInfo")
+@JsonSchema(title = "GroupInfo")
 record JsonGroupInfo(
-        @Schema(required = true) String groupId,
-        @Schema(required = true) String groupName,
-        @Schema(required = true) int revision,
-        @Schema(required = true) String type
+        @JsonProperty(required = true) String groupId,
+        @JsonProperty(required = true) String groupName,
+        @JsonProperty(required = true) int revision,
+        @JsonProperty(required = true) String type
 ) {
 
     static JsonGroupInfo from(MessageEnvelope.Data.GroupContext groupContext, Manager m) {

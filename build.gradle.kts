@@ -82,6 +82,9 @@ dependencies {
         }
     }
 
+    annotationProcessor(libs.micronaut.json.schema.processor)
+    annotationProcessor(libs.micronaut.inject.java)
+
     implementation(libs.bouncycastle)
     implementation(libs.jackson.databind)
     implementation(libs.argparse4j)
@@ -90,8 +93,8 @@ dependencies {
     implementation(libs.slf4j.jul)
     implementation(libs.logback)
     implementation(libs.zxing)
-    implementation(libs.spring.boot.starter.web)
-    implementation(libs.springdoc.openapi.starter.webmvc.ui)
+    implementation(libs.micronaut.json.schema.annotations)
+    implementation(libs.micronaut.json.schema.generator)
     implementation(project(":libsignal-cli"))
 }
 
@@ -107,8 +110,16 @@ tasks.withType<AbstractArchiveTask>().configureEach {
     isReproducibleFileOrder = true
 }
 
-tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
+    options.compilerArgs.addAll(
+        listOf(
+            "-Amicronaut.processing.group=org.asamk",
+            "-Amicronaut.processing.module=signal-cli",
+            "-Amicronaut.processing.annotations=org.asamk.signal.json.*",
+            "-Amicronaut.jsonschema.baseUri=https://example.com/schemas",
+        )
+    )
 }
 
 tasks.withType<Jar> {
@@ -141,9 +152,8 @@ tasks.register("fatJar", type = Jar::class) {
     with(tasks.jar.get())
 }
 
-tasks.register<JavaExec>("openApiDocs") {
+tasks.register("genJsonSchemas") {
     group = "application"
-    description = "Run OpenAPI documentation server for JSON models"
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("org.asamk.signal.openapi.OpenApiDocumentationApplication")
+    description = "Generate JSON schemas using annotation processing"
+    dependsOn(tasks.compileJava)
 }

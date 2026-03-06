@@ -1,8 +1,8 @@
 [versions]
 slf4j = "2.0.17"
 junit = "6.0.2"
-spring-boot = "3.5.0"
-springdoc = "2.8.13"
+micronaut-json-schema = "1.7.2"
+micronaut-core = "4.9.3"
 
 [libraries]
 bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.83"
@@ -10,8 +10,10 @@ jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.20.2"
 argparse4j = "net.sourceforge.argparse4j:argparse4j:0.9.0"
 dbusjava = "com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.0.0"
 zxing = "com.google.zxing:core:3.5.4"
-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
-springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+micronaut-json-schema-annotations = { module = "io.micronaut.jsonschema:micronaut-json-schema-annotations", version.ref = "micronaut-json-schema" }
+micronaut-json-schema-processor = { module = "io.micronaut.jsonschema:micronaut-json-schema-processor", version.ref = "micronaut-json-schema" }
+micronaut-json-schema-generator = { module = "io.micronaut.jsonschema:micronaut-json-schema-generator", version.ref = "micronaut-json-schema" }
+micronaut-inject-java = { module = "io.micronaut:micronaut-inject-java", version.ref = "micronaut-core" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 logback = "ch.qos.logback:logback-classic:1.5.32"

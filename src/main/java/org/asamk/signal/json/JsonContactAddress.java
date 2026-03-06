@@ -1,20 +1,22 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Util;
 
-@Schema(name = "ContactAddress")
+@JsonSchema(title = "ContactAddress")
 public record JsonContactAddress(
-        @Schema(required = true) String type,
-        @Schema(required = true) String label,
-        @Schema(required = true) String street,
-        @Schema(required = true) String pobox,
-        @Schema(required = true) String neighborhood,
-        @Schema(required = true) String city,
-        @Schema(required = true) String region,
-        @Schema(required = true) String postcode,
-        @Schema(required = true) String country
+        @JsonProperty(required = true) String type,
+        @JsonProperty(required = true) String label,
+        @JsonProperty(required = true) String street,
+        @JsonProperty(required = true) String pobox,
+        @JsonProperty(required = true) String neighborhood,
+        @JsonProperty(required = true) String city,
+        @JsonProperty(required = true) String region,
+        @JsonProperty(required = true) String postcode,
+        @JsonProperty(required = true) String country
 ) {
 
     static JsonContactAddress from(MessageEnvelope.Data.SharedContact.Address address) {

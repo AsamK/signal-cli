@@ -1,19 +1,21 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 import java.util.UUID;
 
-@Schema(name = "PollVote")
+@JsonSchema(title = "PollVote")
 public record JsonPollVote(
         @Deprecated String author,
-        @Schema(required = true) String authorNumber,
-        @Schema(required = true) String authorUuid,
-        @Schema(required = true) long targetSentTimestamp,
-        @Schema(required = true) List<Integer> optionIndexes,
-        @Schema(required = true) int voteCount
+        @JsonProperty(required = true) String authorNumber,
+        @JsonProperty(required = true) String authorUuid,
+        @JsonProperty(required = true) long targetSentTimestamp,
+        @JsonProperty(required = true) List<Integer> optionIndexes,
+        @JsonProperty(required = true) int voteCount
 ) {
 
     static JsonPollVote from(MessageEnvelope.Data.PollVote pollVote) {

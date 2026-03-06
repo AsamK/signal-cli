@@ -1,17 +1,19 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
-@Schema(name = "Mention")
+@JsonSchema(title = "Mention")
 public record JsonMention(
         @Deprecated String name,
-        @Schema(required = true) String number,
-        @Schema(required = true) String uuid,
-        @Schema(required = true) int start,
-        @Schema(required = true) int length
+        @JsonProperty(required = true) String number,
+        @JsonProperty(required = true) String uuid,
+        @JsonProperty(required = true) int start,
+        @JsonProperty(required = true) int length
 ) {
 
     static JsonMention from(MessageEnvelope.Data.Mention mention) {

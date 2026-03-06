@@ -1,6 +1,7 @@
 package org.asamk.signal.json;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.micronaut.jsonschema.JsonSchema;
 
-@Schema(name = "RemoteDelete")
-record JsonRemoteDelete(@Schema(required = true) long timestamp) {}
+@JsonSchema(title = "RemoteDelete")
+record JsonRemoteDelete(@JsonProperty(required = true) long timestamp) {}

@@ -1,3 +1,5 @@
+https://sdkman.io/usage/
+
 # signal-cli
 
 signal-cli is a commandline interface for the [Signal messenger](https://signal.org/).
@@ -153,13 +155,10 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
 1. Run documentation server for all the JSON-RPC schemas (`src/main/java/org/asamk/signal/json`):
 
     ```sh
-    ./gradlew openApiDocs
+    ./gradlew genJsonSchemas
     ```
 
-2. Open:
-
-    - `http://localhost:8080/swagger-ui/index.html` (Swagger UI)
-    - `http://localhost:8080/v3/api-docs/json-models` (OpenAPI JSON)
+2. Check the json schemas files in the following folder:    
 
 ### Building a native binary with GraalVM (EXPERIMENTAL)
 
