@@ -8,10 +8,7 @@ import java.util.UUID;
 
 @JsonSchema(title = "SyncReadMessage")
 record JsonSyncReadMessage(
-    @Deprecated String sender,
-    String senderNumber,
-    String senderUuid,
-    long timestamp
+        @Deprecated String sender, String senderNumber, String senderUuid, long timestamp
 ) {
 
     static JsonSyncReadMessage from(MessageEnvelope.Sync.Read readMessage) {

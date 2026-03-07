@@ -8,10 +8,7 @@ import java.util.UUID;
 
 @JsonSchema(title = "UnpinMessage")
 public record JsonUnpinMessage(
-        @Deprecated String targetAuthor,
-        String targetAuthorNumber,
-        String targetAuthorUuid,
-        long targetSentTimestamp
+        @Deprecated String targetAuthor, String targetAuthorNumber, String targetAuthorUuid, long targetSentTimestamp
 ) {
 
     static JsonUnpinMessage from(MessageEnvelope.Data.UnpinMessage unpinMessage) {

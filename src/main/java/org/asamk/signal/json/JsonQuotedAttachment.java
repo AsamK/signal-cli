@@ -7,9 +7,7 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 
 @JsonSchema(title = "QuotedAttachment")
 public record JsonQuotedAttachment(
-        String contentType,
-        String filename,
-        @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment thumbnail
+        String contentType, String filename, @JsonInclude(JsonInclude.Include.NON_NULL) JsonAttachment thumbnail
 ) {
 
     static JsonQuotedAttachment from(MessageEnvelope.Data.Attachment quotedAttachment) {

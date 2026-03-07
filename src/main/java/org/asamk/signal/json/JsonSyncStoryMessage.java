@@ -9,9 +9,7 @@ import java.util.UUID;
 
 @JsonSchema(title = "SyncStoryMessage")
 record JsonSyncStoryMessage(
-        String destinationNumber,
-        String destinationUuid,
-        @JsonUnwrapped JsonStoryMessage dataMessage
+        String destinationNumber, String destinationUuid, @JsonUnwrapped JsonStoryMessage dataMessage
 ) {
 
     static JsonSyncStoryMessage from(MessageEnvelope.Sync.Sent transcriptMessage) {

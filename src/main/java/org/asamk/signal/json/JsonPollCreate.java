@@ -8,9 +8,7 @@ import java.util.List;
 
 @JsonSchema(title = "PollCreate")
 public record JsonPollCreate(
-        String question,
-        boolean allowMultiple,
-        List<String> options
+        String question, boolean allowMultiple, List<String> options
 ) {
 
     static JsonPollCreate from(MessageEnvelope.Data.PollCreate pollCreate) {
