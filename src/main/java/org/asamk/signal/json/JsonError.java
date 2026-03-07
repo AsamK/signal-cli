@@ -2,7 +2,6 @@ package org.asamk.signal.json;
 
 import io.micronaut.jsonschema.JsonSchema;
 
-
 @JsonSchema(title = "Error")
 public record JsonError(String message, String type) {
 

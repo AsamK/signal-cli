@@ -11,7 +11,6 @@ import java.util.List;
 
 import io.micronaut.jsonschema.JsonSchema;
 
-
 enum JsonSyncMessageType {
     CONTACTS_SYNC,
     GROUPS_SYNC,
