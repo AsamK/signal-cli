@@ -1,6 +1,5 @@
 package org.asamk.signal.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import io.micronaut.jsonschema.JsonSchema;
 
