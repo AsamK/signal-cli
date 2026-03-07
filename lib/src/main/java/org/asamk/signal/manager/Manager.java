@@ -64,6 +64,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.asamk.signal.manager.api.CallInfo;
+import org.asamk.signal.manager.api.CallOffer;
+import org.asamk.signal.manager.api.TurnServer;
+
 public interface Manager extends Closeable {
 
     static boolean isValidNumber(final String e164Number, final String countryCode) {
@@ -413,8 +417,36 @@ public interface Manager extends Closeable {
 
     InputStream retrieveSticker(final StickerPackId stickerPackId, final int stickerId) throws IOException;
 
+    // --- Voice call methods ---
+
+    CallInfo startCall(RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException;
+
+    CallInfo acceptCall(long callId) throws IOException;
+
+    void hangupCall(long callId) throws IOException;
+
+    void rejectCall(long callId) throws IOException;
+
+    List<CallInfo> listActiveCalls();
+
+    void sendCallOffer(RecipientIdentifier.Single recipient, CallOffer offer) throws IOException, UnregisteredRecipientException;
+
+    void sendCallAnswer(RecipientIdentifier.Single recipient, long callId, byte[] answerOpaque) throws IOException, UnregisteredRecipientException;
+
+    void sendIceUpdate(RecipientIdentifier.Single recipient, long callId, List<byte[]> iceCandidates) throws IOException, UnregisteredRecipientException;
+
+    void sendHangup(RecipientIdentifier.Single recipient, long callId, MessageEnvelope.Call.Hangup.Type type) throws IOException, UnregisteredRecipientException;
+
+    void sendBusy(RecipientIdentifier.Single recipient, long callId) throws IOException, UnregisteredRecipientException;
+
+    List<TurnServer> getTurnServerInfo() throws IOException;
+
     @Override
     void close();
+
+    void addCallEventListener(CallEventListener listener);
+
+    void removeCallEventListener(CallEventListener listener);
 
     interface ReceiveMessageHandler {
 
@@ -422,5 +454,10 @@ public interface Manager extends Closeable {
         };
 
         void handleMessage(MessageEnvelope envelope, Throwable e);
+    }
+
+    interface CallEventListener {
+
+        void handleCallEvent(CallInfo callInfo, String reason);
     }
 }
