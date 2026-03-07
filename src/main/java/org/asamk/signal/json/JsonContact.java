@@ -28,7 +28,7 @@ public record JsonContact(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonInternal internal
 ) {
 
-        @JsonSchema(title = "Profile")
+    @JsonSchema(title = "Profile")
     public record JsonProfile(
             long lastUpdateTimestamp,
             String givenName,
@@ -39,7 +39,7 @@ public record JsonContact(
             String mobileCoinAddress
     ) {}
 
-        @JsonSchema(title = "Internal")
+    @JsonSchema(title = "Internal")
     public record JsonInternal(
             List<String> capabilities,
             String unidentifiedAccessMode,
