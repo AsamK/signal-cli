@@ -1,10 +1,12 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.SendMessageResult;
 
+@JsonSchema(title = "SendMessageResult")
 public record JsonSendMessageResult(
         JsonRecipientAddress recipientAddress,
         @JsonInclude(JsonInclude.Include.NON_NULL) String groupId,

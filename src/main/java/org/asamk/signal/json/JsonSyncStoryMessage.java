@@ -1,11 +1,13 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.UUID;
 
+@JsonSchema(title = "SyncStoryMessage")
 record JsonSyncStoryMessage(
         String destinationNumber, String destinationUuid, @JsonUnwrapped JsonStoryMessage dataMessage
 ) {

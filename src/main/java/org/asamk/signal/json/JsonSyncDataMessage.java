@@ -2,6 +2,7 @@ package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.MessageEnvelope;
@@ -9,6 +10,7 @@ import org.asamk.signal.manager.api.RecipientAddress;
 
 import java.util.UUID;
 
+@JsonSchema(title = "SyncDataMessage")
 record JsonSyncDataMessage(
         @Deprecated String destination,
         String destinationNumber,

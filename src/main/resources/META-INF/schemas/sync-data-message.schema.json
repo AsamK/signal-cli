@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sync-data-message.schema.json",
+  "title": "SyncDataMessage",
+  "type": "object",
+  "properties": {
+    "destination": {
+      "type": "string"
+    },
+    "destinationNumber": {
+      "type": "string"
+    },
+    "destinationUuid": {
+      "type": "string"
+    },
+    "editMessage": {
+      "$ref": "edit-message.schema.json"
+    },
+    "adminDelete": {
+      "$ref": "admin-delete.schema.json"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "$ref": "attachment.schema.json"
+      }
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "$ref": "shared-contact.schema.json"
+      }
+    },
+    "expiresInSeconds": {
+      "type": "integer"
+    },
+    "groupInfo": {
+      "$ref": "group-info.schema.json"
+    },
+    "isExpirationUpdate": {
+      "type": "boolean"
+    },
+    "mentions": {
+      "type": "array",
+      "items": {
+        "$ref": "mention.schema.json"
+      }
+    },
+    "message": {
+      "type": "string"
+    },
+    "payment": {
+      "$ref": "payment.schema.json"
+    },
+    "pinMessage": {
+      "$ref": "pin-message.schema.json"
+    },
+    "pollCreate": {
+      "$ref": "poll-create.schema.json"
+    },
+    "pollTerminate": {
+      "$ref": "poll-terminate.schema.json"
+    },
+    "pollVote": {
+      "$ref": "poll-vote.schema.json"
+    },
+    "previews": {
+      "type": "array",
+      "items": {
+        "$ref": "preview.schema.json"
+      }
+    },
+    "quote": {
+      "$ref": "quote.schema.json"
+    },
+    "reaction": {
+      "$ref": "reaction.schema.json"
+    },
+    "remoteDelete": {
+      "$ref": "remote-delete.schema.json"
+    },
+    "sticker": {
+      "$ref": "sticker.schema.json"
+    },
+    "storyContext": {
+      "$ref": "story-context.schema.json"
+    },
+    "textStyles": {
+      "type": "array",
+      "items": {
+        "$ref": "text-style.schema.json"
+      }
+    },
+    "timestamp": {
+      "type": "integer"
+    },
+    "unpinMessage": {
+      "$ref": "unpin-message.schema.json"
+    },
+    "viewOnce": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "destinationNumber",
+    "destinationUuid",
+    "timestamp"
+  ]
+}

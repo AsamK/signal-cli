@@ -148,6 +148,16 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
       ./gradlew run --args="--help"
       ```
 
+### JSON Schemeas for the JSON-RPC mode
+
+1. Generate [JSON Schema](https://json-schema.org/) files for all the JSON-RPC data classes (`src/main/java/org/asamk/signal/json`):
+
+    ```sh
+    ./gradlew jsonSchemas
+    ```
+
+2. The generated files can be found in the `build/classes/java/schemas/META-INF/schemas` folder.
+
 ### Building a native binary with GraalVM (EXPERIMENTAL)
 
 It is possible to build a native binary with [GraalVM](https://www.graalvm.org). This is still experimental and will not

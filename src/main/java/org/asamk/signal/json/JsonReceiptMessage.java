@@ -1,9 +1,12 @@
 package org.asamk.signal.json;
 
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 
+@JsonSchema(title = "ReceiptMessage")
 record JsonReceiptMessage(long when, boolean isDelivery, boolean isRead, boolean isViewed, List<Long> timestamps) {
 
     static JsonReceiptMessage from(MessageEnvelope.Receipt receiptMessage) {

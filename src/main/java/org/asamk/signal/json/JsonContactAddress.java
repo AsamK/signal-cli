@@ -1,8 +1,11 @@
 package org.asamk.signal.json;
 
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.util.Util;
 
+@JsonSchema(title = "ContactAddress")
 public record JsonContactAddress(
         String type,
         String label,

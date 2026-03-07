@@ -1,9 +1,12 @@
 package org.asamk.signal.json;
 
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.List;
 
+@JsonSchema(title = "PollCreate")
 public record JsonPollCreate(
         String question, boolean allowMultiple, List<String> options
 ) {

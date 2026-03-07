@@ -1,12 +1,14 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
 import java.util.Base64;
 import java.util.List;
 
+@JsonSchema(title = "CallMessage")
 record JsonCallMessage(
         @JsonInclude(JsonInclude.Include.NON_NULL) Offer offerMessage,
         @JsonInclude(JsonInclude.Include.NON_NULL) Answer answerMessage,
