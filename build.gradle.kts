@@ -101,7 +101,9 @@ dependencies {
     implementation(libs.logback)
     implementation(libs.zxing)
     implementation(libs.micronaut.json.schema.annotations)
-    implementation(libs.micronaut.json.schema.generator)
+    if (gradle.startParameter.taskNames.any { it.contains("genJsonSchemas") }) {
+        implementation(libs.micronaut.json.schema.generator)
+    }    
     implementation(project(":libsignal-cli"))
 }
 
@@ -117,7 +119,7 @@ tasks.withType<AbstractArchiveTask>().configureEach {
     isReproducibleFileOrder = true
 }
 
-tasks.withType<JavaCompile>().configureEach {
+tasks.withType<JavaCompile>() {
     options.encoding = "UTF-8"
 }
 
