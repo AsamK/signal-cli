@@ -101,7 +101,7 @@ dependencies {
     implementation(libs.logback)
     implementation(libs.zxing)
     implementation(libs.micronaut.json.schema.annotations)
-    if (gradle.startParameter.taskNames.any { it.contains("genJsonSchemas") }) {
+    if (gradle.startParameter.taskNames.any { it.contains("jsonSchemas") }) {
         implementation(libs.micronaut.json.schema.generator)
     }    
     implementation(project(":libsignal-cli"))
@@ -119,7 +119,7 @@ tasks.withType<AbstractArchiveTask>().configureEach {
     isReproducibleFileOrder = true
 }
 
-tasks.withType<JavaCompile>() {
+tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
 
@@ -197,7 +197,7 @@ val compileJsonSchemas by tasks.registering(JavaCompile::class) {
     }
 }
 
-tasks.register("genJsonSchemas") {
+tasks.register("jsonSchemas") {
     group = "application"
     description = "Generate JSON schemas using annotation processing"
     dependsOn(compileJsonSchemas)

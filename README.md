@@ -153,7 +153,7 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
 1. Generate [JSON Schema](https://json-schema.org/) files for all the JSON-RPC data classes (`src/main/java/org/asamk/signal/json`):
 
     ```sh
-    ./gradlew genJsonSchemas
+    ./gradlew jsonSchemas
     ```
 
 2. The generated files can be found in the `build/classes/java/schemas/META-INF/schemas` folder.
