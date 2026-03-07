@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/sync-story-message.schema.json",
+  "$id": "sync-story-message.schema.json",
   "title": "SyncStoryMessage",
   "type": "object",
   "properties": {
@@ -14,7 +14,7 @@
       "type": "boolean"
     },
     "fileAttachment": {
-      "$ref": "https://example.com/schemas/attachment.schema.json"
+      "$ref": "attachment.schema.json"
     },
     "groupId": {
       "type": "string"
@@ -54,7 +54,7 @@
           }
         },
         "preview": {
-          "$ref": "https://example.com/schemas/preview.schema.json"
+          "$ref": "preview.schema.json"
         },
         "style": {
           "type": "string"

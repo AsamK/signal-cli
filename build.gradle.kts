@@ -154,6 +154,8 @@ tasks.register("fatJar", type = Jar::class) {
 val compileJsonSchemas by tasks.registering(JavaCompile::class) {
     dependsOn(tasks.compileJava)
     
+    val schemaBaseUri = "http://localhost:8080/schemas/"
+    
     source = sourceSets.main.get().java
     include("org/asamk/signal/json/**/*.java")
     
@@ -172,7 +174,7 @@ val compileJsonSchemas by tasks.registering(JavaCompile::class) {
             "-Amicronaut.processing.group=org.asamk",
             "-Amicronaut.processing.module=signal-cli",
             "-Amicronaut.processing.annotations=org.asamk.signal.json.*",
-            "-Amicronaut.jsonschema.baseUri=https://example.com/schemas",
+            "-Amicronaut.jsonschema.baseUri=$schemaBaseUri",
         )
     )
     
@@ -186,7 +188,8 @@ val compileJsonSchemas by tasks.registering(JavaCompile::class) {
         fileTree(destinationDirectory.get().dir("META-INF/schemas").asFile) {
             include("*.schema.json")
         }.forEach { schemaFile ->
-            val prettyJson = JsonOutput.prettyPrint(schemaFile.readText())
+            val normalized = schemaFile.readText().replace("\"$schemaBaseUri/", "\"")
+            val prettyJson = JsonOutput.prettyPrint(normalized)
             schemaFile.writeText("$prettyJson\n")
         }
     }

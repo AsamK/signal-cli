@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/sync-data-message.schema.json",
+  "$id": "sync-data-message.schema.json",
   "title": "SyncDataMessage",
   "type": "object",
   "properties": {
@@ -14,28 +14,28 @@
       "type": "string"
     },
     "editMessage": {
-      "$ref": "https://example.com/schemas/edit-message.schema.json"
+      "$ref": "edit-message.schema.json"
     },
     "adminDelete": {
-      "$ref": "https://example.com/schemas/admin-delete.schema.json"
+      "$ref": "admin-delete.schema.json"
     },
     "attachments": {
       "type": "array",
       "items": {
-        "$ref": "https://example.com/schemas/attachment.schema.json"
+        "$ref": "attachment.schema.json"
       }
     },
     "contacts": {
       "type": "array",
       "items": {
-        "$ref": "https://example.com/schemas/shared-contact.schema.json"
+        "$ref": "shared-contact.schema.json"
       }
     },
     "expiresInSeconds": {
       "type": "integer"
     },
     "groupInfo": {
-      "$ref": "https://example.com/schemas/group-info.schema.json"
+      "$ref": "group-info.schema.json"
     },
     "isExpirationUpdate": {
       "type": "boolean"
@@ -43,59 +43,59 @@
     "mentions": {
       "type": "array",
       "items": {
-        "$ref": "https://example.com/schemas/mention.schema.json"
+        "$ref": "mention.schema.json"
       }
     },
     "message": {
       "type": "string"
     },
     "payment": {
-      "$ref": "https://example.com/schemas/payment.schema.json"
+      "$ref": "payment.schema.json"
     },
     "pinMessage": {
-      "$ref": "https://example.com/schemas/pin-message.schema.json"
+      "$ref": "pin-message.schema.json"
     },
     "pollCreate": {
-      "$ref": "https://example.com/schemas/poll-create.schema.json"
+      "$ref": "poll-create.schema.json"
     },
     "pollTerminate": {
-      "$ref": "https://example.com/schemas/poll-terminate.schema.json"
+      "$ref": "poll-terminate.schema.json"
     },
     "pollVote": {
-      "$ref": "https://example.com/schemas/poll-vote.schema.json"
+      "$ref": "poll-vote.schema.json"
     },
     "previews": {
       "type": "array",
       "items": {
-        "$ref": "https://example.com/schemas/preview.schema.json"
+        "$ref": "preview.schema.json"
       }
     },
     "quote": {
-      "$ref": "https://example.com/schemas/quote.schema.json"
+      "$ref": "quote.schema.json"
     },
     "reaction": {
-      "$ref": "https://example.com/schemas/reaction.schema.json"
+      "$ref": "reaction.schema.json"
     },
     "remoteDelete": {
-      "$ref": "https://example.com/schemas/remote-delete.schema.json"
+      "$ref": "remote-delete.schema.json"
     },
     "sticker": {
-      "$ref": "https://example.com/schemas/sticker.schema.json"
+      "$ref": "sticker.schema.json"
     },
     "storyContext": {
-      "$ref": "https://example.com/schemas/story-context.schema.json"
+      "$ref": "story-context.schema.json"
     },
     "textStyles": {
       "type": "array",
       "items": {
-        "$ref": "https://example.com/schemas/text-style.schema.json"
+        "$ref": "text-style.schema.json"
       }
     },
     "timestamp": {
       "type": "integer"
     },
     "unpinMessage": {
-      "$ref": "https://example.com/schemas/unpin-message.schema.json"
+      "$ref": "unpin-message.schema.json"
     },
     "viewOnce": {
       "type": "boolean"

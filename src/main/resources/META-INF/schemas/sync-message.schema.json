@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://example.com/schemas/sync-message.schema.json",
+    "$id": "sync-message.schema.json",
     "title": "SyncMessage",
     "type": "object",
     "properties": {
@@ -19,14 +19,14 @@
         "readMessages": {
             "type": "array",
             "items": {
-                "$ref": "https://example.com/schemas/sync-read-message.schema.json"
+                "$ref": "sync-read-message.schema.json"
             }
         },
         "sentMessage": {
-            "$ref": "https://example.com/schemas/sync-data-message.schema.json"
+            "$ref": "sync-data-message.schema.json"
         },
         "sentStoryMessage": {
-            "$ref": "https://example.com/schemas/sync-story-message.schema.json"
+            "$ref": "sync-story-message.schema.json"
         },
         "type": {
             "type": "string",
