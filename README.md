@@ -150,15 +150,16 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
       ./gradlew run --args="--help"
       ```
 
-### JSON-RPC schemas
+### JSON Schemeas for the JSON-RPC mode
 
-1. Run documentation server for all the JSON-RPC schemas (`src/main/java/org/asamk/signal/json`):
+1. Generate [JSON Schema](https://json-schema.org/) files for all the JSON-RPC data classes (`src/main/java/org/asamk/signal/json`):
 
     ```sh
     ./gradlew genJsonSchemas
     ```
 
-2. Check the json schemas files in the following folder:    
+2. The generated files can be found in the `build/classes/java/schemas/META-INF/schemas` folder.
+
 
 ### Building a native binary with GraalVM (EXPERIMENTAL)
 
