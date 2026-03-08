@@ -12,10 +12,9 @@ public record Group(
         String title,
         String description,
         GroupInviteLinkUrl groupInviteLinkUrl,
-        Set<RecipientAddress> members,
+        Set<GroupMember> members,
         Set<RecipientAddress> pendingMembers,
         Set<RecipientAddress> requestingMembers,
-        Set<RecipientAddress> adminMembers,
         Set<RecipientAddress> bannedMembers,
         boolean isBlocked,
         int messageExpirationTimer,
@@ -37,8 +36,7 @@ public record Group(
                 groupInfo.getGroupInviteLink(),
                 groupInfo.getMembers()
                         .stream()
-                        .map(recipientStore::resolveRecipientAddress)
-                        .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)
+                        .map(m -> org.asamk.signal.manager.api.GroupMember.from(m, recipientStore))
                         .collect(Collectors.toSet()),
                 groupInfo.getPendingMembers()
                         .stream()
@@ -46,11 +44,6 @@ public record Group(
                         .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)
                         .collect(Collectors.toSet()),
                 groupInfo.getRequestingMembers()
-                        .stream()
-                        .map(recipientStore::resolveRecipientAddress)
-                        .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)
-                        .collect(Collectors.toSet()),
-                groupInfo.getAdminMembers()
                         .stream()
                         .map(recipientStore::resolveRecipientAddress)
                         .map(org.asamk.signal.manager.storage.recipients.RecipientAddress::toApiRecipientAddress)

@@ -133,6 +133,11 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
         return getPreKey(keyId) != null;
     }
 
+    /**
+     * When we mark Kyber pre-keys used, we want to keep a record of last resort tuples, which are deleted when the key
+     * itself is deleted from this table via a cascading delete.
+     * For non-last-resort keys, this method just deletes them like normal.
+     */
     @Override
     public void markKyberPreKeyUsed(
             final int kyberPreKeyId,

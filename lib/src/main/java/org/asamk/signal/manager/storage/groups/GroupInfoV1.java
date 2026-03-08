@@ -80,8 +80,8 @@ public final class GroupInfoV1 extends GroupInfo {
         return null;
     }
 
-    public Set<RecipientId> getMembers() {
-        return new HashSet<>(members);
+    public Collection<GroupMemberInfo> getMembers() {
+        return members.stream().map(m -> (GroupMemberInfo) new GroupMemberInfoV1(m)).toList();
     }
 
     @Override

@@ -114,7 +114,7 @@ public class SyncHelper {
                     if (record instanceof GroupInfoV1 groupInfo) {
                         out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
                                 Optional.ofNullable(groupInfo.name),
-                                groupInfo.getMembers()
+                                groupInfo.getMemberRecipientIds()
                                         .stream()
                                         .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                                         .toList(),

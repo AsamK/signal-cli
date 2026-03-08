@@ -758,7 +758,7 @@ public class GroupHelper {
         if (admins != null) {
             final var newAdmins = new HashSet<>(admins);
             newAdmins.retainAll(group.getMembers());
-            newAdmins.removeAll(group.getAdminMembers());
+            newAdmins.removeAll(group.getAdminMemberRecipientIds());
             if (!newAdmins.isEmpty()) {
                 for (var admin : newAdmins) {
                     var groupGroupChangePair = groupV2Helper.setMemberAdmin(group, admin, true);
@@ -771,7 +771,7 @@ public class GroupHelper {
 
         if (removeAdmins != null) {
             final var existingRemoveAdmins = new HashSet<>(removeAdmins);
-            existingRemoveAdmins.retainAll(group.getAdminMembers());
+            existingRemoveAdmins.retainAll(group.getAdminMemberRecipientIds());
             if (!existingRemoveAdmins.isEmpty()) {
                 for (var admin : existingRemoveAdmins) {
                     var groupGroupChangePair = groupV2Helper.setMemberAdmin(group, admin, false);
@@ -859,7 +859,7 @@ public class GroupHelper {
             final GroupInfoV2 groupInfoV2,
             final Set<RecipientId> newAdmins
     ) throws LastGroupAdminException, IOException {
-        final var currentAdmins = groupInfoV2.getAdminMembers();
+        final var currentAdmins = groupInfoV2.getAdminMemberRecipientIds();
         newAdmins.removeAll(currentAdmins);
         newAdmins.retainAll(groupInfoV2.getMembers());
         if (currentAdmins.contains(account.getSelfRecipientId())
@@ -888,7 +888,7 @@ public class GroupHelper {
         var group = SignalServiceGroup.newBuilder(SignalServiceGroup.Type.UPDATE)
                 .withId(g.getGroupId().serialize())
                 .withName(g.name)
-                .withMembers(g.getMembers()
+                .withMembers(g.getMemberRecipientIds()
                         .stream()
                         .map(context.getRecipientHelper()::resolveSignalServiceAddress)
                         .toList());
