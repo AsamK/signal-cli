@@ -648,7 +648,7 @@ public class GroupStore {
                                         ON CONFLICT (group_id, recipient_id) DO NOTHING
                                         """.formatted(TABLE_GROUP_V1_MEMBER);
             try (final var statement = connection.prepareStatement(sqlInsertMember)) {
-                for (final var recipient : groupV1.getMembers()) {
+                for (final var recipient : groupV1.getMemberRecipientIds()) {
                     statement.setLong(1, internalId);
                     statement.setLong(2, recipient.id());
                     statement.executeUpdate();

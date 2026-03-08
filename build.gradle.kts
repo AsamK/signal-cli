@@ -3,12 +3,12 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "0.11.4"
+    id("org.graalvm.buildtools.native") version "0.11.5"
 }
 
 allprojects {
     group = "org.asamk"
-    version = "0.14.1-SNAPSHOT"
+    version = "0.14.1"
 }
 
 java {

@@ -2049,6 +2049,19 @@
       "allDeclaredConstructors": true
     },
     {
+      "type": "org.asamk.signal.commands.ListGroupsCommand$JsonGroupMemberAddress",
+      "methods": [
+        {
+          "name": "number",
+          "parameterTypes": []
+        },
+        {
+          "name": "uuid",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.commands.ListIdentitiesCommand$JsonIdentity",
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
@@ -7792,6 +7805,18 @@
     },
     {
       "type": "org.whispersystems.signalservice.internal.push.GroupMismatchedDevices[]"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.push.GroupPatchResponse",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Integer",
+            "java.lang.String"
+          ]
+        }
+      ]
     },
     {
       "type": "org.whispersystems.signalservice.internal.push.GroupStaleDevices",

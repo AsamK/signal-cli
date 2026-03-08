@@ -320,7 +320,9 @@ public class SendHelper {
         messageBuilder.withExpiration(g.getMessageExpirationTimer());
 
         final var message = messageBuilder.build();
-        final var recipients = includeSelf ? g.getMembers() : g.getMembersWithout(account.getSelfRecipientId());
+        final var recipients = includeSelf
+                ? g.getMemberRecipientIds()
+                : g.getMembersWithout(account.getSelfRecipientId());
 
         if (g.isAnnouncementGroup() && !g.isAdmin(account.getSelfRecipientId())) {
             if (message.getBody().isPresent()

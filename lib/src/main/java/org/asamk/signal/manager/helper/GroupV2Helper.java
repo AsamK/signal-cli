@@ -533,6 +533,18 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
+    Pair<DecryptedGroup, GroupChangeResponse> setMemberLabels(
+            GroupInfoV2 groupInfoV2,
+            String labelEmoji,
+            String labelString
+    ) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+        final var change = groupOperations.createChangeMemberLabel(getSelfAci(),
+                labelString == null ? "" : labelString,
+                labelEmoji);
+        return commitChange(groupInfoV2, change);
+    }
+
     private AccessControl.AccessRequired toAccessControl(final GroupLinkState state) {
         return switch (state) {
             case DISABLED -> AccessControl.AccessRequired.UNSATISFIABLE;
