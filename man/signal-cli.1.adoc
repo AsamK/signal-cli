@@ -754,6 +754,12 @@ Groups where only admins can send messages are also called announcement groups
 Set expiration time of messages (seconds).
 To disable expiration set expiration time to 0.
 
+*--member-label-emoji* EMOJI::
+Specify the emoji for the member label.
+
+*--member-label* STRING::
+Specify the string for the member label.
+
 === quitGroup
 
 Send a quit group message to all group members and remove self from member list.

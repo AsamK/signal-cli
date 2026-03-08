@@ -19,6 +19,8 @@ public class UpdateGroup {
     private final String avatarFile;
     private final Integer expirationTimer;
     private final Boolean isAnnouncementGroup;
+    private final String labelEmoji;
+    private final String labelString;
 
     private UpdateGroup(final Builder builder) {
         name = builder.name;
@@ -36,6 +38,8 @@ public class UpdateGroup {
         avatarFile = builder.avatarFile;
         expirationTimer = builder.expirationTimer;
         isAnnouncementGroup = builder.isAnnouncementGroup;
+        labelEmoji = builder.labelEmoji;
+        labelString = builder.labelString;
     }
 
     public static Builder newBuilder() {
@@ -57,7 +61,9 @@ public class UpdateGroup {
                 copy.editDetailsPermission,
                 copy.avatarFile,
                 copy.expirationTimer,
-                copy.isAnnouncementGroup);
+                copy.isAnnouncementGroup,
+                copy.labelEmoji,
+                copy.labelString);
     }
 
     public static Builder newBuilder(
@@ -75,7 +81,9 @@ public class UpdateGroup {
             final GroupPermission editDetailsPermission,
             final String avatarFile,
             final Integer expirationTimer,
-            final Boolean isAnnouncementGroup
+            final Boolean isAnnouncementGroup,
+            final String labelEmoji,
+            final String labelString
     ) {
         return new Builder(name,
                 description,
@@ -91,7 +99,9 @@ public class UpdateGroup {
                 editDetailsPermission,
                 avatarFile,
                 expirationTimer,
-                isAnnouncementGroup);
+                isAnnouncementGroup,
+                labelEmoji,
+                labelString);
     }
 
     public String getName() {
@@ -154,6 +164,14 @@ public class UpdateGroup {
         return isAnnouncementGroup;
     }
 
+    public String getLabelEmoji() {
+        return labelEmoji;
+    }
+
+    public String getLabelString() {
+        return labelString;
+    }
+
     public static final class Builder {
 
         private String name;
@@ -171,6 +189,8 @@ public class UpdateGroup {
         private String avatarFile;
         private Integer expirationTimer;
         private Boolean isAnnouncementGroup;
+        private String labelEmoji;
+        private String labelString;
 
         private Builder() {
         }
@@ -190,7 +210,9 @@ public class UpdateGroup {
                 final GroupPermission editDetailsPermission,
                 final String avatarFile,
                 final Integer expirationTimer,
-                final Boolean isAnnouncementGroup
+                final Boolean isAnnouncementGroup,
+                final String labelEmoji,
+                final String labelString
         ) {
             this.name = name;
             this.description = description;
@@ -207,6 +229,8 @@ public class UpdateGroup {
             this.avatarFile = avatarFile;
             this.expirationTimer = expirationTimer;
             this.isAnnouncementGroup = isAnnouncementGroup;
+            this.labelEmoji = labelEmoji;
+            this.labelString = labelString;
         }
 
         public Builder withName(final String val) {
@@ -281,6 +305,16 @@ public class UpdateGroup {
 
         public Builder withIsAnnouncementGroup(final Boolean val) {
             isAnnouncementGroup = val;
+            return this;
+        }
+
+        public Builder withLabelEmoji(final String val) {
+            labelEmoji = val;
+            return this;
+        }
+
+        public Builder withLabelString(final String val) {
+            labelString = val;
             return this;
         }
 

@@ -31,6 +31,13 @@ public sealed abstract class GroupInfo permits GroupInfoV1, GroupInfoV2 {
         return getMembers().stream().map(GroupMemberInfo::getRecipientId).collect(Collectors.toSet());
     }
 
+    public GroupMemberInfo getMember(RecipientId recipientId) {
+        return getMembers().stream()
+                .filter(member -> member.getRecipientId().equals(recipientId))
+                .findFirst()
+                .orElseThrow();
+    }
+
     public Set<RecipientId> getBannedMembers() {
         return Set.of();
     }

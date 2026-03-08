@@ -299,7 +299,9 @@ public class GroupHelper {
             final GroupPermission editDetailsPermission,
             final String avatarFile,
             final Integer expirationTimer,
-            final Boolean isAnnouncementGroup
+            final Boolean isAnnouncementGroup,
+            final String labelEmoji,
+            final String labelString
     ) throws IOException, GroupNotFoundException, AttachmentInvalidException, NotAGroupMemberException, GroupSendingNotAllowedException {
         var group = getGroupForUpdating(groupId);
         final var avatarBytes = readAvatarBytes(avatarFile);
@@ -323,7 +325,9 @@ public class GroupHelper {
                             editDetailsPermission,
                             avatarBytes,
                             expirationTimer,
-                            isAnnouncementGroup);
+                            isAnnouncementGroup,
+                            labelEmoji,
+                            labelString);
                 } catch (ConflictException e) {
                     // Detected conflicting update, refreshing group and trying again
                     group = getGroup(groupId, true);
@@ -342,7 +346,9 @@ public class GroupHelper {
                             editDetailsPermission,
                             avatarBytes,
                             expirationTimer,
-                            isAnnouncementGroup);
+                            isAnnouncementGroup,
+                            labelEmoji,
+                            labelString);
                 }
             }
 
@@ -701,7 +707,9 @@ public class GroupHelper {
             final GroupPermission editDetailsPermission,
             final byte[] avatarFile,
             final Integer expirationTimer,
-            final Boolean isAnnouncementGroup
+            final Boolean isAnnouncementGroup,
+            final String labelEmoji,
+            final String labelString
     ) throws IOException {
         SendGroupMessageResults result = null;
         final var groupV2Helper = context.getGroupV2Helper();
@@ -827,6 +835,15 @@ public class GroupHelper {
 
         if (isAnnouncementGroup != null) {
             var groupGroupChangePair = groupV2Helper.setIsAnnouncementGroup(group, isAnnouncementGroup);
+            result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
+        }
+
+        if (labelString != null || labelEmoji != null) {
+            final var selfRecipientId = account.getSelfRecipientId();
+            final var selfMember = group.getMember(selfRecipientId);
+            var groupGroupChangePair = groupV2Helper.setMemberLabels(group,
+                    labelEmoji != null ? labelEmoji : selfMember.labelEmoji(),
+                    labelString != null ? labelString : selfMember.labelString());
             result = sendUpdateGroupV2Message(group, groupGroupChangePair.first(), groupGroupChangePair.second());
         }
 

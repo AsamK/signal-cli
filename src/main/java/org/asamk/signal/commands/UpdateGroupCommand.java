@@ -75,6 +75,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                 .choices("every-member", "only-admins");
 
         subparser.addArgument("-e", "--expiration").type(int.class).help("Set expiration time of messages (seconds)");
+        subparser.addArgument("--member-label-emoji").help("Specify the emoji for the member label.");
+        subparser.addArgument("--member-label").help("Specify the string for the member label.");
     }
 
     GroupLinkState getGroupLinkState(String value) throws UserErrorException {
@@ -126,6 +128,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
         var groupAddMemberPermission = getGroupPermission(ns.getString("set-permission-add-member"));
         var groupEditDetailsPermission = getGroupPermission(ns.getString("set-permission-edit-details"));
         var groupSendMessagesPermission = getGroupPermission(ns.getString("set-permission-send-messages"));
+        var memberLabelEmoji = ns.getString("member-label-emoji");
+        var memberLabelString = ns.getString("member-label");
 
         try {
             boolean isNewGroup = false;
@@ -159,6 +163,8 @@ public class UpdateGroupCommand implements JsonRpcLocalCommand {
                             .withIsAnnouncementGroup(groupSendMessagesPermission == null
                                     ? null
                                     : groupSendMessagesPermission == GroupPermission.ONLY_ADMINS)
+                            .withLabelEmoji(memberLabelEmoji)
+                            .withLabelString(memberLabelString)
                             .build());
             if (results != null) {
                 if (groupMessageResults == null) {

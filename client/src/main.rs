@@ -535,6 +535,8 @@ async fn handle_command(
             set_permission_edit_details,
             set_permission_send_messages,
             expiration,
+            member_label_emoji,
+            member_label,
         } => {
             client
                 .update_group(
@@ -568,6 +570,8 @@ async fn handle_command(
                         GroupPermission::OnlyAdmins => "onlyAdmins".to_owned(),
                     }),
                     expiration,
+                    member_label_emoji,
+                    member_label,
                 )
                 .await
         }
