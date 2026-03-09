@@ -2398,6 +2398,10 @@
           "parameterTypes": []
         },
         {
+          "name": "isArchived",
+          "parameterTypes": []
+        },
+        {
           "name": "isBlocked",
           "parameterTypes": []
         },
