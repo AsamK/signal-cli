@@ -1,9 +1,11 @@
 package org.asamk.signal.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.micronaut.jsonschema.JsonSchema;
 
 import java.util.List;
 
+@JsonSchema(title = "Contact")
 public record JsonContact(
         String number,
         String uuid,
@@ -26,6 +28,7 @@ public record JsonContact(
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonInternal internal
 ) {
 
+    @JsonSchema(title = "Profile")
     public record JsonProfile(
             long lastUpdateTimestamp,
             String givenName,
@@ -36,6 +39,7 @@ public record JsonContact(
             String mobileCoinAddress
     ) {}
 
+    @JsonSchema(title = "Internal")
     public record JsonInternal(
             List<String> capabilities,
             String unidentifiedAccessMode,

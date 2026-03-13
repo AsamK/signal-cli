@@ -1,7 +1,10 @@
 package org.asamk.signal.json;
 
+import io.micronaut.jsonschema.JsonSchema;
+
 import org.asamk.signal.manager.api.MessageEnvelope;
 
+@JsonSchema(title = "Attachment")
 record JsonAttachment(
         String contentType,
         String filename,

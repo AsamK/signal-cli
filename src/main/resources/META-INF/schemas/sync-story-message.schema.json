@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sync-story-message.schema.json",
+  "title": "SyncStoryMessage",
+  "type": "object",
+  "properties": {
+    "destinationNumber": {
+      "type": "string"
+    },
+    "destinationUuid": {
+      "type": "string"
+    },
+    "allowsReplies": {
+      "type": "boolean"
+    },
+    "fileAttachment": {
+      "$ref": "attachment.schema.json"
+    },
+    "groupId": {
+      "type": "string"
+    },
+    "textAttachment": {
+      "title": "JsonStoryMessage.TextAttachment",
+      "type": "object",
+      "properties": {
+        "backgroundColor": {
+          "type": "string"
+        },
+        "backgroundGradient": {
+          "title": "JsonStoryMessage.TextAttachment.Gradient",
+          "type": "object",
+          "properties": {
+            "angle": {
+              "type": "integer"
+            },
+            "colors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "endColor": {
+              "type": "string"
+            },
+            "positions": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "startColor": {
+              "type": "string"
+            }
+          }
+        },
+        "preview": {
+          "$ref": "preview.schema.json"
+        },
+        "style": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "textBackgroundColor": {
+          "type": "string"
+        },
+        "textForegroundColor": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "destinationNumber",
+    "destinationUuid",
+    "allowsReplies"
+  ]
+}
