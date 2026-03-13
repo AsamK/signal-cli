@@ -443,6 +443,7 @@ By default, recipients can select multiple options.
 *-o* OPTION [OPTION ...], *--option* OPTION [OPTION ...]*::
 The options for the poll.
 Between 2 and 10 options must be specified.
+Each option must be between 1 and 100 characters.
 
 === sendPollVote
 
