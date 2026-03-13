@@ -739,7 +739,7 @@ public class GroupHelper {
             if (banMembers != null) {
                 existingRemoveMembers.addAll(banMembers);
             }
-            existingRemoveMembers.retainAll(group.getMembers());
+            existingRemoveMembers.retainAll(group.getMemberRecipientIds());
             if (members != null) {
                 existingRemoveMembers.removeAll(members);
             }
@@ -765,7 +765,7 @@ public class GroupHelper {
 
         if (admins != null) {
             final var newAdmins = new HashSet<>(admins);
-            newAdmins.retainAll(group.getMembers());
+            newAdmins.retainAll(group.getMemberRecipientIds());
             newAdmins.removeAll(group.getAdminMemberRecipientIds());
             if (!newAdmins.isEmpty()) {
                 for (var admin : newAdmins) {
@@ -878,7 +878,7 @@ public class GroupHelper {
     ) throws LastGroupAdminException, IOException {
         final var currentAdmins = groupInfoV2.getAdminMemberRecipientIds();
         newAdmins.removeAll(currentAdmins);
-        newAdmins.retainAll(groupInfoV2.getMembers());
+        newAdmins.retainAll(groupInfoV2.getMemberRecipientIds());
         if (currentAdmins.contains(account.getSelfRecipientId())
                 && currentAdmins.size() == 1
                 && groupInfoV2.getMembers().size() > 1
