@@ -913,6 +913,73 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void addCallEventListener(final CallEventListener listener) {
+        // Not supported over DBus
+    }
+
+    @Override
+    public void removeCallEventListener(final CallEventListener listener) {
+        // Not supported over DBus
+    }
+
+    // --- Voice call methods (not supported over DBus) ---
+
+    @Override
+    public org.asamk.signal.manager.api.CallInfo startCall(final org.asamk.signal.manager.api.RecipientIdentifier.Single recipient) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public org.asamk.signal.manager.api.CallInfo acceptCall(final long callId) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void hangupCall(final long callId) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void rejectCall(final long callId) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public java.util.List<org.asamk.signal.manager.api.CallInfo> listActiveCalls() {
+        return java.util.List.of();
+    }
+
+    @Override
+    public void sendCallOffer(final org.asamk.signal.manager.api.RecipientIdentifier.Single recipient, final org.asamk.signal.manager.api.CallOffer offer) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void sendCallAnswer(final org.asamk.signal.manager.api.RecipientIdentifier.Single recipient, final long callId, final byte[] answerOpaque) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void sendIceUpdate(final org.asamk.signal.manager.api.RecipientIdentifier.Single recipient, final long callId, final java.util.List<byte[]> iceCandidates) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void sendHangup(final org.asamk.signal.manager.api.RecipientIdentifier.Single recipient, final long callId, final org.asamk.signal.manager.api.MessageEnvelope.Call.Hangup.Type type) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void sendBusy(final org.asamk.signal.manager.api.RecipientIdentifier.Single recipient, final long callId) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public java.util.List<org.asamk.signal.manager.api.TurnServer> getTurnServerInfo() {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
     public void close() {
         synchronized (this) {
             this.notify();

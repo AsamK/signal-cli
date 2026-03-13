@@ -401,7 +401,47 @@ public final class IncomingMessageHandler {
             longTexts.putAll(syncResults.second());
         }
 
+        if (content.getCallMessage().isPresent()) {
+            handleCallMessage(content.getCallMessage().get(), sender);
+        }
+
         return new Pair<>(actions, longTexts);
+    }
+
+    private void handleCallMessage(
+            final org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage callMessage,
+            final org.asamk.signal.manager.storage.recipients.RecipientId sender
+    ) {
+        var callManager = context.getCallManager();
+
+        callMessage.getOfferMessage().ifPresent(offer -> {
+            var type = offer.getType() == org.whispersystems.signalservice.api.messages.calls.OfferMessage.Type.VIDEO_CALL
+                    ? org.asamk.signal.manager.api.MessageEnvelope.Call.Offer.Type.VIDEO_CALL
+                    : org.asamk.signal.manager.api.MessageEnvelope.Call.Offer.Type.AUDIO_CALL;
+            callManager.handleIncomingOffer(sender, offer.getId(), type, offer.getOpaque());
+        });
+
+        callMessage.getAnswerMessage().ifPresent(answer ->
+                callManager.handleIncomingAnswer(answer.getId(), answer.getOpaque()));
+
+        callMessage.getIceUpdateMessages().ifPresent(iceUpdates -> {
+            for (var ice : iceUpdates) {
+                callManager.handleIncomingIceCandidate(ice.getId(), ice.getOpaque());
+            }
+        });
+
+        callMessage.getHangupMessage().ifPresent(hangup -> {
+            // Only NORMAL hangups actually end the call. ACCEPTED/DECLINED/BUSY
+            // are multi-device notifications irrelevant for single-device signal-cli.
+            var hangupType = hangup.getType();
+            if (hangupType == org.whispersystems.signalservice.api.messages.calls.HangupMessage.Type.NORMAL
+                    || hangupType == null) {
+                callManager.handleIncomingHangup(hangup.getId());
+            }
+        });
+
+        callMessage.getBusyMessage().ifPresent(busy ->
+                callManager.handleIncomingBusy(busy.getId()));
     }
 
     private boolean handlePniSignatureMessage(
