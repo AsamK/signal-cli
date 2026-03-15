@@ -1,0 +1,48 @@
+name: build
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build
+        run: ./reproducible-builds/build.sh
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: signal-cli-build
+          path: dist/*
+
+  build-client:
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+          - macos
+          - windows
+    runs-on: ${{ matrix.os }}-latest
+    defaults:
+      run:
+        working-directory: ./client
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install rust
+        run: rustup default stable
+      - name: Build client
+        run: cargo build --release --verbose
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: signal-cli-client-${{ matrix.os }}
+          path: |
+            client/target/release/signal-cli-client
+            client/target/release/signal-cli-client.exe
