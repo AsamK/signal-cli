@@ -4,7 +4,7 @@ junit = "6.0.2"
 
 [libraries]
 bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.83"
-jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.20.2"
+jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.21.1"
 argparse4j = "net.sourceforge.argparse4j:argparse4j:0.9.0"
 dbusjava = "com.github.hypfvieh:dbus-java-transport-native-unixsocket:5.0.0"
 zxing = "com.google.zxing:core:3.5.4"
