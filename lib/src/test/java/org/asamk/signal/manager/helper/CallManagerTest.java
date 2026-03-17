@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.math.BigInteger;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -410,6 +411,38 @@ class CallManagerTest {
         assertEquals(CallInfo.State.RINGING_INCOMING, info.state());
         assertEquals(null, info.inputDeviceName());
         assertEquals(null, info.outputDeviceName());
+    }
+
+    // ========================================================================
+    // tunnelBinaryFromCodeSourcePath tests
+    //
+    // The install dir is derived from the code source location (jar or class
+    // directory): go up two levels (out of lib/) to reach the install root,
+    // then resolve bin/signal-call-tunnel.
+    // ========================================================================
+
+    @Test
+    void tunnelBinaryFromCodeSourcePath_resolvesFromJarInLib() {
+        // Simulate: /opt/signal-cli/lib/signal-cli.jar
+        var jarPath = Path.of("/opt/signal-cli/lib/signal-cli.jar");
+        var result = CallManager.tunnelBinaryFromCodeSourcePath(jarPath);
+        assertEquals(Path.of("/opt/signal-cli/bin/signal-call-tunnel"), result);
+    }
+
+    @Test
+    void tunnelBinaryFromCodeSourcePath_resolvesFromClassDir() {
+        // In dev/test, code source is a directory like build/classes/java/main
+        var classDir = Path.of("/project/lib/build/classes/java/main");
+        var result = CallManager.tunnelBinaryFromCodeSourcePath(classDir);
+        // Goes up two levels from main -> classes, then looks for bin/signal-call-tunnel
+        assertEquals(Path.of("/project/lib/build/classes/bin/signal-call-tunnel"), result);
+    }
+
+    @Test
+    void tunnelBinaryFromCodeSourcePath_deeplyNestedPath() {
+        var jarPath = Path.of("/home/user/.local/share/signal-cli/lib/signal-cli.jar");
+        var result = CallManager.tunnelBinaryFromCodeSourcePath(jarPath);
+        assertEquals(Path.of("/home/user/.local/share/signal-cli/bin/signal-call-tunnel"), result);
     }
 
     // ========================================================================

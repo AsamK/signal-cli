@@ -421,17 +421,33 @@ public class CallManager implements AutoCloseable {
             return envPath;
         }
 
-        // Check relative to the signal-cli installation
-        var installDir = System.getProperty("signal.cli.install.dir");
-        if (installDir != null) {
-            var binPath = Path.of(installDir, "bin", "signal-call-tunnel");
-            if (Files.isExecutable(binPath)) {
-                return binPath.toString();
+        // Check relative to the signal-cli installation directory
+        try {
+            var codeSource = CallManager.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null) {
+                var jarPath = Path.of(codeSource.getLocation().toURI());
+                var binPath = tunnelBinaryFromCodeSourcePath(jarPath);
+                if (Files.isExecutable(binPath)) {
+                    return binPath.toString();
+                }
             }
+        } catch (Exception e) {
+            logger.debug("Failed to determine install dir from code source", e);
         }
 
         // Fall back to PATH
         return "signal-call-tunnel";
+    }
+
+    /**
+     * Resolves the expected tunnel binary path from a code source path.
+     * The code source (jar or class dir) is expected to be in {@code <install>/lib/},
+     * so we go up two levels to reach the install root, then look for
+     * {@code bin/signal-call-tunnel}.
+     */
+    static Path tunnelBinaryFromCodeSourcePath(Path codeSourcePath) {
+        var installDir = codeSourcePath.getParent().getParent();
+        return installDir.resolve("bin").resolve("signal-call-tunnel");
     }
 
     private String buildConfig(CallState state) {

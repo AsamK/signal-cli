@@ -42,7 +42,7 @@ For each call, signal-cli:
 The `signal-call-tunnel` binary is located by searching (in order):
 
 1. `SIGNAL_CALL_TUNNEL_BIN` environment variable
-2. `<signal-cli install dir>/bin/signal-call-tunnel`
+2. `<signal-cli install dir>/bin/signal-call-tunnel` (detected from jar location)
 3. `signal-call-tunnel` on `PATH`
 
 ### Config JSON
