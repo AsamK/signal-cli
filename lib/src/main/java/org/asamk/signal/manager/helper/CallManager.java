@@ -204,6 +204,20 @@ public class CallManager implements AutoCloseable {
             final MessageEnvelope.Call.Offer.Type type,
             final byte[] opaque
     ) {
+        if (callEventListeners.isEmpty()) {
+            logger.debug("Ignoring incoming offer for call {}: no call event listeners registered", callId);
+            try {
+                var address = context.getRecipientHelper().resolveSignalServiceAddress(senderId);
+                var busyMessage = new org.whispersystems.signalservice.api.messages.calls.BusyMessage(callId);
+                var callMessage = org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage.forBusy(
+                        busyMessage, null);
+                dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
+            } catch (Exception e) {
+                logger.warn("Failed to send busy for unhandled call {}", callId, e);
+            }
+            return;
+        }
+
         var senderAddress = account.getRecipientAddressResolver()
                 .resolveRecipientAddress(senderId)
                 .toApiRecipientAddress();
@@ -325,10 +339,16 @@ public class CallManager implements AutoCloseable {
     }
 
     public void handleIncomingHangup(final long callId) {
+        if (callEventListeners.isEmpty() && !activeCalls.containsKey(callId)) {
+            return;
+        }
         endCall(callId, "remote_hangup");
     }
 
     public void handleIncomingBusy(final long callId) {
+        if (callEventListeners.isEmpty() && !activeCalls.containsKey(callId)) {
+            return;
+        }
         endCall(callId, "remote_busy");
     }
 
