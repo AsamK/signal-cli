@@ -33,11 +33,10 @@ public class HangupCallCommand implements JsonRpcLocalCommand {
             final Manager m,
             final OutputWriter outputWriter
     ) throws CommandException {
-        final var callIdNumber = ns.get("call-id");
-        if (callIdNumber == null) {
+        if (!(ns.get("call-id") instanceof Number callIdNumber)) {
             throw new UserErrorException("No call ID given");
         }
-        final long callId = ((Number) callIdNumber).longValue();
+        final long callId = callIdNumber.longValue();
 
         try {
             m.hangupCall(callId);
