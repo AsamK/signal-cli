@@ -109,6 +109,9 @@ public class SendCommand implements JsonRpcLocalCommand {
                 .action(Arguments.storeTrue())
                 .help("Send the message without the urgent flag, so no push notification is triggered for the recipient. "
                         + "The message will still be delivered in real-time if the recipient's app is active.");
+        subparser.addArgument("--voice-note")
+                .action(Arguments.storeTrue())
+                .help("Mark audio attachments as voice notes. Voice notes are displayed inline in Signal clients.");
     }
 
     @Override
@@ -171,6 +174,7 @@ public class SendCommand implements JsonRpcLocalCommand {
             attachments = List.of();
         }
         final var viewOnce = Boolean.TRUE.equals(ns.getBoolean("view-once"));
+        final var voiceNote = Boolean.TRUE.equals(ns.getBoolean("voice-note"));
 
         final var selfNumber = m.getSelfNumber();
 
@@ -247,6 +251,7 @@ public class SendCommand implements JsonRpcLocalCommand {
             final var message = new Message(messageText,
                     attachments,
                     viewOnce,
+                    voiceNote,
                     mentions,
                     Optional.ofNullable(quote),
                     Optional.ofNullable(sticker),

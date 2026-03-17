@@ -7,6 +7,7 @@ public record Message(
         String messageText,
         List<String> attachments,
         boolean viewOnce,
+        boolean voiceNote,
         List<Mention> mentions,
         Optional<Quote> quote,
         Optional<Sticker> sticker,
