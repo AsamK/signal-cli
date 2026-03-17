@@ -7,9 +7,7 @@ import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
-import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.output.OutputWriter;
-import org.asamk.signal.output.PlainTextWriter;
 
 import java.io.IOException;
 
@@ -43,14 +41,8 @@ public class RejectCallCommand implements JsonRpcLocalCommand {
 
         try {
             m.rejectCall(callId);
-            switch (outputWriter) {
-                case PlainTextWriter writer -> writer.println("Call {} rejected.", callId);
-                case JsonWriter writer -> writer.write(new JsonResult(callId, "rejected"));
-            }
         } catch (IOException e) {
             throw new IOErrorException("Failed to reject call: " + e.getMessage(), e);
         }
     }
-
-    private record JsonResult(long callId, String status) {}
 }
