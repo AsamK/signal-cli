@@ -5,7 +5,6 @@ import org.asamk.signal.manager.api.RecipientAddress;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.invoke.MethodHandle;
@@ -16,7 +15,6 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -28,8 +26,7 @@ class CallManagerTest {
     // --- Reflection helpers for private static methods ---
 
     private static final MethodHandle GET_RAW_IDENTITY_KEY_BYTES;
-    private static final MethodHandle CALL_ID_JSON;
-    private static final MethodHandle ESCAPE_JSON;
+    private static final MethodHandle CALL_ID_UNSIGNED;
     private static final MethodHandle GENERATE_CALL_ID;
 
     static {
@@ -39,11 +36,8 @@ class CallManagerTest {
             GET_RAW_IDENTITY_KEY_BYTES = lookup.findStatic(CallManager.class, "getRawIdentityKeyBytes",
                     MethodType.methodType(byte[].class, byte[].class));
 
-            CALL_ID_JSON = lookup.findStatic(CallManager.class, "callIdJson",
-                    MethodType.methodType(String.class, long.class));
-
-            ESCAPE_JSON = lookup.findStatic(CallManager.class, "escapeJson",
-                    MethodType.methodType(String.class, String.class));
+            CALL_ID_UNSIGNED = lookup.findStatic(CallManager.class, "callIdUnsigned",
+                    MethodType.methodType(BigInteger.class, long.class));
 
             GENERATE_CALL_ID = lookup.findStatic(CallManager.class, "generateCallId",
                     MethodType.methodType(long.class));
@@ -57,12 +51,8 @@ class CallManagerTest {
         return (byte[]) GET_RAW_IDENTITY_KEY_BYTES.invokeExact(serializedKey);
     }
 
-    private static String callIdJson(long callId) throws Throwable {
-        return (String) CALL_ID_JSON.invokeExact(callId);
-    }
-
-    private static String escapeJson(String s) throws Throwable {
-        return (String) ESCAPE_JSON.invokeExact(s);
+    private static BigInteger callIdUnsigned(long callId) throws Throwable {
+        return (BigInteger) CALL_ID_UNSIGNED.invokeExact(callId);
     }
 
     private static long generateCallId() throws Throwable {
@@ -143,78 +133,34 @@ class CallManagerTest {
     }
 
     // ========================================================================
-    // callIdJson tests
+    // callIdUnsigned tests
     // ========================================================================
 
     @Test
-    void callIdJson_zero() throws Throwable {
-        assertEquals("0", callIdJson(0L));
+    void callIdUnsigned_zero() throws Throwable {
+        assertEquals(BigInteger.ZERO, callIdUnsigned(0L));
     }
 
     @Test
-    void callIdJson_positiveLong() throws Throwable {
-        assertEquals("8230211930154373276", callIdJson(8230211930154373276L));
+    void callIdUnsigned_positiveLong() throws Throwable {
+        assertEquals(new BigInteger("8230211930154373276"), callIdUnsigned(8230211930154373276L));
     }
 
     @Test
-    void callIdJson_negativeLongBecomesUnsigned() throws Throwable {
+    void callIdUnsigned_negativeLongBecomesUnsigned() throws Throwable {
         // -1L as unsigned is 2^64 - 1 = 18446744073709551615
-        assertEquals("18446744073709551615", callIdJson(-1L));
+        assertEquals(new BigInteger("18446744073709551615"), callIdUnsigned(-1L));
     }
 
     @Test
-    void callIdJson_longMinValueBecomesUnsigned() throws Throwable {
+    void callIdUnsigned_longMinValueBecomesUnsigned() throws Throwable {
         // Long.MIN_VALUE as unsigned is 2^63 = 9223372036854775808
-        assertEquals("9223372036854775808", callIdJson(Long.MIN_VALUE));
+        assertEquals(new BigInteger("9223372036854775808"), callIdUnsigned(Long.MIN_VALUE));
     }
 
     @Test
-    void callIdJson_longMaxValue() throws Throwable {
-        assertEquals("9223372036854775807", callIdJson(Long.MAX_VALUE));
-    }
-
-    // ========================================================================
-    // escapeJson tests
-    // ========================================================================
-
-    @Test
-    void escapeJson_null() throws Throwable {
-        assertEquals("", escapeJson(null));
-    }
-
-    @Test
-    void escapeJson_empty() throws Throwable {
-        assertEquals("", escapeJson(""));
-    }
-
-    @Test
-    void escapeJson_noSpecialChars() throws Throwable {
-        assertEquals("hello world", escapeJson("hello world"));
-    }
-
-    @Test
-    void escapeJson_backslash() throws Throwable {
-        assertEquals("path\\\\to\\\\file", escapeJson("path\\to\\file"));
-    }
-
-    @Test
-    void escapeJson_doubleQuote() throws Throwable {
-        assertEquals("say \\\"hello\\\"", escapeJson("say \"hello\""));
-    }
-
-    @Test
-    void escapeJson_newline() throws Throwable {
-        assertEquals("line1\\nline2", escapeJson("line1\nline2"));
-    }
-
-    @Test
-    void escapeJson_carriageReturn() throws Throwable {
-        assertEquals("line1\\rline2", escapeJson("line1\rline2"));
-    }
-
-    @Test
-    void escapeJson_allSpecialChars() throws Throwable {
-        assertEquals("a\\\\b\\\"c\\nd\\re", escapeJson("a\\b\"c\nd\re"));
+    void callIdUnsigned_longMaxValue() throws Throwable {
+        assertEquals(new BigInteger("9223372036854775807"), callIdUnsigned(Long.MAX_VALUE));
     }
 
     // ========================================================================

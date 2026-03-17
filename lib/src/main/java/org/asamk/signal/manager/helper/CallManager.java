@@ -10,6 +10,7 @@ import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.SecureRandom;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -116,9 +118,11 @@ public class CallManager implements AutoCloseable {
         var turnServers = getTurnServers();
 
         // Send createOutgoingCall + proceed via control channel
-        var peerIdStr = recipientAddress.toString();
-        sendControlMessage(state, "{\"type\":\"createOutgoingCall\",\"callId\":" + callIdJson(callId)
-                + ",\"peerId\":\"" + escapeJson(peerIdStr) + "\"}");
+        var createMsg = mapper.createObjectNode();
+        createMsg.put("type", "createOutgoingCall");
+        createMsg.put("callId", callIdUnsigned(callId));
+        createMsg.put("peerId", recipientAddress.toString());
+        sendControlMessage(state, writeJson(createMsg));
         sendProceed(state, callId, turnServers);
 
         // Schedule ring timeout
@@ -272,18 +276,16 @@ public class CallManager implements AutoCloseable {
         }
 
         // Send receivedOffer to subprocess
-        var opaqueB64 = java.util.Base64.getEncoder().encodeToString(opaque);
-        var senderIdKeyB64 = java.util.Base64.getEncoder().encodeToString(remoteIdentityKey);
-        var receiverIdKeyB64 = java.util.Base64.getEncoder().encodeToString(localIdentityKey);
-        var peerIdStr = senderAddress.toString();
-        sendControlMessage(state, "{\"type\":\"receivedOffer\",\"callId\":" + callIdJson(callId)
-                + ",\"peerId\":\"" + escapeJson(peerIdStr) + "\""
-                + ",\"senderDeviceId\":1"
-                + ",\"opaque\":\"" + opaqueB64 + "\""
-                + ",\"age\":0"
-                + ",\"senderIdentityKey\":\"" + senderIdKeyB64 + "\""
-                + ",\"receiverIdentityKey\":\"" + receiverIdKeyB64 + "\""
-                + "}");
+        var offerMsg = mapper.createObjectNode();
+        offerMsg.put("type", "receivedOffer");
+        offerMsg.put("callId", callIdUnsigned(callId));
+        offerMsg.put("peerId", senderAddress.toString());
+        offerMsg.put("senderDeviceId", 1);
+        offerMsg.put("opaque", java.util.Base64.getEncoder().encodeToString(opaque));
+        offerMsg.put("age", 0);
+        offerMsg.put("senderIdentityKey", java.util.Base64.getEncoder().encodeToString(remoteIdentityKey));
+        offerMsg.put("receiverIdentityKey", java.util.Base64.getEncoder().encodeToString(localIdentityKey));
+        sendControlMessage(state, writeJson(offerMsg));
 
         // Send proceed with TURN servers
         sendProceed(state, callId, turnServers);
@@ -309,15 +311,13 @@ public class CallManager implements AutoCloseable {
         byte[] remoteIdentityKey = getRemoteIdentityKey(state);
 
         // Forward raw opaque to subprocess
-        var opaqueB64 = java.util.Base64.getEncoder().encodeToString(opaque);
-        var senderIdKeyB64 = java.util.Base64.getEncoder().encodeToString(remoteIdentityKey);
-        var receiverIdKeyB64 = java.util.Base64.getEncoder().encodeToString(localIdentityKey);
-        sendControlMessage(state, "{\"type\":\"receivedAnswer\""
-                + ",\"opaque\":\"" + opaqueB64 + "\""
-                + ",\"senderDeviceId\":1"
-                + ",\"senderIdentityKey\":\"" + senderIdKeyB64 + "\""
-                + ",\"receiverIdentityKey\":\"" + receiverIdKeyB64 + "\""
-                + "}");
+        var answerMsg = mapper.createObjectNode();
+        answerMsg.put("type", "receivedAnswer");
+        answerMsg.put("opaque", java.util.Base64.getEncoder().encodeToString(opaque));
+        answerMsg.put("senderDeviceId", 1);
+        answerMsg.put("senderIdentityKey", java.util.Base64.getEncoder().encodeToString(remoteIdentityKey));
+        answerMsg.put("receiverIdentityKey", java.util.Base64.getEncoder().encodeToString(localIdentityKey));
+        sendControlMessage(state, writeJson(answerMsg));
 
         state.state = CallInfo.State.CONNECTING;
         fireCallEvent(state, null);
@@ -333,8 +333,11 @@ public class CallManager implements AutoCloseable {
         }
 
         // Forward to subprocess as receivedIce
-        var b64 = java.util.Base64.getEncoder().encodeToString(opaque);
-        sendControlMessage(state, "{\"type\":\"receivedIce\",\"candidates\":[\"" + b64 + "\"]}");
+        var iceMsg = mapper.createObjectNode();
+        iceMsg.put("type", "receivedIce");
+        var candidates = iceMsg.putArray("candidates");
+        candidates.add(java.util.Base64.getEncoder().encodeToString(opaque));
+        sendControlMessage(state, writeJson(iceMsg));
         logger.debug("Forwarded ICE candidate to tunnel for call {}", callId);
     }
 
@@ -364,24 +367,21 @@ public class CallManager implements AutoCloseable {
     }
 
     private void sendProceed(CallState state, long callId, List<TurnServer> turnServers) {
-        var sb = new StringBuilder();
-        sb.append("{\"type\":\"proceed\",\"callId\":").append(callIdJson(callId));
-        sb.append(",\"hideIp\":false");
-        sb.append(",\"iceServers\":[");
-        for (int i = 0; i < turnServers.size(); i++) {
-            if (i > 0) sb.append(",");
-            var ts = turnServers.get(i);
-            sb.append("{\"username\":\"").append(escapeJson(ts.username())).append("\"");
-            sb.append(",\"password\":\"").append(escapeJson(ts.password())).append("\"");
-            sb.append(",\"urls\":[");
-            for (int j = 0; j < ts.urls().size(); j++) {
-                if (j > 0) sb.append(",");
-                sb.append("\"").append(escapeJson(ts.urls().get(j))).append("\"");
+        var proceedMsg = mapper.createObjectNode();
+        proceedMsg.put("type", "proceed");
+        proceedMsg.put("callId", callIdUnsigned(callId));
+        proceedMsg.put("hideIp", false);
+        var iceServers = proceedMsg.putArray("iceServers");
+        for (var ts : turnServers) {
+            var server = iceServers.addObject();
+            server.put("username", ts.username());
+            server.put("password", ts.password());
+            var urls = server.putArray("urls");
+            for (var url : ts.urls()) {
+                urls.add(url);
             }
-            sb.append("]}");
         }
-        sb.append("]}");
-        sendControlMessage(state, sb.toString());
+        sendControlMessage(state, writeJson(proceedMsg));
     }
 
     private void spawnMediaTunnel(CallState state) {
@@ -476,15 +476,13 @@ public class CallManager implements AutoCloseable {
         new SecureRandom().nextBytes(tokenBytes);
         state.controlToken = java.util.Base64.getEncoder().encodeToString(tokenBytes);
 
-        var sb = new StringBuilder();
-        sb.append("{");
-        sb.append("\"call_id\":").append(callIdJson(state.callId));
-        sb.append(",\"is_outgoing\":").append(state.isOutgoing);
-        sb.append(",\"control_socket_path\":\"").append(escapeJson(state.controlSocketPath)).append("\"");
-        sb.append(",\"control_token\":\"").append(state.controlToken).append("\"");
-        sb.append(",\"local_device_id\":1");
-        sb.append("}");
-        return sb.toString();
+        var config = mapper.createObjectNode();
+        config.put("call_id", callIdUnsigned(state.callId));
+        config.put("is_outgoing", state.isOutgoing);
+        config.put("control_socket_path", state.controlSocketPath);
+        config.put("control_token", state.controlToken);
+        config.put("local_device_id", 1);
+        return writeJson(config);
     }
 
     private void connectToControlSocket(CallState state) {
@@ -503,7 +501,10 @@ public class CallManager implements AutoCloseable {
                         new OutputStreamWriter(Channels.newOutputStream(channel), StandardCharsets.UTF_8), true);
 
                 // Send authentication token
-                state.controlWriter.println("{\"type\":\"auth\",\"token\":\"" + state.controlToken + "\"}");
+                var authMsg = mapper.createObjectNode();
+                authMsg.put("type", "auth");
+                authMsg.put("token", state.controlToken);
+                state.controlWriter.println(writeJson(authMsg));
                 logger.info("Connected to control socket for call {}", state.callId);
 
                 // Flush any pending control messages
@@ -636,7 +637,9 @@ public class CallManager implements AutoCloseable {
         if (state.acceptPending && state.controlWriter != null) {
             state.acceptPending = false;
             logger.debug("Sending deferred accept for call {}", state.callId);
-            state.controlWriter.println("{\"type\":\"accept\"}");
+            var acceptMsg = mapper.createObjectNode();
+            acceptMsg.put("type", "accept");
+            state.controlWriter.println(writeJson(acceptMsg));
         }
     }
 
@@ -752,14 +755,17 @@ public class CallManager implements AutoCloseable {
         return serializedKey;
     }
 
-    /** Format call ID as unsigned for JSON (tunnel binary expects u64). */
-    private static String callIdJson(long callId) {
-        return Long.toUnsignedString(callId);
+    /** Convert signed long call ID to unsigned BigInteger (tunnel binary expects u64). */
+    private static BigInteger callIdUnsigned(long callId) {
+        return new BigInteger(Long.toUnsignedString(callId));
     }
 
-    private static String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    private static String writeJson(ObjectNode node) {
+        try {
+            return mapper.writeValueAsString(node);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize JSON", e);
+        }
     }
 
     private void endCall(final long callId, final String reason) {
