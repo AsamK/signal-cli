@@ -64,11 +64,6 @@ public class SignalJsonRpcDispatcherHandler {
             c.addOnManagerRemovedHandler(this::unsubscribeReceive);
         }
 
-        for (var m : c.getManagers()) {
-            subscribeCallEvents(m);
-        }
-        c.addOnManagerAddedHandler(this::subscribeCallEvents);
-
         handleConnection();
     }
 
@@ -79,8 +74,6 @@ public class SignalJsonRpcDispatcherHandler {
             subscribeReceive(m, true);
         }
 
-        subscribeCallEvents(m);
-
         final var currentThread = Thread.currentThread();
         m.addClosedListener(currentThread::interrupt);
 
@@ -88,6 +81,10 @@ public class SignalJsonRpcDispatcherHandler {
     }
 
     private void subscribeCallEvents(final Manager manager) {
+        // Prevent duplicate subscriptions for the same manager
+        if (callEventHandlers.stream().anyMatch(p -> p.first().equals(manager))) {
+            return;
+        }
         Manager.CallEventListener listener = (callInfo, reason) -> {
             final var params = new ObjectNode(objectMapper.getNodeFactory());
             params.set("account", params.textNode(manager.getSelfNumber()));
@@ -104,6 +101,24 @@ public class SignalJsonRpcDispatcherHandler {
         };
         manager.addCallEventListener(listener);
         callEventHandlers.add(new Pair<>(manager, listener));
+    }
+
+    private void unsubscribeCallEvents(final Manager manager) {
+        var iterator = callEventHandlers.iterator();
+        while (iterator.hasNext()) {
+            var pair = iterator.next();
+            if (pair.first().equals(manager)) {
+                pair.first().removeCallEventListener(pair.second());
+                iterator.remove();
+            }
+        }
+    }
+
+    private void unsubscribeAllCallEvents() {
+        for (var pair : callEventHandlers) {
+            pair.first().removeCallEventListener(pair.second());
+        }
+        callEventHandlers.clear();
     }
 
     private static final AtomicInteger nextSubscriptionId = new AtomicInteger(0);
@@ -169,10 +184,7 @@ public class SignalJsonRpcDispatcherHandler {
         } finally {
             receiveHandlers.forEach((_subscriptionId, handlers) -> handlers.forEach(this::unsubscribeReceiveHandler));
             receiveHandlers.clear();
-            for (var pair : callEventHandlers) {
-                pair.first().removeCallEventListener(pair.second());
-            }
-            callEventHandlers.clear();
+            unsubscribeAllCallEvents();
         }
     }
 
@@ -188,6 +200,12 @@ public class SignalJsonRpcDispatcherHandler {
         }
         if ("unsubscribeReceive".equals(method)) {
             return new UnsubscribeReceiveCommand();
+        }
+        if ("subscribeCallEvents".equals(method)) {
+            return new SubscribeCallEventsCommand();
+        }
+        if ("unsubscribeCallEvents".equals(method)) {
+            return new UnsubscribeCallEventsCommand();
         }
         return Commands.getCommand(method);
     }
@@ -270,6 +288,61 @@ public class SignalJsonRpcDispatcherHandler {
                 case ObjectNode req -> req.get("subscription").asInt();
                 case null, default -> null;
             };
+        }
+    }
+
+    private class SubscribeCallEventsCommand implements JsonRpcSingleCommand<Void>, JsonRpcMultiCommand<Void> {
+
+        @Override
+        public String getName() {
+            return "subscribeCallEvents";
+        }
+
+        @Override
+        public void handleCommand(
+                final Void request,
+                final Manager m,
+                final JsonWriter jsonWriter
+        ) throws CommandException {
+            subscribeCallEvents(m);
+        }
+
+        @Override
+        public void handleCommand(
+                final Void request,
+                final MultiAccountManager c,
+                final JsonWriter jsonWriter
+        ) throws CommandException {
+            for (var m : c.getManagers()) {
+                subscribeCallEvents(m);
+            }
+            c.addOnManagerAddedHandler(SignalJsonRpcDispatcherHandler.this::subscribeCallEvents);
+        }
+    }
+
+    private class UnsubscribeCallEventsCommand implements JsonRpcSingleCommand<Void>, JsonRpcMultiCommand<Void> {
+
+        @Override
+        public String getName() {
+            return "unsubscribeCallEvents";
+        }
+
+        @Override
+        public void handleCommand(
+                final Void request,
+                final Manager m,
+                final JsonWriter jsonWriter
+        ) throws CommandException {
+            unsubscribeCallEvents(m);
+        }
+
+        @Override
+        public void handleCommand(
+                final Void request,
+                final MultiAccountManager c,
+                final JsonWriter jsonWriter
+        ) throws CommandException {
+            unsubscribeAllCallEvents();
         }
     }
 }

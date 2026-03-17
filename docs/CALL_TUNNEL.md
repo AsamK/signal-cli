@@ -209,8 +209,14 @@ signal-cli            signal-call-tunnel           Remote Phone
 An external application (bot, UI, test script) interacts via JSON-RPC only.
 It never touches the control socket directly.
 
+**Important:** Call event notifications are not sent by default. Clients must
+call `subscribeCallEvents` before initiating or receiving calls. Without this,
+incoming calls are silently ignored (no tunnel is spawned).
+
 ```
 JSON-RPC Client                    signal-cli daemon
+  |                                      |
+  |-- subscribeCallEvents() ------------>|  (required: enables call support)
   |                                      |
   |-- startCall(recipient) ------------->|
   |<-- {callId, state,                  -|
@@ -234,6 +240,8 @@ For incoming calls:
 ```
 JSON-RPC Client                    signal-cli daemon
   |                                      |
+  |-- subscribeCallEvents() ------------>|  (if not already subscribed)
+  |                                      |
   |<-- callEvent: RINGING_INCOMING ------|  (includes callId, device names)
   |                                      |
   |-- acceptCall(callId) --------------->|
@@ -247,6 +255,8 @@ JSON-RPC Client                    signal-cli daemon
   |   connect to audio devices           |
   |   (via platform audio APIs)          |
 ```
+
+To stop receiving call events, call `unsubscribeCallEvents`.
 
 ---
 
