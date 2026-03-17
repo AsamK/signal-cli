@@ -37,11 +37,7 @@ dependencies {
 }
 
 tasks.named<Test>("test") {
-    useJUnitPlatform {
-        if (!project.hasProperty("includeIntegration")) {
-            excludeTags("integration")
-        }
-    }
+    useJUnitPlatform()
 }
 
 configurations {
