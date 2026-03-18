@@ -68,9 +68,7 @@ class CallManagerTest {
                 initialState,
                 address,
                 new org.asamk.signal.manager.api.RecipientIdentifier.Number("+15551234567"),
-                true,
-                "/tmp/sc-test/ctrl.sock",
-                Path.of("/tmp/sc-test")
+                true
         );
     }
 

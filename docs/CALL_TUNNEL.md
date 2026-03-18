@@ -4,24 +4,26 @@
 
 signal-cli supports voice calls by spawning a subprocess called
 `signal-call-tunnel` for each call. The tunnel handles WebRTC negotiation and
-audio transport. signal-cli communicates with it over a Unix domain socket using
-newline-delimited JSON messages, relaying signaling between the tunnel and the
-Signal protocol.
+audio transport. signal-cli communicates with the tunnel over its stdin/stdout
+using newline-delimited JSON messages, relaying signaling between the tunnel
+and the Signal protocol.
 
 ```
 signal-cli                        signal-call-tunnel
     |                                     |
-    |-- spawn (config on stdin) --------->|
+    |-- spawn --------------------------->|
+    |-- config JSON on stdin ------------>|
     |                                     |
-    |<======= ctrl.sock (JSON) ==========>|
-    |   signaling relay                   |   WebRTC
-    |                                     |   audio I/O
+    |-- commands on stdin --------------->|
+    |<-- events on stdout ----------------|
+    |                                     |   WebRTC
+    |   signaling relay                   |   audio I/O
     |                                     |
+    |   (stderr: tunnel logging) -------->| (captured by signal-cli)
 ```
 
-Each call gets its own tunnel process and control socket inside a temporary
-directory (`/tmp/sc-<random>/`). When the call ends, signal-cli kills the
-process and deletes the directory.
+Each call gets its own tunnel process. When the call ends, signal-cli closes
+stdin and destroys the process.
 
 Audio device names (`inputDeviceName`, `outputDeviceName`) are opaque strings
 returned by the tunnel in its `ready` message. signal-cli passes them through
@@ -33,11 +35,11 @@ to JSON-RPC clients, which use them to connect audio via platform APIs.
 
 For each call, signal-cli:
 
-1. Creates a temporary directory `/tmp/sc-<random>/` (mode `0700`)
-2. Generates a random 32-byte auth token
-3. Spawns `signal-call-tunnel` with config JSON on stdin
-4. Connects to the control socket (retries up to 50x at 200 ms intervals)
-5. Authenticates with the auth token
+1. Spawns `signal-call-tunnel`
+2. Writes config JSON followed by a newline to stdin
+3. Keeps stdin open for subsequent control messages
+4. Reads control events from stdout
+5. Captures stderr for logging
 
 The `signal-call-tunnel` binary is located by searching (in order):
 
@@ -47,14 +49,12 @@ The `signal-call-tunnel` binary is located by searching (in order):
 
 ### Config JSON
 
-Written to the tunnel's stdin before it starts:
+The first line written to the tunnel's stdin:
 
 ```json
 {
   "call_id": 12345,
   "is_outgoing": true,
-  "control_socket_path": "/tmp/sc-a1b2c3/ctrl.sock",
-  "control_token": "dG9rZW4...",
   "local_device_id": 1,
   "input_device_name": "signal_input",
   "output_device_name": "signal_output"
@@ -65,8 +65,6 @@ Written to the tunnel's stdin before it starts:
 |-------|------|-------------|
 | `call_id` | unsigned 64-bit integer | Call identifier (use unsigned representation) |
 | `is_outgoing` | boolean | Whether this is an outgoing call |
-| `control_socket_path` | string | Path where the tunnel creates its control socket |
-| `control_token` | string | Base64-encoded 32-byte auth token |
 | `local_device_id` | integer | Signal device ID |
 | `input_device_name` | string (optional) | Requested input audio device name |
 | `output_device_name` | string (optional) | Requested output audio device name |
@@ -78,25 +76,16 @@ and `signal_output`, which must match the pre-installed BlackHole drivers.
 
 ---
 
-## Control Socket Protocol
+## Control Protocol
 
-Unix SOCK_STREAM at `ctrl.sock`. Newline-delimited JSON messages.
+Newline-delimited JSON messages over stdin (signal-cli to tunnel) and stdout
+(tunnel to signal-cli). The first line on stdin is the config JSON. Subsequent
+lines are control messages.
 
-### Authentication
-
-The first message from signal-cli **must** be an auth message. The token is
-a random 32-byte value generated per call and passed in the startup config.
-The tunnel performs constant-time comparison.
-
-```json
-{"type":"auth","token":"<base64-encoded token>"}
-```
-
-### signal-cli -> Tunnel
+### signal-cli -> Tunnel (stdin)
 
 | Type | When | Fields |
 |------|------|--------|
-| `auth` | First message | `token` |
 | `createOutgoingCall` | Outgoing call setup | `callId`, `peerId` |
 | `proceed` | After offer/receivedOffer | `callId`, `hideIp`, `iceServers` |
 | `receivedOffer` | Incoming call | `callId`, `peerId`, `opaque`, `age`, `senderDeviceId`, `senderIdentityKey`, `receiverIdentityKey` |
@@ -105,7 +94,7 @@ The tunnel performs constant-time comparison.
 | `accept` | User accepts incoming call | *(none)* |
 | `hangup` | End the call | *(none)* |
 
-### Tunnel -> signal-cli
+### Tunnel -> signal-cli (stdout)
 
 | Type | When | Fields |
 |------|------|--------|
@@ -132,20 +121,17 @@ Opaque blobs and identity keys are base64-encoded. ICE servers use the format:
 signal-cli                          signal-call-tunnel
     |                                       |
     |-- spawn process ------------------>   |
-    |   (config JSON on stdin)              |
-    |                                       | initialize
-    |                                       | bind ctrl.sock
+    |-- config JSON + newline on stdin ---->|
+    |                                       | parse config
+    |                                       | initialize audio
     |                                       |
-    |-- connect to ctrl.sock -------------->|
-    |   (retries: 50x @ 200ms)              |
-    |<-------- ready -----------------------|
+    |<-------- ready (on stdout) -----------|
     |   {"type":"ready",                    |
     |    "inputDeviceName":"...",           |
     |    "outputDeviceName":"..."}          |
-    |-- auth ------------------------------>|
-    |   {"type":"auth","token":"<b64>"}     |
-    |                                       | constant-time token verify
     |                                       |
+    |-- control messages on stdin --------->|
+    |<-- control events on stdout ----------|
 ```
 
 ---
@@ -159,7 +145,6 @@ signal-cli            signal-call-tunnel           Remote Phone
   |                          |                          |
   |-- spawn + config ------->|                          |
   |<-- ready ----------------|                          |
-  |-- auth ----------------->|                          |
   |-- createOutgoingCall --->|                          |
   |-- proceed (TURN) ------->|                          |
   |                          | create offer             |
@@ -183,7 +168,6 @@ signal-cli            signal-call-tunnel           Remote Phone
   |<-- offer via Signal --------------------------------|
   |-- spawn + config ------->|                          |
   |<-- ready ----------------|                          |
-  |-- auth ----------------->|                          |
   |-- receivedOffer -------->| (+ identity keys)        |
   |-- proceed (TURN) ------->|                          |
   |                          | process offer            |
@@ -311,10 +295,9 @@ during ICE restarts (not during initial connection).
 
 Manages the call lifecycle from the Java side:
 
-1. Creates a temp directory and generates a random auth token
-2. Spawns `signal-call-tunnel` with config JSON on stdin
-3. Connects to the control socket (retries up to 50x at 200 ms intervals),
-   authenticates, and relays signaling between the tunnel and the Signal protocol
+1. Spawns `signal-call-tunnel` and writes config JSON to stdin
+2. Keeps stdin open as the control write channel; reads stdout for control events
+3. Captures stderr for tunnel logging
 4. Parses `inputDeviceName` and `outputDeviceName` from the tunnel's `ready`
    message and includes them in `CallInfo`
 5. Translates tunnel state changes into `CallInfo.State` values and fires
@@ -322,7 +305,7 @@ Manages the call lifecycle from the Java side:
 6. Defers the `accept` message for incoming calls until the tunnel reports
    `Ringing` state (sending earlier causes the tunnel to drop it)
 7. Schedules a 60-second ring timeout for both incoming and outgoing calls
-8. On hangup: sends hangup message, kills the process, deletes the control socket
+8. On hangup: sends hangup message, closes stdin, and destroys the process
 
 ---
 
@@ -369,14 +352,3 @@ Identity keys in `senderIdentityKey` and `receiverIdentityKey` must be **raw
 33-byte serialized form is used instead, SRTP key derivation produces different
 keys on each side, causing authentication failures.
 
----
-
-## File Layout
-
-```
-/tmp/sc-<random>/
-  ctrl.sock       control socket (signal-cli <-> tunnel)
-```
-
-The control socket is created with mode `0700` on the parent directory. The
-directory and its contents are deleted when the call ends.

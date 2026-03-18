@@ -19,14 +19,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.net.StandardProtocolFamily;
-import java.net.UnixDomainSocketAddress;
-import java.nio.channels.Channels;
-import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.security.SecureRandom;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -96,18 +91,11 @@ public class CallManager implements AutoCloseable {
                 .resolveRecipientAddress(recipientId)
                 .toApiRecipientAddress();
 
-        // Create per-call socket directory
-        var callDir = Files.createTempDirectory(Path.of("/tmp"), "sc-");
-        Files.setPosixFilePermissions(callDir, PosixFilePermissions.fromString("rwx------"));
-        var controlSocketPath = callDir.resolve("ctrl.sock").toString();
-
         var state = new CallState(callId,
                 CallInfo.State.RINGING_OUTGOING,
                 recipientApiAddress,
                 recipient,
-                true,
-                controlSocketPath,
-                callDir);
+                true);
         activeCalls.put(callId, state);
         fireCallEvent(state, null);
 
@@ -238,23 +226,11 @@ public class CallManager implements AutoCloseable {
 
         logger.debug("Incoming offer opaque ({} bytes)", opaque == null ? 0 : opaque.length);
 
-        Path callDir;
-        try {
-            callDir = Files.createTempDirectory(Path.of("/tmp"), "sc-");
-            Files.setPosixFilePermissions(callDir, PosixFilePermissions.fromString("rwx------"));
-        } catch (IOException e) {
-            logger.warn("Failed to create socket directory for incoming call {}", callId, e);
-            return;
-        }
-        var controlSocketPath = callDir.resolve("ctrl.sock").toString();
-
         var state = new CallState(callId,
                 CallInfo.State.RINGING_INCOMING,
                 senderAddress,
                 senderIdentifier,
-                false,
-                controlSocketPath,
-                callDir);
+                false);
         state.rawOfferOpaque = opaque;
         activeCalls.put(callId, state);
 
@@ -387,36 +363,49 @@ public class CallManager implements AutoCloseable {
     private void spawnMediaTunnel(CallState state) {
         try {
             var command = new ArrayList<>(List.of(findTunnelBinary()));
-            // Config is sent via stdin; no --host-audio by default
 
             var processBuilder = new ProcessBuilder(command);
-            processBuilder.redirectErrorStream(true);
+            // Keep stdout and stderr separate: stdout = control protocol, stderr = logging
+            processBuilder.redirectErrorStream(false);
             var process = processBuilder.start();
-
-            // Write config JSON to stdin
-            var config = buildConfig(state);
-            try (var stdin = process.getOutputStream()) {
-                stdin.write(config.getBytes(StandardCharsets.UTF_8));
-                stdin.flush();
-            }
 
             state.tunnelProcess = process;
 
-            // Drain subprocess stdout/stderr to prevent pipe buffer deadlock
-            Thread.ofVirtual().name("tunnel-output-" + state.callId).start(() -> {
+            // Write config JSON to stdin, then keep stdin open for control messages
+            var config = buildConfig(state);
+            var stdinStream = process.getOutputStream();
+            stdinStream.write(config.getBytes(StandardCharsets.UTF_8));
+            stdinStream.write('\n');
+            stdinStream.flush();
+
+            // stdin is the control write channel
+            state.controlWriter = new PrintWriter(
+                    new OutputStreamWriter(stdinStream, StandardCharsets.UTF_8), true);
+
+            // Flush any pending control messages
+            for (var msg : state.pendingControlMessages) {
+                state.controlWriter.println(msg);
+            }
+            state.pendingControlMessages.clear();
+
+            // If accept was deferred, send it now
+            sendAcceptIfReady(state);
+
+            // Read control events from subprocess stdout
+            Thread.ofVirtual().name("control-read-" + state.callId).start(() -> {
+                readControlEvents(state, process.getInputStream());
+            });
+
+            // Drain subprocess stderr to prevent pipe buffer deadlock
+            Thread.ofVirtual().name("tunnel-stderr-" + state.callId).start(() -> {
                 try (var reader = new BufferedReader(
-                        new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                        new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         logger.debug("[tunnel-{}] {}", state.callId, line);
                     }
                 } catch (IOException ignored) {
                 }
-            });
-
-            // Connect to control socket in background
-            Thread.ofVirtual().name("control-connect-" + state.callId).start(() -> {
-                connectToControlSocket(state);
             });
 
             // Monitor process exit
@@ -471,66 +460,16 @@ public class CallManager implements AutoCloseable {
     }
 
     private String buildConfig(CallState state) {
-        // Generate control channel authentication token
-        var tokenBytes = new byte[32];
-        new SecureRandom().nextBytes(tokenBytes);
-        state.controlToken = java.util.Base64.getEncoder().encodeToString(tokenBytes);
-
         var config = mapper.createObjectNode();
         config.put("call_id", callIdUnsigned(state.callId));
         config.put("is_outgoing", state.isOutgoing);
-        config.put("control_socket_path", state.controlSocketPath);
-        config.put("control_token", state.controlToken);
         config.put("local_device_id", 1);
         return writeJson(config);
     }
 
-    private void connectToControlSocket(CallState state) {
-        var socketPath = Path.of(state.controlSocketPath);
-        var addr = UnixDomainSocketAddress.of(socketPath);
-
-        for (int attempt = 0; attempt < 50; attempt++) {
-            try {
-                Thread.sleep(200);
-                if (!Files.exists(socketPath)) continue;
-
-                var channel = SocketChannel.open(StandardProtocolFamily.UNIX);
-                channel.connect(addr);
-                state.controlChannel = channel;
-                state.controlWriter = new PrintWriter(
-                        new OutputStreamWriter(Channels.newOutputStream(channel), StandardCharsets.UTF_8), true);
-
-                // Send authentication token
-                var authMsg = mapper.createObjectNode();
-                authMsg.put("type", "auth");
-                authMsg.put("token", state.controlToken);
-                state.controlWriter.println(writeJson(authMsg));
-                logger.info("Connected to control socket for call {}", state.callId);
-
-                // Flush any pending control messages
-                for (var msg : state.pendingControlMessages) {
-                    state.controlWriter.println(msg);
-                }
-                state.pendingControlMessages.clear();
-
-                // Start reading control events
-                Thread.ofVirtual().name("control-read-" + state.callId).start(() -> {
-                    readControlEvents(state);
-                });
-                return;
-            } catch (IOException e) {
-                logger.debug("Control socket connect attempt {} failed: {}", attempt, e.getMessage());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-        logger.warn("Failed to connect to control socket for call {} after retries", state.callId);
-    }
-
-    private void readControlEvents(CallState state) {
+    private void readControlEvents(CallState state, java.io.InputStream inputStream) {
         try (var reader = new BufferedReader(
-                new InputStreamReader(Channels.newInputStream(state.controlChannel), StandardCharsets.UTF_8))) {
+                new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
@@ -617,6 +556,7 @@ public class CallManager implements AutoCloseable {
             state.state = CallInfo.State.RINGING_OUTGOING;
         } else if ("Ringing".equals(ringrtcState)) {
             // Tunnel is now ready to accept — flush deferred accept if pending
+            state.tunnelRinging = true;
             sendAcceptIfReady(state);
             return;
         } else if ("Connected".equals(ringrtcState)) {
@@ -634,7 +574,7 @@ public class CallManager implements AutoCloseable {
     }
 
     private void sendAcceptIfReady(CallState state) {
-        if (state.acceptPending && state.controlWriter != null) {
+        if (state.acceptPending && state.tunnelRinging && state.controlWriter != null) {
             state.acceptPending = false;
             logger.debug("Sending deferred accept for call {}", state.callId);
             var acceptMsg = mapper.createObjectNode();
@@ -792,35 +732,21 @@ public class CallManager implements AutoCloseable {
             }
         }
 
-        // Send hangup via control channel before killing process
+        // Send hangup via control channel (stdin) before killing process
         if (state.controlWriter != null) {
             try {
-                state.controlWriter.println("{\"type\":\"hangup\"}");
+                var hangupMsg = mapper.createObjectNode();
+                hangupMsg.put("type", "hangup");
+                state.controlWriter.println(writeJson(hangupMsg));
+                state.controlWriter.close();
             } catch (Exception e) {
                 logger.debug("Failed to send hangup via control channel", e);
-            }
-        }
-
-        // Close control channel
-        if (state.controlChannel != null) {
-            try {
-                state.controlChannel.close();
-            } catch (IOException e) {
-                logger.debug("Failed to close control channel for call {}", callId, e);
             }
         }
 
         // Kill tunnel process
         if (state.tunnelProcess != null && state.tunnelProcess.isAlive()) {
             state.tunnelProcess.destroy();
-        }
-
-        // Clean up socket directory
-        try {
-            Files.deleteIfExists(Path.of(state.controlSocketPath));
-            Files.deleteIfExists(state.socketDir);
-        } catch (IOException e) {
-            logger.debug("Failed to clean up socket directory for call {}", callId, e);
         }
     }
 
@@ -855,37 +781,31 @@ public class CallManager implements AutoCloseable {
         final org.asamk.signal.manager.api.RecipientAddress recipientAddress;
         final RecipientIdentifier.Single recipientIdentifier;
         final boolean isOutgoing;
-        final String controlSocketPath;
-        final Path socketDir;
         volatile String inputDeviceName;
         volatile String outputDeviceName;
         volatile Process tunnelProcess;
-        volatile SocketChannel controlChannel;
         volatile PrintWriter controlWriter;
-        volatile String controlToken;
         // Raw offer opaque for incoming calls (forwarded to subprocess)
         volatile byte[] rawOfferOpaque;
-        // Control messages queued before the control channel connects
+        // Control messages queued before the tunnel process starts
         final List<String> pendingControlMessages = java.util.Collections.synchronizedList(new ArrayList<>());
         // Accept deferred until tunnel reports Ringing state
         volatile boolean acceptPending = false;
+        // True once the tunnel has reported "Ringing" (ready to accept)
+        volatile boolean tunnelRinging = false;
 
         CallState(
                 long callId,
                 CallInfo.State state,
                 org.asamk.signal.manager.api.RecipientAddress recipientAddress,
                 RecipientIdentifier.Single recipientIdentifier,
-                boolean isOutgoing,
-                String controlSocketPath,
-                Path socketDir
+                boolean isOutgoing
         ) {
             this.callId = callId;
             this.state = state;
             this.recipientAddress = recipientAddress;
             this.recipientIdentifier = recipientIdentifier;
             this.isOutgoing = isOutgoing;
-            this.controlSocketPath = controlSocketPath;
-            this.socketDir = socketDir;
         }
 
         CallInfo toCallInfo() {
