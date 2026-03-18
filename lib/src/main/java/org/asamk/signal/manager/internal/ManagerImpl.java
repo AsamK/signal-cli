@@ -633,7 +633,9 @@ public class ManagerImpl implements Manager {
                         updateGroup.getEditDetailsPermission(),
                         updateGroup.getAvatarFile(),
                         updateGroup.getExpirationTimer(),
-                        updateGroup.getIsAnnouncementGroup());
+                        updateGroup.getIsAnnouncementGroup(),
+                        updateGroup.getLabelEmoji(),
+                        updateGroup.getLabelString());
     }
 
     @Override

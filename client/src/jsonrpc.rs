@@ -460,6 +460,8 @@ pub trait Rpc {
         #[allow(non_snake_case)] setPermissionEditDetails: Option<String>,
         #[allow(non_snake_case)] setPermissionSendMessages: Option<String>,
         expiration: Option<u32>,
+        #[allow(non_snake_case)] memberLabelEmoji: Option<String>,
+        #[allow(non_snake_case)] memberLabel: Option<String>,
     ) -> Result<Value, ErrorObjectOwned>;
 
     #[method(name = "updateProfile", param_kind = map)]

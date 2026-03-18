@@ -3,18 +3,17 @@ package org.asamk.signal.manager.storage.groups;
 import org.asamk.signal.manager.api.GroupIdV2;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupPermission;
-import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.signal.core.models.ServiceId;
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.storageservice.storage.protos.groups.AccessControl;
-import org.signal.storageservice.storage.protos.groups.Member;
 import org.signal.storageservice.storage.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.storage.protos.groups.local.EnabledState;
 import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -122,14 +121,11 @@ public final class GroupInfoV2 extends GroupInfo {
     }
 
     @Override
-    public Set<RecipientId> getMembers() {
+    public Collection<GroupMemberInfo> getMembers() {
         if (this.group == null) {
             return Set.of();
         }
-        return group.members.stream()
-                .map(m -> ServiceId.parseOrThrow(m.aciBytes))
-                .map(recipientResolver::resolveRecipient)
-                .collect(Collectors.toSet());
+        return group.members.stream().map(m -> (GroupMemberInfo) new GroupMemberInfoV2(m, recipientResolver)).toList();
     }
 
     @Override
@@ -175,16 +171,11 @@ public final class GroupInfoV2 extends GroupInfo {
     }
 
     @Override
-    public Set<RecipientId> getAdminMembers() {
-        if (this.group == null) {
-            return Set.of();
-        }
-        return group.members.stream()
-                .filter(m -> m.role == Member.Role.ADMINISTRATOR)
-                .map(m -> new RecipientAddress(ServiceId.ACI.parseOrNull(m.aciBytes),
-                        ServiceId.PNI.parseOrNull(m.pniBytes),
-                        null))
-                .map(recipientResolver::resolveRecipient)
+    public Set<RecipientId> getAdminMemberRecipientIds() {
+        return this.getMembers()
+                .stream()
+                .filter(GroupMemberInfo::isAdmin)
+                .map(GroupMemberInfo::getRecipientId)
                 .collect(Collectors.toSet());
     }
 

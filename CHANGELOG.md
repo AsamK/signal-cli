@@ -1,6 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [0.14.1] - 2026-03-08
+
+### Added
+
+- Added isArchived to contact json output (Thanks @moppman)
+- Added support for group member labels
+
+### Fixed
+
+- Adapt registration to signal server changes
 
 ## [0.14.0] - 2026-03-01
 

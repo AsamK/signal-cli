@@ -29,7 +29,7 @@ public class ServiceConfig {
 
     public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
         final var attachmentBackfill = !isPrimaryDevice;
-        final var spqr = !isPrimaryDevice;
+        final var spqr = true;
         return new AccountAttributes.Capabilities(true, true, attachmentBackfill, spqr);
     }
 
