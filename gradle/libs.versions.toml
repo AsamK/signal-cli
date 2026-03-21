@@ -1,7 +1,7 @@
 [versions]
 slf4j = "2.0.17"
 junit = "6.0.2"
-micronaut-json-schema = "1.7.2"
+micronaut-json-schema = "2.0.0-M6"
 micronaut-core = "4.9.3"
 
 [libraries]

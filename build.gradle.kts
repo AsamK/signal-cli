@@ -161,12 +161,6 @@ val compileJsonSchemas by tasks.registering(JavaCompile::class) {
     source = sourceSets.main.get().java
     include("org/asamk/signal/json/**/*.java")
     
-    // Exclude files with @JsonUnwrapped and files that reference them as that breaks
-    // the annotation generator
-    exclude("org/asamk/signal/json/JsonSyncDataMessage.java")
-    exclude("org/asamk/signal/json/JsonSyncStoryMessage.java")
-    exclude("org/asamk/signal/json/JsonSyncMessage.java")
-
     classpath = sourceSets.main.get().compileClasspath + files(sourceSets.main.get().java.destinationDirectory)
     destinationDirectory.set(layout.buildDirectory.dir("classes/java/schemas"))
     
@@ -181,12 +175,6 @@ val compileJsonSchemas by tasks.registering(JavaCompile::class) {
     )
     
     doLast {
-        copy {
-            from("src/main/resources/META-INF/schemas")
-            into(destinationDirectory.get().dir("META-INF/schemas"))
-            include("*.schema.json")
-        }
-
         fileTree(destinationDirectory.get().dir("META-INF/schemas").asFile) {
             include("*.schema.json")
         }.forEach { schemaFile ->
