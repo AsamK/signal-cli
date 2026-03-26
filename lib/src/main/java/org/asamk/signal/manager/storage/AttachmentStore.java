@@ -44,6 +44,9 @@ public class AttachmentStore {
     }
 
     public StreamDetails retrieveAttachment(final String id) throws IOException {
+        if (id == null || id.isEmpty()) {
+            throw new IOException("Attachment ID must not be null or empty");
+        }
         final var attachmentFile = new File(attachmentsPath, id);
         return Utils.createStreamDetailsFromFile(attachmentFile);
     }
