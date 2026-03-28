@@ -44,8 +44,8 @@ public class AttachmentHelper {
         return attachmentStore.retrieveAttachment(id);
     }
 
-    public List<SignalServiceAttachment> uploadAttachments(final List<String> attachments) throws AttachmentInvalidException, IOException {
-        final var attachmentStreams = createAttachmentStreams(attachments);
+    public List<SignalServiceAttachment> uploadAttachments(final List<String> attachments, boolean voiceNote) throws AttachmentInvalidException, IOException {
+        final var attachmentStreams = createAttachmentStreams(attachments, voiceNote);
 
         try {
             // Upload attachments here, so we only upload once even for multiple recipients
@@ -61,14 +61,18 @@ public class AttachmentHelper {
         }
     }
 
-    private List<SignalServiceAttachmentStream> createAttachmentStreams(List<String> attachments) throws AttachmentInvalidException, IOException {
+    public List<SignalServiceAttachment> uploadAttachments(final List<String> attachments) throws AttachmentInvalidException, IOException {
+        return uploadAttachments(attachments, false);
+    }
+
+    private List<SignalServiceAttachmentStream> createAttachmentStreams(List<String> attachments, boolean voiceNote) throws AttachmentInvalidException, IOException {
         if (attachments == null) {
             return null;
         }
         final var signalServiceAttachments = new ArrayList<SignalServiceAttachmentStream>(attachments.size());
         for (var attachment : attachments) {
             final var uploadSpec = dependencies.getMessageSender().getResumableUploadSpec();
-            signalServiceAttachments.add(AttachmentUtils.createAttachmentStream(attachment, uploadSpec));
+            signalServiceAttachments.add(AttachmentUtils.createAttachmentStream(attachment, voiceNote, uploadSpec));
         }
         return signalServiceAttachments;
     }

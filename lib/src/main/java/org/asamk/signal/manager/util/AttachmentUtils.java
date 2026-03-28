@@ -14,15 +14,42 @@ public class AttachmentUtils {
 
     public static SignalServiceAttachmentStream createAttachmentStream(
             String attachment,
+            boolean voiceNote,
             ResumableUploadSpec resumableUploadSpec
     ) throws AttachmentInvalidException {
         try {
             final var streamDetails = Utils.createStreamDetails(attachment);
 
-            return createAttachmentStream(streamDetails.first(), streamDetails.second(), resumableUploadSpec);
+            return createAttachmentStream(streamDetails.first(), streamDetails.second(), voiceNote, resumableUploadSpec);
         } catch (IOException e) {
             throw new AttachmentInvalidException(attachment, e);
         }
+    }
+
+    public static SignalServiceAttachmentStream createAttachmentStream(
+            String attachment,
+            ResumableUploadSpec resumableUploadSpec
+    ) throws AttachmentInvalidException {
+        return createAttachmentStream(attachment, false, resumableUploadSpec);
+    }
+
+    public static SignalServiceAttachmentStream createAttachmentStream(
+            StreamDetails streamDetails,
+            Optional<String> name,
+            boolean voiceNote,
+            ResumableUploadSpec resumableUploadSpec
+    ) throws ResumeLocationInvalidException {
+        final var uploadTimestamp = System.currentTimeMillis();
+        return SignalServiceAttachmentStream.newStreamBuilder()
+                .withStream(streamDetails.getStream())
+                .withContentType(streamDetails.getContentType())
+                .withLength(streamDetails.getLength())
+                .withFileName(name.orElse(null))
+                .withVoiceNote(voiceNote)
+                .withUploadTimestamp(uploadTimestamp)
+                .withResumableUploadSpec(resumableUploadSpec)
+                .withUuid(UUID.randomUUID())
+                .build();
     }
 
     public static SignalServiceAttachmentStream createAttachmentStream(
@@ -30,16 +57,6 @@ public class AttachmentUtils {
             Optional<String> name,
             ResumableUploadSpec resumableUploadSpec
     ) throws ResumeLocationInvalidException {
-        // TODO maybe add a parameter to set the voiceNote, borderless, preview, width, height and caption option
-        final var uploadTimestamp = System.currentTimeMillis();
-        return SignalServiceAttachmentStream.newStreamBuilder()
-                .withStream(streamDetails.getStream())
-                .withContentType(streamDetails.getContentType())
-                .withLength(streamDetails.getLength())
-                .withFileName(name.orElse(null))
-                .withUploadTimestamp(uploadTimestamp)
-                .withResumableUploadSpec(resumableUploadSpec)
-                .withUuid(UUID.randomUUID())
-                .build();
+        return createAttachmentStream(streamDetails, name, false, resumableUploadSpec);
     }
 }

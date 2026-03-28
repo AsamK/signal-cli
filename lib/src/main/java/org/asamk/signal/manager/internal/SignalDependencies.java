@@ -328,6 +328,7 @@ public class SignalDependencies {
                         Optional.empty(),
                         executor,
                         ServiceConfig.MAX_ENVELOPE_SIZE,
+                        ServiceConfig.MAX_INCREMENTAL_MACS_PER_ENVELOPE,
                         () -> true,
                         true,
                         true));

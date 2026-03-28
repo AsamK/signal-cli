@@ -10,7 +10,7 @@ If you have a question you can ask it in the [GitHub discussions page](https://g
     - Be sure to include a **title and clear description**, as much relevant information as possible.
     - Specify the versions of signal-cli, libsignal-client (if self-compiled), JDK and OS you're using
     - Specify if it's the normal java or the graalvm native version.
-    - Run the failing command with `--verbose` flag to get a more detailed log output and include that in the bug report
+    - Run the failing command with `-vv --scrub-log` flags to get a more detailed log output and include that in the bug report
 
 # Pull request
 
