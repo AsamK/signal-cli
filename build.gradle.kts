@@ -88,6 +88,7 @@ dependencies {
             excludeFilesByArtifact = excludePatterns
         }
     }
+
     schemaAnnotationProcessor(libs.micronaut.json.schema.processor)
     schemaAnnotationProcessor(libs.micronaut.inject.java)
     implementation(libs.bouncycastle)

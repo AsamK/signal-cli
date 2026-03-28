@@ -148,7 +148,7 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
       ./gradlew run --args="--help"
       ```
 
-### JSON Schemeas for the JSON-RPC mode
+### JSON Schemas for the JSON-RPC mode
 
 1. Generate [JSON Schema](https://json-schema.org/) files for all the JSON-RPC data classes (`src/main/java/org/asamk/signal/json`):
 
