@@ -88,10 +88,8 @@ dependencies {
             excludeFilesByArtifact = excludePatterns
         }
     }
-
     schemaAnnotationProcessor(libs.micronaut.json.schema.processor)
     schemaAnnotationProcessor(libs.micronaut.inject.java)
-
     implementation(libs.bouncycastle)
     implementation(libs.jackson.databind)
     implementation(libs.argparse4j)
@@ -153,17 +151,13 @@ tasks.register("fatJar", type = Jar::class) {
     with(tasks.jar.get())
 }
 
-val compileJsonSchemas by tasks.registering(JavaCompile::class) {
+tasks.register<JavaCompile>("jsonSchemas") {
     dependsOn(tasks.compileJava)
-    
     val schemaBaseUri = "http://localhost:8080/schemas/"
-    
     source = sourceSets.main.get().java
     include("org/asamk/signal/json/**/*.java")
-    
     classpath = sourceSets.main.get().compileClasspath + files(sourceSets.main.get().java.destinationDirectory)
-    destinationDirectory.set(layout.buildDirectory.dir("classes/java/schemas"))
-    
+    destinationDirectory.set(layout.buildDirectory.dir("generated"))
     options.annotationProcessorPath = schemaAnnotationProcessor
     options.compilerArgs.addAll(
         listOf(
@@ -173,7 +167,6 @@ val compileJsonSchemas by tasks.registering(JavaCompile::class) {
             "-Amicronaut.jsonschema.baseUri=$schemaBaseUri",
         )
     )
-    
     doLast {
         fileTree(destinationDirectory.get().dir("META-INF/schemas").asFile) {
             include("*.schema.json")
@@ -183,10 +176,4 @@ val compileJsonSchemas by tasks.registering(JavaCompile::class) {
             schemaFile.writeText("$prettyJson\n")
         }
     }
-}
-
-tasks.register("jsonSchemas") {
-    group = "application"
-    description = "Generate JSON schemas using annotation processing"
-    dependsOn(compileJsonSchemas)
 }
