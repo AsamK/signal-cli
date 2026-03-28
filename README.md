@@ -156,7 +156,7 @@ version installed, you can replace `./gradlew` with `gradle` in the following st
     ./gradlew jsonSchemas
     ```
 
-2. The generated files can be found in the `build/classes/java/schemas/META-INF/schemas` folder.
+2. The generated files can be found in the `build/generated/META-INF/schemas` folder.
 
 ### Building a native binary with GraalVM (EXPERIMENTAL)
 
