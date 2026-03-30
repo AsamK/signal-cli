@@ -643,7 +643,9 @@ public class ManagerImpl implements Manager {
                         updateGroup.getEditDetailsPermission(),
                         updateGroup.getAvatarFile(),
                         updateGroup.getExpirationTimer(),
-                        updateGroup.getIsAnnouncementGroup());
+                        updateGroup.getIsAnnouncementGroup(),
+                        updateGroup.getLabelEmoji(),
+                        updateGroup.getLabelString());
     }
 
     @Override
@@ -851,7 +853,7 @@ public class ManagerImpl implements Manager {
             messageBuilder.withBody(message.messageText());
         }
         if (!message.attachments().isEmpty()) {
-            final var uploadedAttachments = context.getAttachmentHelper().uploadAttachments(message.attachments());
+            final var uploadedAttachments = context.getAttachmentHelper().uploadAttachments(message.attachments(), message.voiceNote());
             if (!additionalAttachments.isEmpty()) {
                 additionalAttachments.addAll(uploadedAttachments);
                 messageBuilder.withAttachments(additionalAttachments);

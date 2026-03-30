@@ -598,6 +598,12 @@ pub enum CliCommands {
 
         #[arg(short = 'e', long)]
         expiration: Option<u32>,
+
+        #[arg(long = "member-label-emoji")]
+        member_label_emoji: Option<String>,
+
+        #[arg(long = "member-label")]
+        member_label: Option<String>,
     },
     UpdateProfile {
         #[arg(long = "given-name")]

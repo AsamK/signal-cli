@@ -1477,6 +1477,20 @@
       ]
     },
     {
+      "type": "kotlin.Pair",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getFirst",
+          "parameterTypes": []
+        },
+        {
+          "name": "getSecond",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "kotlin.SafePublicationLazyImpl",
       "fields": [
         {
@@ -2130,6 +2144,19 @@
       "allDeclaredConstructors": true
     },
     {
+      "type": "org.asamk.signal.commands.ListGroupsCommand$JsonGroupMemberAddress",
+      "methods": [
+        {
+          "name": "number",
+          "parameterTypes": []
+        },
+        {
+          "name": "uuid",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.commands.ListIdentitiesCommand$JsonIdentity",
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
@@ -2511,6 +2538,10 @@
         },
         {
           "name": "internal",
+          "parameterTypes": []
+        },
+        {
+          "name": "isArchived",
           "parameterTypes": []
         },
         {
@@ -5495,6 +5526,18 @@
       "type": "org.signal.core.models.ServiceId$PNI"
     },
     {
+      "type": "org.signal.libsignal.attest.AttestationDataException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.internal.CompletableFuture",
       "jniAccessible": true,
       "methods": [
@@ -5807,6 +5850,78 @@
       "jniAccessible": true,
       "methods": [
         {
+          "name": "getIdentityKey",
+          "parameterTypes": [
+            "long"
+          ]
+        },
+        {
+          "name": "getLocalIdentityKeyPair",
+          "parameterTypes": []
+        },
+        {
+          "name": "getLocalRegistrationId",
+          "parameterTypes": []
+        },
+        {
+          "name": "isTrustedIdentity",
+          "parameterTypes": [
+            "long",
+            "long",
+            "int"
+          ]
+        },
+        {
+          "name": "loadPreKey",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "removePreKey",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "saveIdentityKey",
+          "parameterTypes": [
+            "long",
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.protocol.SessionCipher$2",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "loadSession",
+          "parameterTypes": [
+            "long"
+          ]
+        },
+        {
+          "name": "loadSignedPreKey",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "storeSession",
+          "parameterTypes": [
+            "long",
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.protocol.SessionCipher$3",
+      "jniAccessible": true,
+      "methods": [
+        {
           "name": "loadPreKey",
           "parameterTypes": [
             "int"
@@ -5821,13 +5936,33 @@
       ]
     },
     {
-      "type": "org.signal.libsignal.protocol.SessionCipher$2",
+      "type": "org.signal.libsignal.protocol.SessionCipher$4",
       "jniAccessible": true,
       "methods": [
         {
           "name": "loadSignedPreKey",
           "parameterTypes": [
             "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.protocol.SessionCipher$5",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "loadKyberPreKey",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "markKyberPreKeyUsed",
+          "parameterTypes": [
+            "int",
+            "int",
+            "long"
           ]
         }
       ]
@@ -5864,6 +5999,9 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.protocol.ecc.ECPrivateKey"
+    },
+    {
       "type": "org.signal.libsignal.protocol.ecc.ECPublicKey",
       "jniAccessible": true,
       "methods": [
@@ -5883,6 +6021,27 @@
           "name": "<init>",
           "parameterTypes": [
             "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.protocol.groups.GroupCipher$1",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "loadSenderKey",
+          "parameterTypes": [
+            "long",
+            "java.util.UUID"
+          ]
+        },
+        {
+          "name": "storeSenderKey",
+          "parameterTypes": [
+            "long",
+            "java.util.UUID",
+            "long"
           ]
         }
       ]
@@ -6079,7 +6238,23 @@
       "jniAccessible": true
     },
     {
+      "type": "org.signal.libsignal.protocol.state.internal.IdentityKeyStore",
+      "jniAccessible": true
+    },
+    {
+      "type": "org.signal.libsignal.protocol.state.internal.KyberPreKeyStore",
+      "jniAccessible": true
+    },
+    {
       "type": "org.signal.libsignal.protocol.state.internal.PreKeyStore",
+      "jniAccessible": true
+    },
+    {
+      "type": "org.signal.libsignal.protocol.state.internal.SenderKeyStore",
+      "jniAccessible": true
+    },
+    {
+      "type": "org.signal.libsignal.protocol.state.internal.SessionStore",
       "jniAccessible": true
     },
     {
@@ -7921,6 +8096,18 @@
     },
     {
       "type": "org.whispersystems.signalservice.internal.push.GroupMismatchedDevices[]"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.push.GroupPatchResponse",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Integer",
+            "java.lang.String"
+          ]
+        }
+      ]
     },
     {
       "type": "org.whispersystems.signalservice.internal.push.GroupStaleDevices",
