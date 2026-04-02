@@ -9,7 +9,6 @@ import java.math.BigInteger;
 import java.util.Base64;
 import java.util.List;
 
-
 import static org.asamk.signal.manager.util.Utils.callIdUnsigned;
 
 @JsonSchema(title = "CallMessage")
