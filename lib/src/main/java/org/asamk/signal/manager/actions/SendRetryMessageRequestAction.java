@@ -60,7 +60,7 @@ public class SendRetryMessageRequestAction implements HandleAction {
             return CiphertextMessage.WHISPER_TYPE;
         }
         return switch (type) {
-            case PREKEY_BUNDLE -> CiphertextMessage.PREKEY_TYPE;
+            case PREKEY_MESSAGE -> CiphertextMessage.PREKEY_TYPE;
             case UNIDENTIFIED_SENDER -> CiphertextMessage.SENDERKEY_TYPE;
             case PLAINTEXT_CONTENT -> CiphertextMessage.PLAINTEXT_CONTENT_TYPE;
             default -> CiphertextMessage.WHISPER_TYPE;

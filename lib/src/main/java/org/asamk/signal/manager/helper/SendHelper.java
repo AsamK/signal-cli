@@ -36,6 +36,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEditMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
+import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.push.DistributionId;
@@ -306,6 +307,26 @@ public class SendHelper {
             account.getSenderKeyStore().markSenderKeySharedWith(group.getDistributionId(), addresses);
         }
 
+        return result;
+    }
+
+    public SendMessageResult sendCallMessage(
+            final SignalServiceCallMessage callMessage,
+            final RecipientId recipientId
+    ) {
+        final var messageSendLogStore = account.getMessageSendLogStore();
+        final var result = handleSendMessage(recipientId,
+                (messageSender, address, unidentifiedAccess, includePniSignature) -> messageSender.sendCallMessage(
+                        address,
+                        unidentifiedAccess,
+                        callMessage));
+        if (callMessage.getTimestamp().isPresent()) {
+            messageSendLogStore.insertIfPossible(callMessage.getTimestamp().get(),
+                    result,
+                    ContentHint.IMPLICIT,
+                    callMessage.isUrgent());
+        }
+        handleSendMessageResult(result);
         return result;
     }
 

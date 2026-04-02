@@ -1083,6 +1083,12 @@
       ]
     },
     {
+      "type": "java.math.BigInteger"
+    },
+    {
+      "type": "java.math.BigInteger[]"
+    },
+    {
       "type": "java.net.NetPermission"
     },
     {
@@ -1962,6 +1968,48 @@
       ]
     },
     {
+      "type": "org.asamk.signal.commands.AcceptCallCommand$JsonCallInfo",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "channels",
+          "parameterTypes": []
+        },
+        {
+          "name": "codec",
+          "parameterTypes": []
+        },
+        {
+          "name": "inputDeviceName",
+          "parameterTypes": []
+        },
+        {
+          "name": "mediaSocketPath",
+          "parameterTypes": []
+        },
+        {
+          "name": "outputDeviceName",
+          "parameterTypes": []
+        },
+        {
+          "name": "ptimeMs",
+          "parameterTypes": []
+        },
+        {
+          "name": "sampleRate",
+          "parameterTypes": []
+        },
+        {
+          "name": "state",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.commands.FinishLinkCommand$FinishLinkParams",
       "allDeclaredFields": true,
       "methods": [
@@ -1999,6 +2047,20 @@
       "allDeclaredConstructors": true
     },
     {
+      "type": "org.asamk.signal.commands.HangupCallCommand$JsonResult",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "status",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.commands.ListAccountsCommand$JsonAccount",
       "allDeclaredFields": true,
       "methods": [
@@ -2007,6 +2069,47 @@
           "parameterTypes": []
         }
       ]
+    },
+    {
+      "type": "org.asamk.signal.commands.ListCallsCommand$JsonCall",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "inputDeviceName",
+          "parameterTypes": []
+        },
+        {
+          "name": "isOutgoing",
+          "parameterTypes": []
+        },
+        {
+          "name": "mediaSocketPath",
+          "parameterTypes": []
+        },
+        {
+          "name": "number",
+          "parameterTypes": []
+        },
+        {
+          "name": "outputDeviceName",
+          "parameterTypes": []
+        },
+        {
+          "name": "state",
+          "parameterTypes": []
+        },
+        {
+          "name": "uuid",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.signal.commands.ListCallsCommand$JsonCall[]"
     },
     {
       "type": "org.asamk.signal.commands.ListContactsCommand$JsonContact",
@@ -2187,6 +2290,62 @@
       ]
     },
     {
+      "type": "org.asamk.signal.commands.RejectCallCommand$JsonResult",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "status",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.signal.commands.StartCallCommand$JsonCallInfo",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "channels",
+          "parameterTypes": []
+        },
+        {
+          "name": "codec",
+          "parameterTypes": []
+        },
+        {
+          "name": "inputDeviceName",
+          "parameterTypes": []
+        },
+        {
+          "name": "mediaSocketPath",
+          "parameterTypes": []
+        },
+        {
+          "name": "outputDeviceName",
+          "parameterTypes": []
+        },
+        {
+          "name": "ptimeMs",
+          "parameterTypes": []
+        },
+        {
+          "name": "sampleRate",
+          "parameterTypes": []
+        },
+        {
+          "name": "state",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.commands.StartLinkCommand$JsonLink",
       "allDeclaredFields": true,
       "methods": [
@@ -2291,6 +2450,43 @@
     },
     {
       "type": "org.asamk.signal.json.JsonAttachment[]"
+    },
+    {
+      "type": "org.asamk.signal.json.JsonCallEvent",
+      "methods": [
+        {
+          "name": "callId",
+          "parameterTypes": []
+        },
+        {
+          "name": "inputDeviceName",
+          "parameterTypes": []
+        },
+        {
+          "name": "isOutgoing",
+          "parameterTypes": []
+        },
+        {
+          "name": "number",
+          "parameterTypes": []
+        },
+        {
+          "name": "outputDeviceName",
+          "parameterTypes": []
+        },
+        {
+          "name": "reason",
+          "parameterTypes": []
+        },
+        {
+          "name": "state",
+          "parameterTypes": []
+        },
+        {
+          "name": "uuid",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "org.asamk.signal.json.JsonCallMessage",
@@ -7356,6 +7552,35 @@
       "allDeclaredMethods": true
     },
     {
+      "type": "org.whispersystems.signalservice.api.messages.calls.TurnServerInfo",
+      "fields": [
+        {
+          "name": "hostname"
+        },
+        {
+          "name": "password"
+        },
+        {
+          "name": "ttl"
+        },
+        {
+          "name": "urls"
+        },
+        {
+          "name": "urlsWithIps"
+        },
+        {
+          "name": "username"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo",
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
@@ -7932,6 +8157,17 @@
         {
           "name": "<init>",
           "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.push.GetCallingRelaysResponse",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.util.List"
+          ]
         }
       ]
     },

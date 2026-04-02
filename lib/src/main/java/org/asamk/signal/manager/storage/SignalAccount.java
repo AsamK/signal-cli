@@ -292,7 +292,6 @@ public class SignalAccount implements Closeable {
             final IdentityKeyPair aciIdentity,
             final IdentityKeyPair pniIdentity,
             final ProfileKey profileKey,
-            final MasterKey masterKey,
             final AccountEntropyPool accountEntropyPool,
             final MediaRootBackupKey mediaRootBackupKey
     ) {
@@ -314,7 +313,7 @@ public class SignalAccount implements Closeable {
             this.pinMasterKey = null;
             this.accountEntropyPool = accountEntropyPool;
         } else {
-            this.pinMasterKey = masterKey;
+            this.pinMasterKey = null;
             this.accountEntropyPool = null;
         }
         this.mediaRootBackupKey = mediaRootBackupKey;

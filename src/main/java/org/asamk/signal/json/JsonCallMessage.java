@@ -5,8 +5,12 @@ import io.micronaut.jsonschema.JsonSchema;
 
 import org.asamk.signal.manager.api.MessageEnvelope;
 
+import java.math.BigInteger;
 import java.util.Base64;
 import java.util.List;
+
+
+import static org.asamk.signal.manager.util.Utils.callIdUnsigned;
 
 @JsonSchema(title = "CallMessage")
 record JsonCallMessage(
@@ -25,38 +29,41 @@ record JsonCallMessage(
                 callMessage.iceUpdate().stream().map(IceUpdate::from).toList());
     }
 
-    record Offer(long id, String type, String opaque) {
+    record Offer(BigInteger id, String type, String opaque) {
 
         public static Offer from(final MessageEnvelope.Call.Offer offer) {
-            return new Offer(offer.id(), offer.type().name(), Base64.getEncoder().encodeToString(offer.opaque()));
+            return new Offer(callIdUnsigned(offer.id()),
+                    offer.type().name(),
+                    Base64.getEncoder().encodeToString(offer.opaque()));
         }
     }
 
-    public record Answer(long id, String opaque) {
+    public record Answer(BigInteger id, String opaque) {
 
         public static Answer from(final MessageEnvelope.Call.Answer answer) {
-            return new Answer(answer.id(), Base64.getEncoder().encodeToString(answer.opaque()));
+            return new Answer(callIdUnsigned(answer.id()), Base64.getEncoder().encodeToString(answer.opaque()));
         }
     }
 
-    public record Busy(long id) {
+    public record Busy(BigInteger id) {
 
         public static Busy from(final MessageEnvelope.Call.Busy busy) {
-            return new Busy(busy.id());
+            return new Busy(callIdUnsigned(busy.id()));
         }
     }
 
-    public record Hangup(long id, String type, int deviceId) {
+    public record Hangup(BigInteger id, String type, int deviceId) {
 
         public static Hangup from(final MessageEnvelope.Call.Hangup hangup) {
-            return new Hangup(hangup.id(), hangup.type().name(), hangup.deviceId());
+            return new Hangup(callIdUnsigned(hangup.id()), hangup.type().name(), hangup.deviceId());
         }
     }
 
-    public record IceUpdate(long id, String opaque) {
+    public record IceUpdate(BigInteger id, String opaque) {
 
         public static IceUpdate from(final MessageEnvelope.Call.IceUpdate iceUpdate) {
-            return new IceUpdate(iceUpdate.id(), Base64.getEncoder().encodeToString(iceUpdate.opaque()));
+            return new IceUpdate(callIdUnsigned(iceUpdate.id()),
+                    Base64.getEncoder().encodeToString(iceUpdate.opaque()));
         }
     }
 }

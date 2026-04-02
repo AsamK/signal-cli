@@ -64,6 +64,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServicePniSignatureMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
+import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
@@ -401,7 +402,52 @@ public final class IncomingMessageHandler {
             longTexts.putAll(syncResults.second());
         }
 
+        if (content.getCallMessage().isPresent()) {
+            handleCallMessage(content.getCallMessage().get(), sender, senderDeviceId);
+        }
+
         return new Pair<>(actions, longTexts);
+    }
+
+    private void handleCallMessage(
+            final SignalServiceCallMessage callMessage,
+            final RecipientId sender,
+            final int deviceId
+    ) {
+        var callManager = context.getCallManager();
+        if (callMessage.getDestinationDeviceId().isPresent()
+                && callMessage.getDestinationDeviceId().get() != account.getDeviceId()) {
+            return;
+        }
+
+        callMessage.getOfferMessage().ifPresent(offer -> {
+            var type = offer.getType()
+                    == org.whispersystems.signalservice.api.messages.calls.OfferMessage.Type.VIDEO_CALL
+                    ? org.asamk.signal.manager.api.MessageEnvelope.Call.Offer.Type.VIDEO_CALL
+                    : org.asamk.signal.manager.api.MessageEnvelope.Call.Offer.Type.AUDIO_CALL;
+            callManager.handleIncomingOffer(sender, deviceId, offer.getId(), type, offer.getOpaque());
+        });
+
+        callMessage.getAnswerMessage()
+                .ifPresent(answer -> callManager.handleIncomingAnswer(answer.getId(), deviceId, answer.getOpaque()));
+
+        callMessage.getIceUpdateMessages().ifPresent(iceUpdates -> {
+            for (var ice : iceUpdates) {
+                callManager.handleIncomingIceCandidate(ice.getId(), ice.getOpaque(), deviceId);
+            }
+        });
+
+        callMessage.getHangupMessage().ifPresent(hangup -> {
+            // Only NORMAL hangups actually end the call. ACCEPTED/DECLINED/BUSY
+            // are multi-device notifications irrelevant for single-device signal-cli.
+            var hangupType = hangup.getType();
+            if (hangupType == org.whispersystems.signalservice.api.messages.calls.HangupMessage.Type.NORMAL
+                    || hangupType == null) {
+                callManager.handleIncomingHangup(hangup.getId());
+            }
+        });
+
+        callMessage.getBusyMessage().ifPresent(busy -> callManager.handleIncomingBusy(busy.getId()));
     }
 
     private boolean handlePniSignatureMessage(
@@ -614,10 +660,6 @@ public final class IncomingMessageHandler {
             if (keysMessage.getAccountEntropyPool() != null) {
                 final var aep = keysMessage.getAccountEntropyPool();
                 account.setAccountEntropyPool(aep);
-                actions.add(SyncStorageDataAction.create());
-            } else if (keysMessage.getMaster() != null) {
-                final var masterKey = keysMessage.getMaster();
-                account.setMasterKey(masterKey);
                 actions.add(SyncStorageDataAction.create());
             } else if (keysMessage.getStorageService() != null) {
                 final var storageKey = keysMessage.getStorageService();

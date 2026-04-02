@@ -5,7 +5,7 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "0.11.5"
+    id("org.graalvm.buildtools.native") version "1.0.0"
 }
 
 allprojects {
@@ -104,6 +104,14 @@ dependencies {
         implementation(libs.micronaut.json.schema.generator)
     }    
     implementation(project(":libsignal-cli"))
+
+    testImplementation(libs.junit.jupiter)
+    testImplementation(platform(libs.junit.jupiter.bom))
+    testRuntimeOnly(libs.junit.launcher)
+}
+
+tasks.named<Test>("test") {
+    useJUnitPlatform()
 }
 
 configurations {

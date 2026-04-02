@@ -19,6 +19,8 @@ package org.asamk.signal.manager.internal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
+import org.asamk.signal.manager.api.CallInfo;
+import org.asamk.signal.manager.api.CallOffer;
 import org.asamk.signal.manager.api.CaptchaRejectedException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.Configuration;
@@ -62,6 +64,7 @@ import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TextStyle;
+import org.asamk.signal.manager.api.TurnServer;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -105,6 +108,12 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
+import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
+import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
+import org.whispersystems.signalservice.api.messages.calls.HangupMessage;
+import org.whispersystems.signalservice.api.messages.calls.IceUpdateMessage;
+import org.whispersystems.signalservice.api.messages.calls.OfferMessage;
+import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
@@ -701,9 +710,9 @@ public class ManagerImpl implements Manager {
                     results.put(recipient,
                             List.of(SendMessageResult.unregisteredFailure(single.toPartialRecipientAddress())));
                 }
-            } else if (recipient instanceof RecipientIdentifier.Group group) {
+            } else if (recipient instanceof RecipientIdentifier.Group(GroupId groupId)) {
                 final var result = context.getSendHelper()
-                        .sendAsGroupMessage(messageBuilder, group.groupId(), notifySelf, editTargetTimestamp, urgent);
+                        .sendAsGroupMessage(messageBuilder, groupId, notifySelf, editTargetTimestamp, urgent);
                 results.put(recipient, result.stream().map(this::toSendMessageResult).toList());
             }
         }
@@ -843,7 +852,8 @@ public class ManagerImpl implements Manager {
             messageBuilder.withBody(message.messageText());
         }
         if (!message.attachments().isEmpty()) {
-            final var uploadedAttachments = context.getAttachmentHelper().uploadAttachments(message.attachments(), message.voiceNote());
+            final var uploadedAttachments = context.getAttachmentHelper()
+                    .uploadAttachments(message.attachments(), message.voiceNote());
             if (!additionalAttachments.isEmpty()) {
                 additionalAttachments.addAll(uploadedAttachments);
                 messageBuilder.withAttachments(additionalAttachments);
@@ -949,12 +959,10 @@ public class ManagerImpl implements Manager {
         var delete = new SignalServiceDataMessage.RemoteDelete(targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withRemoteDelete(delete);
         for (final var recipient : recipients) {
-            if (recipient instanceof RecipientIdentifier.Uuid u) {
-                account.getMessageSendLogStore()
-                        .deleteEntryForRecipientNonGroup(targetSentTimestamp, ACI.from(u.uuid()));
-            } else if (recipient instanceof RecipientIdentifier.Pni pni) {
-                account.getMessageSendLogStore()
-                        .deleteEntryForRecipientNonGroup(targetSentTimestamp, PNI.from(pni.pni()));
+            if (recipient instanceof RecipientIdentifier.Uuid(var uuid)) {
+                account.getMessageSendLogStore().deleteEntryForRecipientNonGroup(targetSentTimestamp, ACI.from(uuid));
+            } else if (recipient instanceof RecipientIdentifier.Pni(var pni)) {
+                account.getMessageSendLogStore().deleteEntryForRecipientNonGroup(targetSentTimestamp, PNI.from(pni));
             } else if (recipient instanceof RecipientIdentifier.Single r) {
                 try {
                     final var recipientId = context.getRecipientHelper().resolveRecipient(r);
@@ -965,8 +973,8 @@ public class ManagerImpl implements Manager {
                     }
                 } catch (UnregisteredRecipientException ignored) {
                 }
-            } else if (recipient instanceof RecipientIdentifier.Group r) {
-                account.getMessageSendLogStore().deleteEntryForGroup(targetSentTimestamp, r.groupId());
+            } else if (recipient instanceof RecipientIdentifier.Group(var groupId)) {
+                account.getMessageSendLogStore().deleteEntryForGroup(targetSentTimestamp, groupId);
             }
         }
         return sendMessage(messageBuilder, recipients, false);
@@ -1139,8 +1147,8 @@ public class ManagerImpl implements Manager {
                     results.put(recipient,
                             List.of(SendMessageResult.unregisteredFailure(single.toPartialRecipientAddress())));
                 }
-            } else if (recipient instanceof RecipientIdentifier.Group group) {
-                final var result = context.getSyncHelper().sendMessageRequestResponse(type, group.groupId());
+            } else if (recipient instanceof RecipientIdentifier.Group(GroupId groupId)) {
+                final var result = context.getSyncHelper().sendMessageRequestResponse(type, groupId);
                 results.put(recipient, List.of(toSendMessageResult(result)));
             }
         }
@@ -1154,7 +1162,7 @@ public class ManagerImpl implements Manager {
             final List<String> options,
             final Set<RecipientIdentifier> recipients,
             final boolean notifySelf
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var pollCreate = new SignalServiceDataMessage.PollCreate(question, allowMultiple, options);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withPollCreate(pollCreate);
         return sendMessage(messageBuilder, recipients, notifySelf);
@@ -1186,7 +1194,7 @@ public class ManagerImpl implements Manager {
             final long targetSentTimestamp,
             final Set<RecipientIdentifier> recipients,
             final boolean notifySelf
-    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException {
+    ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         final var pollTerminate = new SignalServiceDataMessage.PollTerminate(targetSentTimestamp);
         final var messageBuilder = SignalServiceDataMessage.newBuilder().withPollTerminate(pollTerminate);
         return sendMessage(messageBuilder, recipients, notifySelf);
@@ -1705,6 +1713,16 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public void addCallEventListener(final CallEventListener listener) {
+        context.getCallManager().addCallEventListener(listener);
+    }
+
+    @Override
+    public void removeCallEventListener(final CallEventListener listener) {
+        context.getCallManager().removeCallEventListener(listener);
+    }
+
+    @Override
     public InputStream retrieveAttachment(final String id) throws IOException {
         return context.getAttachmentHelper().retrieveAttachment(id).getStream();
     }
@@ -1759,6 +1777,132 @@ public class ManagerImpl implements Manager {
             throw new FileNotFoundException();
         }
         return streamDetails.getStream();
+    }
+
+    // --- Voice call methods ---
+
+    @Override
+    public CallInfo startCall(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+        return context.getCallManager().startOutgoingCall(recipientId);
+    }
+
+    @Override
+    public CallInfo acceptCall(final long callId) throws IOException {
+        return context.getCallManager().acceptIncomingCall(callId);
+    }
+
+    @Override
+    public void hangupCall(final long callId) throws IOException {
+        context.getCallManager().hangupCall(callId);
+    }
+
+    @Override
+    public SendMessageResult rejectCall(final long callId) throws IOException {
+        final var result = context.getCallManager().rejectCall(callId);
+        return toSendMessageResult(result);
+    }
+
+    @Override
+    public List<CallInfo> listActiveCalls() {
+        return context.getCallManager().listActiveCalls();
+    }
+
+    @Override
+    public void sendCallOffer(
+            final RecipientIdentifier.Single recipient,
+            final CallOffer offer
+    ) throws IOException, UnregisteredRecipientException {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+        final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
+        var offerMessage = new OfferMessage(offer.callId(),
+                offer.type() == CallOffer.Type.VIDEO ? OfferMessage.Type.VIDEO_CALL : OfferMessage.Type.AUDIO_CALL,
+                offer.opaque());
+        var callMessage = SignalServiceCallMessage.forOffer(offerMessage, null);
+        try {
+            dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+            throw new IOException("Untrusted identity for call recipient", e);
+        }
+    }
+
+    @Override
+    public void sendCallAnswer(
+            final RecipientIdentifier.Single recipient,
+            final long callId,
+            final byte[] answerOpaque
+    ) throws IOException, UnregisteredRecipientException {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+        final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
+        var answerMessage = new AnswerMessage(callId, answerOpaque);
+        var callMessage = SignalServiceCallMessage.forAnswer(answerMessage, null);
+        try {
+            dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+            throw new IOException("Untrusted identity for call recipient", e);
+        }
+    }
+
+    @Override
+    public void sendIceUpdate(
+            final RecipientIdentifier.Single recipient,
+            final long callId,
+            final List<byte[]> iceCandidates
+    ) throws IOException, UnregisteredRecipientException {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+        final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
+        var iceUpdates = iceCandidates.stream().map(opaque -> new IceUpdateMessage(callId, opaque)).toList();
+        var callMessage = SignalServiceCallMessage.forIceUpdates(iceUpdates, null);
+        try {
+            dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+            throw new IOException("Untrusted identity for call recipient", e);
+        }
+    }
+
+    @Override
+    public void sendHangup(
+            final RecipientIdentifier.Single recipient,
+            final long callId,
+            final MessageEnvelope.Call.Hangup.Type type
+    ) throws IOException, UnregisteredRecipientException {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+        final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
+        var hangupType = switch (type) {
+            case NORMAL -> HangupMessage.Type.NORMAL;
+            case ACCEPTED -> HangupMessage.Type.ACCEPTED;
+            case DECLINED -> HangupMessage.Type.DECLINED;
+            case BUSY -> HangupMessage.Type.BUSY;
+            case NEED_PERMISSION -> HangupMessage.Type.NEED_PERMISSION;
+        };
+        var hangupMessage = new HangupMessage(callId, hangupType, 0);
+        var callMessage = SignalServiceCallMessage.forHangup(hangupMessage, null);
+        try {
+            dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+            throw new IOException("Untrusted identity for call recipient", e);
+        }
+    }
+
+    @Override
+    public void sendBusy(
+            final RecipientIdentifier.Single recipient,
+            final long callId
+    ) throws IOException, UnregisteredRecipientException {
+        final var recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+        final var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
+        var busyMessage = new BusyMessage(callId);
+        var callMessage = SignalServiceCallMessage.forBusy(busyMessage, null);
+        try {
+            dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+            throw new IOException("Untrusted identity for call recipient", e);
+        }
+    }
+
+    @Override
+    public List<TurnServer> getTurnServerInfo() throws IOException {
+        return context.getCallManager().getTurnServers();
     }
 
     @Override

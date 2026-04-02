@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -234,5 +235,12 @@ public class Utils {
         } else {
             return proxies.getFirst();
         }
+    }
+
+    /**
+     * Convert signed long call ID to unsigned BigInteger (tunnel binary expects u64).
+     */
+    public static BigInteger callIdUnsigned(long callId) {
+        return new BigInteger(Long.toUnsignedString(callId));
     }
 }

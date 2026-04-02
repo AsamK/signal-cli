@@ -145,7 +145,6 @@ public class ProvisioningManagerImpl implements ProvisioningManager {
                     ret.getAciIdentity(),
                     ret.getPniIdentity(),
                     profileKey,
-                    ret.getMasterKey(),
                     ret.getAccountEntropyPool(),
                     ret.getMediaRootBackupKey());
 

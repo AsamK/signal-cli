@@ -258,7 +258,6 @@ public class SyncHelper {
 
     public SendMessageResult sendKeysMessage() {
         var keysMessage = new KeysMessage(account.getOrCreateStorageKey(),
-                account.getOrCreatePinMasterKey(),
                 account.getOrCreateAccountEntropyPool(),
                 account.getOrCreateMediaRootBackupKey());
         return context.getSendHelper().sendSyncMessage(SignalServiceSyncMessage.forKeys(keysMessage));

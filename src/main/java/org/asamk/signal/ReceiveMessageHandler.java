@@ -15,6 +15,8 @@ import org.slf4j.helpers.MessageFormatter;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import static org.asamk.signal.manager.util.Utils.callIdUnsigned;
+
 public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
 
     final Manager m;
@@ -297,26 +299,32 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         }
         if (callMessage.answer().isPresent()) {
             var answerMessage = callMessage.answer().get();
-            writer.println("Answer message: {}, opaque length: {})", answerMessage.id(), answerMessage.opaque().length);
+            writer.println("Answer message: {}, opaque length: {})",
+                    callIdUnsigned(answerMessage.id()),
+                    answerMessage.opaque().length);
         }
         if (callMessage.busy().isPresent()) {
             var busyMessage = callMessage.busy().get();
-            writer.println("Busy message: {}", busyMessage.id());
+            writer.println("Busy message: {}", callIdUnsigned(busyMessage.id()));
         }
         if (callMessage.hangup().isPresent()) {
             var hangupMessage = callMessage.hangup().get();
-            writer.println("Hangup message: {}", hangupMessage.id());
+            writer.println("Hangup message: {}", callIdUnsigned(hangupMessage.id()));
         }
         if (!callMessage.iceUpdate().isEmpty()) {
             writer.println("Ice update messages:");
             var iceUpdateMessages = callMessage.iceUpdate();
             for (var iceUpdateMessage : iceUpdateMessages) {
-                writer.println("- {}, opaque length: {}", iceUpdateMessage.id(), iceUpdateMessage.opaque().length);
+                writer.println("- {}, opaque length: {}",
+                        callIdUnsigned(iceUpdateMessage.id()),
+                        iceUpdateMessage.opaque().length);
             }
         }
         if (callMessage.offer().isPresent()) {
             var offerMessage = callMessage.offer().get();
-            writer.println("Offer message: {}, opaque length: {}", offerMessage.id(), offerMessage.opaque().length);
+            writer.println("Offer message: {}, opaque length: {}",
+                    callIdUnsigned(offerMessage.id()),
+                    offerMessage.opaque().length);
         }
         if (callMessage.opaque().isPresent()) {
             final var opaqueMessage = callMessage.opaque().get();

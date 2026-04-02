@@ -4,6 +4,8 @@ import org.asamk.Signal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AlreadyReceivingException;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
+import org.asamk.signal.manager.api.CallInfo;
+import org.asamk.signal.manager.api.CallOffer;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.Configuration;
 import org.asamk.signal.manager.api.Contact;
@@ -37,12 +39,14 @@ import org.asamk.signal.manager.api.Recipient;
 import org.asamk.signal.manager.api.RecipientAddress;
 import org.asamk.signal.manager.api.RecipientIdentifier;
 import org.asamk.signal.manager.api.SendGroupMessageResults;
+import org.asamk.signal.manager.api.SendMessageResult;
 import org.asamk.signal.manager.api.SendMessageResults;
 import org.asamk.signal.manager.api.StickerPack;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.api.StickerPackInvalidException;
 import org.asamk.signal.manager.api.StickerPackUrl;
 import org.asamk.signal.manager.api.TrustLevel;
+import org.asamk.signal.manager.api.TurnServer;
 import org.asamk.signal.manager.api.TypingAction;
 import org.asamk.signal.manager.api.UnregisteredRecipientException;
 import org.asamk.signal.manager.api.UpdateGroup;
@@ -910,6 +914,85 @@ public class DbusManagerImpl implements Manager {
         synchronized (closedListeners) {
             closedListeners.add(listener);
         }
+    }
+
+    @Override
+    public void addCallEventListener(final CallEventListener listener) {
+        // Not supported over DBus
+    }
+
+    @Override
+    public void removeCallEventListener(final CallEventListener listener) {
+        // Not supported over DBus
+    }
+
+    // --- Voice call methods (not supported over DBus) ---
+
+    @Override
+    public CallInfo startCall(final RecipientIdentifier.Single recipient) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public CallInfo acceptCall(final long callId) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void hangupCall(final long callId) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public SendMessageResult rejectCall(final long callId) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public java.util.List<CallInfo> listActiveCalls() {
+        return java.util.List.of();
+    }
+
+    @Override
+    public void sendCallOffer(final RecipientIdentifier.Single recipient, final CallOffer offer) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void sendCallAnswer(
+            final RecipientIdentifier.Single recipient,
+            final long callId,
+            final byte[] answerOpaque
+    ) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void sendIceUpdate(
+            final RecipientIdentifier.Single recipient,
+            final long callId,
+            final java.util.List<byte[]> iceCandidates
+    ) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void sendHangup(
+            final RecipientIdentifier.Single recipient,
+            final long callId,
+            final MessageEnvelope.Call.Hangup.Type type
+    ) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public void sendBusy(final RecipientIdentifier.Single recipient, final long callId) {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
+    }
+
+    @Override
+    public java.util.List<TurnServer> getTurnServerInfo() {
+        throw new UnsupportedOperationException("Voice calls are not supported over DBus");
     }
 
     @Override
