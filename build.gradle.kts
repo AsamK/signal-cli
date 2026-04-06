@@ -10,7 +10,7 @@ plugins {
 
 allprojects {
     group = "org.asamk"
-    version = "0.14.2-SNAPSHOT"
+    version = "0.14.2"
 }
 
 java {
@@ -158,6 +158,20 @@ tasks.register("fatJar", type = Jar::class) {
         from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     }
     with(tasks.jar.get())
+}
+
+tasks.register("writeLibsignalVersion") {
+    doLast {
+        val resolutionResult = configurations.runtimeClasspath.get().incoming.resolutionResult
+        val libsignalDep =
+            resolutionResult.allDependencies.find { dep -> dep.requested is ModuleComponentSelector && (dep.requested as ModuleComponentSelector).group == "org.signal" && (dep.requested as ModuleComponentSelector).moduleIdentifier.name == "libsignal-client" }
+        if (libsignalDep != null) {
+            val version = (libsignalDep.requested as ModuleComponentSelector).version
+            file("libsignal-version").writeText(version + "\n")
+        } else {
+            throw GradleException("Could not find libsignal-client dependency")
+        }
+    }
 }
 
 tasks.register<JavaCompile>("jsonSchemas") {

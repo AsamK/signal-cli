@@ -41,6 +41,9 @@ public class GetAttachmentCommand implements JsonRpcLocalCommand {
     ) throws CommandException {
 
         final var id = ns.getString("id");
+        if (id == null) {
+            throw new UserErrorException("Missing attachment id parameter");
+        }
 
         try (InputStream attachment = m.retrieveAttachment(id)) {
             final var bytes = attachment.readAllBytes();

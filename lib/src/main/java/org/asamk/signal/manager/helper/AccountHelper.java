@@ -37,9 +37,7 @@ import org.whispersystems.signalservice.api.push.UsernameLinkComponents;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
-import org.whispersystems.signalservice.api.push.exceptions.UsernameIsNotReservedException;
-import org.whispersystems.signalservice.api.push.exceptions.UsernameMalformedException;
-import org.whispersystems.signalservice.api.push.exceptions.UsernameTakenException;
+import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.internal.push.DeviceLimitExceededException;
 import org.whispersystems.signalservice.internal.push.KyberPreKeyEntity;
@@ -465,7 +463,7 @@ public class AccountHelper {
             logger.debug("Attempting to resynchronize username.");
             try {
                 tryReserveConfirmUsername(username);
-            } catch (UsernameMalformedException | UsernameTakenException | UsernameIsNotReservedException e) {
+            } catch (NonSuccessfulResponseCodeException e) {
                 logger.debug("[confirmUsername] Failed to reserve confirm username: {} ({})",
                         e.getMessage(),
                         e.getClass().getSimpleName());

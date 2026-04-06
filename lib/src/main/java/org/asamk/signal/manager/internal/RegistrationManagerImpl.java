@@ -45,6 +45,7 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.AlreadyVerifiedException;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
+import org.whispersystems.signalservice.api.push.exceptions.MustRequestNewCodeException;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 
@@ -262,6 +263,8 @@ public class RegistrationManagerImpl implements RegistrationManager {
         final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
         try {
             handleResponseException(registrationApi.verifyAccount(sessionId, verificationCode));
+        } catch (MustRequestNewCodeException e) {
+            throw new IOException("Verification code expired, please request a new one by registering again.", e);
         } catch (AlreadyVerifiedException e) {
             // Already verified so can continue registering
         }

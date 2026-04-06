@@ -117,8 +117,7 @@ import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMess
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
-import org.whispersystems.signalservice.api.push.exceptions.UsernameMalformedException;
-import org.whispersystems.signalservice.api.push.exceptions.UsernameTakenException;
+import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Util;
@@ -411,10 +410,8 @@ public class ManagerImpl implements Manager {
             } else {
                 context.getAccountHelper().reserveUsernameFromNickname(username);
             }
-        } catch (UsernameMalformedException e) {
-            throw new InvalidUsernameException("Username is malformed", e);
-        } catch (UsernameTakenException e) {
-            throw new InvalidUsernameException("Username is already registered", e);
+        } catch (NonSuccessfulResponseCodeException e) {
+            throw new InvalidUsernameException("Username is malformed or already taken", e);
         } catch (BaseUsernameException e) {
             throw new InvalidUsernameException(e.getMessage() + " (" + e.getClass().getSimpleName() + ")", e);
         }

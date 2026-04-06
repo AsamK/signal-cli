@@ -1,6 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [0.14.2] - 2026-04-04
+
+### Added
+
+- Add `--voice-note` parameter to `send` command (Thanks @Kevin)
+- Add experimental support for voice calling (Thanks @visigoth)
+
+### Fixed
+
+- Fix `updateGroup` command for adding admins and removing members (Thanks @joeykrim)
 
 ## [0.14.1] - 2026-03-08
 
