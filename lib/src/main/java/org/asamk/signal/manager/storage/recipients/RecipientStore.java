@@ -184,12 +184,12 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     @Override
     public RecipientId resolveRecipient(final ServiceId serviceId) {
+        final var recipientWithAddress = recipientAddressCache.get(serviceId);
+        if (recipientWithAddress != null) {
+            return recipientWithAddress.id();
+        }
         try (final var connection = database.getConnection()) {
             connection.setAutoCommit(false);
-            final var recipientWithAddress = recipientAddressCache.get(serviceId);
-            if (recipientWithAddress != null) {
-                return recipientWithAddress.id();
-            }
             final var recipientId = resolveRecipientLocked(connection, serviceId);
             connection.commit();
             return recipientId;
