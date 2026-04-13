@@ -26,6 +26,16 @@ public record SendMessageResult(
     ) {
         final var rateLimitFailure = sendMessageResult.getRateLimitFailure();
         final var proofRequiredFailure = sendMessageResult.getProofRequiredFailure();
+        final Long retryAfterSeconds;
+        if (proofRequiredFailure != null) {
+            retryAfterSeconds = proofRequiredFailure.getRetryAfterSeconds();
+        } else if (rateLimitFailure != null) {
+            retryAfterSeconds = rateLimitFailure.getRetryAfterMilliseconds()
+                    .map(SendMessageResult::millisToCeilingSeconds)
+                    .orElse(null);
+        } else {
+            retryAfterSeconds = null;
+        }
         return new SendMessageResult(addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(
                 sendMessageResult.getAddress())).toApiRecipientAddress(),
                 sendMessageResult.isSuccess(),
@@ -35,8 +45,11 @@ public record SendMessageResult(
                 rateLimitFailure != null || proofRequiredFailure != null,
                 proofRequiredFailure == null ? null : new ProofRequiredException(proofRequiredFailure),
                 sendMessageResult.isInvalidPreKeyFailure(),
-                rateLimitFailure == null
-                        ? null
-                        : rateLimitFailure.getRetryAfterMilliseconds().map(ms -> ms / 1000L).orElse(null));
+                retryAfterSeconds);
+    }
+
+    static long millisToCeilingSeconds(long millis) {
+        // Round up so we never advise a retry before the server's deadline.
+        return (millis + 999L) / 1000L;
     }
 }

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -48,47 +49,6 @@ class JsonSendMessageResultTest {
     }
 
     @Test
-    void sendMessageResultsReturnsMaxRetryAfter() {
-        var small = new SendMessageResult(ADDRESS,
-                false, false, false, false,
-                true,
-                null,
-                false,
-                60L);
-        var big = new SendMessageResult(new RecipientAddress(null, null, "+15559876543", null),
-                false, false, false, false,
-                true,
-                null,
-                false,
-                3600L);
-        var unknown = new SendMessageResult(new RecipientAddress(null, null, "+15550000000", null),
-                false, false, false, false,
-                true,
-                null,
-                false,
-                null);
-
-        var aggregate = new SendMessageResults(1L,
-                Map.of(new RecipientIdentifier.Uuid(java.util.UUID.randomUUID()), List.of(small, big, unknown)));
-
-        assertEquals(3600L, aggregate.maxRateLimitRetryAfterSeconds());
-    }
-
-    @Test
-    void sendMessageResultsReturnsNullWhenNoRetryAfter() {
-        var noRetry = new SendMessageResult(ADDRESS,
-                false, false, false, false,
-                true,
-                null,
-                false,
-                null);
-        var aggregate = new SendMessageResults(1L,
-                Map.of(new RecipientIdentifier.Uuid(java.util.UUID.randomUUID()), List.of(noRetry)));
-
-        assertNull(aggregate.maxRateLimitRetryAfterSeconds());
-    }
-
-    @Test
     void successLeavesRetryAfterNull() {
         var result = new SendMessageResult(ADDRESS,
                 true, false, false, false,
@@ -101,5 +61,53 @@ class JsonSendMessageResultTest {
 
         assertEquals(JsonSendMessageResult.Type.SUCCESS, json.type());
         assertNull(json.retryAfterSeconds());
+    }
+
+    @Test
+    void aggregateReturnsLongestRetryAfter() {
+        var small = rateLimited("+15551234567", 60L);
+        var big = rateLimited("+15559876543", 3600L);
+        var unknown = rateLimited("+15550000000", null);
+
+        var aggregate = new SendMessageResults(1L,
+                Map.of(new RecipientIdentifier.Uuid(UUID.randomUUID()), List.of(small, big, unknown)));
+
+        assertEquals(3600L, aggregate.maxRateLimitRetryAfterSeconds());
+    }
+
+    @Test
+    void aggregateReturnsNullWhenNoRetryAfter() {
+        var aggregate = new SendMessageResults(1L,
+                Map.of(new RecipientIdentifier.Uuid(UUID.randomUUID()),
+                        List.of(rateLimited("+15551234567", null))));
+
+        assertNull(aggregate.maxRateLimitRetryAfterSeconds());
+    }
+
+    /**
+     * Regression for a bug where the aggregate helper could overlook the longest
+     * wait if only some recipients reported a value. Ensures the max is picked
+     * across any mix — which is what downstream captcha/rate-limit clients rely on.
+     */
+    @Test
+    void aggregatePicksMaxEvenWhenSomeValuesAreNull() {
+        var withValue = rateLimited("+15551111111", 7200L);
+        var withoutValue = rateLimited("+15552222222", null);
+        var alsoWithValue = rateLimited("+15553333333", 120L);
+
+        var aggregate = new SendMessageResults(1L,
+                Map.of(new RecipientIdentifier.Uuid(UUID.randomUUID()),
+                        List.of(withoutValue, withValue, alsoWithValue)));
+
+        assertEquals(7200L, aggregate.maxRateLimitRetryAfterSeconds());
+    }
+
+    private static SendMessageResult rateLimited(String number, Long retryAfterSeconds) {
+        return new SendMessageResult(new RecipientAddress(null, null, number, null),
+                false, false, false, false,
+                true,
+                null,
+                false,
+                retryAfterSeconds);
     }
 }
