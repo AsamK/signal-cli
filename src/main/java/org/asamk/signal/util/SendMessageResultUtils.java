@@ -59,8 +59,10 @@ public class SendMessageResultUtils {
             if (sendMessageResults.hasOnlyUntrustedIdentity()) {
                 throw new UntrustedKeyErrorException("Failed to send message due to untrusted identities");
             } else if (sendMessageResults.hasOnlyRateLimitFailure()) {
+                final var retryAfter = sendMessageResults.maxRateLimitRetryAfterSeconds();
+                final var nextAttempt = retryAfter == null ? 0L : System.currentTimeMillis() + retryAfter * 1000L;
                 throw new RateLimitErrorException("Failed to send message due to rate limiting",
-                        new RateLimitException(0));
+                        new RateLimitException(nextAttempt));
             } else {
                 throw new UserErrorException("Failed to send message");
             }
@@ -110,7 +112,10 @@ public class SendMessageResultUtils {
         } else if (result.isNetworkFailure()) {
             return String.format("Network failure for \"%s\"", identifier);
         } else if (result.isRateLimitFailure()) {
-            return String.format("Rate limit failure for \"%s\"", identifier);
+            final var retryAfter = result.rateLimitRetryAfterSeconds();
+            return retryAfter != null
+                    ? String.format("Rate limit failure for \"%s\", retry after %d seconds", identifier, retryAfter)
+                    : String.format("Rate limit failure for \"%s\"", identifier);
         } else if (result.isUnregisteredFailure()) {
             return String.format("Unregistered user \"%s\"", identifier);
         } else if (result.isIdentityFailure()) {

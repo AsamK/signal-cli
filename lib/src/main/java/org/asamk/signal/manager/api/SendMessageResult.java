@@ -11,11 +11,12 @@ public record SendMessageResult(
         boolean isIdentityFailure,
         boolean isRateLimitFailure,
         ProofRequiredException proofRequiredFailure,
-        boolean isInvalidPreKeyFailure
+        boolean isInvalidPreKeyFailure,
+        Long rateLimitRetryAfterSeconds
 ) {
 
     public static SendMessageResult unregisteredFailure(RecipientAddress address) {
-        return new SendMessageResult(address, false, false, true, false, false, null, false);
+        return new SendMessageResult(address, false, false, true, false, false, null, false, null);
     }
 
     public static SendMessageResult from(
@@ -23,16 +24,19 @@ public record SendMessageResult(
             RecipientResolver recipientResolver,
             RecipientAddressResolver addressResolver
     ) {
+        final var rateLimitFailure = sendMessageResult.getRateLimitFailure();
+        final var proofRequiredFailure = sendMessageResult.getProofRequiredFailure();
         return new SendMessageResult(addressResolver.resolveRecipientAddress(recipientResolver.resolveRecipient(
                 sendMessageResult.getAddress())).toApiRecipientAddress(),
                 sendMessageResult.isSuccess(),
                 sendMessageResult.isNetworkFailure(),
                 sendMessageResult.isUnregisteredFailure(),
                 sendMessageResult.getIdentityFailure() != null,
-                sendMessageResult.getRateLimitFailure() != null || sendMessageResult.getProofRequiredFailure() != null,
-                sendMessageResult.getProofRequiredFailure() == null
+                rateLimitFailure != null || proofRequiredFailure != null,
+                proofRequiredFailure == null ? null : new ProofRequiredException(proofRequiredFailure),
+                sendMessageResult.isInvalidPreKeyFailure(),
+                rateLimitFailure == null
                         ? null
-                        : new ProofRequiredException(sendMessageResult.getProofRequiredFailure()),
-                sendMessageResult.isInvalidPreKeyFailure());
+                        : rateLimitFailure.getRetryAfterMilliseconds().map(ms -> ms / 1000L).orElse(null));
     }
 }
