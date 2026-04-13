@@ -15,6 +15,32 @@ public record SendMessageResult(
         Long rateLimitRetryAfterSeconds
 ) {
 
+    /**
+     * Source-compatible constructor for callers built against the pre-retry-after record shape.
+     * Delegates to the canonical constructor with a null retry-after, which is the correct value
+     * for any result not produced by {@link #from}.
+     */
+    public SendMessageResult(
+            RecipientAddress address,
+            boolean isSuccess,
+            boolean isNetworkFailure,
+            boolean isUnregisteredFailure,
+            boolean isIdentityFailure,
+            boolean isRateLimitFailure,
+            ProofRequiredException proofRequiredFailure,
+            boolean isInvalidPreKeyFailure
+    ) {
+        this(address,
+                isSuccess,
+                isNetworkFailure,
+                isUnregisteredFailure,
+                isIdentityFailure,
+                isRateLimitFailure,
+                proofRequiredFailure,
+                isInvalidPreKeyFailure,
+                null);
+    }
+
     public static SendMessageResult unregisteredFailure(RecipientAddress address) {
         return new SendMessageResult(address, false, false, true, false, false, null, false, null);
     }

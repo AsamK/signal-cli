@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Send message results now surface server-advised retry time for plain rate-limit (HTTP 413) failures, not only for proof-required challenges. The `retryAfterSeconds` field in JSON-RPC `SendMessageResult` is populated whenever the server sends a `Retry-After` header. The canonical way to distinguish proof-required failures remains `token != null`. Text output includes "retry after N seconds" when known.
+
 ## [0.14.2] - 2026-04-04
 
 ### Added
