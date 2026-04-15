@@ -1168,6 +1168,7 @@ signal-cli -a ACCOUNT trust -a RECIPIENT
 * *3*: Server or IO error
 * *4*: Sending failed due to untrusted key
 * *5*: Server rate limiting error
+* *6*: CAPTCHA was rejected
 
 == Files
 
