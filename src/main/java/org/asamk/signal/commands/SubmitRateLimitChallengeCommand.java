@@ -3,9 +3,9 @@ package org.asamk.signal.commands;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
+import org.asamk.signal.commands.exceptions.CaptchaRejectedErrorException;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
-import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.CaptchaRejectedException;
 import org.asamk.signal.output.OutputWriter;
@@ -41,8 +41,8 @@ public class SubmitRateLimitChallengeCommand implements JsonRpcLocalCommand {
         } catch (IOException e) {
             throw new IOErrorException("Submit challenge error: " + e.getMessage(), e);
         } catch (CaptchaRejectedException e) {
-            throw new UserErrorException(
-                    "Captcha rejected, it may be outdated, already used or solved from a different IP address.");
+            throw new CaptchaRejectedErrorException(
+                    "Captcha rejected, it may be outdated, already used or solved from a different IP address.", e);
         }
     }
 }

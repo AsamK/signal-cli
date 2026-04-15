@@ -22,6 +22,7 @@ import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
+import org.asamk.signal.commands.exceptions.CaptchaRejectedErrorException;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.RateLimitErrorException;
@@ -128,6 +129,7 @@ public class Main {
             case IOErrorException ioErrorException -> 3;
             case UntrustedKeyErrorException untrustedKeyErrorException -> 4;
             case RateLimitErrorException rateLimitErrorException -> 5;
+            case CaptchaRejectedErrorException captchaRejectedErrorException -> 6;
             case null -> 2;
         };
     }

@@ -12,6 +12,7 @@ import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.JsonRpcMultiCommand;
 import org.asamk.signal.commands.JsonRpcRegistrationCommand;
 import org.asamk.signal.commands.JsonRpcSingleCommand;
+import org.asamk.signal.commands.exceptions.CaptchaRejectedErrorException;
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.RateLimitErrorException;
@@ -39,6 +40,7 @@ public class SignalJsonRpcCommandHandler {
     private static final int IO_ERROR = -3;
     private static final int UNTRUSTED_KEY_ERROR = -4;
     private static final int RATELIMIT_ERROR = -5;
+    private static final int CAPTCHA_REJECTED_ERROR = -6;
 
     private final Manager m;
     private final MultiAccountManager c;
@@ -256,6 +258,10 @@ public class SignalJsonRpcCommandHandler {
                         e.getMessage(),
                         getErrorDataNode(objectMapper, result)));
                 case RateLimitErrorException e -> throw new JsonRpcException(new JsonRpcResponse.Error(RATELIMIT_ERROR,
+                        e.getMessage(),
+                        getErrorDataNode(objectMapper, result)));
+                case CaptchaRejectedErrorException e -> throw new JsonRpcException(new JsonRpcResponse.Error(
+                        CAPTCHA_REJECTED_ERROR,
                         e.getMessage(),
                         getErrorDataNode(objectMapper, result)));
                 case UnexpectedErrorException e -> {
