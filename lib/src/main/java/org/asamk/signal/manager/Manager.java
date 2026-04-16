@@ -35,6 +35,7 @@ import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.RateLimitStatus;
 import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.Recipient;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -155,6 +156,12 @@ public interface Manager extends Closeable {
             String challenge,
             String captcha
     ) throws IOException, CaptchaRejectedException;
+
+    /**
+     * Return the most recent rate-limit state observed from send results, or an inactive
+     * status if no rate-limit has been seen (or the previous window has elapsed).
+     */
+    RateLimitStatus getRateLimitStatus();
 
     List<Device> getLinkedDevices() throws IOException;
 

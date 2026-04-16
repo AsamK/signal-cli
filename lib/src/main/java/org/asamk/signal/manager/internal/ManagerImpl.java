@@ -54,6 +54,7 @@ import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.RateLimitStatus;
 import org.asamk.signal.manager.api.ReceiveConfig;
 import org.asamk.signal.manager.api.Recipient;
 import org.asamk.signal.manager.api.RecipientIdentifier;
@@ -175,6 +176,10 @@ public class ManagerImpl implements Manager {
     private final List<Runnable> addressChangedListeners = new ArrayList<>();
     private final CompositeDisposable disposable = new CompositeDisposable();
     private final AtomicLong lastMessageTimestamp = new AtomicLong();
+    private final java.util.concurrent.atomic.AtomicReference<RateLimitSnapshot> rateLimitSnapshot = new java.util.concurrent.atomic.AtomicReference<>();
+
+    /** Internal snapshot of a rate-limit event — captured from send results, read via getRateLimitStatus(). */
+    private record RateLimitSnapshot(long expiresAtEpochMs, String challengeToken) {}
 
     public ManagerImpl(
             SignalAccount account,
@@ -468,6 +473,27 @@ public class ManagerImpl implements Manager {
         } catch (org.whispersystems.signalservice.internal.push.exceptions.CaptchaRejectedException ignored) {
             throw new CaptchaRejectedException();
         }
+        rateLimitSnapshot.set(null);
+    }
+
+    @Override
+    public RateLimitStatus getRateLimitStatus() {
+        final var snapshot = rateLimitSnapshot.get();
+        if (snapshot == null) {
+            return RateLimitStatus.inactive();
+        }
+        final var remainingMs = snapshot.expiresAtEpochMs() - System.currentTimeMillis();
+        if (remainingMs <= 0) {
+            rateLimitSnapshot.compareAndSet(snapshot, null);
+            return RateLimitStatus.inactive();
+        }
+        final var retryAfterSeconds = (remainingMs + 999L) / 1000L;
+        final var expiresAtEpochSeconds = (snapshot.expiresAtEpochMs() + 999L) / 1000L;
+        return new RateLimitStatus(true,
+                snapshot.challengeToken() != null,
+                retryAfterSeconds,
+                snapshot.challengeToken(),
+                expiresAtEpochSeconds);
     }
 
     @Override
@@ -720,7 +746,21 @@ public class ManagerImpl implements Manager {
     }
 
     private SendMessageResult toSendMessageResult(final org.whispersystems.signalservice.api.messages.SendMessageResult result) {
-        return SendMessageResult.from(result, account.getRecipientResolver(), account.getRecipientAddressResolver());
+        final var apiResult = SendMessageResult.from(result,
+                account.getRecipientResolver(),
+                account.getRecipientAddressResolver());
+        recordRateLimitState(apiResult);
+        return apiResult;
+    }
+
+    private void recordRateLimitState(final SendMessageResult apiResult) {
+        if (!apiResult.isRateLimitFailure() || apiResult.rateLimitRetryAfterMilliseconds() == null) {
+            return;
+        }
+        final var proofRequired = apiResult.proofRequiredFailure();
+        final var token = proofRequired == null ? null : proofRequired.getToken();
+        final var expiresAt = System.currentTimeMillis() + apiResult.rateLimitRetryAfterMilliseconds();
+        rateLimitSnapshot.set(new RateLimitSnapshot(expiresAt, token));
     }
 
     private SendMessageResults sendTypingMessage(

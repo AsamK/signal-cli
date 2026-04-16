@@ -238,6 +238,12 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public org.asamk.signal.manager.api.RateLimitStatus getRateLimitStatus() {
+        // D-Bus does not currently expose rate-limit state; clients should observe send results instead.
+        return org.asamk.signal.manager.api.RateLimitStatus.inactive();
+    }
+
+    @Override
     public List<Device> getLinkedDevices() throws IOException {
         final var thisDevice = signal.getThisDevice();
         return signal.listDevices().stream().map(d -> {
