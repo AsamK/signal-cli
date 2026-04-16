@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `getRateLimitStatus` JSON-RPC/CLI command returning the current rate-limit state for the account (active flag, `retryAfterSeconds`, `challengeToken`, `expiresAtEpochSeconds`). Useful for admin UIs, monitoring, and clients that want to query current state without triggering a send.
+
 ### Changed
 
 - Send message results now surface server-advised retry time for plain rate-limit (HTTP 413) failures, not only for proof-required challenges. The `retryAfterSeconds` field in JSON-RPC `SendMessageResult` is populated whenever the server sends a `Retry-After` header. The canonical way to distinguish proof-required failures remains `token != null`. Text output includes "retry after N seconds" when known.

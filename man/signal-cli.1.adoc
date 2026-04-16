@@ -1119,6 +1119,20 @@ The challenge token from the failed send attempt.
 *--captcha* CAPTCHA::
 The captcha result, starting with signalcaptcha://
 
+=== getRateLimitStatus
+
+Return the current rate-limit state for this account, or an inactive status if no rate limit is active.
+
+State is tracked from observed send results: the status becomes active when a send fails with a rate-limit error, clears after a successful `submitRateLimitChallenge`, and auto-expires when the server-advised retry-after deadline passes.
+
+With JSON output the response has the following fields:
+
+- `active`: boolean, true if a rate-limit window is currently active
+- `proofRequired`: boolean, true if a captcha challenge must be solved via `submitRateLimitChallenge`
+- `retryAfterSeconds`: seconds remaining until the limit expires (omitted when `active` is false)
+- `challengeToken`: the challenge token to pass to `submitRateLimitChallenge` (only present when `proofRequired` is true)
+- `expiresAtEpochSeconds`: Unix timestamp when the rate-limit window expires (omitted when `active` is false)
+
 === version
 
 Show version information.
