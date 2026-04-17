@@ -102,9 +102,6 @@ public class ReceiveHelper {
         signalWebSocket.connect();
         signalWebSocket.registerKeepAliveToken("receive");
 
-        final var unauthenticatedSignalWebSocket = dependencies.getUnauthenticatedSignalWebSocket();
-        unauthenticatedSignalWebSocket.registerKeepAliveToken("receive");
-
         try {
             receiveMessagesInternal(signalWebSocket, timeout, maxMessages, handler, queuedActions);
         } finally {
@@ -113,7 +110,6 @@ public class ReceiveHelper {
             queuedActions.clear();
             signalWebSocket.removeKeepAliveToken("receive");
             signalWebSocket.disconnect();
-            unauthenticatedSignalWebSocket.removeKeepAliveToken("receive");
             webSocketStateDisposable.dispose();
             shouldStop = false;
         }
