@@ -407,6 +407,10 @@ public interface Manager extends Closeable {
 
     void addClosedListener(Runnable listener);
 
+    void addUnidentifiedKeepAlive(String token);
+
+    void removeUnidentifiedKeepAlive(String token);
+
     InputStream retrieveAttachment(final String id) throws IOException;
 
     InputStream retrieveContactAvatar(final RecipientIdentifier.Single recipient) throws IOException, UnregisteredRecipientException;

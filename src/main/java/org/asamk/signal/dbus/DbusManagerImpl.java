@@ -916,6 +916,14 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public void addUnidentifiedKeepAlive(final String token) {
+    }
+
+    @Override
+    public void removeUnidentifiedKeepAlive(final String token) {
+    }
+
+    @Override
     public void addCallEventListener(final CallEventListener listener) {
         // Not supported over DBus
     }
