@@ -18,9 +18,9 @@ val libsignalClientPath = project.findProperty("libsignal_client_path")?.toStrin
 
 dependencies {
     if (libsignalClientPath == null) {
-        implementation(libs.signalservice)
+        implementation(libs.signalnetwork)
     } else {
-        implementation(libs.signalservice) {
+        implementation(libs.signalnetwork) {
             exclude(group = "org.signal", module = "libsignal-client")
         }
         implementation(files(libsignalClientPath))

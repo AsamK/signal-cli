@@ -6,6 +6,13 @@ import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.libsignal.net.Network;
 import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
+import org.signal.network.api.CallingApi;
+import org.signal.network.api.CdsApi;
+import org.signal.network.api.CertificateApi;
+import org.signal.network.api.LinkDeviceApi;
+import org.signal.network.api.RateLimitChallengeApi;
+import org.signal.network.api.UsernameApi;
+import org.signal.network.service.StorageServiceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -15,26 +22,19 @@ import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.account.AccountApi;
 import org.whispersystems.signalservice.api.attachment.AttachmentApi;
-import org.whispersystems.signalservice.api.calling.CallingApi;
-import org.whispersystems.signalservice.api.cds.CdsApi;
-import org.whispersystems.signalservice.api.certificate.CertificateApi;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.keys.KeysApi;
-import org.whispersystems.signalservice.api.link.LinkDeviceApi;
 import org.whispersystems.signalservice.api.message.MessageApi;
 import org.whispersystems.signalservice.api.profiles.ProfileApi;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.ratelimit.RateLimitChallengeApi;
 import org.whispersystems.signalservice.api.registration.RegistrationApi;
 import org.whispersystems.signalservice.api.services.ProfileService;
 import org.whispersystems.signalservice.api.storage.StorageServiceApi;
-import org.whispersystems.signalservice.api.storage.StorageServiceRepository;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
-import org.whispersystems.signalservice.api.username.UsernameApi;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.SignalWebSocket;
@@ -243,8 +243,8 @@ public class SignalDependencies {
                         getPushServiceSocket()));
     }
 
-    public StorageServiceRepository getStorageServiceRepository() {
-        return new StorageServiceRepository(getStorageServiceApi());
+    public StorageServiceService getStorageServiceRepository() {
+        return new StorageServiceService(getStorageServiceApi());
     }
 
     public CertificateApi getCertificateApi() {

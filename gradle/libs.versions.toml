@@ -3,6 +3,7 @@ slf4j = "2.0.17"
 junit = "6.0.3"
 micronaut-json-schema = "2.0.0-M8"
 micronaut-core = "4.9.3"
+signal-service = "2.15.3_unofficial_145"
 
 [libraries]
 bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.84"
@@ -18,7 +19,7 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 logback = "ch.qos.logback:logback-classic:1.5.32"
 
-signalservice = "com.github.turasa:signal-service-java:2.15.3_unofficial_144"
+signalnetwork = { module = "com.github.turasa:signal-network", version.ref = "signal-service" }
 sqlite = "org.xerial:sqlite-jdbc:3.53.0.0"
 hikari = "com.zaxxer:HikariCP:7.0.2"
 junit-jupiter-bom = { module = "org.junit:junit-bom", version.ref = "junit" }

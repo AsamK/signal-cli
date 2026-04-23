@@ -17,6 +17,9 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.core.models.storageservice.StorageKey;
 import org.signal.core.util.SetUtil;
 import org.signal.libsignal.protocol.InvalidKeyException;
+import org.signal.network.service.StorageServiceService;
+import org.signal.network.service.StorageServiceService.ManifestIfDifferentVersionResult;
+import org.signal.network.service.StorageServiceService.WriteStorageRecordsResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
@@ -25,9 +28,6 @@ import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
 import org.whispersystems.signalservice.api.storage.StorageRecordConvertersKt;
-import org.whispersystems.signalservice.api.storage.StorageServiceRepository;
-import org.whispersystems.signalservice.api.storage.StorageServiceRepository.ManifestIfDifferentVersionResult;
-import org.whispersystems.signalservice.api.storage.StorageServiceRepository.WriteStorageRecordsResult;
 import org.whispersystems.signalservice.internal.storage.protos.ManifestRecord;
 import org.whispersystems.signalservice.internal.storage.protos.StorageRecord;
 
@@ -504,7 +504,7 @@ public class StorageHelper {
         final var result = dependencies.getStorageServiceRepository()
                 .readStorageRecords(storageKey, manifest.recordIkm, storageIds);
         return switch (result) {
-            case StorageServiceRepository.StorageRecordResult.DecryptionError decryptionError -> {
+            case StorageServiceService.StorageRecordResult.DecryptionError decryptionError -> {
                 if (decryptionError.getException() instanceof InvalidKeyException) {
                     logger.warn("Failed to read storage records, ignoring.");
                     yield List.of();
@@ -514,11 +514,11 @@ public class StorageHelper {
                     throw new IOException(decryptionError.getException());
                 }
             }
-            case StorageServiceRepository.StorageRecordResult.NetworkError networkError ->
+            case StorageServiceService.StorageRecordResult.NetworkError networkError ->
                     throw networkError.getException();
-            case StorageServiceRepository.StorageRecordResult.StatusCodeError statusCodeError ->
+            case StorageServiceService.StorageRecordResult.StatusCodeError statusCodeError ->
                     throw statusCodeError.getException();
-            case StorageServiceRepository.StorageRecordResult.Success success -> success.getRecords();
+            case StorageServiceService.StorageRecordResult.Success success -> success.getRecords();
             default -> throw new IllegalStateException("Unexpected value: " + result);
         };
     }
