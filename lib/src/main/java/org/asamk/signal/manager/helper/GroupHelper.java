@@ -38,8 +38,6 @@ import org.signal.storageservice.storage.protos.groups.GroupChangeResponse;
 import org.signal.storageservice.storage.protos.groups.local.DecryptedGroup;
 import org.signal.storageservice.storage.protos.groups.local.DecryptedGroupChange;
 import org.signal.storageservice.storage.protos.groups.local.DecryptedGroupJoinInfo;
-import org.signal.storageservice.storage.protos.groups.local.DecryptedMember;
-import org.signal.storageservice.storage.protos.groups.local.DecryptedRequestingMember;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.groupsv2.DecryptedGroupChangeLog;
@@ -559,18 +557,16 @@ public class GroupHelper {
 
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {
         for (var member : group.members) {
-            storeProfileKeyForDecryptedMemberIfMissing(member);
+            final var serviceId = ServiceId.parseOrThrow(member.aciBytes);
+            storeProfileKeyIfMissing(serviceId, member.profileKey.toByteArray());
         }
         for (var member : group.requestingMembers) {
-            storeProfileKeyForDecryptedRequestingMemberIfMissing(member);
+            final var serviceId = ServiceId.parseOrThrow(member.aciBytes);
+            storeProfileKeyIfMissing(serviceId, member.profileKey.toByteArray());
         }
     }
 
-    private void storeProfileKeyForDecryptedMemberIfMissing(final DecryptedMember member) {
-        if (member == null) {
-            return;
-        }
-        final var serviceId = ServiceId.parseOrThrow(member.aciBytes);
+    private void storeProfileKeyIfMissing(final ServiceId serviceId, final byte[] profileKeyBytes) {
         final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
         final var profileStore = account.getProfileStore();
         if (profileStore.getProfileKey(recipientId) != null) {
@@ -578,24 +574,7 @@ public class GroupHelper {
             return;
         }
         try {
-            profileStore.storeProfileKey(recipientId, new ProfileKey(member.profileKey.toByteArray()));
-        } catch (InvalidInputException ignored) {
-        }
-    }
-
-    private void storeProfileKeyForDecryptedRequestingMemberIfMissing(final DecryptedRequestingMember member) {
-        if (member == null) {
-            return;
-        }
-        final var serviceId = ServiceId.parseOrThrow(member.aciBytes);
-        final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
-        final var profileStore = account.getProfileStore();
-        if (profileStore.getProfileKey(recipientId) != null) {
-            // We already have a profile key, not updating it from a non-authoritative source
-            return;
-        }
-        try {
-            profileStore.storeProfileKey(recipientId, new ProfileKey(member.profileKey.toByteArray()));
+            profileStore.storeProfileKey(recipientId, new ProfileKey(profileKeyBytes));
         } catch (InvalidInputException ignored) {
         }
     }
