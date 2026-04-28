@@ -169,6 +169,12 @@ public class HttpServerHandler implements AutoCloseable {
             httpExchange.sendResponseHeaders(200, 0);
             final var sender = new ServerSentEventSender(httpExchange.getResponseBody());
 
+            // Flush HTTP response headers to the client immediately.
+            // Without this, the JVM HttpServer buffers everything until a later write
+            // in the keep-alive loop (15 s), causing clients with shorter timeouts
+            // (e.g. 10 s) to abort before receiving the initial response.
+            httpExchange.getResponseBody().flush();
+
             final var shouldStop = new AtomicBoolean(false);
             final var handlers = subscribeReceiveHandlers(managers, sender, () -> {
                 shouldStop.set(true);
