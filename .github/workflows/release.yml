@@ -75,6 +75,16 @@ jobs:
           asset_name: signal-cli-${{ steps.version.outputs.version }}-Linux-client.tar.gz
           asset_content_type: application/x-compressed-tar # .tar.gz
 
+      - name: Upload JSON schemas archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: signal-cli-${{ steps.version.outputs.version }}-json-schemas.tar.gz
+          asset_name: signal-cli-${{ steps.version.outputs.version }}-json-schemas.tar.gz
+          asset_content_type: application/x-compressed-tar # .tar.gz
+
   build-container:
     needs: release
     runs-on: ubuntu-latest
