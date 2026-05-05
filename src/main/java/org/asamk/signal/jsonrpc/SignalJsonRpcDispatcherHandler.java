@@ -25,12 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class SignalJsonRpcDispatcherHandler {
 
@@ -41,8 +43,8 @@ public class SignalJsonRpcDispatcherHandler {
     private final JsonRpcReader jsonRpcReader;
     private final boolean noReceiveOnStart;
 
-    private final Map<Integer, List<Pair<Manager, Manager.ReceiveMessageHandler>>> receiveHandlers = new HashMap<>();
-    private final Map<Integer, List<Pair<Manager, Manager.CallEventListener>>> callEventHandlers = new HashMap<>();
+    private final Map<Integer, ArrayList<Pair<Manager, Manager.ReceiveMessageHandler>>> receiveHandlers = new HashMap<>();
+    private final Map<Integer, ArrayList<Pair<Manager, Manager.CallEventListener>>> callEventHandlers = new HashMap<>();
     private SignalJsonRpcCommandHandler commandHandler;
 
     public SignalJsonRpcDispatcherHandler(
@@ -91,7 +93,9 @@ public class SignalJsonRpcDispatcherHandler {
 
     private int subscribeCallEvents(final Collection<Manager> managers) {
         final var subscriptionId = nextSubscriptionId.getAndIncrement();
-        final var listeners = managers.stream().map(m -> createCallEventHandler(m, subscriptionId)).toList();
+        final var listeners = managers.stream()
+                .map(m -> createCallEventHandler(m, subscriptionId))
+                .collect(Collectors.toCollection(ArrayList::new));
         callEventHandlers.put(subscriptionId, listeners);
         return subscriptionId;
     }
@@ -146,7 +150,7 @@ public class SignalJsonRpcDispatcherHandler {
         final var subscriptionId = nextSubscriptionId.getAndIncrement();
         final var handlers = managers.stream()
                 .map(m -> createReceiveHandler(m, subscriptionId, internalSubscription))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
         receiveHandlers.put(subscriptionId, handlers);
 
         return subscriptionId;
