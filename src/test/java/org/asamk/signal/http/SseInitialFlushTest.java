@@ -326,8 +326,7 @@ class SseInitialFlushTest {
         }
 
         @Override
-        public SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) {
-            return null;
+        public void sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) {
         }
 
         @Override

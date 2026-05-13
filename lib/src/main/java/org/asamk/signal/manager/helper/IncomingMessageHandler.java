@@ -142,10 +142,11 @@ public final class IncomingMessageHandler {
         final var actions = new ArrayList<HandleAction>();
         SignalServiceContent content = null;
         Exception exception = null;
-        envelope.getSourceServiceId().map(ServiceId::parseOrNull)
-                // Store uuid if we don't have it already
-                // uuid in envelope is sent by server
-                .ifPresent(serviceId -> account.getRecipientResolver().resolveRecipient(serviceId));
+        if (envelope.getSourceServiceId() != null) {
+            // Store uuid if we don't have it already
+            // uuid in envelope is sent by server
+            account.getRecipientResolver().resolveRecipient(envelope.getSourceServiceId());
+        }
         if (!envelope.isReceipt()) {
             final var destination = getDestination(envelope).serviceId();
             try {
@@ -874,11 +875,6 @@ public final class IncomingMessageHandler {
 
         final var selfAddress = isSync ? source : destination;
         final var conversationPartnerAddress = isSync ? destination : source;
-        if (conversationPartnerAddress != null && message.isEndSession()) {
-            account.getAccountData(selfAddress.serviceId())
-                    .getSessionStore()
-                    .deleteAllSessions(conversationPartnerAddress.serviceId());
-        }
         if (message.isExpirationUpdate() || message.getBody().isPresent()) {
             if (message.getGroupContext().isPresent()) {
                 final var groupContext = message.getGroupContext().get();
@@ -1047,7 +1043,7 @@ public final class IncomingMessageHandler {
     }
 
     private SignalServiceAddress getSenderAddress(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        final var serviceId = envelope.getSourceServiceId().map(ServiceId::parseOrNull).orElse(null);
+        final var serviceId = envelope.getSourceServiceId();
         if (!envelope.isUnidentifiedSender() && serviceId != null) {
             return new SignalServiceAddress(serviceId);
         } else if (content != null) {
@@ -1058,7 +1054,7 @@ public final class IncomingMessageHandler {
     }
 
     private DeviceAddress getSender(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        final var serviceId = envelope.getSourceServiceId().map(ServiceId::parseOrNull).orElse(null);
+        final var serviceId = envelope.getSourceServiceId();
         if (!envelope.isUnidentifiedSender() && serviceId != null) {
             return new DeviceAddress(account.getRecipientResolver().resolveRecipient(serviceId),
                     serviceId,
