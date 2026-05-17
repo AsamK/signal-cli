@@ -448,6 +448,14 @@ class SseInitialFlushTest {
         }
 
         @Override
+        public void addUnidentifiedKeepAlive(String token) {
+        }
+
+        @Override
+        public void removeUnidentifiedKeepAlive(String token) {
+        }
+
+        @Override
         public InputStream retrieveAttachment(String id) {
             return null;
         }
