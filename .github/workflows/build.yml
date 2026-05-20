@@ -15,7 +15,7 @@ jobs:
       matrix:
         # java="25" is the LTS Java version used in reproducible builds script (default in Containerfile).
         # More Java versions can be added to test compatibility, eg. "26".
-        java: ["25"]
+        java: ["25", "26"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

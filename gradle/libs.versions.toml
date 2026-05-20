@@ -1,9 +1,9 @@
 [versions]
-slf4j = "2.0.17"
+slf4j = "2.0.18"
 junit = "6.0.3"
-micronaut-json-schema = "2.0.0-M8"
-micronaut-core = "4.9.3"
-signal-service = "2.15.3_unofficial_145"
+micronaut-json-schema = "2.0.0"
+micronaut-core = "5.0.0"
+signal-service = "2.15.3_unofficial_146"
 
 [libraries]
 bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.84"
@@ -20,7 +20,7 @@ slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 logback = "ch.qos.logback:logback-classic:1.5.32"
 
 signalnetwork = { module = "com.github.turasa:signal-network", version.ref = "signal-service" }
-sqlite = "org.xerial:sqlite-jdbc:3.53.0.0"
+sqlite = "org.xerial:sqlite-jdbc:3.53.1.0"
 hikari = "com.zaxxer:HikariCP:7.0.2"
 junit-jupiter-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }

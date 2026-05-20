@@ -430,8 +430,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
     @Override
     public void sendEndSessionMessage(final List<String> recipients) {
         try {
-            final var results = m.sendEndSessionMessage(getSingleRecipientIdentifiers(recipients, m.getSelfNumber()));
-            checkSendMessageResults(results);
+            m.sendEndSessionMessage(getSingleRecipientIdentifiers(recipients, m.getSelfNumber()));
         } catch (IOException e) {
             throw new Error.Failure(e.getMessage());
         }

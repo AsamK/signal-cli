@@ -6,7 +6,7 @@ ENV SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH
 ENV LANG=C.UTF-8
 ENV LC_CTYPE=en_US.UTF-8
 RUN SNAPSHOT="$(date -u -d "@$SOURCE_DATE_EPOCH" +%Y%m%dT%H%M%SZ)" \
-    && apt install -y make asciidoc-base --update --snapshot "$SNAPSHOT" --no-install-recommends --no-install-suggests
+    && sed -i 's/^deb /deb [snapshot=yes] /' /etc/apt/sources.list && apt update --snapshot "$SNAPSHOT" && apt install -y make asciidoc-base --snapshot "$SNAPSHOT" --no-install-recommends --no-install-suggests
 COPY --chmod=0700 reproducible-builds/entrypoint.sh /usr/local/bin/entrypoint.sh
 WORKDIR /signal-cli
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh", "build" ]

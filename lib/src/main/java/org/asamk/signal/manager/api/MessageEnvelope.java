@@ -157,7 +157,7 @@ public record MessageEnvelope(
                     dataMessage.getExpiresInSeconds(),
                     dataMessage.isExpirationUpdate(),
                     dataMessage.isViewOnce(),
-                    dataMessage.isEndSession(),
+                    false,
                     dataMessage.isProfileKeyUpdate(),
                     dataMessage.getProfileKey().isPresent(),
                     dataMessage.getReaction().map(r -> Reaction.from(r, recipientResolver, addressResolver)),
@@ -1028,7 +1028,7 @@ public record MessageEnvelope(
             final AttachmentFileProvider fileProvider,
             Exception exception
     ) {
-        final var serviceId = envelope.getSourceServiceId().map(ServiceId::parseOrNull).orElse(null);
+        final var serviceId = envelope.getSourceServiceId();
         final var source = !envelope.isUnidentifiedSender() && serviceId != null
                 ? recipientResolver.resolveRecipient(serviceId)
                 : envelope.isUnidentifiedSender() && content != null
