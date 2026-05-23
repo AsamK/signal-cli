@@ -21,9 +21,19 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 public class IOUtils {
 
     public static File createTempFile() throws IOException {
-        final var tempFile = File.createTempFile("signal-cli_tmp_", ".tmp");
-        tempFile.deleteOnExit();
-        return tempFile;
+        final var prefix = "signal-cli_tmp_";
+        final var suffix = ".tmp";
+        try {
+            Set<PosixFilePermission> perms = EnumSet.of(OWNER_READ, OWNER_WRITE);
+            var path = Files.createTempFile(prefix, suffix, PosixFilePermissions.asFileAttribute(perms));
+            var tempFile = path.toFile();
+            tempFile.deleteOnExit();
+            return tempFile;
+        } catch (UnsupportedOperationException e) {
+            final var tempFile = File.createTempFile(prefix, suffix);
+            tempFile.deleteOnExit();
+            return tempFile;
+        }
     }
 
     public static byte[] readFully(InputStream in) throws IOException {
