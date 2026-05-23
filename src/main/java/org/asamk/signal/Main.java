@@ -113,13 +113,13 @@ public class Main {
                 .defaultHelp(false);
         parser.addArgument("-v", "--verbose")
                 .action(Arguments.count())
-                .setDefault(config == null ? null : config.verbose());
+                .setDefault(config == null || config.verbose() == null ? 0 : config.verbose());
         parser.addArgument("--log-file")
                 .type(File.class)
                 .setDefault(config == null || config.logFile() == null ? null : new File(config.logFile()));
         parser.addArgument("--scrub-log")
                 .action(Arguments.storeTrue())
-                .setDefault(config == null ? null : config.scrubLog());
+                .setDefault(config == null || config.scrubLog() == null ? false : config.scrubLog());
 
         try {
             return parser.parseKnownArgs(args, null);
