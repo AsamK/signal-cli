@@ -403,7 +403,7 @@ public class SessionStore implements SignalServiceSessionStore {
     }
 
     private static boolean isActive(SessionRecord record) {
-        return record != null && record.hasSenderChain();
+        return record != null && record.hasSenderChain(0.0);
     }
 
     record Key(String address, int deviceId) {}

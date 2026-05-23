@@ -6544,6 +6544,33 @@
       "allDeclaredFields": true
     },
     {
+      "type": "org.signal.network.api.SenderCertificate",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "setCertificate",
+          "parameterTypes": [
+            "byte[]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.network.api.SenderCertificate$ByteArrayDeserializer",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.signal.network.api.SenderCertificate$ByteArraySerializer"
+    },
+    {
       "type": "org.signal.storageservice.storage.protos.groups.AccessControl",
       "fields": [
         {

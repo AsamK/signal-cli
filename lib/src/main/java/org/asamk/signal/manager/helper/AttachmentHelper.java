@@ -126,7 +126,7 @@ public class AttachmentHelper {
         final var streamLength = streamDetails.getLength();
         final var ciphertextLength = AttachmentCipherStreamUtil.getCiphertextLength(PaddingInputStream.getPaddedSize(
                 streamLength));
-        return dependencies.getMessageSender().getResumableUploadSpec(ciphertextLength);
+        return dependencies.getCdnService().getResumableUploadSpecBlocking(ciphertextLength);
     }
 
     public SignalServiceAttachmentPointer uploadAttachment(String attachment) throws IOException, AttachmentInvalidException {

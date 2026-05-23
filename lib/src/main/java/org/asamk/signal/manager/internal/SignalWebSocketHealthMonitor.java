@@ -1,8 +1,9 @@
 package org.asamk.signal.manager.internal;
 
+import org.jetbrains.annotations.NotNull;
+import org.signal.network.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.Preconditions;
 import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.websocket.HealthMonitor;
 import org.whispersystems.signalservice.api.websocket.SignalWebSocket;
@@ -92,6 +93,11 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
 
     private boolean sendKeepAlives() {
         return needsKeepAlive && webSocket != null && webSocket.shouldSendKeepAlives();
+    }
+
+    @Override
+    public void onReceivedAlerts(@NotNull final String[] strings, final boolean b) {
+        logger.info("Received alerts: {}", String.join(", ", strings));
     }
 
     /**

@@ -3,7 +3,7 @@ slf4j = "2.0.18"
 junit = "6.0.3"
 micronaut-json-schema = "2.0.0"
 micronaut-core = "5.0.0"
-signal-service = "2.15.3_unofficial_146"
+signal-service = "2.15.3_unofficial_147"
 
 [libraries]
 bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.84"
