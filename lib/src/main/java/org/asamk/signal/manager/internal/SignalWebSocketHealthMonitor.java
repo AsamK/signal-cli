@@ -97,6 +97,9 @@ final class SignalWebSocketHealthMonitor implements HealthMonitor {
 
     @Override
     public void onReceivedAlerts(@NotNull final String[] strings, final boolean b) {
+        if (strings.length == 0) {
+            return;
+        }
         logger.info("Received alerts: {}", String.join(", ", strings));
     }
 
