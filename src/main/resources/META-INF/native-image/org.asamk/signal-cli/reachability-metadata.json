@@ -1318,6 +1318,14 @@
       ]
     },
     {
+      "type": "java.util.concurrent.CopyOnWriteArrayList",
+      "fields": [
+        {
+          "name": "lock"
+        }
+      ]
+    },
+    {
       "type": "java.util.concurrent.ForkJoinTask",
       "fields": [
         {
@@ -1980,6 +1988,28 @@
       "type": "org.asamk.SignalControl.Error.InvalidNumber"
     },
     {
+      "type": "org.asamk.signal.GlobalConfig",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Integer",
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.lang.Boolean",
+            "org.asamk.signal.OutputType",
+            "org.asamk.signal.ServiceEnvironmentCli",
+            "org.asamk.signal.TrustNewIdentityCli",
+            "java.lang.Boolean",
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.Main",
       "jniAccessible": true,
       "methods": [
@@ -1991,6 +2021,31 @@
           "name": "main",
           "parameterTypes": [
             "java.lang.String[]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.signal.OutputType"
+    },
+    {
+      "type": "org.asamk.signal.ServiceEnvironmentCli",
+      "methods": [
+        {
+          "name": "fromString",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.signal.TrustNewIdentityCli",
+      "methods": [
+        {
+          "name": "fromString",
+          "parameterTypes": [
+            "java.lang.String"
           ]
         }
       ]

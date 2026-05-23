@@ -13,7 +13,7 @@ signal-cli-dbus - A commandline and dbus interface for the Signal messenger
 
 == Synopsis
 
-*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] [-o {plain-text,json}] daemon [--dbus] [--dbus-system]
+*signal-cli* [--verbose] [--data-dir DATA_DIR] [-a ACCOUNT] [-o {plain-text,json}] daemon [--dbus] [--dbus-system]
 
 *dbus-send* [--system | --session] [--print-reply] --type=method_call --dest="org.asamk.Signal" /org/asamk/Signal[/_<phonenumber>] org.asamk.Signal.<method> [string:<string argument>] [array:<type>:<array argument>]
 
