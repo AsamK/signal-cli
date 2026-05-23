@@ -60,7 +60,7 @@ public class App {
         parser.addArgument("-v", "--verbose")
                 .help("Raise log level and include lib signal logs. Specify multiple times for even more logs.")
                 .action(Arguments.count())
-                .setDefault(cfg.verbose());
+                .setDefault(cfg.verbose() == null ? 0 : cfg.verbose());
         parser.addArgument("--log-file")
                 .type(File.class)
                 .help("Write log output to the given file. If --verbose is also given, the detailed logs will only be written to the log file.")
@@ -68,7 +68,7 @@ public class App {
         parser.addArgument("--scrub-log")
                 .action(Arguments.storeTrue())
                 .help("Scrub possibly sensitive information from the log, like phone numbers and UUIDs.")
-                .setDefault(cfg.scrubLog());
+                .setDefault(cfg.scrubLog() == null ? false : cfg.scrubLog());
         parser.addArgument("-d", "--data-dir", "-c", "--config")
                 .help("Set the path where to store data (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).")
                 .setDefault(cfg.dataDir());
@@ -81,12 +81,12 @@ public class App {
                 .dest("global-dbus")
                 .help("Make request via user dbus.")
                 .action(Arguments.storeTrue())
-                .setDefault(cfg.dbus());
+                .setDefault(cfg.dbus() == null ? false : cfg.dbus());
         mut.addArgument("--dbus-system")
                 .dest("global-dbus-system")
                 .help("Make request via system dbus.")
                 .action(Arguments.storeTrue())
-                .setDefault(cfg.dbusSystem());
+                .setDefault(cfg.dbusSystem() == null ? false : cfg.dbusSystem());
         parser.addArgument("--bus-name")
                 .dest("global-bus-name")
                 .setDefault(cfg.busName() != null ? cfg.busName() : DbusConfig.getBusname())
@@ -112,7 +112,7 @@ public class App {
         parser.addArgument("--disable-send-log")
                 .help("Disable message send log (for resending messages that recipient couldn't decrypt)")
                 .action(Arguments.storeTrue())
-                .setDefault(cfg.disableSendLog());
+                .setDefault(cfg.disableSendLog() != null ? cfg.disableSendLog() : false);
 
         parser.epilog(
                 "The global arguments are shown with 'signal-cli -h' and need to come before the subcommand, while the subcommand-specific arguments (shown with 'signal-cli SUBCOMMAND -h') need to be given after the subcommand.");
