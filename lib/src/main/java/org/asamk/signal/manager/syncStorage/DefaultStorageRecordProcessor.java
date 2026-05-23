@@ -6,7 +6,9 @@ import org.whispersystems.signalservice.api.storage.SignalRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -24,6 +26,7 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implemen
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultStorageRecordProcessor.class);
     private final Set<E> matchedRecords = new TreeSet<>(this);
+    private final Set<StorageId> updatedStorageIds = new HashSet<>();
 
     /**
      * One type of invalid remote data this handles is two records mapping to the same local data. We
@@ -50,6 +53,7 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implemen
 
         if (local.isEmpty()) {
             debug(remote.getId(), remote, "[Local Insert] No matching local record. Inserting.");
+            updatedStorageIds.add(remote.getId());
             insertLocal(remote);
             return;
         }
@@ -64,6 +68,7 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implemen
         matchedRecords.add(local.get());
 
         final var merged = merge(remote, local.get());
+        updatedStorageIds.add(merged.getId());
         if (!merged.equals(remote)) {
             debug(remote.getId(), remote, "[Remote Update] " + merged.describeDiff(remote));
         }
@@ -73,6 +78,10 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implemen
             debug(remote.getId(), remote, "[Local Update] " + local.get().describeDiff(merged));
             updateLocal(update);
         }
+    }
+
+    public Set<StorageId> getUpdatedStorageIds() {
+        return Collections.unmodifiableSet(updatedStorageIds);
     }
 
     private void debug(StorageId i, E record, String message) {

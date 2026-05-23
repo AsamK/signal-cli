@@ -40,27 +40,32 @@ import java.security.Security;
 
 public class Main {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         // enable unlimited strength crypto via Policy, supported on relevant JREs
         Security.setProperty("crypto.policy", "unlimited");
         installSecurityProviderWorkaround();
 
+        // Load global config early so we can use its values as parser defaults
+        final GlobalConfig globalConfig;
+        try {
+            globalConfig = ConfigLoader.load();
+        } catch (UserErrorException e) {
+            System.exit(handleCommandException(e, null));
+            return;
+        }
+
         // Configuring the logger needs to happen before any logger is initialized
-        final var loggingConfig = parseLoggingConfig(args);
+        final var loggingConfig = parseLoggingConfig(args, globalConfig);
         configureLogging(loggingConfig);
 
-        final var parser = App.buildArgumentParser();
+        final var parser = App.buildArgumentParser(globalConfig);
         final var ns = parser.parseArgsOrFail(args);
 
         int status = 0;
         try {
             new App(ns).init();
         } catch (CommandException e) {
-            System.err.println(e.getMessage());
-            if (loggingConfig.verboseLevel > 0 && e.getCause() != null) {
-                e.getCause().printStackTrace(System.err);
-            }
-            status = getStatusForError(e);
+            status = handleCommandException(e, loggingConfig);
         } catch (Throwable e) {
             e.printStackTrace(System.err);
             status = 2;
@@ -69,16 +74,27 @@ public class Main {
         System.exit(status);
     }
 
+    private static int handleCommandException(final CommandException e, final LoggingConfig loggingConfig) {
+        System.err.println(e.getMessage());
+        if (loggingConfig != null && loggingConfig.verboseLevel > 0 && e.getCause() != null) {
+            e.getCause().printStackTrace(System.err);
+        }
+        return getStatusForError(e);
+    }
+
     private static void installSecurityProviderWorkaround() {
         // Register our own security provider
         Security.insertProviderAt(new SecurityProvider(), 1);
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private static LoggingConfig parseLoggingConfig(final String[] args) {
-        final var nsLog = parseArgs(args);
+    private static LoggingConfig parseLoggingConfig(final String[] args, final GlobalConfig config) {
+        final var nsLog = parseArgs(args, config);
         if (nsLog == null) {
-            return new LoggingConfig(0, null, false);
+            final var verbose = config != null && config.verbose() != null ? config.verbose() : 0;
+            final var logFile = config != null && config.logFile() != null ? new File(config.logFile()) : null;
+            final var scrubLog = config != null && Boolean.TRUE.equals(config.scrubLog());
+            return new LoggingConfig(verbose, logFile, scrubLog);
         }
 
         final var verboseLevel = nsLog.getInt("verbose");
@@ -90,14 +106,20 @@ public class Main {
     /**
      * This method only parses commandline args relevant for logging configuration.
      */
-    private static Namespace parseArgs(String[] args) {
+    private static Namespace parseArgs(String[] args, final GlobalConfig config) {
         var parser = ArgumentParsers.newFor("signal-cli", DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS)
                 .includeArgumentNamesAsKeysInResult(true)
                 .build()
                 .defaultHelp(false);
-        parser.addArgument("-v", "--verbose").action(Arguments.count());
-        parser.addArgument("--log-file").type(File.class);
-        parser.addArgument("--scrub-log").action(Arguments.storeTrue());
+        parser.addArgument("-v", "--verbose")
+                .action(Arguments.count())
+                .setDefault(config == null ? null : config.verbose());
+        parser.addArgument("--log-file")
+                .type(File.class)
+                .setDefault(config == null || config.logFile() == null ? null : new File(config.logFile()));
+        parser.addArgument("--scrub-log")
+                .action(Arguments.storeTrue())
+                .setDefault(config == null ? null : config.scrubLog());
 
         try {
             return parser.parseKnownArgs(args, null);
@@ -124,12 +146,12 @@ public class Main {
 
     private static int getStatusForError(final CommandException e) {
         return switch (e) {
-            case UserErrorException userErrorException -> 1;
-            case UnexpectedErrorException unexpectedErrorException -> 2;
-            case IOErrorException ioErrorException -> 3;
-            case UntrustedKeyErrorException untrustedKeyErrorException -> 4;
-            case RateLimitErrorException rateLimitErrorException -> 5;
-            case CaptchaRejectedErrorException captchaRejectedErrorException -> 6;
+            case UserErrorException _ -> 1;
+            case UnexpectedErrorException _ -> 2;
+            case IOErrorException _ -> 3;
+            case UntrustedKeyErrorException _ -> 4;
+            case RateLimitErrorException _ -> 5;
+            case CaptchaRejectedErrorException _ -> 6;
             case null -> 2;
         };
     }

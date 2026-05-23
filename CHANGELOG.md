@@ -1,6 +1,20 @@
 # Changelog
 
-## [Unreleased]
+## [0.14.4] - 2026-05-23
+
+### Added
+
+- Support for a global configuration file to set system-wide defaults
+
+### Fixed
+
+- Group admins can now see profile information for users requesting to join groups.
+- Storage sync with unregistered contacts fixed
+- Incoming messages are validated more accurately, fixing receiving messages from new contacts
+
+### Improved
+
+- Some security and stability improvements, including HTTP HOST header validation and safer temporary file handling.
 
 ## [0.14.3] - 2026-04-22
 

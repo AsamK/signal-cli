@@ -19,8 +19,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,12 +40,14 @@ public class HttpServerHandler implements AutoCloseable {
     private final Manager m;
     private HttpServer server;
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
+    private final Set<String> allowedHosts;
 
     public HttpServerHandler(final InetSocketAddress address, final Manager m) {
         this.address = address;
         commandHandler = new SignalJsonRpcCommandHandler(m, Commands::getCommand);
         this.c = null;
         this.m = m;
+        this.allowedHosts = buildAllowedHosts(address);
     }
 
     public HttpServerHandler(final InetSocketAddress address, final MultiAccountManager c) {
@@ -50,6 +55,7 @@ public class HttpServerHandler implements AutoCloseable {
         commandHandler = new SignalJsonRpcCommandHandler(c, Commands::getCommand);
         this.c = c;
         this.m = null;
+        this.allowedHosts = buildAllowedHosts(address);
     }
 
     public void init() throws IOException {
@@ -67,6 +73,7 @@ public class HttpServerHandler implements AutoCloseable {
 
         server.start();
         logger.info("Started HTTP server on {}", address);
+        logger.warn("HTTP server has no authentication; Host header is pinned to {}", allowedHosts);
     }
 
     @Override
@@ -99,6 +106,12 @@ public class HttpServerHandler implements AutoCloseable {
     }
 
     private void handleRpcEndpoint(HttpExchange httpExchange) throws IOException {
+        if (!isHostAllowed(httpExchange)) {
+            logger.warn("Rejected RPC request with invalid Host header: {} from {}",
+                    httpExchange.getRequestHeaders().getFirst("Host"), httpExchange.getRemoteAddress());
+            sendResponse(421, null, httpExchange);
+            return;
+        }
         if (!"/api/v1/rpc".equals(httpExchange.getRequestURI().getPath())) {
             sendResponse(404, null, httpExchange);
             return;
@@ -146,6 +159,12 @@ public class HttpServerHandler implements AutoCloseable {
     }
 
     private void handleEventsEndpoint(HttpExchange httpExchange) throws IOException {
+        if (!isHostAllowed(httpExchange)) {
+            logger.warn("Rejected Events request with invalid Host header: {} from {}",
+                    httpExchange.getRequestHeaders().getFirst("Host"), httpExchange.getRemoteAddress());
+            sendResponse(421, null, httpExchange);
+            return;
+        }
         if (!"/api/v1/events".equals(httpExchange.getRequestURI().getPath())) {
             sendResponse(404, null, httpExchange);
             return;
@@ -272,5 +291,60 @@ public class HttpServerHandler implements AutoCloseable {
     private interface Callable {
 
         void call();
+    }
+
+    private Set<String> buildAllowedHosts(final InetSocketAddress address) {
+        final var s = new HashSet<String>();
+        final var host = address == null ? null : address.getHostString();
+        if (host != null && !host.isEmpty()) {
+            s.add(host.toLowerCase(Locale.ROOT));
+        }
+        s.add("localhost");
+        s.add("127.0.0.1");
+        s.add("::1");
+        return s;
+    }
+
+    private boolean isHostAllowed(final HttpExchange httpExchange) {
+        final var hostHeader = httpExchange.getRequestHeaders().getFirst("Host");
+        if (hostHeader == null || hostHeader.isEmpty()) {
+            return false;
+        }
+
+        String hostPart = hostHeader;
+        String portPart = null;
+        if (hostHeader.startsWith("[")) {
+            final var idx = hostHeader.indexOf(']');
+            if (idx == -1) return false;
+            hostPart = hostHeader.substring(1, idx);
+            if (hostHeader.length() > idx + 1 && hostHeader.charAt(idx + 1) == ':') {
+                portPart = hostHeader.substring(idx + 2);
+            }
+        } else {
+            final var colon = hostHeader.lastIndexOf(':');
+            if (colon != -1) {
+                final var possiblePort = hostHeader.substring(colon + 1);
+                if (possiblePort.chars().allMatch(Character::isDigit)) {
+                    hostPart = hostHeader.substring(0, colon);
+                    portPart = possiblePort;
+                }
+            }
+        }
+
+        hostPart = hostPart.toLowerCase(Locale.ROOT);
+        if (!allowedHosts.contains(hostPart)) {
+            return false;
+        }
+
+        if (portPart != null) {
+            try {
+                final var port = Integer.parseInt(portPart);
+                if (port != address.getPort()) return false;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

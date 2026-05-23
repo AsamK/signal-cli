@@ -878,7 +878,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     public int removeStorageIdsFromLocalOnlyUnregisteredRecipients(
             final Connection connection,
-            final List<StorageId> storageIds
+            final Collection<StorageId> storageIds
     ) throws SQLException {
         final var sql = (
                 """

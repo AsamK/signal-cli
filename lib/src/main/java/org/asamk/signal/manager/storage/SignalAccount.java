@@ -192,6 +192,10 @@ public class SignalAccount implements Closeable {
         this.lock = lock;
     }
 
+    public File getDataPath() {
+        return dataPath;
+    }
+
     public static SignalAccount load(
             File dataPath,
             String accountPath,

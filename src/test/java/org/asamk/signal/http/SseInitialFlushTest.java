@@ -39,7 +39,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.URL;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -97,7 +97,7 @@ class SseInitialFlushTest {
     @Test
     void sseEndpointReturnsHeadersWithinTwoSeconds() {
         assertDoesNotThrow(() -> {
-            var url = new URL("http://127.0.0.1:" + port + "/api/v1/events");
+            var url = new URI("http", null, "127.0.0.1", port, "/api/v1/events", null, null).toURL();
             var conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("Accept", "text/event-stream");
             conn.setReadTimeout(2_000);   // 2 s — fails before fix (15 s flush), passes after
