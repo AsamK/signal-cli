@@ -1586,42 +1586,13 @@
     },
     {
       "type": "kotlin.reflect.jvm.internal.impl.resolve.scopes.DescriptorKindFilter",
-      "allPublicFields": true,
-      "fields": [
-        {
-          "name": "ALL"
-        },
-        {
-          "name": "CALLABLES"
-        },
-        {
-          "name": "CLASSIFIERS"
-        },
-        {
-          "name": "Companion"
-        },
-        {
-          "name": "FUNCTIONS"
-        },
-        {
-          "name": "NON_SINGLETON_CLASSIFIERS"
-        },
-        {
-          "name": "PACKAGES"
-        },
-        {
-          "name": "SINGLETON_CLASSIFIERS"
-        },
-        {
-          "name": "TYPE_ALIASES"
-        },
-        {
-          "name": "VALUES"
-        },
-        {
-          "name": "VARIABLES"
-        }
-      ]
+      "allPublicFields": true
+    },
+    {
+      "type": "kotlinx.coroutines.AwaitAll"
+    },
+    {
+      "type": "kotlinx.coroutines.AwaitAll$AwaitAllNode"
     },
     {
       "type": "kotlinx.coroutines.CancellableContinuationImpl",
@@ -6569,6 +6540,23 @@
     },
     {
       "type": "org.signal.network.api.SenderCertificate$ByteArraySerializer"
+    },
+    {
+      "type": "org.signal.network.api.SubmitRecaptchaChallengePayload",
+      "methods": [
+        {
+          "name": "getCaptcha",
+          "parameterTypes": []
+        },
+        {
+          "name": "getToken",
+          "parameterTypes": []
+        },
+        {
+          "name": "getType",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "org.signal.network.util.JsonUtil$IdentityKeyDeserializer",
