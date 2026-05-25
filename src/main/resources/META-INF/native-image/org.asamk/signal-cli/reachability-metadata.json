@@ -6571,6 +6571,15 @@
       "type": "org.signal.network.api.SenderCertificate$ByteArraySerializer"
     },
     {
+      "type": "org.signal.network.util.JsonUtil$IdentityKeyDeserializer",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.signal.network.util.JsonUtil$ServiceIdDeserializer",
       "methods": [
         {
