@@ -34,8 +34,10 @@ public class AttachmentHelper {
 
     private final SignalDependencies dependencies;
     private final AttachmentStore attachmentStore;
+    private final Context context;
 
     public AttachmentHelper(final Context context) {
+        this.context = context;
         this.dependencies = context.getDependencies();
         this.attachmentStore = context.getAttachmentStore();
     }
@@ -92,6 +94,21 @@ public class AttachmentHelper {
             final boolean voiceNote
     ) throws AttachmentInvalidException {
         try {
+            // Reject local files that point into the signal-cli data directory
+            if (attachment != null && !attachment.startsWith("data:")) {
+                try {
+                    final var file = new File(attachment);
+                    final var canonical = file.getCanonicalFile();
+                    final var dataPath = context.getAccount().getDataPath().getCanonicalFile();
+                    if (canonical.toPath().startsWith(dataPath.toPath())) {
+                        throw new AttachmentInvalidException(attachment,
+                                new IOException("Attaching files from the signal-cli data directory is not allowed"));
+                    }
+                } catch (IOException e) {
+                    throw new AttachmentInvalidException(attachment, e);
+                }
+            }
+
             final var streamDetailsAndFileName = Utils.createStreamDetails(attachment);
             final var streamDetails = streamDetailsAndFileName.first();
             final var uploadSpec = getResumableUploadSpec(streamDetails);
@@ -109,7 +126,7 @@ public class AttachmentHelper {
         final var streamLength = streamDetails.getLength();
         final var ciphertextLength = AttachmentCipherStreamUtil.getCiphertextLength(PaddingInputStream.getPaddedSize(
                 streamLength));
-        return dependencies.getMessageSender().getResumableUploadSpec(ciphertextLength);
+        return dependencies.getCdnService().getResumableUploadSpecBlocking(ciphertextLength);
     }
 
     public SignalServiceAttachmentPointer uploadAttachment(String attachment) throws IOException, AttachmentInvalidException {

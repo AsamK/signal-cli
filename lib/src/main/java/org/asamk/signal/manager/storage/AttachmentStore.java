@@ -44,7 +44,8 @@ public class AttachmentStore {
     }
 
     public StreamDetails retrieveAttachment(final String id) throws IOException {
-        final var attachmentFile = new File(attachmentsPath, id);
+        final var safeId = sanitizeId(id);
+        final var attachmentFile = new File(attachmentsPath, safeId);
         return Utils.createStreamDetailsFromFile(attachmentFile);
     }
 
@@ -61,7 +62,8 @@ public class AttachmentStore {
             Optional<String> contentType
     ) {
         final var extension = getAttachmentExtension(filename, contentType);
-        return new File(attachmentsPath, attachmentId.toString() + extension + ".preview");
+        final var safe = sanitizeId(attachmentId.toString());
+        return new File(attachmentsPath, safe + extension + ".preview");
     }
 
     private File getAttachmentFile(
@@ -70,7 +72,15 @@ public class AttachmentStore {
             Optional<String> contentType
     ) {
         final var extension = getAttachmentExtension(filename, contentType);
-        return new File(attachmentsPath, attachmentId.toString() + extension);
+        final var safe = sanitizeId(attachmentId.toString());
+        return new File(attachmentsPath, safe + extension);
+    }
+
+    private static String sanitizeId(final String id) {
+        if (id == null) {
+            return "";
+        }
+        return id.replaceAll("[^A-Za-z0-9_.-]", "_");
     }
 
     private static String getAttachmentExtension(final Optional<String> filename, final Optional<String> contentType) {

@@ -13,7 +13,7 @@ signal-cli - A commandline interface for the Signal messenger
 
 == Synopsis
 
-*signal-cli* [--config CONFIG] [-h | -v | -a ACCOUNT | --dbus | --dbus-system] command [command-options]
+*signal-cli* [--data-dir DATA_DIR] [-h | -v | -a ACCOUNT | --dbus | --dbus-system] command [command-options]
 
 == Description
 
@@ -57,8 +57,8 @@ If `--verbose` is also given, the detailed logs will only be written to the log 
 Scrub possibly sensitive information from the log, like phone numbers and UUIDs.
 Doesn't work reliably on dbus logs with very verbose logging (`-vvv`)
 
-*--config* CONFIG::
-Set the path, where to store the config.
+*-d* DATA_DIR, *--data-dir* DATA_DIR, *-c* CONFIG, *--config* CONFIG::
+Set the path where to store account data and local configuration.
 Make sure you have full read/write access to the given directory.
 (Default: `$XDG_DATA_HOME/signal-cli` (`$HOME/.local/share/signal-cli`))
 
@@ -1186,9 +1186,24 @@ signal-cli -a ACCOUNT trust -a RECIPIENT
 
 == Files
 
-The password and cryptographic keys are created when registering and stored in the current users home directory, the directory can be changed with *--config*:
+The password and cryptographic keys are created when registering and stored in the current users home directory, the directory can be changed with *--data-dir* (legacy *--config*):
 
 `$XDG_DATA_HOME/signal-cli/` (`$HOME/.local/share/signal-cli/`)
+
+=== Configuration file
+
+signal-cli supports a JSON-based global configuration file that provides defaults for CLI options.
+Keys use camelCase and generally match the long CLI parameter names (for example `dataDir`, `verbose`, `logFile`, `serviceEnvironment`, `trustNewIdentities`, `output`, `disableSendLog`, `account`).
+
+Configuration files are read and merged in this order; later files override earlier ones:
+
+- `/etc/signal-cli/config.json` (system-wide defaults)
+- the path in the `SIGNAL_CLI_CONFIG` environment variable (if set)
+- `$XDG_CONFIG_HOME/signal-cli/config.json` (per-user; defaults to `$HOME/.config/signal-cli/config.json`)
+
+When multiple configuration files are present their settings are merged; values from later files override earlier values.
+Command-line options always take precedence over configuration file values.
+Overall precedence (highest → lowest): command-line options → per-user config → system config → built-in defaults.
 
 == Authors
 

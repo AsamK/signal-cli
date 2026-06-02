@@ -105,6 +105,8 @@ public class CallManager implements AutoCloseable {
                 recipientAddress,
                 recipientId);
         activeCalls.put(callId, state);
+        dependencies.getAuthenticatedSignalWebSocket().registerKeepAliveToken("call" + callId);
+        dependencies.getUnauthenticatedSignalWebSocket().registerKeepAliveToken("call" + callId);
         fireCallEvent(state, null);
 
         // Spawn call tunnel binary and connect control channel
@@ -197,11 +199,6 @@ public class CallManager implements AutoCloseable {
         if (callEventListeners.isEmpty()) {
             logger.debug("Ignoring incoming offer for call {}: no call event listeners registered",
                     callIdUnsigned(callId));
-
-            final var result = sendBusyMessage(callId, recipientId, deviceId);
-            if (!result.isSuccess()) {
-                logger.warn("Failed to send busy for unhandled call {}", callIdUnsigned(callId));
-            }
             return;
         }
 
@@ -701,6 +698,8 @@ public class CallManager implements AutoCloseable {
 
     private void endCall(final long callId, final String reason) {
         var state = activeCalls.remove(callId);
+        dependencies.getAuthenticatedSignalWebSocket().removeKeepAliveToken("call" + callId);
+        dependencies.getUnauthenticatedSignalWebSocket().removeKeepAliveToken("call" + callId);
         if (state == null) return;
 
         state.state = CallInfo.State.ENDED;

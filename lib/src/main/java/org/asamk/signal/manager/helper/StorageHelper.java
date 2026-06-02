@@ -2,6 +2,7 @@ package org.asamk.signal.manager.helper;
 
 import org.asamk.signal.manager.api.GroupIdV1;
 import org.asamk.signal.manager.api.GroupIdV2;
+import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -17,6 +18,9 @@ import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.core.models.storageservice.StorageKey;
 import org.signal.core.util.SetUtil;
 import org.signal.libsignal.protocol.InvalidKeyException;
+import org.signal.network.service.StorageServiceService;
+import org.signal.network.service.StorageServiceService.ManifestIfDifferentVersionResult;
+import org.signal.network.service.StorageServiceService.WriteStorageRecordsResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
@@ -25,9 +29,6 @@ import org.whispersystems.signalservice.api.storage.SignalStorageManifest;
 import org.whispersystems.signalservice.api.storage.SignalStorageRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
 import org.whispersystems.signalservice.api.storage.StorageRecordConvertersKt;
-import org.whispersystems.signalservice.api.storage.StorageServiceRepository;
-import org.whispersystems.signalservice.api.storage.StorageServiceRepository.ManifestIfDifferentVersionResult;
-import org.whispersystems.signalservice.api.storage.StorageServiceRepository.WriteStorageRecordsResult;
 import org.whispersystems.signalservice.internal.storage.protos.ManifestRecord;
 import org.whispersystems.signalservice.internal.storage.protos.StorageRecord;
 
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -211,20 +213,23 @@ public class StorageHelper {
                             remoteOnlyRecords.size());
                 }
 
-                // This logic is wrong, records should only be deleted if they're deleted remotely, not if the remote record is updated
-//                if (!idDifference.localOnlyIds().isEmpty()) {
-//                    final var updated = account.getRecipientStore()
-//                            .removeStorageIdsFromLocalOnlyUnregisteredRecipients(connection,
-//                                    idDifference.localOnlyIds());
-//
-//                    if (updated > 0) {
-//                        logger.warn(
-//                                "Found {} records that were deleted remotely but only marked unregistered locally. Removed those from local store.",
-//                                updated);
-//                    }
-//                }
-//
-                final var unknownInserts = processKnownRecords(connection, remoteOnlyRecords);
+                final var listListPair = processKnownRecords(connection, remoteOnlyRecords);
+                final var unknownInserts = listListPair.first();
+                final var updatedStorageIds = listListPair.second();
+                final var oldUnregisteredLocalOnlyIds = new HashSet<>(idDifference.localOnlyIds());
+                updatedStorageIds.forEach(oldUnregisteredLocalOnlyIds::remove);
+                if (!idDifference.localOnlyIds().isEmpty()) {
+                    final var updated = account.getRecipientStore()
+                            .removeStorageIdsFromLocalOnlyUnregisteredRecipients(connection,
+                                    oldUnregisteredLocalOnlyIds);
+
+                    if (updated > 0) {
+                        logger.warn(
+                                "Found {} records that were deleted remotely but only marked unregistered locally. Removed those from local store.",
+                                updated);
+                    }
+                }
+
                 final var unknownDeletes = idDifference.localOnlyIds()
                         .stream()
                         .filter(id -> !KNOWN_TYPES.contains(id.getType()))
@@ -480,13 +485,13 @@ public class StorageHelper {
     private Map<GroupIdV1, StorageId> generateGroupV1StorageIds(List<GroupIdV1> groupIds) {
         return groupIds.stream()
                 .collect(Collectors.toMap(recipientId -> recipientId,
-                        recipientId -> StorageId.forGroupV1(KeyUtils.createRawStorageId())));
+                        _ -> StorageId.forGroupV1(KeyUtils.createRawStorageId())));
     }
 
     private Map<GroupIdV2, StorageId> generateGroupV2StorageIds(List<GroupIdV2> groupIds) {
         return groupIds.stream()
                 .collect(Collectors.toMap(recipientId -> recipientId,
-                        recipientId -> StorageId.forGroupV2(KeyUtils.createRawStorageId())));
+                        _ -> StorageId.forGroupV2(KeyUtils.createRawStorageId())));
     }
 
     private void storeManifestLocally(
@@ -504,7 +509,7 @@ public class StorageHelper {
         final var result = dependencies.getStorageServiceRepository()
                 .readStorageRecords(storageKey, manifest.recordIkm, storageIds);
         return switch (result) {
-            case StorageServiceRepository.StorageRecordResult.DecryptionError decryptionError -> {
+            case StorageServiceService.StorageRecordResult.DecryptionError decryptionError -> {
                 if (decryptionError.getException() instanceof InvalidKeyException) {
                     logger.warn("Failed to read storage records, ignoring.");
                     yield List.of();
@@ -514,11 +519,11 @@ public class StorageHelper {
                     throw new IOException(decryptionError.getException());
                 }
             }
-            case StorageServiceRepository.StorageRecordResult.NetworkError networkError ->
+            case StorageServiceService.StorageRecordResult.NetworkError networkError ->
                     throw networkError.getException();
-            case StorageServiceRepository.StorageRecordResult.StatusCodeError statusCodeError ->
+            case StorageServiceService.StorageRecordResult.StatusCodeError statusCodeError ->
                     throw statusCodeError.getException();
-            case StorageServiceRepository.StorageRecordResult.Success success -> success.getRecords();
+            case StorageServiceService.StorageRecordResult.Success success -> success.getRecords();
             default -> throw new IllegalStateException("Unexpected value: " + result);
         };
     }
@@ -630,16 +635,17 @@ public class StorageHelper {
         return new IdDifferenceResult(remoteOnlyKeys, localOnlyKeys, hasTypeMismatch);
     }
 
-    private List<StorageId> processKnownRecords(
+    private Pair<List<StorageId>, List<StorageId>> processKnownRecords(
             final Connection connection,
             List<SignalStorageRecord> records
     ) throws SQLException {
         final var unknownRecords = new ArrayList<StorageId>();
+        final var processedRecords = new ArrayList<StorageId>();
 
         final var accountRecordProcessor = new AccountRecordProcessor(account, connection, context.getJobExecutor());
-        final var contactRecordProcessor = new ContactRecordProcessor(account, connection, context.getJobExecutor());
         final var groupV1RecordProcessor = new GroupV1RecordProcessor(account, connection);
         final var groupV2RecordProcessor = new GroupV2RecordProcessor(account, connection);
+        final var contactRecordProcessor = new ContactRecordProcessor(account, connection, context.getJobExecutor());
 
         for (final var record : records) {
             if (record.getProto().account != null) {
@@ -662,8 +668,12 @@ public class StorageHelper {
                 unknownRecords.add(record.getId());
             }
         }
+        processedRecords.addAll(accountRecordProcessor.getUpdatedStorageIds());
+        processedRecords.addAll(groupV1RecordProcessor.getUpdatedStorageIds());
+        processedRecords.addAll(groupV2RecordProcessor.getUpdatedStorageIds());
+        processedRecords.addAll(contactRecordProcessor.getUpdatedStorageIds());
 
-        return unknownRecords;
+        return new Pair<>(unknownRecords, processedRecords);
     }
 
     /**

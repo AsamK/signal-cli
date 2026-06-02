@@ -7,11 +7,11 @@ plugins {
 }
 
 tasks.named<KotlinCompilationTask<KotlinJvmCompilerOptions>>("compileKotlin").configure {
-    compilerOptions.jvmTarget.set(JvmTarget.JVM_24)
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_25)
 }
 
 java {
-    targetCompatibility = JavaVersion.VERSION_24
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 repositories {

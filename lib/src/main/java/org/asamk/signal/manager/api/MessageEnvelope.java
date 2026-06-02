@@ -4,7 +4,6 @@ import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.MimeUtils;
-import org.signal.core.models.ServiceId;
 import org.signal.libsignal.metadata.ProtocolException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -157,7 +156,7 @@ public record MessageEnvelope(
                     dataMessage.getExpiresInSeconds(),
                     dataMessage.isExpirationUpdate(),
                     dataMessage.isViewOnce(),
-                    dataMessage.isEndSession(),
+                    false,
                     dataMessage.isProfileKeyUpdate(),
                     dataMessage.getProfileKey().isPresent(),
                     dataMessage.getReaction().map(r -> Reaction.from(r, recipientResolver, addressResolver)),
@@ -1028,7 +1027,7 @@ public record MessageEnvelope(
             final AttachmentFileProvider fileProvider,
             Exception exception
     ) {
-        final var serviceId = envelope.getSourceServiceId().map(ServiceId::parseOrNull).orElse(null);
+        final var serviceId = envelope.getSourceServiceId();
         final var source = !envelope.isUnidentifiedSender() && serviceId != null
                 ? recipientResolver.resolveRecipient(serviceId)
                 : envelope.isUnidentifiedSender() && content != null

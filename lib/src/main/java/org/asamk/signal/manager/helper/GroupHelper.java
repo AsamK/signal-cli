@@ -558,16 +558,24 @@ public class GroupHelper {
     private void storeProfileKeysFromMembers(final DecryptedGroup group) {
         for (var member : group.members) {
             final var serviceId = ServiceId.parseOrThrow(member.aciBytes);
-            final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
-            final var profileStore = account.getProfileStore();
-            if (profileStore.getProfileKey(recipientId) != null) {
-                // We already have a profile key, not updating it from a non-authoritative source
-                continue;
-            }
-            try {
-                profileStore.storeProfileKey(recipientId, new ProfileKey(member.profileKey.toByteArray()));
-            } catch (InvalidInputException ignored) {
-            }
+            storeProfileKeyIfMissing(serviceId, member.profileKey.toByteArray());
+        }
+        for (var member : group.requestingMembers) {
+            final var serviceId = ServiceId.parseOrThrow(member.aciBytes);
+            storeProfileKeyIfMissing(serviceId, member.profileKey.toByteArray());
+        }
+    }
+
+    private void storeProfileKeyIfMissing(final ServiceId serviceId, final byte[] profileKeyBytes) {
+        final var recipientId = account.getRecipientResolver().resolveRecipient(serviceId);
+        final var profileStore = account.getProfileStore();
+        if (profileStore.getProfileKey(recipientId) != null) {
+            // We already have a profile key, not updating it from a non-authoritative source
+            return;
+        }
+        try {
+            profileStore.storeProfileKey(recipientId, new ProfileKey(profileKeyBytes));
+        } catch (InvalidInputException ignored) {
         }
     }
 

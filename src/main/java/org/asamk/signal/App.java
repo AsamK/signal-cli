@@ -46,7 +46,9 @@ public class App {
 
     private final Namespace ns;
 
-    static ArgumentParser buildArgumentParser() {
+    static ArgumentParser buildArgumentParser(GlobalConfig config) {
+        final var cfg = config == null ? GlobalConfig.DEFAULT : config;
+
         var parser = ArgumentParsers.newFor("signal-cli", VERSION_0_9_0_DEFAULT_SETTINGS)
                 .includeArgumentNamesAsKeysInResult(true)
                 .build()
@@ -57,47 +59,60 @@ public class App {
         parser.addArgument("--version").help("Show package version.").action(Arguments.version());
         parser.addArgument("-v", "--verbose")
                 .help("Raise log level and include lib signal logs. Specify multiple times for even more logs.")
-                .action(Arguments.count());
+                .action(Arguments.count())
+                .setDefault(cfg.verbose() == null ? 0 : cfg.verbose());
         parser.addArgument("--log-file")
                 .type(File.class)
-                .help("Write log output to the given file. If --verbose is also given, the detailed logs will only be written to the log file.");
+                .help("Write log output to the given file. If --verbose is also given, the detailed logs will only be written to the log file.")
+                .setDefault(cfg.logFile() == null ? null : new File(cfg.logFile()));
         parser.addArgument("--scrub-log")
                 .action(Arguments.storeTrue())
-                .help("Scrub possibly sensitive information from the log, like phone numbers and UUIDs.");
-        parser.addArgument("-c", "--config")
-                .help("Set the path, where to store the config (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).");
+                .help("Scrub possibly sensitive information from the log, like phone numbers and UUIDs.")
+                .setDefault(cfg.scrubLog() == null ? false : cfg.scrubLog());
+        parser.addArgument("-d", "--data-dir", "-c", "--config")
+                .help("Set the path where to store data (Default: $XDG_DATA_HOME/signal-cli , $HOME/.local/share/signal-cli).")
+                .setDefault(cfg.dataDir());
 
         parser.addArgument("-a", "--account", "-u", "--username")
                 .help("Specify your phone number, that will be your identifier.");
 
         var mut = parser.addMutuallyExclusiveGroup();
-        mut.addArgument("--dbus").dest("global-dbus").help("Make request via user dbus.").action(Arguments.storeTrue());
+        mut.addArgument("--dbus")
+                .dest("global-dbus")
+                .help("Make request via user dbus.")
+                .action(Arguments.storeTrue())
+                .setDefault(cfg.dbus() == null ? false : cfg.dbus());
         mut.addArgument("--dbus-system")
                 .dest("global-dbus-system")
                 .help("Make request via system dbus.")
-                .action(Arguments.storeTrue());
+                .action(Arguments.storeTrue())
+                .setDefault(cfg.dbusSystem() == null ? false : cfg.dbusSystem());
         parser.addArgument("--bus-name")
                 .dest("global-bus-name")
-                .setDefault(DbusConfig.getBusname())
+                .setDefault(cfg.busName() != null ? cfg.busName() : DbusConfig.getBusname())
                 .help("Specify the D-Bus bus name to connect to.");
 
         parser.addArgument("-o", "--output")
                 .help("Choose to output in plain text or JSON")
-                .type(Arguments.enumStringType(OutputType.class));
+                .type(Arguments.enumStringType(OutputType.class))
+                .setDefault(cfg.output() == null ? null : cfg.output());
 
         parser.addArgument("--service-environment")
                 .help("Choose the server environment to use.")
                 .type(Arguments.enumStringType(ServiceEnvironmentCli.class))
-                .setDefault(ServiceEnvironmentCli.LIVE);
+                .setDefault(cfg.serviceEnvironment() != null ? cfg.serviceEnvironment() : ServiceEnvironmentCli.LIVE);
 
         parser.addArgument("--trust-new-identities")
                 .help("Choose when to trust new identities.")
                 .type(Arguments.enumStringType(TrustNewIdentityCli.class))
-                .setDefault(TrustNewIdentityCli.ON_FIRST_USE);
+                .setDefault(cfg.trustNewIdentities() != null
+                        ? cfg.trustNewIdentities()
+                        : TrustNewIdentityCli.ON_FIRST_USE);
 
         parser.addArgument("--disable-send-log")
                 .help("Disable message send log (for resending messages that recipient couldn't decrypt)")
-                .action(Arguments.storeTrue());
+                .action(Arguments.storeTrue())
+                .setDefault(cfg.disableSendLog() != null ? cfg.disableSendLog() : false);
 
         parser.epilog(
                 "The global arguments are shown with 'signal-cli -h' and need to come before the subcommand, while the subcommand-specific arguments (shown with 'signal-cli SUBCOMMAND -h') need to be given after the subcommand.");
@@ -219,12 +234,12 @@ public class App {
     }
 
     private SignalAccountFiles loadSignalAccountFiles() throws IOErrorException {
-        final File configPath;
-        final var config = ns.getString("config");
-        if (config != null) {
-            configPath = new File(config);
+        final File dataPath;
+        final var dataDir = ns.getString("data-dir");
+        if (dataDir != null) {
+            dataPath = new File(dataDir);
         } else {
-            configPath = getDefaultConfigPath();
+            dataPath = getDefaultDataPath();
         }
 
         final var serviceEnvironmentCli = ns.<ServiceEnvironmentCli>get("service-environment");
@@ -240,7 +255,7 @@ public class App {
         final var disableSendLog = Boolean.TRUE.equals(ns.getBoolean("disable-send-log"));
 
         try {
-            return new SignalAccountFiles(configPath,
+            return new SignalAccountFiles(dataPath,
                     serviceEnvironment,
                     BaseConfig.USER_AGENT,
                     new Settings(trustNewIdentity, disableSendLog));
@@ -339,7 +354,7 @@ public class App {
     /**
      * @return the default data directory to be used by signal-cli.
      */
-    private static File getDefaultConfigPath() {
+    private static File getDefaultDataPath() {
         return new File(IOUtils.getDataHomeDir(), "signal-cli");
     }
 }

@@ -102,6 +102,7 @@ import org.signal.core.util.Base64;
 import org.signal.core.util.Hex;
 import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.usernames.BaseUsernameException;
+import org.signal.network.exceptions.NonSuccessfulResponseCodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
@@ -118,7 +119,6 @@ import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMess
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
-import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Util;
@@ -195,6 +195,7 @@ public class ManagerImpl implements Manager {
                 userAgent,
                 account.getCredentialsProvider(),
                 account.getSignalServiceDataStore(),
+                account.getDeviceId(),
                 executor,
                 sessionLock);
         final var avatarStore = new AvatarStore(pathConfig.avatarsPath());
@@ -1131,30 +1132,26 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
-    public SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException {
-        var messageBuilder = SignalServiceDataMessage.newBuilder().asEndSessionMessage();
-
-        try {
-            return sendMessage(messageBuilder,
-                    recipients.stream().map(RecipientIdentifier.class::cast).collect(Collectors.toSet()),
-                    false);
-        } catch (GroupNotFoundException | NotAGroupMemberException | GroupSendingNotAllowedException e) {
-            throw new AssertionError(e);
-        } finally {
-            for (var recipient : recipients) {
-                final RecipientId recipientId;
-                try {
-                    recipientId = context.getRecipientHelper().resolveRecipient(recipient);
-                } catch (UnregisteredRecipientException e) {
-                    continue;
-                }
-                final var serviceId = context.getAccount()
-                        .getRecipientAddressResolver()
-                        .resolveRecipientAddress(recipientId)
-                        .serviceId();
-                if (serviceId.isPresent()) {
-                    account.getAccountData(ServiceIdType.ACI).getSessionStore().deleteAllSessions(serviceId.get());
-                }
+    public void sendEndSessionMessage(Set<RecipientIdentifier.Single> recipients) throws IOException {
+        for (var recipient : recipients) {
+            final RecipientId recipientId;
+            try {
+                recipientId = context.getRecipientHelper().resolveRecipient(recipient);
+            } catch (UnregisteredRecipientException e) {
+                continue;
+            }
+            final var recipientAddress = context.getAccount()
+                    .getRecipientAddressResolver()
+                    .resolveRecipientAddress(recipientId);
+            final var aciSessionStore = account.getAccountData(ServiceIdType.ACI).getSessionStore();
+            final var pniSessionStore = account.getAccountData(ServiceIdType.PNI).getSessionStore();
+            if (recipientAddress.aci().isPresent()) {
+                aciSessionStore.archiveSessions(recipientAddress.aci().get());
+                pniSessionStore.archiveSessions(recipientAddress.aci().get());
+            }
+            if (recipientAddress.pni().isPresent()) {
+                aciSessionStore.archiveSessions(recipientAddress.pni().get());
+                pniSessionStore.archiveSessions(recipientAddress.pni().get());
             }
         }
     }

@@ -13,9 +13,9 @@ signal-cli-jsonrpc - A commandline and dbus interface for the Signal messenger
 
 == Synopsis
 
-*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] daemon [--socket[=SOCKET_PATH]] [--tcp[=HOST:PORT]] [--http[=HOST:PORT]]
+*signal-cli* [--verbose] [--data-dir DATA_DIR] [-a ACCOUNT] daemon [--socket[=SOCKET_PATH]] [--tcp[=HOST:PORT]] [--http[=HOST:PORT]]
 
-*signal-cli* [--verbose] [--config CONFIG] [-a ACCOUNT] jsonRpc
+*signal-cli* [--verbose] [--data-dir DATA_DIR] [-a ACCOUNT] jsonRpc
 
 == Description
 

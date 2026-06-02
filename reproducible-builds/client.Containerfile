@@ -1,5 +1,8 @@
-FROM docker.io/rust:1.94.1-slim-trixie@sha256:c6a474d7164ea2455e09b60a759b1edca38db7373c5689c1dae31780de4e71ac
-ENV SOURCE_DATE_EPOCH=1767225600
+ARG RUST_TAG="1-slim@sha256:715efd1ccdc4a63bd6a6e2f54387fff73f904b70e610d41b4d9d74ff38e13ad3"
+
+FROM docker.io/rust:$RUST_TAG
+ARG SOURCE_DATE_EPOCH="1776889382"
+ENV SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH
 ENV LANG=C.UTF-8
 ENV LC_CTYPE=en_US.UTF-8
 COPY --chmod=0700 reproducible-builds/entrypoint.sh /usr/local/bin/entrypoint.sh

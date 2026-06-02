@@ -9,6 +9,7 @@ import org.signal.libsignal.protocol.InvalidKeyIdException;
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.signal.libsignal.protocol.state.PreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
+import org.signal.network.exceptions.NonSuccessfulResponseCodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.NetworkResultUtil;
@@ -16,7 +17,6 @@ import org.whispersystems.signalservice.api.account.PreKeyUpload;
 import org.whispersystems.signalservice.api.keys.OneTimePreKeyCounts;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
-import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 
 import java.io.IOException;
 import java.util.List;
@@ -84,7 +84,8 @@ public class PreKeyHelper {
     ) throws IOException {
         OneTimePreKeyCounts preKeyCounts;
         try {
-            preKeyCounts = handleResponseException(dependencies.getKeysApi().getAvailablePreKeyCounts(serviceIdType));
+            preKeyCounts = handleResponseException(dependencies.getKeysApi()
+                    .getAvailablePreKeyCountsSync(serviceIdType));
         } catch (AuthorizationFailedException e) {
             logger.debug("Failed to get pre key count, ignoring: " + e.getClass().getSimpleName());
             preKeyCounts = new OneTimePreKeyCounts(0, 0);
@@ -145,7 +146,7 @@ public class PreKeyHelper {
                 kyberPreKeyRecords);
         var needsReset = false;
         try {
-            NetworkResultUtil.toPreKeysLegacy(dependencies.getKeysApi().setPreKeys(preKeyUpload));
+            NetworkResultUtil.toPreKeysLegacy(dependencies.getKeysApi().setPreKeysSync(preKeyUpload));
             try {
                 if (preKeyRecords != null) {
                     account.addPreKeys(serviceIdType, preKeyRecords);

@@ -12,10 +12,11 @@ env:
   IMAGE_REGISTRY: ghcr.io/asamk
   REGISTRY_USER: ${{ github.actor }}
   REGISTRY_PASSWORD: ${{ github.token }}
+  ARCHIVE_JAVA_VERSION: 25
 
 jobs:
   build:
-    uses: AsamK/signal-cli/.github/workflows/build.yml@master
+    uses: ./.github/workflows/build.yml
 
   release:
     needs: build
@@ -31,7 +32,7 @@ jobs:
       - name: Get signal-cli version
         id: version
         run: |
-          mv ./signal-cli-reproducible-build/* .
+          mv ./signal-cli-archive-${{ env.ARCHIVE_JAVA_VERSION }}/* .
           echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
 
       - name: Create release
@@ -87,7 +88,7 @@ jobs:
 
       - name: Move archive file
         run: |
-          tar xf ./signal-cli-reproducible-build/signal-cli-${{ needs.release.outputs.version }}.tar.gz
+          tar xf signal-cli-archive-${{ env.ARCHIVE_JAVA_VERSION }}/signal-cli-${{ needs.release.outputs.version }}.tar.gz
           mkdir -p build/install/
           mv ./signal-cli-"${{ needs.release.outputs.version }}"/ build/install/signal-cli
 
@@ -127,7 +128,7 @@ jobs:
 
       - name: Move archive file
         run: |
-          tar xf ./signal-cli-reproducible-build/signal-cli-${{ needs.release.outputs.version }}-Linux-native.tar.gz
+          tar xf signal-cli-archive-${{ env.ARCHIVE_JAVA_VERSION }}/signal-cli-${{ needs.release.outputs.version }}-Linux-native.tar.gz
           mkdir -p build/native/nativeCompile/
           mv signal-cli build/native/nativeCompile/
           chmod +x build/native/nativeCompile/signal-cli
@@ -168,7 +169,7 @@ jobs:
 
       - name: Move archive file
         run: |
-          tar xf ./signal-cli-reproducible-build/signal-cli-${{ needs.release.outputs.version }}-Linux-client.tar.gz
+          tar xf signal-cli-archive-${{ env.ARCHIVE_JAVA_VERSION }}/signal-cli-${{ needs.release.outputs.version }}-Linux-client.tar.gz
           mkdir -p client/target/release/
           mv signal-cli-client client/target/release/
           chmod +x client/target/release/signal-cli-client

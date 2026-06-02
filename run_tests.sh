@@ -38,6 +38,13 @@ else
 	SIGNAL_CLI="$PWD/build/install/signal-cli/bin/signal-cli"
 fi
 
+# Prefer line-buffered output for external commands when available
+if command -v stdbuf >/dev/null 2>&1; then
+  STD_BUF="stdbuf -oL -eL --"
+else
+  STD_BUF=""
+fi
+
 run() {
   # To update graalvm config, set GRAALVM_HOME, e.g:
   # export GRAALVM_HOME=/usr/lib/jvm/java-25-graalvm
@@ -48,11 +55,23 @@ run() {
 
   set -x
   if [ "$JSON_RPC" -eq 1 ]; then
-    "$SIGNAL_CLI" $@
+    if [ -n "$STD_BUF" ]; then
+      $STD_BUF "$SIGNAL_CLI" $@
+    else
+      "$SIGNAL_CLI" $@
+    fi
   elif [ "$DBUS" -eq 1 ]; then
-    "$SIGNAL_CLI" --dbus --verbose --verbose $@ | grep -v 'Warning:' | grep -v 'at org'
+    if [ -n "$STD_BUF" ]; then
+      $STD_BUF "$SIGNAL_CLI" --dbus --verbose --verbose $@ | grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org'
+    else
+      "$SIGNAL_CLI" --dbus --verbose --verbose $@ | grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org'
+    fi
   else
-    "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@ | grep -v 'Warning:' | grep -v 'at org'
+    if [ -n "$STD_BUF" ]; then
+      $STD_BUF "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@ | grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org'
+    else
+      "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@ | grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org'
+    fi
   fi
   set +x
 }
@@ -98,9 +117,10 @@ link() {
   rm -f "$LINK_CODE_FILE"
   mkfifo "$LINK_CODE_FILE"
   run_linked link -n "test-device" >"$LINK_CODE_FILE" &
-  read LINK_CODE <"$LINK_CODE_FILE"
+  LINK_PID=$!
+  read -r LINK_CODE <"$LINK_CODE_FILE"
   run_main -a "$NUMBER" addDevice --uri "$LINK_CODE"
-  wait
+  wait $LINK_PID
   run_linked -a "$NUMBER" send --note-to-self -m hi
   run_main -a "$NUMBER" receive
   run_linked -a "$NUMBER" receive
@@ -180,6 +200,7 @@ run_main -a "$NUMBER_2" updateContact "$NUMBER_1" -n NUMBER_1 -e 10
 run_main -a "$NUMBER_2" block "$NUMBER_1"
 run_main -a "$NUMBER_2" unblock "$NUMBER_1"
 run_main -a "$NUMBER_2" listContacts
+run_main -a "$NUMBER_2" listContacts "$NUMBER_1"
 
 run_main -a "$NUMBER_1" send "$NUMBER_2" -m hi
 run_main -a "$NUMBER_2" receive
@@ -207,6 +228,7 @@ run_main -a "$NUMBER_1" updateGroup -g "$GROUP_ID" -m "$NUMBER_2"
 run_main -a "$NUMBER_1" listGroups -d
 run_main -a "$NUMBER_1" --output=json listGroups -d
 run_main -a "$NUMBER_2" receive
+run_main -a "$NUMBER_2" listGroups -g "$GROUP_ID"
 run_main -a "$NUMBER_2" quitGroup -g "$GROUP_ID"
 run_main -a "$NUMBER_2" listGroups -d
 run_main -a "$NUMBER_2" --output=json listGroups -d
@@ -228,6 +250,7 @@ for OUTPUT in "plain-text" "json"; do
   run_main -a "$NUMBER_2" --output="$OUTPUT" receive
   run_main -a "$NUMBER_1" --output="$OUTPUT" receive
   run_main -a "$NUMBER_1" --output="$OUTPUT" send -e "$NUMBER_2"
+  run_main -a "$NUMBER_1" --output="$OUTPUT" send "$NUMBER_2" -m test
   run_main -a "$NUMBER_2" --output="$OUTPUT" receive
 done
 
@@ -235,8 +258,8 @@ done
 run_main -a "$NUMBER_1" updateProfile --given-name=GIVEN --family-name=FAMILY --about=ABOUT --about-emoji=EMOJI --avatar=LICENSE --mobile-coin-address="YWJjCg=="
 
 ## Provisioning
-link "$NUMBER_1"
-link "$NUMBER_2"
+link "$NUMBER_1" || true
+link "$NUMBER_2" || true
 run_main -a "$NUMBER_1" listDevices
 run_linked -a "$NUMBER_1" sendSyncRequest
 run_main -a "$NUMBER_1" sendContacts

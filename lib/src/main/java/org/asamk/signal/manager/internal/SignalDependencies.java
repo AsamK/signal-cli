@@ -5,7 +5,18 @@ import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.util.Utils;
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.libsignal.net.Network;
+import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
+import org.signal.network.api.AttachmentApi;
+import org.signal.network.api.CallingApi;
+import org.signal.network.api.CdsApi;
+import org.signal.network.api.CertificateApi;
+import org.signal.network.api.LinkDeviceApi;
+import org.signal.network.api.RateLimitChallengeApi;
+import org.signal.network.api.UsernameApi;
+import org.signal.network.rest.SignalRestClient;
+import org.signal.network.service.CdnService;
+import org.signal.network.service.StorageServiceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -14,27 +25,20 @@ import org.whispersystems.signalservice.api.SignalServiceMessageReceiver;
 import org.whispersystems.signalservice.api.SignalServiceMessageSender;
 import org.whispersystems.signalservice.api.SignalSessionLock;
 import org.whispersystems.signalservice.api.account.AccountApi;
-import org.whispersystems.signalservice.api.attachment.AttachmentApi;
-import org.whispersystems.signalservice.api.calling.CallingApi;
-import org.whispersystems.signalservice.api.cds.CdsApi;
-import org.whispersystems.signalservice.api.certificate.CertificateApi;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipher;
 import org.whispersystems.signalservice.api.groupsv2.ClientZkOperations;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.keys.KeysApi;
-import org.whispersystems.signalservice.api.link.LinkDeviceApi;
+import org.whispersystems.signalservice.api.keys.PreKeyRepository;
 import org.whispersystems.signalservice.api.message.MessageApi;
 import org.whispersystems.signalservice.api.profiles.ProfileApi;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.api.ratelimit.RateLimitChallengeApi;
 import org.whispersystems.signalservice.api.registration.RegistrationApi;
 import org.whispersystems.signalservice.api.services.ProfileService;
 import org.whispersystems.signalservice.api.storage.StorageServiceApi;
-import org.whispersystems.signalservice.api.storage.StorageServiceRepository;
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
-import org.whispersystems.signalservice.api.username.UsernameApi;
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.api.util.UptimeSleepTimer;
 import org.whispersystems.signalservice.api.websocket.SignalWebSocket;
@@ -61,6 +65,7 @@ public class SignalDependencies {
     private final String userAgent;
     private final CredentialsProvider credentialsProvider;
     private final SignalServiceDataStore dataStore;
+    private final int deviceId;
     private final ExecutorService executor;
     private final SignalSessionLock sessionLock;
 
@@ -82,6 +87,11 @@ public class SignalDependencies {
     private KeysApi keysApi;
     private GroupsV2Operations groupsV2Operations;
     private ClientZkOperations clientZkOperations;
+    private ProfileService profileService;
+    private ProfileApi profileApi;
+    private CdnService cdnService;
+    private PreKeyRepository preKeyRepository;
+    private SignalRestClient signalRestClient;
 
     private PushServiceSocket pushServiceSocket;
     private Network libSignalNetwork;
@@ -91,14 +101,13 @@ public class SignalDependencies {
     private SignalServiceMessageSender messageSender;
 
     private List<SecureValueRecovery> secureValueRecovery;
-    private ProfileService profileService;
-    private ProfileApi profileApi;
 
     SignalDependencies(
             final ServiceEnvironmentConfig serviceEnvironmentConfig,
             final String userAgent,
             final CredentialsProvider credentialsProvider,
             final SignalServiceDataStore dataStore,
+            final int deviceId,
             final ExecutorService executor,
             final SignalSessionLock sessionLock
     ) {
@@ -106,6 +115,7 @@ public class SignalDependencies {
         this.userAgent = userAgent;
         this.credentialsProvider = credentialsProvider;
         this.dataStore = dataStore;
+        this.deviceId = deviceId;
         this.executor = executor;
         this.sessionLock = sessionLock;
     }
@@ -243,8 +253,8 @@ public class SignalDependencies {
                         getPushServiceSocket()));
     }
 
-    public StorageServiceRepository getStorageServiceRepository() {
-        return new StorageServiceRepository(getStorageServiceApi());
+    public StorageServiceService getStorageServiceRepository() {
+        return new StorageServiceService(getStorageServiceApi());
     }
 
     public CertificateApi getCertificateApi() {
@@ -326,12 +336,33 @@ public class SignalDependencies {
                 () -> messageReceiver = new SignalServiceMessageReceiver(getPushServiceSocket()));
     }
 
+    private SignalRestClient getSignalRestClient() {
+        return getOrCreate(() -> signalRestClient,
+                () -> signalRestClient = new SignalRestClient(serviceEnvironmentConfig.signalServiceConfiguration(),
+                        userAgent,
+                        credentialsProvider,
+                        ServiceConfig.AUTOMATIC_NETWORK_RETRY));
+    }
+
+    public CdnService getCdnService() {
+        return getOrCreate(() -> cdnService,
+                () -> cdnService = new CdnService(getSignalRestClient(), getAttachmentApi()));
+    }
+
+    public PreKeyRepository getPreKeyRepository() {
+        final SignalProtocolAddress localProtocolAddress = credentialsProvider.getAci().toProtocolAddress(deviceId);
+        return getOrCreate(() -> preKeyRepository,
+                () -> preKeyRepository = new PreKeyRepository(getKeysApi(),
+                        dataStore.aci(),
+                        localProtocolAddress,
+                        Runnable::run));
+    }
+
     public SignalServiceMessageSender getMessageSender() {
         return getOrCreate(() -> messageSender,
                 () -> messageSender = new SignalServiceMessageSender(getPushServiceSocket(),
                         dataStore,
                         sessionLock,
-                        getAttachmentApi(),
                         getMessageApi(),
                         getKeysApi(),
                         Optional.empty(),
@@ -339,8 +370,7 @@ public class SignalDependencies {
                         ServiceConfig.MAX_ENVELOPE_SIZE,
                         ServiceConfig.MAX_INCREMENTAL_MACS_PER_ENVELOPE,
                         () -> true,
-                        true,
-                        true));
+                        getPreKeyRepository()));
     }
 
     public List<SecureValueRecovery> getSecureValueRecovery() {
@@ -368,7 +398,10 @@ public class SignalDependencies {
 
     public SignalServiceCipher getCipher(ServiceIdType serviceIdType) {
         final var certificateValidator = new CertificateValidator(serviceEnvironmentConfig.unidentifiedSenderTrustRoots());
-        final var address = new SignalServiceAddress(credentialsProvider.getAci(), credentialsProvider.getE164());
+        final var serviceId = serviceIdType == ServiceIdType.ACI
+                ? credentialsProvider.getAci()
+                : credentialsProvider.getPni();
+        final var address = new SignalServiceAddress(serviceId, credentialsProvider.getE164());
         final var deviceId = credentialsProvider.getDeviceId();
         return new SignalServiceCipher(address,
                 deviceId,

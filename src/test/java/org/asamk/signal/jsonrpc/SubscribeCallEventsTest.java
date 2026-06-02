@@ -333,8 +333,7 @@ class SubscribeCallEventsTest {
         }
 
         @Override
-        public SendMessageResults sendEndSessionMessage(Set<RecipientIdentifier.Single> r) {
-            return null;
+        public void sendEndSessionMessage(Set<RecipientIdentifier.Single> r) {
         }
 
         @Override
