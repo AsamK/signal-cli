@@ -1,10 +1,10 @@
 package org.asamk.signal.manager.internal;
 
 import org.jetbrains.annotations.NotNull;
+import org.signal.core.util.SleepTimer;
 import org.signal.network.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.util.SleepTimer;
 import org.whispersystems.signalservice.api.websocket.HealthMonitor;
 import org.whispersystems.signalservice.api.websocket.SignalWebSocket;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;

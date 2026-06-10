@@ -17,6 +17,7 @@ import org.asamk.signal.manager.util.PaymentUtils;
 import org.asamk.signal.manager.util.ProfileUtils;
 import org.asamk.signal.manager.util.Utils;
 import org.jetbrains.annotations.Nullable;
+import org.signal.core.util.ExpiringProfileCredentialUtil;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
@@ -32,7 +33,6 @@ import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
 import org.whispersystems.signalservice.api.services.ProfileService;
-import org.whispersystems.signalservice.api.util.ExpiringProfileCredentialUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
