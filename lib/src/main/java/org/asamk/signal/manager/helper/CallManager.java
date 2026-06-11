@@ -706,8 +706,11 @@ public class CallManager implements AutoCloseable {
         fireCallEvent(state, reason);
         logger.debug("Call {} ended: {}", callIdUnsigned(callId), reason);
 
-        // Send Signal protocol hangup to remote peer (unless they initiated the end)
-        if (!"remote_hangup".equals(reason)
+        // Send Signal protocol hangup to remote peer (unless they initiated the end).
+        // Skip if deviceId is null: no offer was exchanged yet (e.g. tunnel failed to spawn),
+        // so there is no remote device to notify.
+        if (state.deviceId != null
+                && !"remote_hangup".equals(reason)
                 && !"rejected".equals(reason)
                 && !"remote_busy".equals(reason)
                 && !"ringrtc_hangup".equals(reason)) {
