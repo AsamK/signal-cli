@@ -409,6 +409,9 @@ public class CallManager implements AutoCloseable {
             // Monitor process exit
             process.onExit().thenAcceptAsync(p -> {
                 logger.debug("Tunnel for call {} exited with code {}", callIdUnsigned(state.callId), p.exitValue());
+                // SIGTERM (code 143) kills the Rust process without running Drop,
+                // so VirtualAudioDevicePair::drop() never fires. Clean up here.
+                teardownVirtualAudioDevices(state);
                 if (activeCalls.containsKey(state.callId)) {
                     endCall(state.callId, "tunnel_exit");
                 }
@@ -745,6 +748,41 @@ public class CallManager implements AutoCloseable {
         if (state.state == CallInfo.State.RINGING_INCOMING || state.state == CallInfo.State.RINGING_OUTGOING) {
             logger.debug("Call {} ring timeout", callIdUnsigned(callId));
             endCall(callId, "ring_timeout");
+        }
+    }
+
+    private void teardownVirtualAudioDevices(CallState state) {
+        var inputDevice = state.inputDeviceName;
+        var outputDevice = state.outputDeviceName;
+        if (inputDevice == null && outputDevice == null) {
+            logger.debug("No virtual audio device names for call {}, skipping teardown", callIdUnsigned(state.callId));
+            return;
+        }
+        try {
+            var listProc = new ProcessBuilder("pactl", "list", "modules", "short")
+                    .redirectErrorStream(true)
+                    .start();
+            var output = new String(listProc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            listProc.waitFor(5, TimeUnit.SECONDS);
+            for (var line : output.lines().toList()) {
+                var parts = line.split("\t");
+                if (parts.length < 1) continue;
+                var moduleId = parts[0].trim();
+                if (moduleId.isEmpty()) continue;
+                var matches = (inputDevice != null && line.contains(inputDevice))
+                        || (outputDevice != null && line.contains(outputDevice));
+                if (!matches) continue;
+                try {
+                    new ProcessBuilder("pactl", "unload-module", moduleId)
+                            .start()
+                            .waitFor(5, TimeUnit.SECONDS);
+                    logger.debug("Unloaded PulseAudio module {} for call {}", moduleId, callIdUnsigned(state.callId));
+                } catch (Exception e) {
+                    logger.debug("Failed to unload PulseAudio module {} for call {}: {}", moduleId, callIdUnsigned(state.callId), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to list PulseAudio modules for call {}", callIdUnsigned(state.callId), e);
         }
     }
 
