@@ -73,7 +73,13 @@ public class HttpServerHandler implements AutoCloseable {
 
         server.start();
         logger.info("Started HTTP server on {}", address);
-        logger.warn("HTTP server has no authentication; Host header is pinned to {}", allowedHosts);
+        // If we're listening on any local address (0.0.0.0 or ::), skip Host header validation
+        final var addr = address == null ? null : address.getAddress();
+        if (addr != null && addr.isAnyLocalAddress()) {
+            logger.warn("HTTP server has no authentication; Host header validation DISABLED because listening on {}", address);
+        } else {
+            logger.warn("HTTP server has no authentication; Host header is pinned to {}", allowedHosts);
+        }
     }
 
     @Override
@@ -306,6 +312,18 @@ public class HttpServerHandler implements AutoCloseable {
     }
 
     private boolean isHostAllowed(final HttpExchange httpExchange) {
+        // If the server is bound to any local address (0.0.0.0 or ::), skip host header validation
+        if (address != null) {
+            final var addr = address.getAddress();
+            if (addr != null && addr.isAnyLocalAddress()) {
+                return true;
+            }
+            final var hostStr = address.getHostString();
+            if ("0.0.0.0".equals(hostStr) || "::".equals(hostStr)) {
+                return true;
+            }
+        }
+
         final var hostHeader = httpExchange.getRequestHeaders().getFirst("Host");
         if (hostHeader == null || hostHeader.isEmpty()) {
             return false;
