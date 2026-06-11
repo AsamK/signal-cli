@@ -5,7 +5,7 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "1.0.0"
+    id("org.graalvm.buildtools.native") version "1.1.2"
 }
 
 allprojects {
