@@ -20,6 +20,7 @@ public class Commands {
         addCommand(new HangupCallCommand());
         addCommand(new GetAttachmentCommand());
         addCommand(new GetAvatarCommand());
+        addCommand(new GetRateLimitStatusCommand());
         addCommand(new GetStickerCommand());
         addCommand(new GetUserStatusCommand());
         addCommand(new AddStickerPackCommand());

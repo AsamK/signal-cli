@@ -11,6 +11,9 @@
 
 - Receiving unidentified sender messages after signal server change
 
+### Added
+
+- `getRateLimitStatus` JSON-RPC/CLI command returning the current rate-limit state for the account (active flag, `retryAfterSeconds`, `challengeToken`, `expiresAtEpochSeconds`). Useful for admin UIs, monitoring, and clients that want to query current state without triggering a send.
 ## [0.14.4] - 2026-05-23
 
 ### Added

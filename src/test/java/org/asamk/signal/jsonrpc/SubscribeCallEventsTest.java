@@ -187,6 +187,11 @@ class SubscribeCallEventsTest {
         }
 
         @Override
+        public org.asamk.signal.manager.api.RateLimitStatus getRateLimitStatus() {
+            return org.asamk.signal.manager.api.RateLimitStatus.inactive();
+        }
+
+        @Override
         public List<Device> getLinkedDevices() {
             return List.of();
         }
