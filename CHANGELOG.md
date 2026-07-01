@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Sending to large groups is no longer slowed down by members that are already known to be unregistered; they are skipped instead of being retried via the legacy 1:1 send path on every send.
+
 ## [0.14.5] - 2026-06-11
 
 ### Changed
