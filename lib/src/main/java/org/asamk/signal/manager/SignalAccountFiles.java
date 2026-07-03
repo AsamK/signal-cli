@@ -5,6 +5,7 @@ import org.asamk.signal.manager.api.NotRegisteredException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.asamk.signal.manager.config.ServiceConfig;
+import org.signal.core.models.ServiceId.ACI;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.internal.AccountFileUpdaterImpl;
 import org.asamk.signal.manager.internal.ManagerImpl;
@@ -93,6 +94,23 @@ public class SignalAccountFiles {
     public Manager initManager(String number) throws IOException, NotRegisteredException, AccountCheckException {
         final var accountPath = accountsStore.getPathByNumber(number);
         return this.initManager(number, accountPath);
+    }
+
+    public Manager initManagerByAci(String aciStr) throws IOException, NotRegisteredException, AccountCheckException {
+        final var aci = ACI.parseOrThrow(aciStr);
+        final var accountPath = accountsStore.getPathByAci(aci);
+        if (accountPath == null) {
+            throw new NotRegisteredException();
+        }
+        final var accounts = accountsStore.getAllAccounts();
+        final var account = accounts.stream()
+                .filter(a -> aciStr.equals(a.uuid()))
+                .findFirst()
+                .orElseThrow(NotRegisteredException::new);
+        if (account.number() == null) {
+            throw new NotRegisteredException();
+        }
+        return this.initManager(account.number(), accountPath);
     }
 
     private Manager initManager(

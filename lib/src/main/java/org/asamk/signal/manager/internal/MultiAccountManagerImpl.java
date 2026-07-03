@@ -95,23 +95,42 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
-    public Manager getManager(final String number) {
+    public Manager getManager(final String identifier) {
         synchronized (managers) {
-            final var manager = managers.stream()
-                    .filter(m -> m.getSelfNumber().equals(number))
+            // Try to find already loaded manager by phone number
+            var manager = managers.stream()
+                    .filter(m -> m.getSelfNumber().equals(identifier))
                     .findFirst()
                     .orElse(null);
             if (manager != null) {
                 return manager;
             }
+
+            // Try to load by phone number first
             try {
-                final var newManager = signalAccountFiles.initManager(number);
+                final var newManager = signalAccountFiles.initManager(identifier);
                 managers.add(newManager);
                 return newManager;
-            } catch (IOException | NotRegisteredException | AccountCheckException e) {
-                logger.warn("Failed to load new manager", e);
+            } catch (NotRegisteredException e) {
+                // Not a valid phone number or not registered yet, try ACI
+                logger.debug("Manager not found by number, trying ACI: {}", identifier);
+            } catch (IOException | AccountCheckException e) {
+                logger.warn("Failed to load new manager by number: {}", identifier, e);
                 return null;
             }
+
+            // Try to load by ACI (useful for SSE endpoint with ?account=<UUID>)
+            try {
+                final var newManager = signalAccountFiles.initManagerByAci(identifier);
+                managers.add(newManager);
+                return newManager;
+            } catch (NotRegisteredException e) {
+                logger.debug("Manager not found by ACI: {}", identifier);
+            } catch (IOException | AccountCheckException e) {
+                logger.warn("Failed to load new manager by ACI: {}", identifier, e);
+            }
+
+            return null;
         }
     }
 
