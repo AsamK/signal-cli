@@ -96,21 +96,28 @@ public class SignalAccountFiles {
         return this.initManager(number, accountPath);
     }
 
-    public Manager initManagerByAci(String aciStr) throws IOException, NotRegisteredException, AccountCheckException {
-        final var aci = ACI.parseOrThrow(aciStr);
-        final var accountPath = accountsStore.getPathByAci(aci);
-        if (accountPath == null) {
-            throw new NotRegisteredException();
-        }
+    public String getAccountNumberByAci(final String aciStr) throws IOException {
         final var accounts = accountsStore.getAllAccounts();
         final var account = accounts.stream()
                 .filter(a -> aciStr.equals(a.uuid()))
                 .findFirst()
-                .orElseThrow(NotRegisteredException::new);
-        if (account.number() == null) {
+                .orElse(null);
+        if (account == null || account.number() == null) {
+            return null;
+        }
+        return account.number();
+    }
+
+    public Manager initManagerByAci(String aciStr) throws IOException, NotRegisteredException, AccountCheckException {
+        final var phoneNumber = getAccountNumberByAci(aciStr);
+        if (phoneNumber == null) {
             throw new NotRegisteredException();
         }
-        return this.initManager(account.number(), accountPath);
+        final var accountPath = accountsStore.getPathByNumber(phoneNumber);
+        if (accountPath == null) {
+            throw new NotRegisteredException();
+        }
+        return this.initManager(phoneNumber, accountPath);
     }
 
     private Manager initManager(
