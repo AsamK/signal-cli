@@ -649,7 +649,7 @@ public class CallManager implements AutoCloseable {
             case "busy", "busyonanotherdevice" -> HangupMessage.Type.BUSY;
             default -> HangupMessage.Type.NORMAL;
         };
-        var hangupMessage = new HangupMessage(state.callId, type, state.deviceId);
+        var hangupMessage = new HangupMessage(state.callId, type, 0);
         var callMessage = SignalServiceCallMessage.forHangup(hangupMessage, state.deviceId);
         final var result = context.getSendHelper().sendCallMessage(callMessage, state.recipientId);
         logger.debug("Sent hangup ({}) via Signal for call {}", hangupType, callIdUnsigned(state.callId));
@@ -711,7 +711,7 @@ public class CallManager implements AutoCloseable {
                 && !"rejected".equals(reason)
                 && !"remote_busy".equals(reason)
                 && !"ringrtc_hangup".equals(reason)) {
-            var hangupMessage = new HangupMessage(callId, HangupMessage.Type.NORMAL, state.deviceId);
+            var hangupMessage = new HangupMessage(callId, HangupMessage.Type.NORMAL, 0);
             var callMessage = SignalServiceCallMessage.forHangup(hangupMessage, null);
             final var result = context.getSendHelper().sendCallMessage(callMessage, state.recipientId);
             if (!result.isSuccess()) {

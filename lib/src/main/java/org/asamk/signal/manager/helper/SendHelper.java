@@ -507,9 +507,32 @@ public class SendHelper {
     ) throws IOException {
         long startTime = System.currentTimeMillis();
 
-        final var addressesMap = recipientIds.stream()
+        // Recipients that are already known to be unregistered are skipped here.
+        // Otherwise every group send re-attempts them via the slow legacy 1:1
+        // fan-out, which on large groups can take tens of seconds (and time out).
+        // The unregistered flag is maintained independently by profile/CDS
+        // discovery, which clears it once a recipient registers again, so they
+        // are re-included automatically. An unregisteredFailure result is still
+        // returned for each skipped recipient, so callers see them unchanged.
+        final var skippedResults = new ArrayList<SendMessageResult>();
+        final Set<RecipientId> targetRecipientIds;
+        final var unregisteredRecipientIds = account.getRecipientStore().getUnregisteredRecipientIds(recipientIds);
+        if (unregisteredRecipientIds.isEmpty()) {
+            targetRecipientIds = recipientIds;
+        } else {
+            logger.debug("Skipping {} known-unregistered recipient(s) in group send.",
+                    unregisteredRecipientIds.size());
+            targetRecipientIds = new HashSet<>(recipientIds);
+            targetRecipientIds.removeAll(unregisteredRecipientIds);
+            for (final var recipientId : unregisteredRecipientIds) {
+                skippedResults.add(SendMessageResult.unregisteredFailure(context.getRecipientHelper()
+                        .resolveSignalServiceAddress(recipientId)));
+            }
+        }
+
+        final var addressesMap = targetRecipientIds.stream()
                 .collect(Collectors.toMap(id -> id, context.getRecipientHelper()::resolveSignalServiceAddress));
-        final var unidentifiedAccessesMap = context.getUnidentifiedAccessHelper().getAccessFor(recipientIds);
+        final var unidentifiedAccessesMap = context.getUnidentifiedAccessHelper().getAccessFor(targetRecipientIds);
         final var groupSendEndorsementsResult = getGroupSendEndorsements(groupInfo);
         final var groupSecretParams = groupInfo instanceof GroupInfoV2 gv2
                 ? GroupSecretParams.deriveFromMasterKey((gv2.getMasterKey()))
@@ -523,7 +546,7 @@ public class SendHelper {
                 : groupSendEndorsementsResult.first();
         Set<RecipientId> senderKeyTargets = groupInfo.getDistributionId() == null || groupSendEndorsements == null
                 ? Set.of()
-                : recipientIds.stream()
+                : targetRecipientIds.stream()
                   .filter(s -> this.isSenderKeyCapable(s,
                           addressesMap.get(s),
                           unidentifiedAccessesMap.get(s),
@@ -533,7 +556,7 @@ public class SendHelper {
             logger.debug("Too few sender-key-capable users ({}). Doing all legacy sends.", senderKeyTargets.size());
             senderKeyTargets = Set.of();
         } else {
-            logger.debug("Can use sender key for {}/{} recipients.", senderKeyTargets.size(), recipientIds.size());
+            logger.debug("Can use sender key for {}/{} recipients.", senderKeyTargets.size(), targetRecipientIds.size());
         }
 
         final var allResults = new ArrayList<SendMessageResult>(recipientIds.size());
@@ -569,9 +592,9 @@ public class SendHelper {
             }
         }
 
-        final var legacyTargets = new HashSet<>(recipientIds);
+        final var legacyTargets = new HashSet<>(targetRecipientIds);
         legacyTargets.removeAll(senderKeyTargets);
-        final boolean onlyTargetIsSelfWithLinkedDevice = recipientIds.isEmpty() && account.isMultiDevice();
+        final boolean onlyTargetIsSelfWithLinkedDevice = targetRecipientIds.isEmpty() && account.isMultiDevice();
 
         if (!legacyTargets.isEmpty() || onlyTargetIsSelfWithLinkedDevice) {
             if (!legacyTargets.isEmpty()) {
@@ -605,6 +628,7 @@ public class SendHelper {
                     isRecipientUpdate || !allResults.isEmpty());
             allResults.addAll(results);
         }
+        allResults.addAll(skippedResults);
         final var duration = Duration.ofMillis(System.currentTimeMillis() - startTime);
         logger.debug("Sending took {}", duration.toString());
         return allResults;

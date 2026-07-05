@@ -777,11 +777,29 @@
       "jniAccessible": true,
       "methods": [
         {
+          "name": "forName",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "forName",
+          "parameterTypes": [
+            "java.lang.String",
+            "boolean",
+            "java.lang.ClassLoader"
+          ]
+        },
+        {
           "name": "getCanonicalName",
           "parameterTypes": []
         },
         {
           "name": "getClassLoader",
+          "parameterTypes": []
+        },
+        {
+          "name": "getName",
           "parameterTypes": []
         },
         {
@@ -819,7 +837,27 @@
       ]
     },
     {
-      "type": "java.lang.ClassNotFoundException"
+      "type": "java.lang.ClassNotFoundException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.Throwable"
+          ]
+        }
+      ]
     },
     {
       "type": "java.lang.ClassValue"
@@ -960,12 +998,36 @@
           "parameterTypes": []
         },
         {
+          "name": "getContextClassLoader",
+          "parameterTypes": []
+        },
+        {
+          "name": "getId",
+          "parameterTypes": []
+        },
+        {
+          "name": "getName",
+          "parameterTypes": []
+        },
+        {
           "name": "getStackTrace",
           "parameterTypes": []
         },
         {
           "name": "isVirtual",
           "parameterTypes": []
+        },
+        {
+          "name": "setContextClassLoader",
+          "parameterTypes": [
+            "java.lang.ClassLoader"
+          ]
+        },
+        {
+          "name": "setName",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
         }
       ]
     },
@@ -980,7 +1042,15 @@
           ]
         },
         {
+          "name": "getCause",
+          "parameterTypes": []
+        },
+        {
           "name": "getMessage",
+          "parameterTypes": []
+        },
+        {
+          "name": "getStackTrace",
           "parameterTypes": []
         },
         {
@@ -1586,7 +1656,42 @@
     },
     {
       "type": "kotlin.reflect.jvm.internal.impl.resolve.scopes.DescriptorKindFilter",
-      "allPublicFields": true
+      "allPublicFields": true,
+      "fields": [
+        {
+          "name": "ALL"
+        },
+        {
+          "name": "CALLABLES"
+        },
+        {
+          "name": "CLASSIFIERS"
+        },
+        {
+          "name": "Companion"
+        },
+        {
+          "name": "FUNCTIONS"
+        },
+        {
+          "name": "NON_SINGLETON_CLASSIFIERS"
+        },
+        {
+          "name": "PACKAGES"
+        },
+        {
+          "name": "SINGLETON_CLASSIFIERS"
+        },
+        {
+          "name": "TYPE_ALIASES"
+        },
+        {
+          "name": "VALUES"
+        },
+        {
+          "name": "VARIABLES"
+        }
+      ]
     },
     {
       "type": "kotlinx.coroutines.AwaitAll"

@@ -310,6 +310,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         if (callMessage.hangup().isPresent()) {
             var hangupMessage = callMessage.hangup().get();
             writer.println("Hangup message: {}", callIdUnsigned(hangupMessage.id()));
+            writer.println("- type: {}", hangupMessage.type());
+            writer.println("- device id: {}", hangupMessage.deviceId());
         }
         if (!callMessage.iceUpdate().isEmpty()) {
             writer.println("Ice update messages:");
