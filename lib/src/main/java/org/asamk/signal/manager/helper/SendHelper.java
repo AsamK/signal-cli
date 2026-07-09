@@ -379,6 +379,67 @@ public class SendHelper {
         return results;
     }
 
+    /**
+     * Send a story message (file attachment) to a group.
+     */
+    public List<SendMessageResult> sendGroupStoryMessage(
+            SignalServiceStoryMessage storyMessage,
+            long timestamp,
+            GroupInfoV2 groupInfo,
+            boolean allowsReplies
+    ) throws IOException {
+        final var messageSender = dependencies.getMessageSender();
+
+        final var recipientIds = groupInfo.getMembersWithout(account.getSelfRecipientId());
+        final var recipientIdList = List.copyOf(recipientIds);
+        final var addressesMap = recipientIdList.stream()
+                .collect(Collectors.toMap(id -> id, context.getRecipientHelper()::resolveSignalServiceAddress));
+        final var unidentifiedAccessesMap = context.getUnidentifiedAccessHelper().getAccessFor(recipientIds);
+
+        final var groupSendEndorsementsResult = getGroupSendEndorsements(groupInfo);
+        if (groupSendEndorsementsResult == null) {
+            throw new IOException("Group send endorsements unavailable; try again after group state refreshes");
+        }
+        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfo.getMasterKey());
+        final var senderCertificate = context.getUnidentifiedAccessHelper().getSenderCertificateFor(null);
+        final var groupSendEndorsements = new GroupSendEndorsements(groupSendEndorsementsResult.first(),
+                recipientIdList.stream()
+                        .collect(Collectors.toMap(id -> (ACI) addressesMap.get(id).getServiceId(),
+                                groupSendEndorsementsResult.second()::get)),
+                senderCertificate,
+                groupSecretParams);
+
+        final var addresses = recipientIdList.stream().map(addressesMap::get).toList();
+        final var unidentifiedAccesses = recipientIdList.stream().map(unidentifiedAccessesMap::get).toList();
+        final var storyMessageRecipients = recipientIdList.stream()
+                .map(id -> new SignalServiceStoryMessageRecipient(addressesMap.get(id),
+                        List.of(groupInfo.getDistributionId().asUuid().toString()),
+                        allowsReplies))
+                .collect(Collectors.toSet());
+
+        final List<SendMessageResult> results;
+        try {
+            results = messageSender.sendGroupStory(groupInfo.getDistributionId(),
+                    Optional.of(groupInfo.getMasterKey().serialize()),
+                    addresses,
+                    unidentifiedAccesses,
+                    groupSendEndorsements,
+                    false,
+                    storyMessage,
+                    timestamp,
+                    storyMessageRecipients,
+                    null);
+        } catch (UntrustedIdentityException | InvalidKeyException | NoSessionException | InvalidRegistrationIdException e) {
+            throw new IOException(e);
+        }
+
+        for (var r : results) {
+            handleSendMessageResult(r);
+        }
+
+        return results;
+    }
+
     private List<SendMessageResult> sendAsGroupMessage(
             final SignalServiceDataMessage.Builder messageBuilder,
             final GroupInfo g,
