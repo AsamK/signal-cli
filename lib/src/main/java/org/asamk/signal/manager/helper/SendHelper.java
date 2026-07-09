@@ -390,7 +390,23 @@ public class SendHelper {
     ) throws IOException {
         final var messageSender = dependencies.getMessageSender();
 
-        final var recipientIds = groupInfo.getMembersWithout(account.getSelfRecipientId());
+        final var allRecipientIds = groupInfo.getMembersWithout(account.getSelfRecipientId());
+        final var skippedResults = new ArrayList<SendMessageResult>();
+        final var unregisteredRecipientIds = account.getRecipientStore().getUnregisteredRecipientIds(allRecipientIds);
+        final Set<RecipientId> recipientIds;
+        if (unregisteredRecipientIds.isEmpty()) {
+            recipientIds = allRecipientIds;
+        } else {
+            logger.debug("Skipping {} known-unregistered recipient(s) in group story send.",
+                    unregisteredRecipientIds.size());
+            recipientIds = new HashSet<>(allRecipientIds);
+            recipientIds.removeAll(unregisteredRecipientIds);
+            for (final var recipientId : unregisteredRecipientIds) {
+                skippedResults.add(SendMessageResult.unregisteredFailure(context.getRecipientHelper()
+                        .resolveSignalServiceAddress(recipientId)));
+            }
+        }
+
         final var recipientIdList = List.copyOf(recipientIds);
         final var addressesMap = recipientIdList.stream()
                 .collect(Collectors.toMap(id -> id, context.getRecipientHelper()::resolveSignalServiceAddress));
@@ -402,16 +418,29 @@ public class SendHelper {
         }
         final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfo.getMasterKey());
         final var senderCertificate = context.getUnidentifiedAccessHelper().getSenderCertificateFor(null);
+        final var endorsementMap = groupSendEndorsementsResult.second();
+        final var eligibleRecipientIds = recipientIdList.stream()
+                .filter(id -> addressesMap.get(id).getServiceId() instanceof ACI)
+                .filter(id -> endorsementMap.containsKey(id) && endorsementMap.get(id) != null)
+                .toList();
+        if (eligibleRecipientIds.size() < recipientIdList.size()) {
+            logger.debug("Filtered {}/{} recipients for group story (missing ACI or endorsement)",
+                    recipientIdList.size() - eligibleRecipientIds.size(),
+                    recipientIdList.size());
+        }
+        if (eligibleRecipientIds.isEmpty()) {
+            throw new IOException("No group members eligible for story delivery (missing endorsements or ACI)");
+        }
         final var groupSendEndorsements = new GroupSendEndorsements(groupSendEndorsementsResult.first(),
-                recipientIdList.stream()
+                eligibleRecipientIds.stream()
                         .collect(Collectors.toMap(id -> (ACI) addressesMap.get(id).getServiceId(),
-                                groupSendEndorsementsResult.second()::get)),
+                                endorsementMap::get)),
                 senderCertificate,
                 groupSecretParams);
 
-        final var addresses = recipientIdList.stream().map(addressesMap::get).toList();
-        final var unidentifiedAccesses = recipientIdList.stream().map(unidentifiedAccessesMap::get).toList();
-        final var storyMessageRecipients = recipientIdList.stream()
+        final var addresses = eligibleRecipientIds.stream().map(addressesMap::get).toList();
+        final var unidentifiedAccesses = eligibleRecipientIds.stream().map(unidentifiedAccessesMap::get).toList();
+        final var storyMessageRecipients = eligibleRecipientIds.stream()
                 .map(id -> new SignalServiceStoryMessageRecipient(addressesMap.get(id),
                         List.of(groupInfo.getDistributionId().asUuid().toString()),
                         allowsReplies))
@@ -437,7 +466,9 @@ public class SendHelper {
             handleSendMessageResult(r);
         }
 
-        return results;
+        final var allResults = new ArrayList<>(results);
+        allResults.addAll(skippedResults);
+        return allResults;
     }
 
     private List<SendMessageResult> sendAsGroupMessage(

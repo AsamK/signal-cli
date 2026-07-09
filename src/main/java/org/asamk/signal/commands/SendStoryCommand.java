@@ -64,10 +64,8 @@ public class SendStoryCommand implements JsonRpcLocalCommand {
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send story: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")", e);
-        } catch (GroupNotFoundException e) {
-            throw new UserErrorException("Group not found: " + e.getMessage());
-        } catch (NotAGroupMemberException e) {
-            throw new UserErrorException("Not a member of this group: " + e.getMessage());
+        } catch (GroupNotFoundException | NotAGroupMemberException e) {
+            throw new UserErrorException(e.getMessage());
         }
     }
 }
