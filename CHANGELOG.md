@@ -4,7 +4,7 @@
 
 ### Added
 
-- New `sendStory` command to post file attachment stories to "My Story"
+- New `sendStory` command to post file attachment stories to "My Story" or to a group via `--group-id`
 
 ### Fixed
 

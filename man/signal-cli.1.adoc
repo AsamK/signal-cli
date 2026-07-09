@@ -639,6 +639,10 @@ Post a file attachment story to your Story, visible to all contacts.
 *-a* ATTACHMENT, *--attachment* ATTACHMENT::
 Specify the file path to the image or video to post as a story.
 
+*-g* GROUP, *--group-id* GROUP::
+Specify a group to post the story to.
+Without this flag, the story is posted to "My Story".
+
 *--no-replies*::
 Disable replies on this story. By default, replies are allowed.
 
