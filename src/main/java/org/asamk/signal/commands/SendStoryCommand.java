@@ -9,9 +9,14 @@ import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.AttachmentInvalidException;
+import org.asamk.signal.manager.api.GroupId;
+import org.asamk.signal.manager.api.GroupNotFoundException;
+import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.output.OutputWriter;
+import org.asamk.signal.util.CommandUtil;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static org.asamk.signal.util.SendMessageResultUtils.outputResult;
 
@@ -31,6 +36,8 @@ public class SendStoryCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--no-replies")
                 .action(Arguments.storeTrue())
                 .help("Disable replies on this story.");
+        subparser.addArgument("-g", "--group-id")
+                .help("Specify a group to post the story to. Without this, posts to My Story.");
     }
 
     @Override
@@ -46,12 +53,21 @@ public class SendStoryCommand implements JsonRpcLocalCommand {
 
         final var noReplies = Boolean.TRUE.equals(ns.getBoolean("no-replies"));
 
+        final var groupIdStr = ns.getString("group-id");
+        final var groupId = groupIdStr != null
+                ? Optional.of(CommandUtil.getGroupId(groupIdStr))
+                : Optional.<GroupId>empty();
+
         try {
-            final var results = m.sendStory(attachment, !noReplies);
+            final var results = m.sendStory(attachment, !noReplies, groupId);
             outputResult(outputWriter, results);
         } catch (AttachmentInvalidException | IOException e) {
             throw new UnexpectedErrorException("Failed to send story: " + e.getMessage() + " (" + e.getClass()
                     .getSimpleName() + ")", e);
+        } catch (GroupNotFoundException e) {
+            throw new UserErrorException("Group not found: " + e.getMessage());
+        } catch (NotAGroupMemberException e) {
+            throw new UserErrorException("Not a member of this group: " + e.getMessage());
         }
     }
 }
