@@ -841,13 +841,6 @@ public class ManagerImpl implements Manager {
             throw new AttachmentInvalidException(attachment,
                     new IOException("Stories only support image and video attachments"));
         }
-        final var uploadedAttachment = context.getAttachmentHelper().uploadAttachment(attachment);
-        final var storyMessage = SignalServiceStoryMessage.forFileAttachment(account.getProfileKey().serialize(),
-                null,
-                uploadedAttachment,
-                allowsReplies,
-                List.of());
-        final var timestamp = getNextMessageTimestamp();
 
         final var recipients = account.getRecipientStore()
                 .getRecipients(true, Optional.of(false), Set.of(), Optional.empty());
@@ -856,6 +849,18 @@ public class ManagerImpl implements Manager {
                 .filter(r -> r.getContact() == null || !r.getContact().hideStory())
                 .map(r -> r.getRecipientId())
                 .collect(Collectors.toSet());
+
+        if (recipientIds.isEmpty()) {
+            throw new IOException("No eligible contacts found for story delivery");
+        }
+
+        final var uploadedAttachment = context.getAttachmentHelper().uploadAttachment(attachment);
+        final var storyMessage = SignalServiceStoryMessage.forFileAttachment(account.getProfileKey().serialize(),
+                null,
+                uploadedAttachment,
+                allowsReplies,
+                List.of());
+        final var timestamp = getNextMessageTimestamp();
 
         final var sendResults = context.getSendHelper()
                 .sendStoryMessage(storyMessage, timestamp, recipientIds, allowsReplies);
