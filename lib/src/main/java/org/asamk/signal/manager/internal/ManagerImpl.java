@@ -909,6 +909,10 @@ public class ManagerImpl implements Manager {
             throw new IOException("Stories are only supported for V2 groups");
         }
 
+        if (groupInfoV2.getMembersWithout(account.getSelfRecipientId()).isEmpty()) {
+            throw new IOException("No other members in group for story delivery");
+        }
+
         final var uploadedAttachment = context.getAttachmentHelper().uploadAttachment(attachment);
         final var groupContext = SignalServiceGroupV2.newBuilder(groupInfoV2.getMasterKey())
                 .withRevision(groupInfoV2.getGroup() == null ? 0 : groupInfoV2.getGroup().revision)
