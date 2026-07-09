@@ -213,6 +213,14 @@ public interface Manager extends Closeable {
             long editTargetTimestamp
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException;
 
+    /**
+     * Post a file attachment story to "My Story".
+     *
+     * @param attachment    path to the file to upload and post as a story
+     * @param allowsReplies whether other users are allowed to reply to this story
+     */
+    SendMessageResults sendStory(String attachment, boolean allowsReplies) throws IOException, AttachmentInvalidException;
+
     SendMessageResults sendRemoteDeleteMessage(
             long targetSentTimestamp,
             Set<RecipientIdentifier> recipients

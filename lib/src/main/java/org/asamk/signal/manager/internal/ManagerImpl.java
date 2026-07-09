@@ -104,10 +104,13 @@ import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.network.exceptions.NonSuccessfulResponseCodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessageRecipient;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
 import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
@@ -116,6 +119,7 @@ import org.whispersystems.signalservice.api.messages.calls.IceUpdateMessage;
 import org.whispersystems.signalservice.api.messages.calls.OfferMessage;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
+import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
@@ -824,6 +828,51 @@ public class ManagerImpl implements Manager {
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
         return sendMessage(messageBuilder, recipients, false, Optional.of(editTargetTimestamp), message.urgent());
+    }
+
+    @Override
+    public SendMessageResults sendStory(
+            String attachment,
+            boolean allowsReplies
+    ) throws IOException, AttachmentInvalidException {
+        final var uploadedAttachment = context.getAttachmentHelper().uploadAttachment(attachment);
+        final var storyMessage = SignalServiceStoryMessage.forFileAttachment(account.getProfileKey().serialize(),
+                null,
+                uploadedAttachment,
+                allowsReplies,
+                List.of());
+        final var timestamp = getNextMessageTimestamp();
+
+        final var recipients = account.getRecipientStore()
+                .getRecipients(true, Optional.of(false), Set.of(), Optional.empty());
+        final var recipientIds = recipients.stream()
+                .filter(r -> !r.getRecipientId().equals(account.getSelfRecipientId()))
+                .filter(r -> r.getContact() == null || !r.getContact().hideStory())
+                .map(r -> r.getRecipientId())
+                .collect(Collectors.toSet());
+
+        final var sendResults = context.getSendHelper()
+                .sendStoryMessage(storyMessage, timestamp, recipientIds, allowsReplies);
+
+        final var storyMessageRecipients = sendResults.stream()
+                .filter(org.whispersystems.signalservice.api.messages.SendMessageResult::isSuccess)
+                .map(r -> new SignalServiceStoryMessageRecipient(r.getAddress(),
+                        List.of(DistributionId.MY_STORY.asUuid().toString()),
+                        allowsReplies))
+                .collect(Collectors.toSet());
+        try {
+            dependencies.getMessageSender().sendStorySyncMessage(storyMessage, timestamp, false, storyMessageRecipients);
+        } catch (UntrustedIdentityException e) {
+            throw new IOException(e);
+        }
+
+        final var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
+        for (final var sendResult : sendResults) {
+            final var result = toSendMessageResult(sendResult);
+            results.put(RecipientIdentifier.Single.fromAddress(result.address()), List.of(result));
+        }
+
+        return new SendMessageResults(timestamp, results);
     }
 
     private void applyMessage(
