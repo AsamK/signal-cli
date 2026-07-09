@@ -350,6 +350,11 @@ class SseInitialFlushTest {
         }
 
         @Override
+        public SendMessageResults sendStory(String attachment, boolean allowsReplies) {
+            return new SendMessageResults(0, Map.of());
+        }
+
+        @Override
         public void hideRecipient(RecipientIdentifier.Single recipient) {
         }
 
