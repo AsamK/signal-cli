@@ -835,6 +835,12 @@ public class ManagerImpl implements Manager {
             String attachment,
             boolean allowsReplies
     ) throws IOException, AttachmentInvalidException {
+        final var file = new File(attachment);
+        final var mimeType = MimeUtils.getFileMimeType(file);
+        if (mimeType.isEmpty() || (!mimeType.get().startsWith("image/") && !mimeType.get().startsWith("video/"))) {
+            throw new AttachmentInvalidException(attachment,
+                    new IOException("Stories only support image and video attachments"));
+        }
         final var uploadedAttachment = context.getAttachmentHelper().uploadAttachment(attachment);
         final var storyMessage = SignalServiceStoryMessage.forFileAttachment(account.getProfileKey().serialize(),
                 null,

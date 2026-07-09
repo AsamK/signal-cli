@@ -544,7 +544,7 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public SendMessageResults sendStory(String attachment, boolean allowsReplies) {
-        return new SendMessageResults(0, Map.of());
+        throw new UnsupportedOperationException();
     }
 
     @Override
