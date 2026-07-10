@@ -2950,6 +2950,12 @@
       "allDeclaredConstructors": true
     },
     {
+      "type": "org.asamk.signal.json.JsonError$Details",
+      "allDeclaredFields": true,
+      "allDeclaredMethods": true,
+      "allDeclaredConstructors": true
+    },
+    {
       "type": "org.asamk.signal.json.JsonGroupInfo",
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
@@ -3418,6 +3424,12 @@
     },
     {
       "type": "org.asamk.signal.logging.LogConfigurator"
+    },
+    {
+      "type": "org.asamk.signal.manager.api.InvalidEnvelopeContentException$InvalidBodyRange",
+      "allDeclaredFields": true,
+      "allDeclaredMethods": true,
+      "allDeclaredConstructors": true
     },
     {
       "type": "org.asamk.signal.manager.api.PhoneNumberSharingMode",

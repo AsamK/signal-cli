@@ -271,7 +271,11 @@ public final class IncomingMessageHandler {
             final EnvelopeMetadata envelopeMetadata,
             final Content content
     ) {
-        final var dataMessage = content.dataMessage;
+        final var dataMessage = content.dataMessage != null
+                ? content.dataMessage
+                : content.syncMessage != null && content.syncMessage.sent != null
+                        ? content.syncMessage.sent.message
+                        : null;
         final Integer bodyLength = dataMessage == null
                 ? null
                 : dataMessage.body == null ? 0 : dataMessage.body.length();

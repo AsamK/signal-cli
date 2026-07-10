@@ -8,6 +8,7 @@ import org.whispersystems.signalservice.api.messages.EnvelopeContentValidator;
 import org.whispersystems.signalservice.internal.push.BodyRange;
 import org.whispersystems.signalservice.internal.push.Content;
 import org.whispersystems.signalservice.internal.push.DataMessage;
+import org.whispersystems.signalservice.internal.push.SyncMessage;
 
 import java.util.List;
 
@@ -35,6 +36,28 @@ class IncomingMessageHandlerTest {
         assertEquals(2, exception.getSenderDevice());
         assertEquals(5, exception.getBodyLength());
         assertEquals(List.of(new InvalidEnvelopeContentException.InvalidBodyRange(0, 4, 3, "STYLE_BOLD")),
+                exception.getInvalidBodyRanges());
+    }
+
+    @Test
+    void invalidEnvelopeContentReportsOutOfBoundsBodyRangeFromSyncMessage() {
+        final var sender = ACI.parseOrThrow("2a04f0cc-199f-4b93-99d8-13c6b10a70de");
+        final var bodyRange = new BodyRange.Builder().start(-1).length(2).mentionAci(sender.toString()).build();
+        final var dataMessage = new DataMessage.Builder().body("hello").bodyRanges(List.of(bodyRange)).build();
+        final var sent = new SyncMessage.Sent.Builder().message(dataMessage).build();
+        final var content = new Content.Builder().syncMessage(new SyncMessage.Builder().sent(sent).build()).build();
+        final var metadata = new EnvelopeMetadata(sender, null, 2, false, null, sender, 1);
+        final var validationResult = new EnvelopeContentValidator.Result.Invalid(
+                "[DataMessage] Body range with out-of-bounds start/length!",
+                new Throwable());
+
+        final var exception = IncomingMessageHandler.createInvalidEnvelopeContentException(validationResult,
+                metadata,
+                content);
+
+        assertEquals(InvalidEnvelopeContentException.DATA_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS, exception.getCode());
+        assertEquals(5, exception.getBodyLength());
+        assertEquals(List.of(new InvalidEnvelopeContentException.InvalidBodyRange(0, -1, 2, "MENTION")),
                 exception.getInvalidBodyRanges());
     }
 }
