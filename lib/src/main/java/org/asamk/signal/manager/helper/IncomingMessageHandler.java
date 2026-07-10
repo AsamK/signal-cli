@@ -73,6 +73,7 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.internal.push.BodyRange;
 import org.whispersystems.signalservice.internal.push.Content;
+import org.whispersystems.signalservice.internal.push.DataMessage;
 import org.whispersystems.signalservice.internal.push.Envelope;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 
@@ -89,6 +90,12 @@ import java.util.stream.Collectors;
 public final class IncomingMessageHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(IncomingMessageHandler.class);
+    private static final String DATA_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS_REASON =
+            "[DataMessage] Body range with out-of-bounds start/length!";
+    private static final String DATA_MESSAGE_QUOTE_BODY_RANGE_OUT_OF_BOUNDS_REASON =
+            "[DataMessage] Quote body range with out-of-bounds start/length!";
+    private static final String EDIT_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS_REASON =
+            "[EditMessage] Body range with out-of-bounds start/length!";
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
@@ -271,21 +278,31 @@ public final class IncomingMessageHandler {
             final EnvelopeMetadata envelopeMetadata,
             final Content content
     ) {
-        final var dataMessage = content.dataMessage != null
-                ? content.dataMessage
-                : content.syncMessage != null && content.syncMessage.sent != null
-                        ? content.syncMessage.sent.message
-                        : null;
-        final Integer bodyLength = dataMessage == null
-                ? null
-                : dataMessage.body == null ? 0 : dataMessage.body.length();
-        final List<InvalidEnvelopeContentException.InvalidBodyRange> invalidBodyRanges;
-        if (dataMessage == null) {
-            invalidBodyRanges = List.of();
+        final var reason = validationResult.getReason();
+        final var dataMessage = getDataMessage(content, reason);
+        final String body;
+        final List<BodyRange> bodyRanges;
+        if (DATA_MESSAGE_QUOTE_BODY_RANGE_OUT_OF_BOUNDS_REASON.equals(reason)) {
+            if (dataMessage == null || dataMessage.quote == null) {
+                body = null;
+                bodyRanges = null;
+            } else {
+                body = dataMessage.quote.text;
+                bodyRanges = dataMessage.quote.bodyRanges;
+            }
+        } else if (dataMessage == null) {
+            body = null;
+            bodyRanges = null;
         } else {
-            invalidBodyRanges = new ArrayList<>();
-            for (int i = 0; i < dataMessage.bodyRanges.size(); i++) {
-                final var range = dataMessage.bodyRanges.get(i);
+            body = dataMessage.body;
+            bodyRanges = dataMessage.bodyRanges;
+        }
+
+        final Integer bodyLength = bodyRanges == null ? null : body == null ? 0 : body.length();
+        final List<InvalidEnvelopeContentException.InvalidBodyRange> invalidBodyRanges = new ArrayList<>();
+        if (bodyRanges != null) {
+            for (int i = 0; i < bodyRanges.size(); i++) {
+                final var range = bodyRanges.get(i);
                 final long start = range.start == null ? 0 : range.start;
                 final long length = range.length == null ? 0 : range.length;
                 if (start < 0 || length < 0 || start + length > bodyLength) {
@@ -297,16 +314,48 @@ public final class IncomingMessageHandler {
             }
         }
 
-        final var code = "[DataMessage] Body range with out-of-bounds start/length!".equals(validationResult.getReason())
+        final var code = isBodyRangeOutOfBoundsReason(reason)
                 ? InvalidEnvelopeContentException.DATA_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS
                 : InvalidEnvelopeContentException.INVALID_ENVELOPE_CONTENT;
-        return new InvalidEnvelopeContentException(validationResult.getReason(),
+        return new InvalidEnvelopeContentException(reason,
                 code,
                 envelopeMetadata.getSourceServiceId().toString(),
                 envelopeMetadata.getSourceDeviceId(),
                 bodyLength,
                 invalidBodyRanges,
                 validationResult.getThrowable());
+    }
+
+    private static DataMessage getDataMessage(final Content content, final String validationReason) {
+        if (validationReason.startsWith("[EditMessage]")) {
+            return getEditDataMessage(content);
+        }
+
+        if (content.dataMessage != null) {
+            return content.dataMessage;
+        }
+        if (content.syncMessage != null && content.syncMessage.sent != null
+                && content.syncMessage.sent.message != null) {
+            return content.syncMessage.sent.message;
+        }
+        return getEditDataMessage(content);
+    }
+
+    private static DataMessage getEditDataMessage(final Content content) {
+        if (content.editMessage != null) {
+            return content.editMessage.dataMessage;
+        }
+        if (content.syncMessage != null && content.syncMessage.sent != null
+                && content.syncMessage.sent.editMessage != null) {
+            return content.syncMessage.sent.editMessage.dataMessage;
+        }
+        return null;
+    }
+
+    private static boolean isBodyRangeOutOfBoundsReason(final String reason) {
+        return DATA_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS_REASON.equals(reason)
+                || DATA_MESSAGE_QUOTE_BODY_RANGE_OUT_OF_BOUNDS_REASON.equals(reason)
+                || EDIT_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS_REASON.equals(reason);
     }
 
     private static String getBodyRangeType(final BodyRange range) {
@@ -357,7 +406,7 @@ public final class IncomingMessageHandler {
         // Check again in case the user just joined the group
         notAllowedToSendToGroup = notAllowedToSendToGroup && isNotAllowedToSendToGroup(envelope, content);
 
-        if (isMessageBlocked(envelope, content)) {
+        if (isMessageBlocked(envelope, content, exception)) {
             logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
             return List.of();
         } else if (notAllowedToSendToGroup) {
@@ -826,8 +875,12 @@ public final class IncomingMessageHandler {
         return null;
     }
 
-    private boolean isMessageBlocked(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        SignalServiceAddress source = getSenderAddress(envelope, content);
+    private boolean isMessageBlocked(
+            SignalServiceEnvelope envelope,
+            SignalServiceContent content,
+            Exception exception
+    ) {
+        SignalServiceAddress source = getSenderAddress(envelope, content, exception);
         if (source == null) {
             return false;
         }
@@ -1134,7 +1187,10 @@ public final class IncomingMessageHandler {
         this.account.getProfileStore().storeProfileKey(source, profileKey);
     }
 
-    private SignalServiceAddress getSenderAddress(SignalServiceEnvelope envelope, SignalServiceContent content) {
+    private static SignalServiceAddress getSenderAddress(
+            final SignalServiceEnvelope envelope,
+            final SignalServiceContent content
+    ) {
         final var serviceId = envelope.getSourceServiceId();
         if (!envelope.isUnidentifiedSender() && serviceId != null) {
             return new SignalServiceAddress(serviceId);
@@ -1143,6 +1199,24 @@ public final class IncomingMessageHandler {
         } else {
             return null;
         }
+    }
+
+    static SignalServiceAddress getSenderAddress(
+            final SignalServiceEnvelope envelope,
+            final SignalServiceContent content,
+            final Exception exception
+    ) {
+        final var source = getSenderAddress(envelope, content);
+        if (source != null) {
+            return source;
+        }
+        if (exception instanceof InvalidEnvelopeContentException e && e.getSender() != null) {
+            final var sender = ServiceId.parseOrNull(e.getSender());
+            if (sender != null) {
+                return new SignalServiceAddress(sender);
+            }
+        }
+        return null;
     }
 
     private DeviceAddress getSender(SignalServiceEnvelope envelope, SignalServiceContent content) {
