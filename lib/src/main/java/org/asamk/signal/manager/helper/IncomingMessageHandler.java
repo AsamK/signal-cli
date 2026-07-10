@@ -122,6 +122,8 @@ public final class IncomingMessageHandler {
         }
 
         SignalServiceContent content = null;
+        Content decryptedContent = null;
+        InvalidEnvelopeContentException validationException = null;
         if (!envelope.isReceipt()) {
             account.getIdentityKeyStore().setRetryingDecryption(true);
             try {
@@ -129,6 +131,7 @@ public final class IncomingMessageHandler {
                 final var cipherResult = dependencies.getCipher(destination == null
                                 || destination.equals(account.getAci()) ? ServiceIdType.ACI : ServiceIdType.PNI)
                         .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
+                decryptedContent = cipherResult.getContent();
                 content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
                 if (content == null) {
                     return new Pair<>(List.of(), null);
@@ -139,14 +142,21 @@ public final class IncomingMessageHandler {
                         .resolveRecipientAddress(recipientId)
                         .toApiRecipientAddress(), e.getSenderDevice());
                 return new Pair<>(List.of(), exception);
+            } catch (InvalidEnvelopeContentException e) {
+                validationException = e;
             } catch (Exception e) {
                 return new Pair<>(List.of(), e);
             } finally {
                 account.getIdentityKeyStore().setRetryingDecryption(false);
             }
         }
-        actions.addAll(checkAndHandleMessage(envelope, content, null, receiveConfig, handler, null));
-        return new Pair<>(actions, null);
+        actions.addAll(checkAndHandleMessage(envelope,
+                content,
+                validationException == null ? null : decryptedContent,
+                receiveConfig,
+                handler,
+                validationException));
+        return new Pair<>(actions, validationException);
     }
 
     public Pair<List<HandleAction>, Exception> handleEnvelope(
