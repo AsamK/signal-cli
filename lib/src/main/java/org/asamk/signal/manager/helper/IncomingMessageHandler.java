@@ -21,6 +21,7 @@ import org.asamk.signal.manager.actions.SyncStorageDataAction;
 import org.asamk.signal.manager.actions.UpdateAccountAttributesAction;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupNotFoundException;
+import org.asamk.signal.manager.api.InvalidEnvelopeContentException;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.ReceiveConfig;
@@ -52,6 +53,7 @@ import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.InvalidMessageStructureException;
+import org.whispersystems.signalservice.api.crypto.EnvelopeMetadata;
 import org.whispersystems.signalservice.api.crypto.SignalGroupSessionBuilder;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipherResult;
 import org.whispersystems.signalservice.api.messages.EnvelopeContentValidator;
@@ -69,6 +71,8 @@ import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSy
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.internal.push.BodyRange;
+import org.whispersystems.signalservice.internal.push.Content;
 import org.whispersystems.signalservice.internal.push.Envelope;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 
@@ -225,7 +229,8 @@ public final class IncomingMessageHandler {
             Envelope envelope,
             SignalServiceCipherResult cipherResult,
             long serverDeliveredTimestamp
-    ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException, InvalidMessageStructureException {
+    ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException,
+            InvalidMessageStructureException, InvalidEnvelopeContentException {
         final var content = cipherResult.getContent();
         final var envelopeMetadata = cipherResult.getMetadata();
         final var validationResult = EnvelopeContentValidator.INSTANCE.validate(envelope,
@@ -234,8 +239,17 @@ public final class IncomingMessageHandler {
                 cipherResult.getMetadata().getCiphertextMessageType());
 
         if (validationResult instanceof EnvelopeContentValidator.Result.Invalid v) {
-            logger.warn("Invalid content! {}", v.getReason(), v.getThrowable());
-            return null;
+            final var exception = createInvalidEnvelopeContentException(v, envelopeMetadata, content);
+            logger.warn("Invalid content! reason={} code={} source={} sourceDevice={} timestamp={} bodyLength={} invalidBodyRanges={}",
+                    exception.getMessage(),
+                    exception.getCode(),
+                    exception.getSender(),
+                    exception.getSenderDevice(),
+                    envelope.clientTimestamp,
+                    exception.getBodyLength(),
+                    exception.getInvalidBodyRanges());
+            logger.debug("Invalid content validation location", v.getThrowable());
+            throw exception;
         }
 
         if (validationResult instanceof EnvelopeContentValidator.Result.UnsupportedDataMessage v) {
@@ -250,6 +264,55 @@ public final class IncomingMessageHandler {
                 envelopeMetadata,
                 content,
                 serverDeliveredTimestamp);
+    }
+
+    static InvalidEnvelopeContentException createInvalidEnvelopeContentException(
+            final EnvelopeContentValidator.Result.Invalid validationResult,
+            final EnvelopeMetadata envelopeMetadata,
+            final Content content
+    ) {
+        final var dataMessage = content.dataMessage;
+        final Integer bodyLength = dataMessage == null
+                ? null
+                : dataMessage.body == null ? 0 : dataMessage.body.length();
+        final List<InvalidEnvelopeContentException.InvalidBodyRange> invalidBodyRanges;
+        if (dataMessage == null) {
+            invalidBodyRanges = List.of();
+        } else {
+            invalidBodyRanges = new ArrayList<>();
+            for (int i = 0; i < dataMessage.bodyRanges.size(); i++) {
+                final var range = dataMessage.bodyRanges.get(i);
+                final long start = range.start == null ? 0 : range.start;
+                final long length = range.length == null ? 0 : range.length;
+                if (start < 0 || length < 0 || start + length > bodyLength) {
+                    invalidBodyRanges.add(new InvalidEnvelopeContentException.InvalidBodyRange(i,
+                            range.start,
+                            range.length,
+                            getBodyRangeType(range)));
+                }
+            }
+        }
+
+        final var code = "[DataMessage] Body range with out-of-bounds start/length!".equals(validationResult.getReason())
+                ? InvalidEnvelopeContentException.DATA_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS
+                : InvalidEnvelopeContentException.INVALID_ENVELOPE_CONTENT;
+        return new InvalidEnvelopeContentException(validationResult.getReason(),
+                code,
+                envelopeMetadata.getSourceServiceId().toString(),
+                envelopeMetadata.getSourceDeviceId(),
+                bodyLength,
+                invalidBodyRanges,
+                validationResult.getThrowable());
+    }
+
+    private static String getBodyRangeType(final BodyRange range) {
+        if (range.style != null) {
+            return "STYLE_" + range.style.name();
+        }
+        if (range.mentionAci != null || range.mentionAciBinary != null) {
+            return "MENTION";
+        }
+        return "UNKNOWN";
     }
 
     private List<HandleAction> checkAndHandleMessage(
