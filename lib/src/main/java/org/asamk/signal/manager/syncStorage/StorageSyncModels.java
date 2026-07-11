@@ -92,8 +92,10 @@ public final class StorageSyncModels {
 
     public static ContactRecord localToRemoteRecord(Recipient recipient, IdentityInfo identity) {
         final var address = recipient.getAddress();
+        final var pniPresent = address.pni().isPresent();
+
         final var builder = SignalContactRecord.Companion.newBuilder(recipient.getStorageRecord())
-                .e164(address.number().orElse(""))
+                .e164(pniPresent ? address.number().orElse("") : "")
                 .username(address.username().orElse(""))
                 .profileKey(recipient.getProfileKey() == null
                         ? ByteString.EMPTY
