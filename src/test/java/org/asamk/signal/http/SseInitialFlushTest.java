@@ -124,6 +124,11 @@ class SseInitialFlushTest {
         }
 
         @Override
+        public String getSelfACI() {
+            return "00000000-0000-0000-0000-000000000000";
+        }
+
+        @Override
         public void addReceiveHandler(ReceiveMessageHandler handler, boolean isWeakListener) {
             // no-op
         }

@@ -114,6 +114,11 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public String getSelfACI() {
+        return signal.getSelfACI();
+    }
+
+    @Override
     public Map<String, UserStatus> getUserStatus(final Set<String> numbers) throws IOException {
         final var numbersList = new ArrayList<>(numbers);
         final var registered = signal.isRegistered(numbersList);

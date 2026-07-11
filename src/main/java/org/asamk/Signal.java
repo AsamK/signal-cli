@@ -22,6 +22,8 @@ public interface Signal extends DBusInterface {
 
     String getSelfNumber();
 
+    String getSelfACI();
+
     void subscribeReceive();
 
     void unsubscribeReceive();

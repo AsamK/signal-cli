@@ -120,6 +120,11 @@ class SubscribeCallEventsTest {
             return selfNumber;
         }
 
+        @Override
+        public String getSelfACI() {
+            return "00000000-0000-0000-0000-000000000000";
+        }
+
         // --- Stubs for remaining Manager interface methods ---
         @Override
         public Map<String, UserStatus> getUserStatus(Set<String> n) {

@@ -247,6 +247,11 @@ public class ManagerImpl implements Manager {
         return account.getNumber();
     }
 
+    @Override
+    public String getSelfACI() {
+        return account.getAci().toString();
+    }
+
     public void checkAccountState() throws IOException {
         context.getAccountHelper().checkAccountState();
         final var lastRecipientsRefresh = account.getLastRecipientsRefresh();

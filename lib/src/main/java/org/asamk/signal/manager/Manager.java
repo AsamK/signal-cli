@@ -91,6 +91,8 @@ public interface Manager extends Closeable {
 
     String getSelfNumber();
 
+    String getSelfACI();
+
     /**
      * This is used for checking a set of phone numbers for registration on Signal
      *
