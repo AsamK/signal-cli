@@ -8,6 +8,7 @@ import org.asamk.signal.manager.SignalAccountFiles;
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
 import org.slf4j.Logger;
+import org.signal.core.util.UuidUtil;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -97,57 +98,51 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     @Override
     public Manager getManager(final String identifier) {
         synchronized (managers) {
-            // Try to find already loaded manager by phone number
-            var manager = managers.stream()
-                    .filter(m -> m.getSelfNumber().equals(identifier))
-                    .findFirst()
-                    .orElse(null);
-            if (manager != null) {
-                return manager;
-            }
-
-            // Try to load by phone number first
-            try {
-                final var newManager = signalAccountFiles.initManager(identifier);
-                managers.add(newManager);
-                return newManager;
-            } catch (NotRegisteredException e) {
-                // Not a valid phone number or not registered yet, try ACI
-                logger.debug("Manager not found by number, trying ACI: {}", identifier);
-            } catch (IOException | IllegalArgumentException | AccountCheckException e) {
-                logger.warn("Failed to load new manager by number: {}", identifier, e);
-                return null;
-            }
-
-            // Before trying to initByAci (which would try to re-open an already-locked file),
-            // check if this UUID corresponds to an already-loaded manager
-            try {
-                final var phoneNumber = signalAccountFiles.getAccountNumberByAci(identifier);
-                if (phoneNumber != null) {
-                    final var existingManager = managers.stream()
-                            .filter(m -> m.getSelfNumber().equals(phoneNumber))
-                            .findFirst()
-                            .orElse(null);
-                    if (existingManager != null) {
-                        logger.debug("Found already loaded manager for ACI: {}", identifier);
-                        return existingManager;
+            if (UuidUtil.INSTANCE.isUuid(identifier)) {
+                // Check if UUID corresponds to an already-loaded manager
+                try {
+                    final var phoneNumber = signalAccountFiles.getAccountNumberByAci(identifier);
+                    if (phoneNumber != null) {
+                        final var existing = managers.stream()
+                                .filter(m -> m.getSelfNumber().equals(phoneNumber))
+                                .findFirst()
+                                .orElse(null);
+                        if (existing != null) {
+                            logger.debug("Found already loaded manager for ACI: {}", identifier);
+                            return existing;
+                        }
                     }
+                } catch (IOException e) {
+                    logger.warn("Failed to lookup ACI in accounts: {}", identifier, e);
                 }
-            } catch (IOException e) {
-                logger.warn("Failed to lookup ACI in accounts: {}", identifier, e);
+                // Load by ACI
+                try {
+                    final var newManager = signalAccountFiles.initManagerByAci(identifier);
+                    managers.add(newManager);
+                    return newManager;
+                } catch (NotRegisteredException e) {
+                    logger.debug("Manager not found by ACI: {}", identifier);
+                } catch (IOException | IllegalArgumentException | AccountCheckException e) {
+                    logger.warn("Failed to load new manager by ACI: {}", identifier, e);
+                }
+            } else {
+                // Phone number — check already loaded managers
+                var existing = managers.stream()
+                        .filter(m -> m.getSelfNumber().equals(identifier))
+                        .findFirst()
+                        .orElse(null);
+                if (existing != null) {
+                    return existing;
+                }
+                // Load by phone number
+                try {
+                    final var newManager = signalAccountFiles.initManager(identifier);
+                    managers.add(newManager);
+                    return newManager;
+                } catch (NotRegisteredException | IOException | IllegalArgumentException | AccountCheckException e) {
+                    logger.warn("Failed to load manager by number: {}", identifier, e);
+                }
             }
-
-            // Try to load by ACI (useful for SSE endpoint with ?account=<UUID>)
-            try {
-                final var newManager = signalAccountFiles.initManagerByAci(identifier);
-                managers.add(newManager);
-                return newManager;
-            } catch (NotRegisteredException e) {
-                logger.debug("Manager not found by ACI: {}", identifier);
-            } catch (IOException | IllegalArgumentException | AccountCheckException e) {
-                logger.warn("Failed to load new manager by ACI: {}", identifier, e);
-            }
-
             return null;
         }
     }
