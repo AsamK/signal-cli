@@ -35,6 +35,8 @@ import org.whispersystems.signalservice.api.messages.SendMessageResult;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceEditMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessageRecipient;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SentTranscriptMessage;
@@ -328,6 +330,53 @@ public class SendHelper {
         }
         handleSendMessageResult(result);
         return result;
+    }
+
+    /**
+     * Send a story message (file attachment) to "My Story".
+     */
+    public List<SendMessageResult> sendStoryMessage(
+            SignalServiceStoryMessage storyMessage,
+            long timestamp,
+            Set<RecipientId> recipientIds,
+            boolean allowsReplies
+    ) throws IOException {
+        final var messageSender = dependencies.getMessageSender();
+
+        final var recipientIdList = List.copyOf(recipientIds);
+        final var addressesMap = recipientIdList.stream()
+                .collect(Collectors.toMap(id -> id, context.getRecipientHelper()::resolveSignalServiceAddress));
+        final var unidentifiedAccessesMap = context.getUnidentifiedAccessHelper().getAccessFor(recipientIds);
+
+        final var addresses = recipientIdList.stream().map(addressesMap::get).toList();
+        final var unidentifiedAccesses = recipientIdList.stream().map(unidentifiedAccessesMap::get).toList();
+        final var storyMessageRecipients = recipientIdList.stream()
+                .map(id -> new SignalServiceStoryMessageRecipient(addressesMap.get(id),
+                        List.of(DistributionId.MY_STORY.asUuid().toString()),
+                        allowsReplies))
+                .collect(Collectors.toSet());
+
+        final List<SendMessageResult> results;
+        try {
+            results = messageSender.sendGroupStory(DistributionId.MY_STORY,
+                    Optional.empty(),
+                    addresses,
+                    unidentifiedAccesses,
+                    null,
+                    false,
+                    storyMessage,
+                    timestamp,
+                    storyMessageRecipients,
+                    null);
+        } catch (UntrustedIdentityException | InvalidKeyException | NoSessionException | InvalidRegistrationIdException e) {
+            throw new IOException(e);
+        }
+
+        for (var r : results) {
+            handleSendMessageResult(r);
+        }
+
+        return results;
     }
 
     private List<SendMessageResult> sendAsGroupMessage(

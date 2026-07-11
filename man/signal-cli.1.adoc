@@ -632,6 +632,16 @@ Specify the timestamp of the message to which to react.
 *--type* TYPE::
 Specify the receipt type, either `read` (the default) or `viewed`.
 
+=== sendStory
+
+Post a file attachment story to your Story, visible to all contacts.
+
+*-a* ATTACHMENT, *--attachment* ATTACHMENT::
+Specify the file path to the image or video to post as a story.
+
+*--no-replies*::
+Disable replies on this story. By default, replies are allowed.
+
 === sendTyping
 
 Send typing message to trigger a typing indicator for the recipient.

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- New `sendStory` command to post file attachment stories to "My Story"
+
 ### Fixed
 
 - Sending to large groups is no longer slowed down by members that are already known to be unregistered; they are skipped instead of being retried via the legacy 1:1 send path on every send.

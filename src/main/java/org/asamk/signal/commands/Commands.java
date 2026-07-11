@@ -52,6 +52,7 @@ public class Commands {
         addCommand(new SendPollTerminateCommand());
         addCommand(new SendReactionCommand());
         addCommand(new SendReceiptCommand());
+        addCommand(new SendStoryCommand());
         addCommand(new SendSyncRequestCommand());
         addCommand(new SendTypingCommand());
         addCommand(new SendUnpinMessageCommand());

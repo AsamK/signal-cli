@@ -543,6 +543,11 @@ public class DbusManagerImpl implements Manager {
     }
 
     @Override
+    public SendMessageResults sendStory(String attachment, boolean allowsReplies) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void sendEndSessionMessage(final Set<RecipientIdentifier.Single> recipients) throws IOException {
         signal.sendEndSessionMessage(recipients.stream().map(RecipientIdentifier.Single::getIdentifier).toList());
     }
