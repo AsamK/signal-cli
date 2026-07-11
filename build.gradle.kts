@@ -74,7 +74,7 @@ val excludePatterns = mapOf(
     )
 )
 
-val schemaAnnotationProcessor by configurations.creating {
+val schemaAnnotationProcessor = configurations.create("schemaAnnotationProcessor") {
     isCanBeConsumed = false
     isCanBeResolved = true
 }
