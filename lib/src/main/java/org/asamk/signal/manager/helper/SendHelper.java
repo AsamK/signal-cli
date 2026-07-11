@@ -520,8 +520,7 @@ public class SendHelper {
         if (unregisteredRecipientIds.isEmpty()) {
             targetRecipientIds = recipientIds;
         } else {
-            logger.debug("Skipping {} known-unregistered recipient(s) in group send.",
-                    unregisteredRecipientIds.size());
+            logger.debug("Skipping {} known-unregistered recipient(s) in group send.", unregisteredRecipientIds.size());
             targetRecipientIds = new HashSet<>(recipientIds);
             targetRecipientIds.removeAll(unregisteredRecipientIds);
             for (final var recipientId : unregisteredRecipientIds) {
@@ -556,7 +555,9 @@ public class SendHelper {
             logger.debug("Too few sender-key-capable users ({}). Doing all legacy sends.", senderKeyTargets.size());
             senderKeyTargets = Set.of();
         } else {
-            logger.debug("Can use sender key for {}/{} recipients.", senderKeyTargets.size(), targetRecipientIds.size());
+            logger.debug("Can use sender key for {}/{} recipients.",
+                    senderKeyTargets.size(),
+                    targetRecipientIds.size());
         }
 
         final var allResults = new ArrayList<SendMessageResult>(recipientIds.size());
@@ -691,7 +692,7 @@ public class SendHelper {
             final var successCount = results.stream().filter(SendMessageResult::isSuccess).count();
             logger.debug("Successfully sent using 1:1 to {}/{} legacy targets.", successCount, addresses.size());
             return results;
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException | NoSessionException e) {
             return List.of();
         }
     }
@@ -883,7 +884,7 @@ public class SendHelper {
                 SignalServiceAddress address,
                 SealedSenderAccess unidentifiedAccess,
                 boolean includePniSignature
-        ) throws IOException, UnregisteredUserException, ProofRequiredException, RateLimitException, org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
+        ) throws IOException, UnregisteredUserException, ProofRequiredException, RateLimitException, org.whispersystems.signalservice.api.crypto.UntrustedIdentityException, NoSessionException;
     }
 
     interface SenderKeySenderHandler {
@@ -903,6 +904,6 @@ public class SendHelper {
                 List<SignalServiceAddress> recipients,
                 List<SealedSenderAccess> unidentifiedAccess,
                 boolean isRecipientUpdate
-        ) throws IOException, UntrustedIdentityException;
+        ) throws IOException, UntrustedIdentityException, NoSessionException;
     }
 }

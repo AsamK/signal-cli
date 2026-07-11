@@ -100,6 +100,7 @@ import org.signal.core.models.ServiceId.PNI;
 import org.signal.core.util.Base64;
 import org.signal.core.util.Hex;
 import org.signal.libsignal.protocol.InvalidMessageException;
+import org.signal.libsignal.protocol.NoSessionException;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.network.exceptions.NonSuccessfulResponseCodeException;
 import org.slf4j.Logger;
@@ -1820,6 +1821,8 @@ public class ManagerImpl implements Manager {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
+        } catch (NoSessionException e) {
+            throw new IOException("No session for call recipient", e);
         }
     }
 
@@ -1837,6 +1840,8 @@ public class ManagerImpl implements Manager {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
+        } catch (NoSessionException e) {
+            throw new IOException("No session for call recipient", e);
         }
     }
 
@@ -1854,6 +1859,8 @@ public class ManagerImpl implements Manager {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
+        } catch (NoSessionException e) {
+            throw new IOException("No session for call recipient", e);
         }
     }
 
@@ -1878,6 +1885,8 @@ public class ManagerImpl implements Manager {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
+        } catch (NoSessionException e) {
+            throw new IOException("No session for call recipient", e);
         }
     }
 
@@ -1894,6 +1903,8 @@ public class ManagerImpl implements Manager {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
         } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
+        } catch (NoSessionException e) {
+            throw new IOException("No session for call recipient", e);
         }
     }
 

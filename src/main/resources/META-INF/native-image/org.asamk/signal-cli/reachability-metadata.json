@@ -9836,6 +9836,15 @@
       ]
     },
     {
+      "type": "sun.net.www.protocol.http.Handler",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "sun.security.provider.DSA$SHA224withDSA",
       "methods": [
         {

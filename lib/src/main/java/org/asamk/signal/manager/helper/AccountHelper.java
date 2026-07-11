@@ -19,6 +19,7 @@ import org.signal.core.models.ServiceId.PNI;
 import org.signal.core.util.Base64;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
+import org.signal.libsignal.protocol.NoSessionException;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
@@ -280,7 +281,7 @@ public class AccountHelper {
                     final var message = messageSender.getEncryptedSyncPniInitializeDeviceMessage(deviceId,
                             pniChangeNumber);
                     encryptedDeviceMessages.add(message);
-                } catch (UntrustedIdentityException | IOException | InvalidKeyException e) {
+                } catch (UntrustedIdentityException | IOException | InvalidKeyException | NoSessionException e) {
                     throw new RuntimeException(e);
                 }
             }

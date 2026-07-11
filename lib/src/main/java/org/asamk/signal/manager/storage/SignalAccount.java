@@ -1924,7 +1924,8 @@ public class SignalAccount implements Closeable {
                             getSessionStore(),
                             getIdentityKeyStore(),
                             getSenderKeyStore(),
-                            SignalAccount.this::isMultiDevice));
+                            SignalAccount.this::isMultiDevice,
+                            SignalAccount.this::setMultiDevice));
         }
 
         public PreKeyStore getPreKeyStore() {

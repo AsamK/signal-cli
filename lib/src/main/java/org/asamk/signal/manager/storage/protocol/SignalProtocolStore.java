@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class SignalProtocolStore implements SignalServiceAccountDataStore {
@@ -37,6 +38,7 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     private final IdentityKeyStore identityKeyStore;
     private final SignalServiceSenderKeyStore senderKeyStore;
     private final Supplier<Boolean> isMultiDevice;
+    private final Consumer<Boolean> setMultiDeviceCallback;
 
     public SignalProtocolStore(
             final SignalServicePreKeyStore preKeyStore,
@@ -45,7 +47,8 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
             final SignalServiceSessionStore sessionStore,
             final IdentityKeyStore identityKeyStore,
             final SignalServiceSenderKeyStore senderKeyStore,
-            final Supplier<Boolean> isMultiDevice
+            final Supplier<Boolean> isMultiDevice,
+            final Consumer<Boolean> setMultiDeviceCallback
     ) {
         this.preKeyStore = preKeyStore;
         this.signedPreKeyStore = signedPreKeyStore;
@@ -54,6 +57,7 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
         this.identityKeyStore = identityKeyStore;
         this.senderKeyStore = senderKeyStore;
         this.isMultiDevice = isMultiDevice;
+        this.setMultiDeviceCallback = setMultiDeviceCallback;
     }
 
     @Override
@@ -207,6 +211,11 @@ public class SignalProtocolStore implements SignalServiceAccountDataStore {
     @Override
     public boolean isMultiDevice() {
         return isMultiDevice.get();
+    }
+
+    @Override
+    public void setMultiDevice(final boolean isMultiDevice) {
+        setMultiDeviceCallback.accept(isMultiDevice);
     }
 
     @Override
