@@ -117,23 +117,34 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
 
         IdentityState identityState;
         ByteString identityKey;
-        if (remote.identityKey.size() > 0 && (
-                !account.isPrimaryDevice()
-                        || remote.identityState != local.identityState
-                        || local.identityKey.size() == 0
 
-        )) {
-            identityState = remote.identityState;
-            identityKey = remote.identityKey;
-        } else {
-            identityState = local.identityState;
-            identityKey = local.identityKey.size() > 0 ? local.identityKey : ByteString.EMPTY;
-        }
-
+        // Parse ACI/PNI first so we can determine if contact has identity
         final var localAci = ACI.parseOrNull(local.aci, local.aciBinary);
         final var localPni = PNI.parseOrNull(local.pni, local.pniBinary);
         final var remoteAci = ACI.parseOrNull(remote.aci, remote.aciBinary);
         final var remotePni = PNI.parseOrNull(remote.pni, remote.pniBinary);
+
+        final var hasLocalIdentity = localAci != null || localPni != null;
+        final var hasRemoteIdentity = remoteAci != null || remotePni != null;
+
+        final var remoteIdentityKeySize = remote.identityKey.size();
+        final var localIdentityKeySize = local.identityKey.size();
+        final var statesDiffer = remote.identityState != local.identityState;
+
+        if (remoteIdentityKeySize > 0 && (!account.isPrimaryDevice() || statesDiffer || localIdentityKeySize == 0)) {
+            identityState = remote.identityState;
+            identityKey = remote.identityKey;
+        } else {
+            identityState = local.identityState;
+            // Only use local's identity key if:
+            // 1. Contact has ACI or PNI
+            // 2. Remote also has an identity key (if remote size=0, respect that decision)
+            if (hasLocalIdentity && localIdentityKeySize > 0 && remoteIdentityKeySize > 0) {
+                identityKey = local.identityKey;
+            } else {
+                identityKey = ByteString.EMPTY;
+            }
+        }
 
         if (localAci != null
                 && local.identityKey.size() > 0
