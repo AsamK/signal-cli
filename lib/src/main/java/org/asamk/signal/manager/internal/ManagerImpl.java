@@ -110,7 +110,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessageRecipient;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
 import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
@@ -119,7 +118,6 @@ import org.whispersystems.signalservice.api.messages.calls.IceUpdateMessage;
 import org.whispersystems.signalservice.api.messages.calls.OfferMessage;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceInfo;
-import org.whispersystems.signalservice.api.push.DistributionId;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
 import org.whispersystems.signalservice.api.util.DeviceNameUtil;
@@ -846,7 +844,7 @@ public class ManagerImpl implements Manager {
                 .getRecipients(true, Optional.of(false), Set.of(), Optional.empty());
         final var recipientIds = recipients.stream()
                 .filter(r -> !r.getRecipientId().equals(account.getSelfRecipientId()))
-                .filter(r -> r.getContact() == null || !r.getContact().hideStory())
+                .filter(r -> r.getContact() != null && !r.getContact().hideStory())
                 .map(r -> r.getRecipientId())
                 .collect(Collectors.toSet());
 
@@ -864,18 +862,6 @@ public class ManagerImpl implements Manager {
 
         final var sendResults = context.getSendHelper()
                 .sendStoryMessage(storyMessage, timestamp, recipientIds, allowsReplies);
-
-        final var storyMessageRecipients = sendResults.stream()
-                .filter(org.whispersystems.signalservice.api.messages.SendMessageResult::isSuccess)
-                .map(r -> new SignalServiceStoryMessageRecipient(r.getAddress(),
-                        List.of(DistributionId.MY_STORY.asUuid().toString()),
-                        allowsReplies))
-                .collect(Collectors.toSet());
-        try {
-            dependencies.getMessageSender().sendStorySyncMessage(storyMessage, timestamp, false, storyMessageRecipients);
-        } catch (UntrustedIdentityException e) {
-            throw new IOException(e);
-        }
 
         final var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         for (final var sendResult : sendResults) {
