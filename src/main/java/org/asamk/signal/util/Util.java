@@ -79,7 +79,7 @@ public class Util {
         for (var param : params) {
             final var paramParts = param.split("=", 2);
             var name = URLDecoder.decode(paramParts[0], StandardCharsets.UTF_8);
-            var value = paramParts.length == 1 ? null : URLDecoder.decode(paramParts[1], StandardCharsets.UTF_8);
+            var value = paramParts.length == 1 ? null : URLDecoder.decode(paramParts[1].replace("+", "%2B"), StandardCharsets.UTF_8);
             map.put(name, value);
         }
         return map;

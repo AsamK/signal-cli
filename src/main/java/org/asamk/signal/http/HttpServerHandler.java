@@ -262,6 +262,9 @@ public class HttpServerHandler implements AutoCloseable {
             } else {
                 final var manager = c.getManager(account);
                 if (manager == null) {
+                    // Account not found by the given identifier (number or ACI/UUID)
+                    // Log the available accounts to help debug
+                    logger.warn("Account not found for identifier: {}", account);
                     return null;
                 }
                 return List.of(manager);

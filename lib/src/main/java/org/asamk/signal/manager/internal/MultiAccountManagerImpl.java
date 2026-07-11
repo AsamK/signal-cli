@@ -8,6 +8,7 @@ import org.asamk.signal.manager.SignalAccountFiles;
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
 import org.slf4j.Logger;
+import org.signal.core.util.UuidUtil;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -95,23 +96,54 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
-    public Manager getManager(final String number) {
+    public Manager getManager(final String identifier) {
         synchronized (managers) {
-            final var manager = managers.stream()
-                    .filter(m -> m.getSelfNumber().equals(number))
-                    .findFirst()
-                    .orElse(null);
-            if (manager != null) {
-                return manager;
+            if (UuidUtil.INSTANCE.isUuid(identifier)) {
+                // Check if UUID corresponds to an already-loaded manager
+                try {
+                    final var phoneNumber = signalAccountFiles.getAccountNumberByAci(identifier);
+                    if (phoneNumber != null) {
+                        final var existing = managers.stream()
+                                .filter(m -> m.getSelfNumber().equals(phoneNumber))
+                                .findFirst()
+                                .orElse(null);
+                        if (existing != null) {
+                            logger.debug("Found already loaded manager for ACI: {}", identifier);
+                            return existing;
+                        }
+                    }
+                } catch (IOException e) {
+                    logger.warn("Failed to lookup ACI in accounts: {}", identifier, e);
+                }
+                // Load by ACI
+                try {
+                    final var newManager = signalAccountFiles.initManagerByAci(identifier);
+                    managers.add(newManager);
+                    return newManager;
+                } catch (NotRegisteredException e) {
+                    logger.debug("Manager not found by ACI: {}", identifier);
+                } catch (IOException | IllegalArgumentException | AccountCheckException e) {
+                    logger.warn("Failed to load new manager by ACI: {}", identifier, e);
+                }
+            } else {
+                // Phone number — check already loaded managers
+                var existing = managers.stream()
+                        .filter(m -> m.getSelfNumber().equals(identifier))
+                        .findFirst()
+                        .orElse(null);
+                if (existing != null) {
+                    return existing;
+                }
+                // Load by phone number
+                try {
+                    final var newManager = signalAccountFiles.initManager(identifier);
+                    managers.add(newManager);
+                    return newManager;
+                } catch (NotRegisteredException | IOException | IllegalArgumentException | AccountCheckException e) {
+                    logger.warn("Failed to load manager by number: {}", identifier, e);
+                }
             }
-            try {
-                final var newManager = signalAccountFiles.initManager(number);
-                managers.add(newManager);
-                return newManager;
-            } catch (IOException | NotRegisteredException | AccountCheckException e) {
-                logger.warn("Failed to load new manager", e);
-                return null;
-            }
+            return null;
         }
     }
 
