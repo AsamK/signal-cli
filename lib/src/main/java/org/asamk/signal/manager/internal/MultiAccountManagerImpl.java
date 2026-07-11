@@ -7,8 +7,8 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.SignalAccountFiles;
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
-import org.slf4j.Logger;
 import org.signal.core.util.UuidUtil;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -100,20 +100,13 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
         synchronized (managers) {
             if (UuidUtil.INSTANCE.isUuid(identifier)) {
                 // Check if UUID corresponds to an already-loaded manager
-                try {
-                    final var phoneNumber = signalAccountFiles.getAccountNumberByAci(identifier);
-                    if (phoneNumber != null) {
-                        final var existing = managers.stream()
-                                .filter(m -> m.getSelfNumber().equals(phoneNumber))
-                                .findFirst()
-                                .orElse(null);
-                        if (existing != null) {
-                            logger.debug("Found already loaded manager for ACI: {}", identifier);
-                            return existing;
-                        }
-                    }
-                } catch (IOException e) {
-                    logger.warn("Failed to lookup ACI in accounts: {}", identifier, e);
+                final var existing = managers.stream()
+                        .filter(m -> m.getSelfACI().equals(identifier))
+                        .findFirst()
+                        .orElse(null);
+                if (existing != null) {
+                    logger.debug("Found already loaded manager for ACI: {}", identifier);
+                    return existing;
                 }
                 // Load by ACI
                 try {
@@ -136,7 +129,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
                 }
                 // Load by phone number
                 try {
-                    final var newManager = signalAccountFiles.initManager(identifier);
+                    final var newManager = signalAccountFiles.initManagerByNumber(identifier);
                     managers.add(newManager);
                     return newManager;
                 } catch (NotRegisteredException | IOException | IllegalArgumentException | AccountCheckException e) {

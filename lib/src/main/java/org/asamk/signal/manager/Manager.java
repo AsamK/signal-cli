@@ -54,6 +54,7 @@ import org.asamk.signal.manager.api.UserStatus;
 import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.asamk.signal.manager.api.UsernameStatus;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
+import org.signal.core.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +73,10 @@ public interface Manager extends Closeable {
 
     static boolean isValidNumber(final String e164Number, final String countryCode) {
         return PhoneNumberUtil.getInstance().isPossibleNumber(e164Number, countryCode);
+    }
+
+    static boolean isValidAci(final String aci) {
+        return UuidUtil.INSTANCE.isUuid(aci);
     }
 
     static boolean isSignalClientAvailable() {

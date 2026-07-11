@@ -184,16 +184,20 @@ public class App {
             }
 
             account = getAccountIfOnlyOne(signalAccountFiles);
-        } else if (!Manager.isValidNumber(account, null)) {
-            throw new UserErrorException("Invalid account (phone number), make sure you include the country code.");
         }
 
         if (command instanceof RegistrationCommand registrationCommand) {
+            if (!Manager.isValidNumber(account, null)) {
+                throw new UserErrorException("Invalid account (phone number), make sure you include the country code.");
+            }
             handleRegistrationCommand(registrationCommand, account, signalAccountFiles, commandHandler);
             return;
         }
 
         if (command instanceof LocalCommand localCommand) {
+            if (!Manager.isValidNumber(account, null) && !Manager.isValidAci(account)) {
+                throw new UserErrorException("Invalid account (phone number), make sure you include the country code.");
+            }
             handleLocalCommand(localCommand, account, signalAccountFiles, commandHandler);
             return;
         }
@@ -330,7 +334,11 @@ public class App {
     ) throws CommandException {
         logger.trace("Loading account file for {}", account);
         try {
-            return signalAccountFiles.initManager(account);
+            if (Manager.isValidAci(account)) {
+                return signalAccountFiles.initManagerByAci(account);
+            } else {
+                return signalAccountFiles.initManagerByNumber(account);
+            }
         } catch (NotRegisteredException e) {
             throw new UserErrorException("User " + account + " is not registered.");
         } catch (AccountCheckException ace) {
