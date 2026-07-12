@@ -62,15 +62,15 @@ run() {
     fi
   elif [ "$DBUS" -eq 1 ]; then
     if [ -n "$STD_BUF" ]; then
-      $STD_BUF "$SIGNAL_CLI" --dbus --verbose --verbose $@ | grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org'
+      $STD_BUF "$SIGNAL_CLI" --dbus --verbose --verbose $@ > >(grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org' || true)
     else
-      "$SIGNAL_CLI" --dbus --verbose --verbose $@ | grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org'
+      "$SIGNAL_CLI" --dbus --verbose --verbose $@ > >(grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org' || true)
     fi
   else
     if [ -n "$STD_BUF" ]; then
-      $STD_BUF "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@ | grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org'
+      $STD_BUF "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@ > >(grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org' || true)
     else
-      "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@ | grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org'
+      "$SIGNAL_CLI" --service-environment="staging" --verbose --verbose $@ > >(grep --line-buffered -v 'Warning:' | grep --line-buffered -v 'at org' || true)
     fi
   fi
   set +x
