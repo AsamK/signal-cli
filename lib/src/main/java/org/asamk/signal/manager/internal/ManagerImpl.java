@@ -794,13 +794,20 @@ public class ManagerImpl implements Manager {
     ) {
         try {
             final var recipientId = context.getRecipientHelper().resolveRecipient(sender);
-            final var result = context.getSendHelper().sendReceiptMessage(receiptMessage, recipientId);
+            List<SendMessageResult> results;
+            if (receiptMessage.isDeliveryReceipt() || !Boolean.FALSE.equals(account.getConfigurationStore()
+                    .getReadReceipts())) {
+                final var result = context.getSendHelper().sendReceiptMessage(receiptMessage, recipientId);
+                results = List.of(toSendMessageResult(result));
+            } else {
+                results = List.of();
+            }
 
             final var aci = account.getRecipientAddressResolver().resolveRecipientAddress(recipientId).aci();
             if (aci.isPresent()) {
                 context.getSyncHelper().sendSyncReceiptMessage(aci.get(), receiptMessage);
             }
-            return new SendMessageResults(timestamp, Map.of(sender, List.of(toSendMessageResult(result))));
+            return new SendMessageResults(timestamp, Map.of(sender, results));
         } catch (UnregisteredRecipientException e) {
             return new SendMessageResults(timestamp,
                     Map.of(sender, List.of(SendMessageResult.unregisteredFailure(sender.toPartialRecipientAddress()))));
@@ -1870,7 +1877,7 @@ public class ManagerImpl implements Manager {
         var callMessage = SignalServiceCallMessage.forOffer(offerMessage, null);
         try {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+        } catch (UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
         } catch (NoSessionException e) {
             throw new IOException("No session for call recipient", e);
@@ -1889,7 +1896,7 @@ public class ManagerImpl implements Manager {
         var callMessage = SignalServiceCallMessage.forAnswer(answerMessage, null);
         try {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+        } catch (UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
         } catch (NoSessionException e) {
             throw new IOException("No session for call recipient", e);
@@ -1908,7 +1915,7 @@ public class ManagerImpl implements Manager {
         var callMessage = SignalServiceCallMessage.forIceUpdates(iceUpdates, null);
         try {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+        } catch (UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
         } catch (NoSessionException e) {
             throw new IOException("No session for call recipient", e);
@@ -1934,7 +1941,7 @@ public class ManagerImpl implements Manager {
         var callMessage = SignalServiceCallMessage.forHangup(hangupMessage, null);
         try {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+        } catch (UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
         } catch (NoSessionException e) {
             throw new IOException("No session for call recipient", e);
@@ -1952,7 +1959,7 @@ public class ManagerImpl implements Manager {
         var callMessage = SignalServiceCallMessage.forBusy(busyMessage, null);
         try {
             dependencies.getMessageSender().sendCallMessage(address, null, callMessage);
-        } catch (org.whispersystems.signalservice.api.crypto.UntrustedIdentityException e) {
+        } catch (UntrustedIdentityException e) {
             throw new IOException("Untrusted identity for call recipient", e);
         } catch (NoSessionException e) {
             throw new IOException("No session for call recipient", e);
