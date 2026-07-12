@@ -4,52 +4,16 @@ import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.RegistrationManager;
-import org.asamk.signal.manager.api.CallInfo;
-import org.asamk.signal.manager.api.CallOffer;
-import org.asamk.signal.manager.api.Configuration;
-import org.asamk.signal.manager.api.Device;
-import org.asamk.signal.manager.api.DeviceLinkUrl;
-import org.asamk.signal.manager.api.Group;
-import org.asamk.signal.manager.api.GroupId;
-import org.asamk.signal.manager.api.GroupInviteLinkUrl;
-import org.asamk.signal.manager.api.Identity;
-import org.asamk.signal.manager.api.IdentityVerificationCode;
-import org.asamk.signal.manager.api.Message;
-import org.asamk.signal.manager.api.MessageEnvelope;
-import org.asamk.signal.manager.api.Pair;
-import org.asamk.signal.manager.api.ReceiveConfig;
-import org.asamk.signal.manager.api.Recipient;
-import org.asamk.signal.manager.api.RecipientIdentifier;
-import org.asamk.signal.manager.api.SendGroupMessageResults;
-import org.asamk.signal.manager.api.SendMessageResult;
-import org.asamk.signal.manager.api.SendMessageResults;
-import org.asamk.signal.manager.api.StickerPack;
-import org.asamk.signal.manager.api.StickerPackId;
-import org.asamk.signal.manager.api.StickerPackUrl;
-import org.asamk.signal.manager.api.TurnServer;
-import org.asamk.signal.manager.api.TypingAction;
-import org.asamk.signal.manager.api.UpdateGroup;
-import org.asamk.signal.manager.api.UpdateProfile;
-import org.asamk.signal.manager.api.UserStatus;
-import org.asamk.signal.manager.api.UsernameLinkUrl;
-import org.asamk.signal.manager.api.UsernameStatus;
 import org.asamk.signal.output.JsonWriter;
+import org.asamk.signal.testutil.ManagerMock;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.InputStream;
 import java.net.URI;
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,499 +53,12 @@ class SubscribeCallEventsTest {
         }
     }
 
-    /**
-     * Minimal Manager stub that tracks call event listener add/remove calls.
-     */
-    private static class StubManager implements Manager {
-
-        final List<CallEventListener> listeners = new ArrayList<>();
-        final AtomicInteger addCount = new AtomicInteger(0);
-        final AtomicInteger removeCount = new AtomicInteger(0);
-        final String selfNumber;
-
-        StubManager(String selfNumber) {
-            this.selfNumber = selfNumber;
-        }
-
-        @Override
-        public void addCallEventListener(CallEventListener listener) {
-            addCount.incrementAndGet();
-            listeners.add(listener);
-        }
-
-        @Override
-        public void removeCallEventListener(CallEventListener listener) {
-            removeCount.incrementAndGet();
-            listeners.remove(listener);
-        }
-
-        @Override
-        public String getSelfNumber() {
-            return selfNumber;
-        }
-
-        @Override
-        public String getSelfACI() {
-            return "00000000-0000-0000-0000-000000000000";
-        }
-
-        // --- Stubs for remaining Manager interface methods ---
-        @Override
-        public Map<String, UserStatus> getUserStatus(Set<String> n) {
-            return Map.of();
-        }
-
-        @Override
-        public Map<String, UsernameStatus> getUsernameStatus(Set<String> u) {
-            return Map.of();
-        }
-
-        @Override
-        public void updateAccountAttributes(String d, Boolean u, Boolean dn, Boolean ns) {
-        }
-
-        @Override
-        public Configuration getConfiguration() {
-            return null;
-        }
-
-        @Override
-        public void updateConfiguration(Configuration c) {
-        }
-
-        @Override
-        public void updateProfile(UpdateProfile u) {
-        }
-
-        @Override
-        public String getUsername() {
-            return null;
-        }
-
-        @Override
-        public UsernameLinkUrl getUsernameLink() {
-            return null;
-        }
-
-        @Override
-        public void setUsername(String u) {
-        }
-
-        @Override
-        public void deleteUsername() {
-        }
-
-        @Override
-        public void startChangeNumber(String n, boolean v, String c) {
-        }
-
-        @Override
-        public void finishChangeNumber(String n, String v, String p) {
-        }
-
-        @Override
-        public void unregister() {
-        }
-
-        @Override
-        public void deleteAccount() {
-        }
-
-        @Override
-        public void submitRateLimitRecaptchaChallenge(String c, String cap) {
-        }
-
-        @Override
-        public List<Device> getLinkedDevices() {
-            return List.of();
-        }
-
-        @Override
-        public void updateLinkedDevice(int d, String n) {
-        }
-
-        @Override
-        public void removeLinkedDevices(int d) {
-        }
-
-        @Override
-        public void addDeviceLink(DeviceLinkUrl u) {
-        }
-
-        @Override
-        public void setRegistrationLockPin(Optional<String> p) {
-        }
-
-        @Override
-        public List<Group> getGroups() {
-            return List.of();
-        }
-
-        @Override
-        public List<Group> getGroups(Collection<GroupId> g) {
-            return List.of();
-        }
-
-        @Override
-        public SendGroupMessageResults quitGroup(GroupId g, Set<RecipientIdentifier.Single> a) {
-            return null;
-        }
-
-        @Override
-        public void deleteGroup(GroupId g) {
-        }
-
-        @Override
-        public Pair<GroupId, SendGroupMessageResults> createGroup(
-                String n,
-                Set<RecipientIdentifier.Single> m,
-                String a
-        ) {
-            return null;
-        }
-
-        @Override
-        public SendGroupMessageResults updateGroup(GroupId g, UpdateGroup u) {
-            return null;
-        }
-
-        @Override
-        public Pair<GroupId, SendGroupMessageResults> joinGroup(GroupInviteLinkUrl u) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendTypingMessage(TypingAction a, Set<RecipientIdentifier> r) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendReadReceipt(RecipientIdentifier.Single s, List<Long> m) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendViewedReceipt(RecipientIdentifier.Single s, List<Long> m) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendMessage(Message m, Set<RecipientIdentifier> r, boolean n) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendEditMessage(Message m, Set<RecipientIdentifier> r, long t) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendRemoteDeleteMessage(long t, Set<RecipientIdentifier> r) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendMessageReaction(
-                String e,
-                boolean rm,
-                RecipientIdentifier.Single a,
-                long t,
-                Set<RecipientIdentifier> r,
-                boolean n,
-                boolean s
-        ) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendAdminDelete(
-                RecipientIdentifier.Single a,
-                long t,
-                Set<RecipientIdentifier.Group> r,
-                boolean n,
-                boolean s
-        ) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendPinMessage(
-                int d,
-                RecipientIdentifier.Single a,
-                long t,
-                Set<RecipientIdentifier> r,
-                boolean n,
-                boolean s
-        ) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendUnpinMessage(
-                RecipientIdentifier.Single a,
-                long t,
-                Set<RecipientIdentifier> r,
-                boolean n,
-                boolean s
-        ) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendPaymentNotificationMessage(byte[] r, String n, RecipientIdentifier.Single re) {
-            return null;
-        }
-
-        @Override
-        public void sendEndSessionMessage(Set<RecipientIdentifier.Single> r) {
-        }
-
-        @Override
-        public SendMessageResults sendMessageRequestResponse(
-                MessageEnvelope.Sync.MessageRequestResponse.Type t,
-                Set<RecipientIdentifier> r
-        ) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendPollCreateMessage(
-                String q,
-                boolean a,
-                List<String> o,
-                Set<RecipientIdentifier> r,
-                boolean n
-        ) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendPollVoteMessage(
-                RecipientIdentifier.Single a,
-                long t,
-                List<Integer> o,
-                int v,
-                Set<RecipientIdentifier> r,
-                boolean n
-        ) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendPollTerminateMessage(long t, Set<RecipientIdentifier> r, boolean n) {
-            return null;
-        }
-
-        @Override
-        public SendMessageResults sendStory(String attachment, boolean allowsReplies) {
-            return new SendMessageResults(0, Map.of());
-        }
-
-        @Override
-        public void hideRecipient(RecipientIdentifier.Single r) {
-        }
-
-        @Override
-        public void deleteRecipient(RecipientIdentifier.Single r) {
-        }
-
-        @Override
-        public void deleteContact(RecipientIdentifier.Single r) {
-        }
-
-        @Override
-        public void setContactName(RecipientIdentifier.Single r, String g, String f, String ng, String nf, String n) {
-        }
-
-        @Override
-        public void setContactsBlocked(Collection<RecipientIdentifier.Single> r, boolean b) {
-        }
-
-        @Override
-        public void setGroupsBlocked(Collection<GroupId> g, boolean b) {
-        }
-
-        @Override
-        public void setExpirationTimer(RecipientIdentifier.Single r, int t) {
-        }
-
-        @Override
-        public StickerPackUrl uploadStickerPack(File p) {
-            return null;
-        }
-
-        @Override
-        public void installStickerPack(StickerPackUrl u) {
-        }
-
-        @Override
-        public List<StickerPack> getStickerPacks() {
-            return List.of();
-        }
-
-        @Override
-        public void requestAllSyncData() {
-        }
-
-        @Override
-        public void addReceiveHandler(ReceiveMessageHandler h, boolean w) {
-        }
-
-        @Override
-        public void removeReceiveHandler(ReceiveMessageHandler h) {
-        }
-
-        @Override
-        public boolean isReceiving() {
-            return false;
-        }
-
-        @Override
-        public void receiveMessages(Optional<Duration> t, Optional<Integer> m, ReceiveMessageHandler h) {
-        }
-
-        @Override
-        public void stopReceiveMessages() {
-        }
-
-        @Override
-        public void setReceiveConfig(ReceiveConfig r) {
-        }
-
-        @Override
-        public boolean isContactBlocked(RecipientIdentifier.Single r) {
-            return false;
-        }
-
-        @Override
-        public void sendContacts() {
-        }
-
-        @Override
-        public List<Recipient> getRecipients(
-                boolean o,
-                Optional<Boolean> b,
-                Collection<RecipientIdentifier.Single> a,
-                Optional<String> n
-        ) {
-            return List.of();
-        }
-
-        @Override
-        public String getContactOrProfileName(RecipientIdentifier.Single r) {
-            return null;
-        }
-
-        @Override
-        public Group getGroup(GroupId g) {
-            return null;
-        }
-
-        @Override
-        public List<Identity> getIdentities() {
-            return List.of();
-        }
-
-        @Override
-        public List<Identity> getIdentities(RecipientIdentifier.Single r) {
-            return List.of();
-        }
-
-        @Override
-        public boolean trustIdentityVerified(RecipientIdentifier.Single r, IdentityVerificationCode v) {
-            return false;
-        }
-
-        @Override
-        public boolean trustIdentityAllKeys(RecipientIdentifier.Single r) {
-            return false;
-        }
-
-        @Override
-        public void addAddressChangedListener(Runnable l) {
-        }
-
-        @Override
-        public void addClosedListener(Runnable l) {
-        }
-
-        @Override
-        public InputStream retrieveAttachment(String id) {
-            return null;
-        }
-
-        @Override
-        public InputStream retrieveContactAvatar(RecipientIdentifier.Single r) {
-            return null;
-        }
-
-        @Override
-        public InputStream retrieveProfileAvatar(RecipientIdentifier.Single r) {
-            return null;
-        }
-
-        @Override
-        public InputStream retrieveGroupAvatar(GroupId g) {
-            return null;
-        }
-
-        @Override
-        public InputStream retrieveSticker(StickerPackId s, int i) {
-            return null;
-        }
-
-        @Override
-        public CallInfo startCall(RecipientIdentifier.Single r) {
-            return null;
-        }
-
-        @Override
-        public CallInfo acceptCall(long c) {
-            return null;
-        }
-
-        @Override
-        public void hangupCall(long c) {
-        }
-
-        @Override
-        public SendMessageResult rejectCall(long c) {
-            return null;
-        }
-
-        @Override
-        public List<CallInfo> listActiveCalls() {
-            return List.of();
-        }
-
-        @Override
-        public void sendCallOffer(RecipientIdentifier.Single r, CallOffer o) {
-        }
-
-        @Override
-        public void sendCallAnswer(RecipientIdentifier.Single r, long c, byte[] a) {
-        }
-
-        @Override
-        public void sendIceUpdate(RecipientIdentifier.Single r, long c, List<byte[]> i) {
-        }
-
-        @Override
-        public void sendHangup(RecipientIdentifier.Single r, long c, MessageEnvelope.Call.Hangup.Type t) {
-        }
-
-        @Override
-        public void sendBusy(RecipientIdentifier.Single r, long c) {
-        }
-
-        @Override
-        public List<TurnServer> getTurnServerInfo() {
-            return List.of();
-        }
-
-        @Override
-        public void close() {
-        }
+    private record ManagedManager(Manager manager, ManagerMock.State state) {
+    }
+
+    private static ManagedManager createManager(final String selfNumber) {
+        final var state = new ManagerMock.State();
+        return new ManagedManager(ManagerMock.create(selfNumber, state), state);
     }
 
     /**
@@ -652,21 +129,21 @@ class SubscribeCallEventsTest {
 
     @Test
     void callEventsNotSubscribedByDefault() {
-        var manager = new StubManager("+15551234567");
+        var manager = createManager("+15551234567");
         var feeder = new LineFeeder();
         var writer = new CapturingJsonWriter();
 
         // Send no subscribeCallEvents, just end the connection
         var handler = new SignalJsonRpcDispatcherHandler(writer, feeder::getLine, true);
-        handler.handleConnection(manager);
+        handler.handleConnection(manager.manager());
 
         // No listeners should have been added
-        assertEquals(0, manager.addCount.get(), "call events should not be auto-subscribed");
+        assertEquals(0, manager.state().addCallEventListenerCount.get(), "call events should not be auto-subscribed");
     }
 
     @Test
     void subscribeCallEventsAddsListener() {
-        var manager = new StubManager("+15551234567");
+        var manager = createManager("+15551234567");
         var feeder = new LineFeeder();
         var writer = new CapturingJsonWriter();
 
@@ -674,17 +151,17 @@ class SubscribeCallEventsTest {
         // null terminates the read loop
 
         var handler = new SignalJsonRpcDispatcherHandler(writer, feeder::getLine, true);
-        handler.handleConnection(manager);
+        handler.handleConnection(manager.manager());
 
-        assertEquals(1, manager.addCount.get(), "subscribeCallEvents should add one listener");
+        assertEquals(1, manager.state().addCallEventListenerCount.get(), "subscribeCallEvents should add one listener");
         // Cleanup in finally block should remove it
-        assertEquals(1, manager.removeCount.get(), "cleanup should remove the listener");
-        assertEquals(0, manager.listeners.size(), "no listeners should remain after cleanup");
+        assertEquals(1, manager.state().removeCallEventListenerCount.get(), "cleanup should remove the listener");
+        assertEquals(0, manager.state().callEventListeners.size(), "no listeners should remain after cleanup");
     }
 
     @Test
     void subscribeCallEventsCanBeCalledMultipleTimes() {
-        var manager = new StubManager("+15551234567");
+        var manager = createManager("+15551234567");
         var feeder = new LineFeeder();
         var writer = new CapturingJsonWriter();
 
@@ -692,15 +169,15 @@ class SubscribeCallEventsTest {
         feeder.addLine(jsonRpcCall(2, "subscribeCallEvents"));
 
         var handler = new SignalJsonRpcDispatcherHandler(writer, feeder::getLine, true);
-        handler.handleConnection(manager);
+        handler.handleConnection(manager.manager());
 
         // The implementation allows multiple subscriptions, so two calls add two listeners
-        assertEquals(2, manager.addCount.get(), "multiple subscribeCallEvents should add multiple listeners");
+        assertEquals(2, manager.state().addCallEventListenerCount.get(), "multiple subscribeCallEvents should add multiple listeners");
     }
 
     @Test
     void unsubscribeCallEventsRemovesListener() {
-        var manager = new StubManager("+15551234567");
+        var manager = createManager("+15551234567");
         var feeder = new LineFeeder();
         var writer = new CapturingJsonWriter();
 
@@ -708,37 +185,37 @@ class SubscribeCallEventsTest {
         feeder.addLine(jsonRpcCall(2, "unsubscribeCallEvents", "{\"subscription\":0}"));
 
         var handler = new SignalJsonRpcDispatcherHandler(writer, feeder::getLine, true);
-        handler.handleConnection(manager);
+        handler.handleConnection(manager.manager());
 
-        assertEquals(1, manager.addCount.get(), "should have subscribed once");
+        assertEquals(1, manager.state().addCallEventListenerCount.get(), "should have subscribed once");
         // removeCount: 1 from explicit unsubscribe. The finally block's unsubscribeAllCallEvents
         // iterates an empty list so adds 0 more.
-        assertEquals(1, manager.removeCount.get(), "should have unsubscribed once");
-        assertEquals(0, manager.listeners.size());
+        assertEquals(1, manager.state().removeCallEventListenerCount.get(), "should have unsubscribed once");
+        assertEquals(0, manager.state().callEventListeners.size());
     }
 
     @Test
     void unsubscribeWithoutSubscribeIsNoOp() {
-        var manager = new StubManager("+15551234567");
+        var manager = createManager("+15551234567");
         var feeder = new LineFeeder();
         var writer = new CapturingJsonWriter();
 
         feeder.addLine(jsonRpcCall(1, "unsubscribeCallEvents"));
 
         var handler = new SignalJsonRpcDispatcherHandler(writer, feeder::getLine, true);
-        handler.handleConnection(manager);
+        handler.handleConnection(manager.manager());
 
-        assertEquals(0, manager.addCount.get());
-        assertEquals(0, manager.removeCount.get());
+        assertEquals(0, manager.state().addCallEventListenerCount.get());
+        assertEquals(0, manager.state().removeCallEventListenerCount.get());
     }
 
     // --- Multi-account mode tests ---
 
     @Test
     void multiAccountSubscribeCallEventsSubscribesAllManagers() {
-        var manager1 = new StubManager("+15551111111");
-        var manager2 = new StubManager("+15552222222");
-        var multi = new StubMultiAccountManager(List.of(manager1, manager2));
+        var manager1 = createManager("+15551111111");
+        var manager2 = createManager("+15552222222");
+        var multi = new StubMultiAccountManager(List.of(manager1.manager(), manager2.manager()));
 
         var feeder = new LineFeeder();
         var writer = new CapturingJsonWriter();
@@ -748,17 +225,17 @@ class SubscribeCallEventsTest {
         var handler = new SignalJsonRpcDispatcherHandler(writer, feeder::getLine, true);
         handler.handleConnection(multi);
 
-        assertEquals(1, manager1.addCount.get(), "manager1 should have one listener");
-        assertEquals(1, manager2.addCount.get(), "manager2 should have one listener");
+        assertEquals(1, manager1.state().addCallEventListenerCount.get(), "manager1 should have one listener");
+        assertEquals(1, manager2.state().addCallEventListenerCount.get(), "manager2 should have one listener");
         // Also registers an onManagerAdded handler for receive and one for call events
         assertEquals(2, multi.addedHandlers.size(), "should register onManagerAdded handlers");
     }
 
     @Test
     void multiAccountUnsubscribeCallEventsCleansUpAll() {
-        var manager1 = new StubManager("+15551111111");
-        var manager2 = new StubManager("+15552222222");
-        var multi = new StubMultiAccountManager(List.of(manager1, manager2));
+        var manager1 = createManager("+15551111111");
+        var manager2 = createManager("+15552222222");
+        var multi = new StubMultiAccountManager(List.of(manager1.manager(), manager2.manager()));
 
         var feeder = new LineFeeder();
         var writer = new CapturingJsonWriter();
@@ -769,16 +246,16 @@ class SubscribeCallEventsTest {
         var handler = new SignalJsonRpcDispatcherHandler(writer, feeder::getLine, true);
         handler.handleConnection(multi);
 
-        assertEquals(1, manager1.addCount.get());
-        assertEquals(1, manager2.addCount.get());
-        assertEquals(1, manager1.removeCount.get(), "manager1 listener should be removed");
-        assertEquals(1, manager2.removeCount.get(), "manager2 listener should be removed");
+        assertEquals(1, manager1.state().addCallEventListenerCount.get());
+        assertEquals(1, manager2.state().addCallEventListenerCount.get());
+        assertEquals(1, manager1.state().removeCallEventListenerCount.get(), "manager1 listener should be removed");
+        assertEquals(1, manager2.state().removeCallEventListenerCount.get(), "manager2 listener should be removed");
     }
 
     @Test
     void multiAccountCallEventsNotSubscribedByDefault() {
-        var manager1 = new StubManager("+15551111111");
-        var multi = new StubMultiAccountManager(List.of(manager1));
+        var manager1 = createManager("+15551111111");
+        var multi = new StubMultiAccountManager(List.of(manager1.manager()));
 
         var feeder = new LineFeeder();
         var writer = new CapturingJsonWriter();
@@ -786,6 +263,6 @@ class SubscribeCallEventsTest {
         var handler = new SignalJsonRpcDispatcherHandler(writer, feeder::getLine, true);
         handler.handleConnection(multi);
 
-        assertEquals(0, manager1.addCount.get(), "call events should not be auto-subscribed in multi mode");
+        assertEquals(0, manager1.state().addCallEventListenerCount.get(), "call events should not be auto-subscribed in multi mode");
     }
 }
