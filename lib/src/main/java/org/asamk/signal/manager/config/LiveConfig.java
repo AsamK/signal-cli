@@ -32,7 +32,6 @@ class LiveConfig {
     private static final String CDSI_MRENCLAVE = "0f6fd79cdfdaa5b2e6337f534d3baf999318b0c462a7ac1f41297a3e4b424a57";
     private static final String SVR2_MRENCLAVE = "ced8217b26228e4b210c985786999d095c4958a94faf37b14acaf25c4cbb02a4";
     private static final String SVR2_MRENCLAVE_LEGACY = "1240acbd4aa26974184844c8a46b1022d3957ac8a76c1fd8f5b1a15141ee0708";
-    private static final String SVR2_MRENCLAVE_OLD_LEGACY = "29cd63c87bea751e3bfd0fbd401279192e2e5c99948b4ee9437eafc4968355fb";
 
     private static final String URL = "https://chat.signal.org";
     private static final String CDN_URL = "https://cdn.signal.org";
@@ -95,7 +94,7 @@ class LiveConfig {
                 createDefaultServiceConfiguration(interceptors),
                 getUnidentifiedSenderTrustRoots(),
                 CDSI_MRENCLAVE,
-                List.of(SVR2_MRENCLAVE, SVR2_MRENCLAVE_LEGACY, SVR2_MRENCLAVE_OLD_LEGACY));
+                List.of(SVR2_MRENCLAVE, SVR2_MRENCLAVE_LEGACY));
     }
 
     private LiveConfig() {
