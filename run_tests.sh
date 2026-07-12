@@ -294,6 +294,7 @@ fi
 run_main -a "$NUMBER_2" deleteLocalAccountData || true
 
 if [ ! -z "$GRAALVM_HOME" ]; then
-  "$GRAALVM_HOME"/lib/svm/bin/native-image-configure generate --input-dir=src/main/resources/META-INF/native-image/org.asamk/signal-cli/ --input-dir=graalvm-config-dir-linked/ --input-dir=graalvm-config-dir-main/ --output-dir=src/main/resources/META-INF/native-image/org.asamk/signal-cli/
+  NATIVE_IMAGE_UTILS="$GRAALVM_HOME/lib/svm/bin/native-image-utils"
+  "$NATIVE_IMAGE_UTILS" generate --input-dir=src/main/resources/META-INF/native-image/org.asamk/signal-cli/ --input-dir=graalvm-config-dir-linked/ --input-dir=graalvm-config-dir-main/ --output-dir=src/main/resources/META-INF/native-image/org.asamk/signal-cli/
   rm -r graalvm-config-dir-main graalvm-config-dir-linked
 fi
