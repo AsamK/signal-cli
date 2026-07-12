@@ -83,6 +83,7 @@ import org.asamk.signal.manager.storage.AttachmentStore;
 import org.asamk.signal.manager.storage.AvatarStore;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.groups.GroupInfo;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
@@ -108,9 +109,11 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
+import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessageRecipient;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
 import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
@@ -844,13 +847,18 @@ public class ManagerImpl implements Manager {
     @Override
     public SendMessageResults sendStory(
             String attachment,
-            boolean allowsReplies
-    ) throws IOException, AttachmentInvalidException {
+            boolean allowsReplies,
+            Optional<GroupId> groupId
+    ) throws IOException, AttachmentInvalidException, GroupNotFoundException, NotAGroupMemberException {
         final var file = new File(attachment);
         final var mimeType = MimeUtils.getFileMimeType(file);
         if (mimeType.isEmpty() || (!mimeType.get().startsWith("image/") && !mimeType.get().startsWith("video/"))) {
             throw new AttachmentInvalidException(attachment,
                     new IOException("Stories only support image and video attachments"));
+        }
+
+        if (groupId.isPresent()) {
+            return sendGroupStory(attachment, allowsReplies, groupId.get());
         }
 
         final var recipients = account.getRecipientStore()
@@ -875,6 +883,61 @@ public class ManagerImpl implements Manager {
 
         final var sendResults = context.getSendHelper()
                 .sendStoryMessage(storyMessage, timestamp, recipientIds, allowsReplies);
+
+        final var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
+        for (final var sendResult : sendResults) {
+            final var result = toSendMessageResult(sendResult);
+            results.put(RecipientIdentifier.Single.fromAddress(result.address()), List.of(result));
+        }
+
+        return new SendMessageResults(timestamp, results);
+    }
+
+    private SendMessageResults sendGroupStory(
+            String attachment,
+            boolean allowsReplies,
+            GroupId groupId
+    ) throws IOException, AttachmentInvalidException, GroupNotFoundException, NotAGroupMemberException {
+        final var groupInfo = context.getGroupHelper().getGroup(groupId);
+        if (groupInfo == null) {
+            throw new GroupNotFoundException(groupId);
+        }
+        if (!groupInfo.isMember(account.getSelfRecipientId())) {
+            throw new NotAGroupMemberException(groupId, groupInfo.getTitle());
+        }
+        if (!(groupInfo instanceof GroupInfoV2 groupInfoV2)) {
+            throw new IOException("Stories are only supported for V2 groups");
+        }
+
+        if (groupInfoV2.getMembersWithout(account.getSelfRecipientId()).isEmpty()) {
+            throw new IOException("No other members in group for story delivery");
+        }
+
+        final var uploadedAttachment = context.getAttachmentHelper().uploadAttachment(attachment);
+        final var groupContext = SignalServiceGroupV2.newBuilder(groupInfoV2.getMasterKey())
+                .withRevision(groupInfoV2.getGroup() == null ? 0 : groupInfoV2.getGroup().revision)
+                .build();
+        final var storyMessage = SignalServiceStoryMessage.forFileAttachment(account.getProfileKey().serialize(),
+                groupContext,
+                uploadedAttachment,
+                allowsReplies,
+                List.of());
+        final var timestamp = getNextMessageTimestamp();
+
+        final var sendResults = context.getSendHelper()
+                .sendGroupStoryMessage(storyMessage, timestamp, groupInfoV2, allowsReplies);
+
+        final var storyMessageRecipients = sendResults.stream()
+                .filter(org.whispersystems.signalservice.api.messages.SendMessageResult::isSuccess)
+                .map(r -> new SignalServiceStoryMessageRecipient(r.getAddress(),
+                        List.of(groupInfoV2.getDistributionId().asUuid().toString()),
+                        allowsReplies))
+                .collect(Collectors.toSet());
+        try {
+            dependencies.getMessageSender().sendStorySyncMessage(storyMessage, timestamp, false, storyMessageRecipients);
+        } catch (UntrustedIdentityException | NoSessionException e) {
+            throw new IOException(e);
+        }
 
         final var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         for (final var sendResult : sendResults) {
