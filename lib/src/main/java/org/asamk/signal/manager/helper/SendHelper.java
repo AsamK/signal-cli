@@ -368,7 +368,8 @@ public class SendHelper {
                     timestamp,
                     storyMessageRecipients,
                     null);
-        } catch (UntrustedIdentityException | InvalidKeyException | NoSessionException | InvalidRegistrationIdException e) {
+        } catch (UntrustedIdentityException | InvalidKeyException | NoSessionException |
+                 InvalidRegistrationIdException e) {
             throw new IOException(e);
         }
 
@@ -391,84 +392,29 @@ public class SendHelper {
         final var messageSender = dependencies.getMessageSender();
 
         final var allRecipientIds = groupInfo.getMembersWithout(account.getSelfRecipientId());
-        final var skippedResults = new ArrayList<SendMessageResult>();
-        final var unregisteredRecipientIds = account.getRecipientStore().getUnregisteredRecipientIds(allRecipientIds);
-        final Set<RecipientId> recipientIds;
-        if (unregisteredRecipientIds.isEmpty()) {
-            recipientIds = allRecipientIds;
-        } else {
-            logger.debug("Skipping {} known-unregistered recipient(s) in group story send.",
-                    unregisteredRecipientIds.size());
-            recipientIds = new HashSet<>(allRecipientIds);
-            recipientIds.removeAll(unregisteredRecipientIds);
-            for (final var recipientId : unregisteredRecipientIds) {
-                skippedResults.add(SendMessageResult.unregisteredFailure(context.getRecipientHelper()
-                        .resolveSignalServiceAddress(recipientId)));
-            }
-        }
 
-        final var recipientIdList = List.copyOf(recipientIds);
-        final var addressesMap = recipientIdList.stream()
-                .collect(Collectors.toMap(id -> id, context.getRecipientHelper()::resolveSignalServiceAddress));
-        final var unidentifiedAccessesMap = context.getUnidentifiedAccessHelper().getAccessFor(recipientIds);
-
-        final var groupSendEndorsementsResult = getGroupSendEndorsements(groupInfo);
-        if (groupSendEndorsementsResult == null) {
-            throw new IOException("Group send endorsements unavailable; try again after group state refreshes");
-        }
-        final var groupSecretParams = GroupSecretParams.deriveFromMasterKey(groupInfo.getMasterKey());
-        final var senderCertificate = context.getUnidentifiedAccessHelper().getSenderCertificateFor(null);
-        final var endorsementMap = groupSendEndorsementsResult.second();
-        final var eligibleRecipientIds = recipientIdList.stream()
-                .filter(id -> addressesMap.get(id).getServiceId() instanceof ACI)
-                .filter(id -> endorsementMap.containsKey(id) && endorsementMap.get(id) != null)
-                .toList();
-        if (eligibleRecipientIds.size() < recipientIdList.size()) {
-            logger.debug("Filtered {}/{} recipients for group story (missing ACI or endorsement)",
-                    recipientIdList.size() - eligibleRecipientIds.size(),
-                    recipientIdList.size());
-        }
-        if (eligibleRecipientIds.isEmpty()) {
-            throw new IOException("No group members eligible for story delivery (missing endorsements or ACI)");
-        }
-        final var groupSendEndorsements = new GroupSendEndorsements(groupSendEndorsementsResult.first(),
-                eligibleRecipientIds.stream()
-                        .collect(Collectors.toMap(id -> (ACI) addressesMap.get(id).getServiceId(),
-                                endorsementMap::get)),
-                senderCertificate,
-                groupSecretParams);
-
-        final var addresses = eligibleRecipientIds.stream().map(addressesMap::get).toList();
-        final var unidentifiedAccesses = eligibleRecipientIds.stream().map(unidentifiedAccessesMap::get).toList();
-        final var storyMessageRecipients = eligibleRecipientIds.stream()
-                .map(id -> new SignalServiceStoryMessageRecipient(addressesMap.get(id),
-                        List.of(groupInfo.getDistributionId().asUuid().toString()),
-                        allowsReplies))
-                .collect(Collectors.toSet());
-
-        final List<SendMessageResult> results;
-        try {
-            results = messageSender.sendGroupStory(groupInfo.getDistributionId(),
-                    Optional.of(groupInfo.getMasterKey().serialize()),
-                    addresses,
-                    unidentifiedAccesses,
-                    groupSendEndorsements,
-                    false,
-                    storyMessage,
-                    timestamp,
-                    storyMessageRecipients,
-                    null);
-        } catch (UntrustedIdentityException | InvalidKeyException | NoSessionException | InvalidRegistrationIdException e) {
-            throw new IOException(e);
-        }
+        final SenderKeySenderHandler senderKeySender = (distId, recipients, unidentifiedAccess, groupSendEndorsements, isRecipientUpdate) -> messageSender.sendGroupStory(
+                distId,
+                Optional.of(groupInfo.getMasterKey().serialize()),
+                recipients,
+                unidentifiedAccess,
+                groupSendEndorsements,
+                isRecipientUpdate,
+                storyMessage,
+                timestamp,
+                recipients.stream()
+                        .map(address -> new SignalServiceStoryMessageRecipient(address,
+                                List.of(groupInfo.getDistributionId().asUuid().toString()),
+                                allowsReplies))
+                        .collect(Collectors.toSet()),
+                null);
+        final var results = sendGroupMessageInternal(null, senderKeySender, allRecipientIds, groupInfo, false);
 
         for (var r : results) {
             handleSendMessageResult(r);
         }
 
-        final var allResults = new ArrayList<>(results);
-        allResults.addAll(skippedResults);
-        return allResults;
+        return results;
     }
 
     private List<SendMessageResult> sendAsGroupMessage(
@@ -738,7 +684,7 @@ public class SendHelper {
         legacyTargets.removeAll(senderKeyTargets);
         final boolean onlyTargetIsSelfWithLinkedDevice = targetRecipientIds.isEmpty() && account.isMultiDevice();
 
-        if (!legacyTargets.isEmpty() || onlyTargetIsSelfWithLinkedDevice) {
+        if (legacySender != null && (!legacyTargets.isEmpty() || onlyTargetIsSelfWithLinkedDevice)) {
             if (!legacyTargets.isEmpty()) {
                 logger.debug("Need to do {} legacy sends.", legacyTargets.size());
             } else {

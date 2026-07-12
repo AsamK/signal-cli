@@ -113,7 +113,6 @@ import org.whispersystems.signalservice.api.messages.SignalServiceGroupV2;
 import org.whispersystems.signalservice.api.messages.SignalServicePreview;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessage;
-import org.whispersystems.signalservice.api.messages.SignalServiceStoryMessageRecipient;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
 import org.whispersystems.signalservice.api.messages.calls.BusyMessage;
@@ -909,10 +908,6 @@ public class ManagerImpl implements Manager {
             throw new IOException("Stories are only supported for V2 groups");
         }
 
-        if (groupInfoV2.getMembersWithout(account.getSelfRecipientId()).isEmpty()) {
-            throw new IOException("No other members in group for story delivery");
-        }
-
         final var uploadedAttachment = context.getAttachmentHelper().uploadAttachment(attachment);
         final var groupContext = SignalServiceGroupV2.newBuilder(groupInfoV2.getMasterKey())
                 .withRevision(groupInfoV2.getGroup() == null ? 0 : groupInfoV2.getGroup().revision)
@@ -926,18 +921,6 @@ public class ManagerImpl implements Manager {
 
         final var sendResults = context.getSendHelper()
                 .sendGroupStoryMessage(storyMessage, timestamp, groupInfoV2, allowsReplies);
-
-        final var storyMessageRecipients = sendResults.stream()
-                .filter(org.whispersystems.signalservice.api.messages.SendMessageResult::isSuccess)
-                .map(r -> new SignalServiceStoryMessageRecipient(r.getAddress(),
-                        List.of(groupInfoV2.getDistributionId().asUuid().toString()),
-                        allowsReplies))
-                .collect(Collectors.toSet());
-        try {
-            dependencies.getMessageSender().sendStorySyncMessage(storyMessage, timestamp, false, storyMessageRecipients);
-        } catch (UntrustedIdentityException | NoSessionException e) {
-            throw new IOException(e);
-        }
 
         final var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         for (final var sendResult : sendResults) {
