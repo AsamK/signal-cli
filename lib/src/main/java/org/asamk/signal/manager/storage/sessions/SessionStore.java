@@ -18,7 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,8 +28,15 @@ public class SessionStore implements SignalServiceSessionStore {
 
     private static final String TABLE_SESSION = "session";
     private static final Logger logger = LoggerFactory.getLogger(SessionStore.class);
+    private static final int MAX_CACHE_SIZE = 1000;
 
-    private final Map<Key, SessionRecord> cachedSessions = new HashMap<>();
+    private final Map<Key, SessionRecord> cachedSessions = new LinkedHashMap<>(16, 0.75f, true) {
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Key, SessionRecord> eldest) {
+            return size() > MAX_CACHE_SIZE;
+        }
+    };
 
     private final Database database;
     private final int accountIdType;
