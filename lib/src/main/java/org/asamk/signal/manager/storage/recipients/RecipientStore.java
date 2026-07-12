@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,7 +52,16 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
 
     private final Map<Long, Long> recipientsMerged = new HashMap<>();
 
-    private final Map<ServiceId, RecipientWithAddress> recipientAddressCache = Collections.synchronizedMap(new HashMap<>());
+    private static final int MAX_RECIPIENT_CACHE_SIZE = 2000;
+
+    private final Map<ServiceId, RecipientWithAddress> recipientAddressCache = Collections.synchronizedMap(
+            new LinkedHashMap<>(16, 0.75f, true) {
+
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<ServiceId, RecipientWithAddress> eldest) {
+                    return size() > MAX_RECIPIENT_CACHE_SIZE;
+                }
+            });
 
     public static void createSql(Connection connection) throws SQLException {
         // When modifying the CREATE statement here, also add a migration in AccountDatabase.java
