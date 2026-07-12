@@ -506,6 +506,14 @@ class SubscribeCallEventsTest {
         }
 
         @Override
+        public void addUnidentifiedKeepAlive(String token) {
+        }
+
+        @Override
+        public void removeUnidentifiedKeepAlive(String token) {
+        }
+
+        @Override
         public InputStream retrieveAttachment(String id) {
             return null;
         }
@@ -750,8 +758,8 @@ class SubscribeCallEventsTest {
 
         assertEquals(1, manager1.addCount.get(), "manager1 should have one listener");
         assertEquals(1, manager2.addCount.get(), "manager2 should have one listener");
-        // Also registers an onManagerAdded handler for receive and one for call events
-        assertEquals(2, multi.addedHandlers.size(), "should register onManagerAdded handlers");
+        // Registers onManagerAdded handlers for receive, call events, and keep-alive
+        assertEquals(3, multi.addedHandlers.size(), "should register onManagerAdded handlers");
     }
 
     @Test

@@ -1762,6 +1762,16 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public void addUnidentifiedKeepAlive(final String token) {
+        dependencies.getUnauthenticatedSignalWebSocket().registerKeepAliveToken(token);
+    }
+
+    @Override
+    public void removeUnidentifiedKeepAlive(final String token) {
+        dependencies.getUnauthenticatedSignalWebSocket().removeKeepAliveToken(token);
+    }
+
+    @Override
     public void addCallEventListener(final CallEventListener listener) {
         context.getCallManager().addCallEventListener(listener);
     }
