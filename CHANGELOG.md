@@ -1,10 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [0.14.6] - 2026-07-12
 
 ### Added
 
 - New `sendStory` command to post file attachment stories to "My Story" or to a group via `--group-id`
+
+### Improved
+
+- The account parameter `-a` now supports ACI in addition to phone number
+- Disabling read receipts in configuration now prevents sending read receipts (only sync message to linked devices is still sent)
 
 ### Fixed
 
