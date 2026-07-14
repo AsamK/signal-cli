@@ -21,6 +21,7 @@ import org.asamk.signal.manager.actions.SyncStorageDataAction;
 import org.asamk.signal.manager.actions.UpdateAccountAttributesAction;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupNotFoundException;
+import org.asamk.signal.manager.api.InvalidEnvelopeContentException;
 import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.ReceiveConfig;
@@ -31,6 +32,7 @@ import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.jobs.RetrieveStickerPackJob;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
@@ -48,10 +50,12 @@ import org.signal.libsignal.protocol.InvalidMessageException;
 import org.signal.libsignal.protocol.groups.GroupSessionBuilder;
 import org.signal.libsignal.protocol.message.DecryptionErrorMessage;
 import org.signal.libsignal.zkgroup.InvalidInputException;
+import org.signal.libsignal.zkgroup.groups.GroupMasterKey;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.InvalidMessageStructureException;
+import org.whispersystems.signalservice.api.crypto.EnvelopeMetadata;
 import org.whispersystems.signalservice.api.crypto.SignalGroupSessionBuilder;
 import org.whispersystems.signalservice.api.crypto.SignalServiceCipherResult;
 import org.whispersystems.signalservice.api.messages.EnvelopeContentValidator;
@@ -69,7 +73,12 @@ import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSy
 import org.whispersystems.signalservice.api.messages.multidevice.StickerPackOperationMessage;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.internal.push.BodyRange;
+import org.whispersystems.signalservice.internal.push.Content;
+import org.whispersystems.signalservice.internal.push.DataMessage;
 import org.whispersystems.signalservice.internal.push.Envelope;
+import org.whispersystems.signalservice.internal.push.GroupContext;
+import org.whispersystems.signalservice.internal.push.GroupContextV2;
 import org.whispersystems.signalservice.internal.push.UnsupportedDataMessageException;
 
 import java.io.IOException;
@@ -85,6 +94,12 @@ import java.util.stream.Collectors;
 public final class IncomingMessageHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(IncomingMessageHandler.class);
+    private static final String DATA_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS_REASON =
+            "[DataMessage] Body range with out-of-bounds start/length!";
+    private static final String DATA_MESSAGE_QUOTE_BODY_RANGE_OUT_OF_BOUNDS_REASON =
+            "[DataMessage] Quote body range with out-of-bounds start/length!";
+    private static final String EDIT_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS_REASON =
+            "[EditMessage] Body range with out-of-bounds start/length!";
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
@@ -107,6 +122,8 @@ public final class IncomingMessageHandler {
         }
 
         SignalServiceContent content = null;
+        Content decryptedContent = null;
+        InvalidEnvelopeContentException validationException = null;
         if (!envelope.isReceipt()) {
             account.getIdentityKeyStore().setRetryingDecryption(true);
             try {
@@ -114,6 +131,7 @@ public final class IncomingMessageHandler {
                 final var cipherResult = dependencies.getCipher(destination == null
                                 || destination.equals(account.getAci()) ? ServiceIdType.ACI : ServiceIdType.PNI)
                         .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
+                decryptedContent = cipherResult.getContent();
                 content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
                 if (content == null) {
                     return new Pair<>(List.of(), null);
@@ -124,14 +142,21 @@ public final class IncomingMessageHandler {
                         .resolveRecipientAddress(recipientId)
                         .toApiRecipientAddress(), e.getSenderDevice());
                 return new Pair<>(List.of(), exception);
+            } catch (InvalidEnvelopeContentException e) {
+                validationException = e;
             } catch (Exception e) {
                 return new Pair<>(List.of(), e);
             } finally {
                 account.getIdentityKeyStore().setRetryingDecryption(false);
             }
         }
-        actions.addAll(checkAndHandleMessage(envelope, content, receiveConfig, handler, null));
-        return new Pair<>(actions, null);
+        actions.addAll(checkAndHandleMessage(envelope,
+                content,
+                validationException == null ? null : decryptedContent,
+                receiveConfig,
+                handler,
+                validationException));
+        return new Pair<>(actions, validationException);
     }
 
     public Pair<List<HandleAction>, Exception> handleEnvelope(
@@ -144,6 +169,7 @@ public final class IncomingMessageHandler {
             actions.add(RefreshPreKeysAction.create());
         }
         SignalServiceContent content = null;
+        Content decryptedContent = null;
         Exception exception = null;
         if (envelope.getSourceServiceId() != null) {
             // Store uuid if we don't have it already
@@ -167,6 +193,7 @@ public final class IncomingMessageHandler {
                 final var cipherResult = dependencies.getCipher(destination == null
                                 || destination.equals(account.getAci()) ? ServiceIdType.ACI : ServiceIdType.PNI)
                         .decrypt(envelope.getProto(), envelope.getServerDeliveredTimestamp());
+                decryptedContent = cipherResult.getContent();
                 content = validate(envelope.getProto(), cipherResult, envelope.getServerDeliveredTimestamp());
                 if (content == null) {
                     return new Pair<>(List.of(), null);
@@ -217,7 +244,12 @@ public final class IncomingMessageHandler {
             }
         }
 
-        actions.addAll(checkAndHandleMessage(envelope, content, receiveConfig, handler, exception));
+        actions.addAll(checkAndHandleMessage(envelope,
+                content,
+                exception instanceof InvalidEnvelopeContentException ? decryptedContent : null,
+                receiveConfig,
+                handler,
+                exception));
         return new Pair<>(actions, exception);
     }
 
@@ -225,7 +257,8 @@ public final class IncomingMessageHandler {
             Envelope envelope,
             SignalServiceCipherResult cipherResult,
             long serverDeliveredTimestamp
-    ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException, InvalidMessageStructureException {
+    ) throws ProtocolInvalidKeyException, ProtocolInvalidMessageException, UnsupportedDataMessageException,
+            InvalidMessageStructureException, InvalidEnvelopeContentException {
         final var content = cipherResult.getContent();
         final var envelopeMetadata = cipherResult.getMetadata();
         final var validationResult = EnvelopeContentValidator.INSTANCE.validate(envelope,
@@ -234,8 +267,17 @@ public final class IncomingMessageHandler {
                 cipherResult.getMetadata().getCiphertextMessageType());
 
         if (validationResult instanceof EnvelopeContentValidator.Result.Invalid v) {
-            logger.warn("Invalid content! {}", v.getReason(), v.getThrowable());
-            return null;
+            final var exception = createInvalidEnvelopeContentException(v, envelopeMetadata, content);
+            logger.warn("Invalid content! reason={} code={} source={} sourceDevice={} timestamp={} bodyLength={} invalidBodyRanges={}",
+                    exception.getMessage(),
+                    exception.getCode(),
+                    exception.getSender(),
+                    exception.getSenderDevice(),
+                    envelope.clientTimestamp,
+                    exception.getBodyLength(),
+                    exception.getInvalidBodyRanges());
+            logger.debug("Invalid content validation location", v.getThrowable());
+            throw exception;
         }
 
         if (validationResult instanceof EnvelopeContentValidator.Result.UnsupportedDataMessage v) {
@@ -252,9 +294,105 @@ public final class IncomingMessageHandler {
                 serverDeliveredTimestamp);
     }
 
+    static InvalidEnvelopeContentException createInvalidEnvelopeContentException(
+            final EnvelopeContentValidator.Result.Invalid validationResult,
+            final EnvelopeMetadata envelopeMetadata,
+            final Content content
+    ) {
+        final var reason = validationResult.getReason();
+        final var dataMessage = getDataMessage(content, reason);
+        final String body;
+        final List<BodyRange> bodyRanges;
+        if (DATA_MESSAGE_QUOTE_BODY_RANGE_OUT_OF_BOUNDS_REASON.equals(reason)) {
+            if (dataMessage == null || dataMessage.quote == null) {
+                body = null;
+                bodyRanges = null;
+            } else {
+                body = dataMessage.quote.text;
+                bodyRanges = dataMessage.quote.bodyRanges;
+            }
+        } else if (dataMessage == null) {
+            body = null;
+            bodyRanges = null;
+        } else {
+            body = dataMessage.body;
+            bodyRanges = dataMessage.bodyRanges;
+        }
+
+        final Integer bodyLength = bodyRanges == null ? null : body == null ? 0 : body.length();
+        final List<InvalidEnvelopeContentException.InvalidBodyRange> invalidBodyRanges = new ArrayList<>();
+        if (bodyRanges != null) {
+            for (int i = 0; i < bodyRanges.size(); i++) {
+                final var range = bodyRanges.get(i);
+                final long start = range.start == null ? 0 : range.start;
+                final long length = range.length == null ? 0 : range.length;
+                if (start < 0 || length < 0 || start + length > bodyLength) {
+                    invalidBodyRanges.add(new InvalidEnvelopeContentException.InvalidBodyRange(i,
+                            range.start,
+                            range.length,
+                            getBodyRangeType(range)));
+                }
+            }
+        }
+
+        final var code = isBodyRangeOutOfBoundsReason(reason)
+                ? InvalidEnvelopeContentException.DATA_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS
+                : InvalidEnvelopeContentException.INVALID_ENVELOPE_CONTENT;
+        return new InvalidEnvelopeContentException(reason,
+                code,
+                envelopeMetadata.getSourceServiceId().toString(),
+                envelopeMetadata.getSourceDeviceId(),
+                bodyLength,
+                invalidBodyRanges,
+                validationResult.getThrowable());
+    }
+
+    private static DataMessage getDataMessage(final Content content, final String validationReason) {
+        if (validationReason.startsWith("[EditMessage]")) {
+            return getEditDataMessage(content);
+        }
+
+        if (content.dataMessage != null) {
+            return content.dataMessage;
+        }
+        if (content.syncMessage != null && content.syncMessage.sent != null
+                && content.syncMessage.sent.message != null) {
+            return content.syncMessage.sent.message;
+        }
+        return getEditDataMessage(content);
+    }
+
+    private static DataMessage getEditDataMessage(final Content content) {
+        if (content.editMessage != null) {
+            return content.editMessage.dataMessage;
+        }
+        if (content.syncMessage != null && content.syncMessage.sent != null
+                && content.syncMessage.sent.editMessage != null) {
+            return content.syncMessage.sent.editMessage.dataMessage;
+        }
+        return null;
+    }
+
+    private static boolean isBodyRangeOutOfBoundsReason(final String reason) {
+        return DATA_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS_REASON.equals(reason)
+                || DATA_MESSAGE_QUOTE_BODY_RANGE_OUT_OF_BOUNDS_REASON.equals(reason)
+                || EDIT_MESSAGE_BODY_RANGE_OUT_OF_BOUNDS_REASON.equals(reason);
+    }
+
+    private static String getBodyRangeType(final BodyRange range) {
+        if (range.style != null) {
+            return "STYLE_" + range.style.name();
+        }
+        if (range.mentionAci != null || range.mentionAciBinary != null) {
+            return "MENTION";
+        }
+        return "UNKNOWN";
+    }
+
     private List<HandleAction> checkAndHandleMessage(
             final SignalServiceEnvelope envelope,
             final SignalServiceContent content,
+            final Content invalidContent,
             final ReceiveConfig receiveConfig,
             final Manager.ReceiveMessageHandler handler,
             final Exception exception
@@ -282,19 +420,21 @@ public final class IncomingMessageHandler {
             account.getMessageSendLogStore().deleteEntryForRecipient(envelope.getTimestamp(), sender, senderDeviceId);
         }
 
-        var notAllowedToSendToGroup = isNotAllowedToSendToGroup(envelope, content);
+        final var groupFilterInfo = getGroupFilterInfo(content, invalidContent, exception);
+        var notAllowedToSendToGroup = isNotAllowedToSendToGroup(envelope, content, exception, groupFilterInfo);
         final var groupContext = getGroupContext(content);
         if (groupContext != null && groupContext.getGroupV2().isPresent()) {
             handleGroupV2Context(groupContext.getGroupV2().get(), receiveConfig.ignoreAvatars());
         }
         // Check again in case the user just joined the group
-        notAllowedToSendToGroup = notAllowedToSendToGroup && isNotAllowedToSendToGroup(envelope, content);
+        notAllowedToSendToGroup = notAllowedToSendToGroup
+                && isNotAllowedToSendToGroup(envelope, content, exception, groupFilterInfo);
 
-        if (isMessageBlocked(envelope, content)) {
+        if (isMessageBlocked(envelope, content, exception, groupFilterInfo)) {
             logger.info("Ignoring a message from blocked user/group: {}", envelope.getTimestamp());
             return List.of();
         } else if (notAllowedToSendToGroup) {
-            final var senderAddress = getSenderAddress(envelope, content);
+            final var senderAddress = getSenderAddress(envelope, content, exception);
             logger.info("Ignoring a group message from an unauthorized sender (no member or admin): {} {}",
                     senderAddress == null ? null : senderAddress.getIdentifier(),
                     envelope.getTimestamp());
@@ -733,7 +873,7 @@ public final class IncomingMessageHandler {
         return new Pair<>(actions, longTexts);
     }
 
-    private SignalServiceGroupContext getGroupContext(SignalServiceContent content) {
+    private static SignalServiceGroupContext getGroupContext(SignalServiceContent content) {
         if (content == null) {
             return null;
         }
@@ -759,51 +899,62 @@ public final class IncomingMessageHandler {
         return null;
     }
 
-    private boolean isMessageBlocked(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        SignalServiceAddress source = getSenderAddress(envelope, content);
-        if (source == null) {
-            return false;
-        }
-        final var recipientId = account.getRecipientResolver().resolveRecipient(source);
-        if (context.getContactHelper().isContactBlocked(recipientId)) {
-            return true;
+    private boolean isMessageBlocked(
+            SignalServiceEnvelope envelope,
+            SignalServiceContent content,
+            Exception exception,
+            GroupFilterInfo groupFilterInfo
+    ) {
+        SignalServiceAddress source = getSenderAddress(envelope, content, exception);
+        if (source != null) {
+            final var recipientId = account.getRecipientResolver().resolveRecipient(source);
+            if (context.getContactHelper().isContactBlocked(recipientId)) {
+                return true;
+            }
         }
 
-        final var groupContext = getGroupContext(content);
-        if (groupContext != null) {
-            var groupId = GroupUtils.getGroupId(groupContext);
-            return context.getGroupHelper().isGroupBlocked(groupId);
+        if (groupFilterInfo != null) {
+            return isGroupBlocked(context.getGroupHelper().getGroup(groupFilterInfo.groupId()));
         }
 
         return false;
     }
 
-    private boolean isNotAllowedToSendToGroup(SignalServiceEnvelope envelope, SignalServiceContent content) {
-        SignalServiceAddress source = getSenderAddress(envelope, content);
+    private boolean isNotAllowedToSendToGroup(
+            SignalServiceEnvelope envelope,
+            SignalServiceContent content,
+            Exception exception,
+            GroupFilterInfo groupFilterInfo
+    ) {
+        SignalServiceAddress source = getSenderAddress(envelope, content, exception);
         if (source == null) {
             return false;
         }
 
-        final var groupContext = getGroupContext(content);
-        if (groupContext == null) {
+        if (groupFilterInfo == null) {
             return false;
         }
 
-        if (groupContext.getGroupV1().isPresent()) {
-            var groupInfo = groupContext.getGroupV1().get();
-            if (groupInfo.getType() == SignalServiceGroup.Type.QUIT) {
-                return false;
-            }
+        if (groupFilterInfo.isQuit()) {
+            return false;
         }
-
-        final var message = content.getDataMessage().orElse(null);
 
         final var recipientId = account.getRecipientResolver().resolveRecipient(source);
 
-        final var groupId = GroupUtils.getGroupId(groupContext);
-        final var group = context.getGroupHelper().getGroup(groupId);
+        final var group = context.getGroupHelper().getGroup(groupFilterInfo.groupId());
+        return isNotAllowedToSendToGroup(group, recipientId, groupFilterInfo);
+    }
 
-        if (message != null && message.getAdminDelete().isPresent() && (group == null || !group.isAdmin(recipientId))) {
+    static boolean isGroupBlocked(final GroupInfo group) {
+        return group != null && group.isBlocked();
+    }
+
+    static boolean isNotAllowedToSendToGroup(
+            final GroupInfo group,
+            final RecipientId recipientId,
+            final GroupFilterInfo groupFilterInfo
+    ) {
+        if (groupFilterInfo.hasAdminDelete() && (group == null || !group.isAdmin(recipientId))) {
             return true;
         }
 
@@ -811,23 +962,101 @@ public final class IncomingMessageHandler {
             return false;
         }
 
-        if (!group.isMember(recipientId) && !(
-                group.isPendingMember(recipientId) && message != null && message.isGroupV2Update()
-        )) {
+        if (!group.isMember(recipientId)
+                && !(group.isPendingMember(recipientId) && groupFilterInfo.isGroupV2Update())) {
             return true;
         }
 
         if (group.isAnnouncementGroup() && !group.isAdmin(recipientId)) {
-            return message == null
-                    || message.getBody().isPresent()
-                    || message.getAttachments().isPresent()
-                    || message.getQuote().isPresent()
-                    || message.getPreviews().isPresent()
-                    || message.getMentions().isPresent()
-                    || message.getSticker().isPresent();
+            return groupFilterInfo.hasAnnouncementContent();
         }
         return false;
     }
+
+    static GroupFilterInfo getGroupFilterInfo(
+            final SignalServiceContent content,
+            final Content invalidContent,
+            final Exception exception
+    ) {
+        if (content != null) {
+            final var groupContext = getGroupContext(content);
+            if (groupContext == null) {
+                return null;
+            }
+            final var message = content.getDataMessage().orElse(null);
+            return new GroupFilterInfo(GroupUtils.getGroupId(groupContext),
+                    groupContext.getGroupV1()
+                            .map(group -> group.getType() == SignalServiceGroup.Type.QUIT)
+                            .orElse(false),
+                    message != null && message.getAdminDelete().isPresent(),
+                    message != null && message.isGroupV2Update(),
+                    message == null
+                            || message.getBody().isPresent()
+                            || message.getAttachments().isPresent()
+                            || message.getQuote().isPresent()
+                            || message.getPreviews().isPresent()
+                            || message.getMentions().isPresent()
+                            || message.getSticker().isPresent());
+        }
+
+        if (invalidContent == null || !(exception instanceof InvalidEnvelopeContentException e)) {
+            return null;
+        }
+
+        final var message = getDataMessage(invalidContent, e.getMessage());
+        if (message != null) {
+            final var groupId = getGroupId(message);
+            if (groupId == null) {
+                return null;
+            }
+            return new GroupFilterInfo(groupId,
+                    message.group != null
+                            && message.group.type == GroupContext.Type.QUIT,
+                    message.adminDelete != null,
+                    message.groupV2 != null
+                            && message.groupV2.groupChange != null
+                            && message.groupV2.groupChange.size() > 0,
+                    message.body != null
+                            || !message.attachments.isEmpty()
+                            || message.quote != null
+                            || !message.preview.isEmpty()
+                            || message.bodyRanges.stream()
+                                    .anyMatch(range -> range.mentionAci != null || range.mentionAciBinary != null)
+                            || message.sticker != null);
+        }
+
+        if (invalidContent.storyMessage != null && invalidContent.storyMessage.group != null) {
+            final var groupId = getGroupId(invalidContent.storyMessage.group);
+            return groupId == null ? null : new GroupFilterInfo(groupId, false, false, false, true);
+        }
+        return null;
+    }
+
+    private static GroupId getGroupId(final DataMessage message) {
+        if (message.group != null && message.group.id != null) {
+            return GroupId.v1(message.group.id.toByteArray());
+        }
+        return message.groupV2 == null ? null : getGroupId(message.groupV2);
+    }
+
+    private static GroupId getGroupId(final GroupContextV2 groupContext) {
+        if (groupContext.masterKey == null) {
+            return null;
+        }
+        try {
+            return GroupUtils.getGroupIdV2(new GroupMasterKey(groupContext.masterKey.toByteArray()));
+        } catch (InvalidInputException e) {
+            return null;
+        }
+    }
+
+    record GroupFilterInfo(
+            GroupId groupId,
+            boolean isQuit,
+            boolean hasAdminDelete,
+            boolean isGroupV2Update,
+            boolean hasAnnouncementContent
+    ) {}
 
     private Pair<List<HandleAction>, Map<String, String>> handleSignalServiceDataMessage(
             SignalServiceDataMessage message,
@@ -1067,7 +1296,10 @@ public final class IncomingMessageHandler {
         this.account.getProfileStore().storeProfileKey(source, profileKey);
     }
 
-    private SignalServiceAddress getSenderAddress(SignalServiceEnvelope envelope, SignalServiceContent content) {
+    private static SignalServiceAddress getSenderAddress(
+            final SignalServiceEnvelope envelope,
+            final SignalServiceContent content
+    ) {
         final var serviceId = envelope.getSourceServiceId();
         if (!envelope.isUnidentifiedSender() && serviceId != null) {
             return new SignalServiceAddress(serviceId);
@@ -1076,6 +1308,24 @@ public final class IncomingMessageHandler {
         } else {
             return null;
         }
+    }
+
+    static SignalServiceAddress getSenderAddress(
+            final SignalServiceEnvelope envelope,
+            final SignalServiceContent content,
+            final Exception exception
+    ) {
+        final var source = getSenderAddress(envelope, content);
+        if (source != null) {
+            return source;
+        }
+        if (exception instanceof InvalidEnvelopeContentException e && e.getSender() != null) {
+            final var sender = ServiceId.parseOrNull(e.getSender());
+            if (sender != null) {
+                return new SignalServiceAddress(sender);
+            }
+        }
+        return null;
     }
 
     private DeviceAddress getSender(SignalServiceEnvelope envelope, SignalServiceContent content) {
