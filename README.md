@@ -64,7 +64,19 @@ Important: The ACCOUNT is your phone number in international format and must inc
 should start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list
 of all country codes.)
 
+* Link to an existing account
+
+  If you have an existing Signal account associated
+  with a number, you can link signal-cli to it with:
+
+      signal-cli link
+
 * Register a number (with SMS verification)
+
+  Alternatively, if you don't have an existing Signal
+  account, you can register one from signal-cli. Note
+  that this will unregister any existing client
+  associated with the same number.
 
       signal-cli -a ACCOUNT register
 
