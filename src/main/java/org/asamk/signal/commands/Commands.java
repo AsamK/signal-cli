@@ -61,6 +61,7 @@ public class Commands {
         addCommand(new SubmitRateLimitChallengeCommand());
         addCommand(new StartChangeNumberCommand());
         addCommand(new StartLinkCommand());
+        addCommand(new TerminateGroupCommand());
         addCommand(new TrustCommand());
         addCommand(new UnblockCommand());
         addCommand(new UnregisterCommand());

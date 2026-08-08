@@ -1377,6 +1377,19 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
         }
 
         @Override
+        public void terminateGroup() throws Error.Failure {
+            try {
+                m.terminateGroup(groupId);
+            } catch (GroupNotFoundException e) {
+                throw new Error.GroupNotFound(e.getMessage());
+            } catch (NotAGroupMemberException e) {
+                throw new Error.NotAGroupMember(e.getMessage());
+            } catch (IOException e) {
+                throw new Error.Failure(e.getMessage());
+            }
+        }
+
+        @Override
         public void addMembers(final List<String> recipients) throws Error.Failure {
             final var memberIdentifiers = getSingleRecipientIdentifiers(recipients, m.getSelfNumber());
             updateGroup(UpdateGroup.newBuilder().withMembers(memberIdentifiers).build());

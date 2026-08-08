@@ -543,6 +543,14 @@ class GroupV2Helper {
         return commitChange(groupInfoV2, change);
     }
 
+    Pair<DecryptedGroup, GroupChangeResponse> terminateGroup(
+            GroupInfoV2 groupInfoV2
+    ) throws IOException {
+        final GroupsV2Operations.GroupOperations groupOperations = getGroupOperations(groupInfoV2);
+        final var change = groupOperations.createTerminateGroup();
+        return commitChange(groupInfoV2, change);
+    }
+
     Pair<DecryptedGroup, GroupChangeResponse> setMemberLabels(
             GroupInfoV2 groupInfoV2,
             String labelEmoji,

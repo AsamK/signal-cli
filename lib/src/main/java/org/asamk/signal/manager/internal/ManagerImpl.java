@@ -611,6 +611,11 @@ public class ManagerImpl implements Manager {
     }
 
     @Override
+    public SendGroupMessageResults terminateGroup(GroupId groupId) throws IOException, GroupNotFoundException, NotAGroupMemberException {
+        return context.getGroupHelper().terminateGroup(groupId);
+    }
+
+    @Override
     public Pair<GroupId, SendGroupMessageResults> createGroup(
             String name,
             Set<RecipientIdentifier.Single> members,

@@ -786,6 +786,16 @@ Specify the recipient group ID in base64 encoding.
 *--delete*::
 Delete local group data completely after quitting group.
 
+=== terminateGroup
+
+Permanently terminate a group for all members.
+This requires admin privileges.
+Afterwards no member (not even an admin) can send messages or start calls in the group; members keep access to the existing message history.
+Only supported for Signal group v2 groups.
+
+*-g* GROUP, *--group-id* GROUP::
+Specify the group ID in base64 encoding.
+
 === listGroups
 
 Show a list of known groups and related information.

@@ -612,6 +612,8 @@ public interface Signal extends DBusInterface {
 
         void deleteGroup() throws Error.Failure;
 
+        void terminateGroup() throws Error.Failure;
+
         void addMembers(List<String> recipients) throws Error.Failure;
 
         void removeMembers(List<String> recipients) throws Error.Failure;

@@ -503,6 +503,11 @@ Exceptions: Failure
 quitGroup() -> <>::
 Exceptions: Failure, LastGroupAdmin
 
+terminateGroup() -> <>::
+Permanently terminate the group for all members (requires admin privileges). Afterwards nobody can send messages or start calls; members keep access to the existing history.
+
+Exceptions: Failure
+
 removeAdmins(recipients<as>) -> <>::
 * recipients : String array of phone numbers
 

@@ -184,6 +184,10 @@ public interface Manager extends Closeable {
 
     void deleteGroup(GroupId groupId) throws IOException;
 
+    SendGroupMessageResults terminateGroup(
+            GroupId groupId
+    ) throws IOException, GroupNotFoundException, NotAGroupMemberException;
+
     Pair<GroupId, SendGroupMessageResults> createGroup(
             String name,
             Set<RecipientIdentifier.Single> members,
