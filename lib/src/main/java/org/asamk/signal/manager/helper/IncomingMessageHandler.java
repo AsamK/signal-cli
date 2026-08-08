@@ -837,6 +837,15 @@ public final class IncomingMessageHandler {
             return true;
         }
 
+        if (group.isTerminated()) {
+            return message == null
+                    || message.getBody().isPresent()
+                    || message.getAttachments().isPresent()
+                    || message.getQuote().isPresent()
+                    || message.getPreviews().isPresent()
+                    || message.getMentions().isPresent()
+                    || message.getSticker().isPresent();
+        }
         if (group.isAnnouncementGroup() && !group.isAdmin(recipientId)) {
             return message == null
                     || message.getBody().isPresent()

@@ -871,7 +871,8 @@ public class DbusManagerImpl implements Manager {
                     GroupPermission.valueOf((String) group.get("PermissionEditDetails").getValue()),
                     GroupPermission.valueOf((String) group.get("PermissionSendMessage").getValue()),
                     (boolean) group.get("IsMember").getValue(),
-                    (boolean) group.get("IsAdmin").getValue());
+                    (boolean) group.get("IsAdmin").getValue(),
+                    group.get("IsTerminated") != null && (boolean) group.get("IsTerminated").getValue());
         } catch (GroupInviteLinkUrl.InvalidGroupLinkException | GroupInviteLinkUrl.UnknownGroupLinkVersionException e) {
             throw new AssertionError(e);
         }

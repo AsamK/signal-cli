@@ -79,12 +79,13 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             final var groupInviteLink = group.groupInviteLinkUrl();
 
             writer.println(
-                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Members: {} Pending members: {} Requesting members: {} Banned: {} Message expiration: {} Link: {}",
+                    "Id: {} Name: {} Description: {} Active: {} Blocked: {} Terminated: {} Members: {} Pending members: {} Requesting members: {} Banned: {} Message expiration: {} Link: {}",
                     group.groupId().toBase64(),
                     group.title(),
                     group.description(),
                     group.isMember(),
                     group.isBlocked(),
+                    group.isTerminated(),
                     resolveMembers(group.members()),
                     resolveMemberAddress(group.pendingMembers()),
                     resolveMemberAddress(group.requestingMembers()),
@@ -92,11 +93,12 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                     group.messageExpirationTimer() == 0 ? "disabled" : group.messageExpirationTimer() + "s",
                     groupInviteLink == null ? '-' : groupInviteLink.getUrl());
         } else {
-            writer.println("Id: {} Name: {}  Active: {} Blocked: {}",
+            writer.println("Id: {} Name: {}  Active: {} Blocked: {} Terminated: {}",
                     group.groupId().toBase64(),
                     group.title(),
                     group.isMember(),
-                    group.isBlocked());
+                    group.isBlocked(),
+                    group.isTerminated());
         }
     }
 
@@ -133,7 +135,8 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
                             group.permissionAddMember().name(),
                             group.permissionEditDetails().name(),
                             group.permissionSendMessage().name(),
-                            groupInviteLink == null ? null : groupInviteLink.getUrl());
+                            groupInviteLink == null ? null : groupInviteLink.getUrl(),
+                            group.isTerminated());
                 }).toList();
                 jsonWriter.write(jsonGroups);
             }
@@ -161,7 +164,8 @@ public class ListGroupsCommand implements JsonRpcLocalCommand {
             String permissionAddMember,
             String permissionEditDetails,
             String permissionSendMessage,
-            String groupInviteLink
+            String groupInviteLink,
+            boolean isTerminated
     ) {}
 
     private record JsonGroupMemberAddress(String number, String uuid) {}

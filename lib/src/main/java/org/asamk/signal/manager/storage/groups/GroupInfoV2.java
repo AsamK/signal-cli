@@ -212,6 +212,11 @@ public final class GroupInfoV2 extends GroupInfo {
     }
 
     @Override
+    public boolean isTerminated() {
+        return this.group != null && Boolean.TRUE.equals(this.group.terminated);
+    }
+
+    @Override
     public GroupPermission getPermissionAddMember() {
         final var accessControl = getAccessControl();
         return accessControl == null ? GroupPermission.EVERY_MEMBER : toGroupPermission(accessControl.members);

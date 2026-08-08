@@ -66,6 +66,8 @@ public sealed abstract class GroupInfo permits GroupInfoV1, GroupInfoV2 {
 
     public abstract boolean isAnnouncementGroup();
 
+    public abstract boolean isTerminated();
+
     public abstract GroupPermission getPermissionAddMember();
 
     public abstract GroupPermission getPermissionEditDetails();

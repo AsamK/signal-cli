@@ -595,6 +595,7 @@ public interface Signal extends DBusInterface {
     @DBusProperty(name = "IsBlocked", type = Boolean.class)
     @DBusProperty(name = "IsMember", type = Boolean.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "IsAdmin", type = Boolean.class, access = DBusProperty.Access.READ)
+    @DBusProperty(name = "IsTerminated", type = Boolean.class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "MessageExpirationTimer", type = Integer.class)
     @DBusProperty(name = "Members", type = String[].class, access = DBusProperty.Access.READ)
     @DBusProperty(name = "PendingMembers", type = String[].class, access = DBusProperty.Access.READ)

@@ -567,13 +567,17 @@ public class SendHelper {
         return results;
     }
 
-    private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException {
+    private GroupInfo getGroupForSending(GroupId groupId) throws GroupNotFoundException, NotAGroupMemberException, GroupSendingNotAllowedException {
         var g = context.getGroupHelper().getGroup(groupId);
         if (g == null) {
             throw new GroupNotFoundException(groupId);
         }
         if (!g.isMember(account.getSelfRecipientId())) {
             throw new NotAGroupMemberException(groupId, g.getTitle());
+        }
+        if (g.isTerminated()) {
+            // Other clients drop messages sent to a terminated group.
+            throw new GroupSendingNotAllowedException(groupId, g.getTitle());
         }
         if (!g.isProfileSharingEnabled()) {
             g.setProfileSharingEnabled(true);

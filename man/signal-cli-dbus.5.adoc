@@ -452,6 +452,7 @@ Groups have the following (case-sensitive) properties:
 * IsBlocked<b> : true=member will not receive group messages; false=not blocked
 * IsMember<b> (read-only) : always true (object path exists only for group members)
 * IsAdmin<b> (read-only) : true=member has admin privileges; false=not admin
+* IsTerminated<b> (read-only) : true=group was permanently ended by an admin; nobody (not even an admin) can send messages or start calls, sending is rejected locally
 * MessageExpirationTimer<i> : int32 representing message expiration time for group
 * Members<as> (read-only) : String array of group members' phone numbers
 * PendingMembers<as> (read-only) : String array of pending members' phone numbers

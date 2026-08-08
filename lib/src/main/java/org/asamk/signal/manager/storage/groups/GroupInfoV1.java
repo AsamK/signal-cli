@@ -114,6 +114,11 @@ public final class GroupInfoV1 extends GroupInfo {
     }
 
     @Override
+    public boolean isTerminated() {
+        return false;
+    }
+
+    @Override
     public GroupPermission getPermissionAddMember() {
         return GroupPermission.EVERY_MEMBER;
     }

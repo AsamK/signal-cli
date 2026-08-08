@@ -1308,6 +1308,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                             new DbusProperty<>("IsBlocked", () -> getGroup().isBlocked(), this::setIsBlocked),
                             new DbusProperty<>("IsMember", () -> getGroup().isMember()),
                             new DbusProperty<>("IsAdmin", () -> getGroup().isAdmin()),
+                            new DbusProperty<>("IsTerminated", () -> getGroup().isTerminated()),
                             new DbusProperty<>("MessageExpirationTimer",
                                     () -> getGroup().messageExpirationTimer(),
                                     this::setMessageExpirationTime),

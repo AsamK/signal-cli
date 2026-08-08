@@ -912,6 +912,10 @@ public class ManagerImpl implements Manager {
         if (!(groupInfo instanceof GroupInfoV2 groupInfoV2)) {
             throw new IOException("Stories are only supported for V2 groups");
         }
+        if (groupInfoV2.isTerminated()) {
+            // Other clients drop messages sent to a terminated group.
+            throw new IOException("Cannot send a story to a group that has been terminated");
+        }
 
         final var uploadedAttachment = context.getAttachmentHelper().uploadAttachment(attachment);
         final var groupContext = SignalServiceGroupV2.newBuilder(groupInfoV2.getMasterKey())

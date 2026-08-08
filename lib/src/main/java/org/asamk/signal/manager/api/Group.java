@@ -22,7 +22,8 @@ public record Group(
         GroupPermission permissionEditDetails,
         GroupPermission permissionSendMessage,
         boolean isMember,
-        boolean isAdmin
+        boolean isAdmin,
+        boolean isTerminated
 ) {
 
     public static Group from(
@@ -59,6 +60,7 @@ public record Group(
                 groupInfo.getPermissionEditDetails(),
                 groupInfo.getPermissionSendMessage(),
                 groupInfo.isMember(selfRecipientId),
-                groupInfo.isAdmin(selfRecipientId));
+                groupInfo.isAdmin(selfRecipientId),
+                groupInfo.isTerminated());
     }
 }
