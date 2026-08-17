@@ -16,6 +16,10 @@ record JsonDataMessage(
         Integer expiresInSeconds,
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean isExpirationUpdate,
         @JsonInclude(JsonInclude.Include.NON_NULL) Boolean viewOnce,
+        @JsonInclude(JsonInclude.Include.NON_NULL) JsonGroupCallUpdate groupCallUpdate,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean isEndSession,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean isProfileKeyUpdate,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean hasProfileKey,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonReaction reaction,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonQuote quote,
         @JsonInclude(JsonInclude.Include.NON_NULL) JsonPayment payment,
@@ -47,6 +51,10 @@ record JsonDataMessage(
         final var expiresInSeconds = dataMessage.expiresInSeconds();
         final var isExpirationUpdate = dataMessage.isExpirationUpdate();
         final var viewOnce = dataMessage.isViewOnce();
+        final var groupCallUpdate = dataMessage.groupCallUpdate().map(JsonGroupCallUpdate::from).orElse(null);
+        final var isEndSession = dataMessage.isEndSession();
+        final var isProfileKeyUpdate = dataMessage.isProfileKeyUpdate();
+        final var hasProfileKey = dataMessage.hasProfileKey();
         final var reaction = dataMessage.reaction().map(JsonReaction::from).orElse(null);
         final var quote = dataMessage.quote().isPresent() ? JsonQuote.from(dataMessage.quote().get()) : null;
         final var payment = dataMessage.payment().isPresent() ? JsonPayment.from(dataMessage.payment().get()) : null;
@@ -86,6 +94,10 @@ record JsonDataMessage(
                 expiresInSeconds,
                 isExpirationUpdate,
                 viewOnce,
+                groupCallUpdate,
+                isEndSession,
+                isProfileKeyUpdate,
+                hasProfileKey,
                 reaction,
                 quote,
                 payment,
