@@ -40,6 +40,11 @@ dependencies {
     implementation(libs.bouncycastle)
     implementation(libs.slf4j.api)
     implementation(libs.sqlite)
+    if (androidClassifier != null) {
+        runtimeOnly(variantOf(libs.sqlite) {
+            classifier("natives-android")
+        })
+    }
     implementation(libs.hikari)
     compileOnly(libs.kotlinx.coroutines.core)
 
