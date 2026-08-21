@@ -85,12 +85,18 @@ public class ContactHelper {
     }
 
     public void setContactBlocked(RecipientId recipientId, boolean blocked) {
+        setContactBlocked(recipientId, blocked, blocked ? System.currentTimeMillis() : 0);
+    }
+
+    public void setContactBlocked(RecipientId recipientId, boolean blocked, long blockedAt) {
         var contact = account.getContactStore().getContact(recipientId);
         final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
         if (blocked) {
             builder.withIsProfileSharingEnabled(false);
         }
-        account.getContactStore().storeContact(recipientId, builder.withIsBlocked(blocked).build());
+        account.getContactStore()
+                .storeContact(recipientId,
+                        builder.withIsBlocked(blocked).withBlockedAt(blocked ? blockedAt : 0).build());
     }
 
     public void setContactProfileSharing(RecipientId recipientId, boolean profileSharing) {

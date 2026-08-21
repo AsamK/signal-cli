@@ -116,7 +116,7 @@ public class SignalAccount implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(SignalAccount.class);
 
     private static final int MINIMUM_STORAGE_VERSION = 1;
-    private static final int CURRENT_STORAGE_VERSION = 10;
+    private static final int CURRENT_STORAGE_VERSION = 11;
 
     private final Object LOCK = new Object();
 
@@ -141,6 +141,7 @@ public class SignalAccount implements Closeable {
     private MasterKey pinMasterKey;
     private StorageKey storageKey;
     private AccountEntropyPool accountEntropyPool;
+    private byte[] authCredentialSalt;
     private MediaRootBackupKey mediaRootBackupKey;
     private ProfileKey profileKey;
 
@@ -301,6 +302,7 @@ public class SignalAccount implements Closeable {
             final IdentityKeyPair pniIdentity,
             final ProfileKey profileKey,
             final AccountEntropyPool accountEntropyPool,
+            final byte[] authCredentialSalt,
             final MediaRootBackupKey mediaRootBackupKey
     ) {
         this.deviceId = 0;
@@ -325,6 +327,7 @@ public class SignalAccount implements Closeable {
             this.pinMasterKey = null;
             this.accountEntropyPool = null;
         }
+        this.authCredentialSalt = authCredentialSalt;
         this.mediaRootBackupKey = mediaRootBackupKey;
         getKeyValueStore().storeEntry(storageManifestVersion, -1L);
         this.setStorageManifest(null);
@@ -361,6 +364,7 @@ public class SignalAccount implements Closeable {
     ) {
         this.pinMasterKey = masterKey;
         this.accountEntropyPool = null;
+        this.authCredentialSalt = null;
         getKeyValueStore().storeEntry(storageManifestVersion, -1L);
         this.setStorageManifest(null);
         this.storageKey = null;
@@ -525,6 +529,9 @@ public class SignalAccount implements Closeable {
             }
             if (storage.accountEntropyPool != null) {
                 accountEntropyPool = new AccountEntropyPool(storage.accountEntropyPool);
+            }
+            if (storage.authCredentialSalt != null) {
+                authCredentialSalt = base64.decode(storage.authCredentialSalt);
             }
             if (storage.mediaRootBackupKey != null) {
                 mediaRootBackupKey = new MediaRootBackupKey(base64.decode(storage.mediaRootBackupKey));
@@ -906,6 +913,7 @@ public class SignalAccount implements Closeable {
                                 0,
                                 false,
                                 contact.blocked,
+                                0,
                                 contact.archived,
                                 false,
                                 false,
@@ -1014,6 +1022,7 @@ public class SignalAccount implements Closeable {
                     pinMasterKey == null ? null : base64.encodeToString(pinMasterKey.serialize()),
                     storageKey == null ? null : base64.encodeToString(storageKey.serialize()),
                     accountEntropyPool == null ? null : accountEntropyPool.getValue(),
+                    authCredentialSalt == null ? null : base64.encodeToString(authCredentialSalt),
                     mediaRootBackupKey == null ? null : base64.encodeToString(mediaRootBackupKey.getValue()),
                     profileKey == null ? null : base64.encodeToString(profileKey.serialize()),
                     usernameLink == null ? null : base64.encodeToString(usernameLink.getEntropy()),
@@ -1226,6 +1235,11 @@ public class SignalAccount implements Closeable {
             @Override
             public SignalServiceAccountDataStore pni() {
                 return pniAccountData.getSignalServiceAccountDataStore();
+            }
+
+            @Override
+            public SignalServiceAccountDataStore pniOrNull() {
+                return getPni() != null ? pniAccountData.getSignalServiceAccountDataStore() : null;
             }
 
             @Override
@@ -1648,6 +1662,10 @@ public class SignalAccount implements Closeable {
         save();
     }
 
+    public byte[] getAuthCredentialSalt() {
+        return authCredentialSalt;
+    }
+
     public String getRecoveryPassword() {
         final var masterKey = getPinBackedMasterKey();
         if (masterKey == null) {
@@ -1987,6 +2005,7 @@ public class SignalAccount implements Closeable {
             String pinMasterKey,
             String storageKey,
             String accountEntropyPool,
+            String authCredentialSalt,
             String mediaRootBackupKey,
             String profileKey,
             String usernameLinkEntropy,

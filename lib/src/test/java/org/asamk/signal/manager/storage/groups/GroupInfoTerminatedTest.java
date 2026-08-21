@@ -2,7 +2,6 @@ package org.asamk.signal.manager.storage.groups;
 
 import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.GroupId;
-import org.asamk.signal.manager.api.GroupIdV2;
 import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
@@ -61,6 +60,7 @@ class GroupInfoTerminatedTest {
                 group,
                 DistributionId.create(),
                 false,
+                0,
                 false,
                 false,
                 null,

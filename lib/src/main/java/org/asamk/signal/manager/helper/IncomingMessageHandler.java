@@ -626,13 +626,12 @@ public final class IncomingMessageHandler {
             for (var individual : blockedListMessage.individuals) {
                 final var address = new RecipientAddress(individual.getAci(), individual.getE164());
                 final var recipientId = account.getRecipientResolver().resolveRecipient(address);
-                context.getContactHelper().setContactBlocked(recipientId, true);
+                context.getContactHelper().setContactBlocked(recipientId, true, individual.getBlockedAt());
             }
-            for (var groupId : blockedListMessage.groupIds.stream()
-                    .map(GroupId::unknownVersion)
-                    .collect(Collectors.toSet())) {
+            for (var group : blockedListMessage.groups) {
+                final var groupId = GroupId.unknownVersion(group.getGroupId());
                 try {
-                    context.getGroupHelper().setGroupBlocked(groupId, true);
+                    context.getGroupHelper().setGroupBlocked(groupId, true, group.getBlockedAt());
                 } catch (GroupNotFoundException e) {
                     logger.warn("BlockedListMessage contained groupID that was not found in GroupStore: {}",
                             groupId.toBase64());

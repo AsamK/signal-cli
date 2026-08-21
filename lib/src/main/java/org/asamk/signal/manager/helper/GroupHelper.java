@@ -459,12 +459,21 @@ public class GroupHelper {
     }
 
     public void setGroupBlocked(final GroupId groupId, final boolean blocked) throws GroupNotFoundException {
+        setGroupBlocked(groupId, blocked, blocked ? System.currentTimeMillis() : 0);
+    }
+
+    public void setGroupBlocked(
+            final GroupId groupId,
+            final boolean blocked,
+            final long blockedAt
+    ) throws GroupNotFoundException {
         var group = getGroup(groupId);
         if (group == null) {
             throw new GroupNotFoundException(groupId);
         }
 
         group.setBlocked(blocked);
+        group.setBlockedAt(blocked ? blockedAt : 0);
         account.getGroupStore().updateGroup(group);
         context.getJobExecutor().enqueueJob(new SyncStorageJob());
     }

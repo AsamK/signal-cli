@@ -32,7 +32,13 @@ public class ServiceConfig {
         final var attachmentBackfill = !isPrimaryDevice;
         final var spqr = true;
         final var usernameSyncChangeMessage = !isPrimaryDevice;
-        return new AccountAttributes.Capabilities(true, true, attachmentBackfill, spqr, usernameSyncChangeMessage);
+        final var optionalPhoneNumber = !isPrimaryDevice;
+        return new AccountAttributes.Capabilities(true,
+                true,
+                attachmentBackfill,
+                spqr,
+                usernameSyncChangeMessage,
+                optionalPhoneNumber);
     }
 
     public static ServiceEnvironmentConfig getServiceEnvironmentConfig(

@@ -59,6 +59,7 @@ public class LegacyGroupStore {
                         g1.color,
                         g1.messageExpirationTime,
                         g1.blocked,
+                        0,
                         g1.archived,
                         null);
             }
@@ -77,6 +78,7 @@ public class LegacyGroupStore {
                     loadDecryptedGroupLocked(groupId, groupCachePath),
                     g2.distributionId == null ? DistributionId.create() : DistributionId.from(g2.distributionId),
                     g2.blocked,
+                    0,
                     true,
                     g2.permissionDenied,
                     null,

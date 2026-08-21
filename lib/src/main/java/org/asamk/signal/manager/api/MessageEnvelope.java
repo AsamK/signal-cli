@@ -739,7 +739,10 @@ public record MessageEnvelope(
                                 null,
                                 d.getE164(),
                                 null))
-                        .toList(), blockedListMessage.groupIds.stream().map(GroupId::unknownVersion).toList());
+                        .toList(),
+                        blockedListMessage.groups.stream()
+                                .map(group -> GroupId.unknownVersion(group.getGroupId()))
+                                .toList());
             }
         }
 

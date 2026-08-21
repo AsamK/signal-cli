@@ -114,6 +114,7 @@ public final class GroupV1RecordProcessor extends DefaultStorageRecordProcessor<
         final var group = account.getGroupStore().getOrCreateGroupV1(connection, groupIdV1);
         if (group != null) {
             group.setBlocked(groupV1Proto.blocked);
+            group.setBlockedAt(0);
             account.getGroupStore().updateGroup(connection, group);
             account.getGroupStore()
                     .storeStorageRecord(connection, group.getGroupId(), groupV1Record.getId(), groupV1Proto.encode());
