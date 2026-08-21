@@ -839,6 +839,7 @@ public class DbusManagerImpl implements Manager {
                             0,
                             false,
                             contactBlocked,
+                            0,
                             false,
                             false,
                             false,

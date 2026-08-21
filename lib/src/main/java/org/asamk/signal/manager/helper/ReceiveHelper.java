@@ -12,6 +12,7 @@ import org.asamk.signal.manager.storage.recipients.RecipientAddress;
 import org.signal.core.models.ServiceId.ACI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.whispersystems.signalservice.api.messages.EnvelopeResponse;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.websocket.SignalWebSocket;
 import org.whispersystems.signalservice.api.websocket.WebSocketConnectionState;
@@ -147,15 +148,19 @@ public class ReceiveHelper {
                     logger.debug("Retrieved {} envelopes!", batch.size());
                     isWaitingForMessage = false;
                     for (final var it : batch) {
-                        SignalServiceEnvelope envelope1 = new SignalServiceEnvelope(it.getEnvelope(),
-                                it.getServerDeliveredTimestamp());
-                        final var sourceServiceId = envelope1.getSourceServiceId();
-                        final var recipientId = sourceServiceId == null
-                                ? null
-                                : account.getRecipientResolver().resolveRecipient(sourceServiceId);
-                        logger.trace("Storing new message from {}", recipientId);
-                        // store message on disk, before acknowledging receipt to the server
-                        cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
+                        if (it instanceof EnvelopeResponse.Unparseable) {
+                            logger.warn("Received unparseable envelope from server, ignoring.");
+                        } else if (it instanceof EnvelopeResponse.Parsed parsed) {
+                            SignalServiceEnvelope envelope1 = new SignalServiceEnvelope(parsed.getEnvelope(),
+                                    parsed.getServerDeliveredTimestamp());
+                            final var sourceServiceId = envelope1.getSourceServiceId();
+                            final var recipientId = sourceServiceId == null
+                                    ? null
+                                    : account.getRecipientResolver().resolveRecipient(sourceServiceId);
+                            logger.trace("Storing new message from {}", recipientId);
+                            // store message on disk, before acknowledging receipt to the server
+                            cachedMessage[0] = account.getMessageCache().cacheMessage(envelope1, recipientId);
+                        }
                         try {
                             signalWebSocket.sendAck(it);
                         } catch (IOException e) {
@@ -167,6 +172,9 @@ public class ReceiveHelper {
                 backOffCounter = 0;
 
                 if (queueNotEmpty) {
+                    if (cachedMessage[0] == null) {
+                        continue;
+                    }
                     if (remainingMessages > 0) {
                         remainingMessages -= 1;
                     }

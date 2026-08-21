@@ -298,7 +298,7 @@ public class StickerStore {
                 """
                 SELECT s.pack_id
                 FROM %s s
-                WHERE s.storage_id IS NULL AND (s.installed = TRUE OR s.deleted_timestamp > 0)
+                WHERE s.storage_id IS NULL AND s.installed = TRUE
                 """
         ).formatted(TABLE_STICKER);
         final var updateSql = (

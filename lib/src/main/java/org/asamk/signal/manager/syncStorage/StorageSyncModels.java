@@ -123,6 +123,7 @@ public final class StorageSyncModels {
                     .nickname(getNicknameRemoteRecord(recipient.getContact()))
                     .note(emptyIfNull(recipient.getContact().note()))
                     .blocked(recipient.getContact().isBlocked())
+                    .blockedAtTimestamp(recipient.getContact().blockedAt())
                     .whitelisted(recipient.getContact().isProfileSharingEnabled())
                     .mutedUntilTimestamp(recipient.getContact().muteUntil())
                     .hideStory(recipient.getContact().hideStory())
@@ -161,6 +162,7 @@ public final class StorageSyncModels {
         final var builder = SignalGroupV2Record.Companion.newBuilder(group.getStorageRecord());
         builder.masterKey(ByteString.of(group.getMasterKey().serialize()));
         builder.blocked(group.isBlocked());
+        builder.blockedAtTimestamp(group.getBlockedAt());
         builder.whitelisted(group.isProfileSharingEnabled());
         return builder.build();
     }

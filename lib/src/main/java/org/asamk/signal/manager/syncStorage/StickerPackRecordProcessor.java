@@ -63,14 +63,15 @@ public class StickerPackRecordProcessor extends DefaultStorageRecordProcessor<Si
         final var remote = remoteRecord.getProto();
         final var local = localRecord.getProto();
 
-        final var isRemoteDeleted = remote.deletedAtTimestamp > 0;
-        final var isLocalDeleted = local.deletedAtTimestamp > 0;
-
-        if (isRemoteDeleted && isLocalDeleted && local.deletedAtTimestamp > remote.deletedAtTimestamp) {
+        if (shouldKeepLocalDeletion(remote.deletedAtTimestamp, local.deletedAtTimestamp)) {
             return localRecord;
         }
 
         return remoteRecord;
+    }
+
+    static boolean shouldKeepLocalDeletion(final long remoteDeletedAt, final long localDeletedAt) {
+        return remoteDeletedAt > 0 && localDeletedAt > 0 && localDeletedAt < remoteDeletedAt;
     }
 
     @Override

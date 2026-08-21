@@ -56,6 +56,7 @@ public final class GroupV2RecordProcessor extends DefaultStorageRecordProcessor<
         final var mergedBuilder = remote.newBuilder()
                 .masterKey(remote.masterKey)
                 .blocked(remote.blocked)
+                .blockedAtTimestamp(remote.blockedAtTimestamp)
                 .whitelisted(remote.whitelisted)
                 .archived(remote.archived)
                 .markedUnread(remote.markedUnread)
@@ -93,6 +94,7 @@ public final class GroupV2RecordProcessor extends DefaultStorageRecordProcessor<
 
         final var group = account.getGroupStore().getGroupOrPartialMigrate(connection, groupMasterKey);
         group.setBlocked(groupV2Proto.blocked);
+        group.setBlockedAt(groupV2Proto.blocked ? groupV2Proto.blockedAtTimestamp : 0);
         group.setProfileSharingEnabled(groupV2Proto.whitelisted);
         account.getGroupStore().updateGroup(connection, group);
         account.getGroupStore()

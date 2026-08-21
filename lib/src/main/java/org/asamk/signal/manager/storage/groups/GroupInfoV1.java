@@ -24,6 +24,7 @@ public final class GroupInfoV1 extends GroupInfo {
     public String color;
     public int messageExpirationTime;
     public boolean blocked;
+    private long blockedAt;
     public boolean archived;
     private byte[] storageRecord;
 
@@ -39,6 +40,7 @@ public final class GroupInfoV1 extends GroupInfo {
             final String color,
             final int messageExpirationTime,
             final boolean blocked,
+            final long blockedAt,
             final boolean archived,
             final byte[] storageRecord
     ) {
@@ -49,6 +51,7 @@ public final class GroupInfoV1 extends GroupInfo {
         this.color = color;
         this.messageExpirationTime = messageExpirationTime;
         this.blocked = blocked;
+        this.blockedAt = blockedAt;
         this.archived = archived;
         this.storageRecord = storageRecord;
     }
@@ -91,7 +94,22 @@ public final class GroupInfoV1 extends GroupInfo {
 
     @Override
     public void setBlocked(final boolean blocked) {
+        if (blocked && !this.blocked) {
+            blockedAt = System.currentTimeMillis();
+        } else if (!blocked) {
+            blockedAt = 0;
+        }
         this.blocked = blocked;
+    }
+
+    @Override
+    public long getBlockedAt() {
+        return blockedAt;
+    }
+
+    @Override
+    public void setBlockedAt(final long blockedAt) {
+        this.blockedAt = blockedAt;
     }
 
     @Override

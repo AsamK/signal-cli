@@ -23,6 +23,7 @@ public final class GroupInfoV2 extends GroupInfo {
     private final GroupMasterKey masterKey;
     private final DistributionId distributionId;
     private boolean blocked;
+    private long blockedAt;
     private boolean profileSharingEnabled;
     private DecryptedGroup group;
     private byte[] storageRecord;
@@ -47,6 +48,7 @@ public final class GroupInfoV2 extends GroupInfo {
             final DecryptedGroup group,
             final DistributionId distributionId,
             final boolean blocked,
+            final long blockedAt,
             final boolean profileSharingEnabled,
             final boolean permissionDenied,
             final byte[] storageRecord,
@@ -57,6 +59,7 @@ public final class GroupInfoV2 extends GroupInfo {
         this.group = group;
         this.distributionId = distributionId;
         this.blocked = blocked;
+        this.blockedAt = blockedAt;
         this.profileSharingEnabled = profileSharingEnabled;
         this.permissionDenied = permissionDenied;
         this.storageRecord = storageRecord;
@@ -186,7 +189,22 @@ public final class GroupInfoV2 extends GroupInfo {
 
     @Override
     public void setBlocked(final boolean blocked) {
+        if (blocked && !this.blocked) {
+            blockedAt = System.currentTimeMillis();
+        } else if (!blocked) {
+            blockedAt = 0;
+        }
         this.blocked = blocked;
+    }
+
+    @Override
+    public long getBlockedAt() {
+        return blockedAt;
+    }
+
+    @Override
+    public void setBlockedAt(final long blockedAt) {
+        this.blockedAt = blockedAt;
     }
 
     @Override

@@ -214,6 +214,7 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
                     pniIdentity,
                     profileKey,
                     accountEntropyPool,
+                    msg.authCredentialSalt == null ? null : msg.authCredentialSalt.toByteArray(),
                     mediaRootBackupKey);
 
             if (msg.readReceipts != null) {

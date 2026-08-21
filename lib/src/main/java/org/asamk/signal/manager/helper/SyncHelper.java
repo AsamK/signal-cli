@@ -237,18 +237,19 @@ public class SyncHelper {
                 final var address = account.getRecipientAddressResolver().resolveRecipientAddress(record.first());
                 if (address.aci().isPresent() || address.number().isPresent()) {
                     addresses.add(new BlockedListMessage.Individual(address.aci().orElse(null),
-                            address.number().orElse(null)));
+                            address.number().orElse(null),
+                            record.second().blockedAt()));
                 }
             }
         }
-        var groupIds = new ArrayList<byte[]>();
+        var groups = new ArrayList<BlockedListMessage.Group>();
         for (var record : account.getGroupStore().getGroups()) {
             if (record.isBlocked()) {
-                groupIds.add(record.getGroupId().serialize());
+                groups.add(new BlockedListMessage.Group(record.getGroupId().serialize(), record.getBlockedAt()));
             }
         }
         return context.getSendHelper()
-                .sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groupIds)));
+                .sendSyncMessage(SignalServiceSyncMessage.forBlocked(new BlockedListMessage(addresses, groups)));
     }
 
     public SendMessageResult sendVerifiedMessage(

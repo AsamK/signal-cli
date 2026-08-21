@@ -50,6 +50,7 @@ import org.whispersystems.signalservice.internal.push.exceptions.MismatchedDevic
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -399,13 +400,17 @@ public class AccountHelper {
     }
 
     private void reserveUsername(final List<Username> candidates) throws IOException {
-        final var candidateHashes = new ArrayList<String>();
+        final var candidateHashes = new ArrayList<byte[]>();
         for (final var candidate : candidates) {
-            candidateHashes.add(Base64.encodeUrlSafeWithoutPadding(candidate.getHash()));
+            candidateHashes.add(candidate.getHash());
         }
 
-        final var response = handleResponseException(dependencies.getAccountApi().reserveUsername(candidateHashes));
-        final var hashIndex = candidateHashes.indexOf(response.getUsernameHash());
+        final var usernameHash = handleResponseException(dependencies.getAccountApi().reserveUsername(candidateHashes));
+        final var hashIndex = candidateHashes.stream()
+                .filter(candidateHash -> Arrays.equals(candidateHash, usernameHash))
+                .findFirst()
+                .map(candidateHashes::indexOf)
+                .orElse(-1);
         if (hashIndex == -1) {
             logger.warn("[reserveUsername] The response hash could not be found in our set of candidateHashes.");
             throw new IOException("Unexpected username response");
@@ -498,8 +503,7 @@ public class AccountHelper {
         final var usernameLink = account.getUsernameLink();
 
         if (usernameLink == null) {
-            handleResponseException(dependencies.getAccountApi()
-                    .reserveUsername(List.of(Base64.encodeUrlSafeWithoutPadding(username.getHash()))));
+            handleResponseException(dependencies.getAccountApi().reserveUsername(List.of(username.getHash())));
             logger.debug("[reserveUsername] Successfully reserved existing username.");
             final var linkComponents = confirmUsernameAndCreateNewLink(username);
             account.setUsernameLink(linkComponents);
@@ -534,19 +538,19 @@ public class AccountHelper {
 
     public void setDeviceName(String deviceName) {
         final var encryptedDeviceName = getEncryptedDeviceName(deviceName);
-        account.setEncryptedDeviceName(encryptedDeviceName);
+        account.setEncryptedDeviceName(Base64.encodeWithoutPadding(encryptedDeviceName));
     }
 
     public void setDeviceName(int deviceId, String deviceName) throws IOException {
         final var encryptedDeviceName = getEncryptedDeviceName(deviceName);
-        handleResponseException(dependencies.getLinkDeviceApi().setDeviceName(encryptedDeviceName, deviceId));
+        handleResponseExceptionSuspend(cont -> dependencies.getLinkDeviceApi()
+                .setDeviceName(encryptedDeviceName, deviceId, cont));
         context.getSyncHelper().sendDeviceNameChange(deviceId);
     }
 
-    private String getEncryptedDeviceName(final String deviceName) {
+    private byte[] getEncryptedDeviceName(final String deviceName) {
         final var identityKey = account.getAciIdentityKeyPair();
-        return Base64.encodeWithoutPadding(DeviceNameCipher.encryptDeviceName(deviceName.getBytes(StandardCharsets.UTF_8),
-                identityKey));
+        return DeviceNameCipher.encryptDeviceName(deviceName.getBytes(StandardCharsets.UTF_8), identityKey);
     }
 
     public void refreshDeviceName() throws IOException {
@@ -585,7 +589,8 @@ public class AccountHelper {
                         account.getOrCreatePinMasterKey(),
                         account.getOrCreateMediaRootBackupKey(),
                         verificationCode.getVerificationCode(),
-                        null));
+                        null,
+                        account.getAuthCredentialSalt()));
         account.setMultiDevice(true);
         context.getJobExecutor().enqueueJob(new SyncStorageJob());
     }
@@ -601,16 +606,14 @@ public class AccountHelper {
         var masterKey = account.getOrCreatePinMasterKey();
 
         context.getPinHelper().migrateRegistrationLockPin(account.getRegistrationLockPin(), masterKey);
-        handleResponseException(dependencies.getAccountApi()
-                .enableRegistrationLock(masterKey.deriveRegistrationLock()));
+        handleResponseException(dependencies.getAccountApi().enableRegistrationLock(masterKey));
     }
 
     public void setRegistrationPin(String pin) throws IOException {
         var masterKey = account.getOrCreatePinMasterKey();
 
         context.getPinHelper().setRegistrationLockPin(pin, masterKey);
-        handleResponseException(dependencies.getAccountApi()
-                .enableRegistrationLock(masterKey.deriveRegistrationLock()));
+        handleResponseException(dependencies.getAccountApi().enableRegistrationLock(masterKey));
 
         account.setRegistrationLockPin(pin);
         updateAccountAttributes();

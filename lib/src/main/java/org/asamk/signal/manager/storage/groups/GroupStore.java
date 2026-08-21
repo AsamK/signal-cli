@@ -63,6 +63,7 @@ public class GroupStore {
                                       distribution_id BLOB UNIQUE NOT NULL,
                                       endorsement_expiration_time INTEGER NOT NULL DEFAULT 0,
                                       blocked INTEGER NOT NULL DEFAULT FALSE,
+                                      blocked_at INTEGER NOT NULL DEFAULT 0,
                                       profile_sharing INTEGER NOT NULL DEFAULT FALSE,
                                       permission_denied INTEGER NOT NULL DEFAULT FALSE
                                     ) STRICT;
@@ -83,6 +84,7 @@ public class GroupStore {
                                       color TEXT,
                                       expiration_time INTEGER NOT NULL DEFAULT 0,
                                       blocked INTEGER NOT NULL DEFAULT FALSE,
+                                      blocked_at INTEGER NOT NULL DEFAULT 0,
                                       archived INTEGER NOT NULL DEFAULT FALSE
                                     ) STRICT;
                                     CREATE TABLE group_v1_member (
@@ -401,6 +403,7 @@ public class GroupStore {
                 deleteGroup(connection, groupInfoV1.getGroupId());
                 final var groupInfoV2 = new GroupInfoV2(groupId, groupMasterKey, recipientResolver);
                 groupInfoV2.setBlocked(groupInfoV1.isBlocked());
+                groupInfoV2.setBlockedAt(groupInfoV1.getBlockedAt());
                 updateGroup(connection, groupInfoV2);
                 logger.debug("Locally migrated group {} to group v2, id: {}",
                         groupInfoV1.getGroupId().toBase64(),
@@ -614,9 +617,9 @@ public class GroupStore {
                 }
             }
             final var sql = """
-                            INSERT INTO %s (_id, group_id, group_id_v2, name, color, expiration_time, blocked, archived, storage_id)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            ON CONFLICT (_id) DO UPDATE SET group_id=excluded.group_id, group_id_v2=excluded.group_id_v2, name=excluded.name, color=excluded.color, expiration_time=excluded.expiration_time, blocked=excluded.blocked, archived=excluded.archived, storage_id=excluded.storage_id
+                            INSERT INTO %s (_id, group_id, group_id_v2, name, color, expiration_time, blocked, blocked_at, archived, storage_id)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON CONFLICT (_id) DO UPDATE SET group_id=excluded.group_id, group_id_v2=excluded.group_id_v2, name=excluded.name, color=excluded.color, expiration_time=excluded.expiration_time, blocked=excluded.blocked, blocked_at=excluded.blocked_at, archived=excluded.archived, storage_id=excluded.storage_id
                             RETURNING _id
                             """.formatted(TABLE_GROUP_V1);
             try (final var statement = connection.prepareStatement(sql)) {
@@ -631,8 +634,9 @@ public class GroupStore {
                 statement.setString(5, groupV1.color);
                 statement.setLong(6, groupV1.getMessageExpirationTimer());
                 statement.setBoolean(7, groupV1.isBlocked());
-                statement.setBoolean(8, groupV1.archived);
-                statement.setBytes(9, KeyUtils.createRawStorageId());
+                statement.setLong(8, groupV1.getBlockedAt());
+                statement.setBoolean(9, groupV1.archived);
+                statement.setBytes(10, KeyUtils.createRawStorageId());
                 final var generatedKey = Utils.executeQueryForOptional(statement, Utils::getIdMapper);
 
                 if (internalId == null) {
@@ -658,9 +662,9 @@ public class GroupStore {
         } else if (group instanceof GroupInfoV2 groupV2) {
             final var sql = (
                     """
-                    INSERT INTO %s (_id, group_id, master_key, group_data, distribution_id, blocked, permission_denied, storage_id, profile_sharing)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT (_id) DO UPDATE SET group_id=excluded.group_id, master_key=excluded.master_key, group_data=excluded.group_data, distribution_id=excluded.distribution_id, blocked=excluded.blocked, permission_denied=excluded.permission_denied, storage_id=excluded.storage_id, profile_sharing=excluded.profile_sharing
+                    INSERT INTO %s (_id, group_id, master_key, group_data, distribution_id, blocked, blocked_at, permission_denied, storage_id, profile_sharing)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (_id) DO UPDATE SET group_id=excluded.group_id, master_key=excluded.master_key, group_data=excluded.group_data, distribution_id=excluded.distribution_id, blocked=excluded.blocked, blocked_at=excluded.blocked_at, permission_denied=excluded.permission_denied, storage_id=excluded.storage_id, profile_sharing=excluded.profile_sharing
                     """
             ).formatted(TABLE_GROUP_V2);
             try (final var statement = connection.prepareStatement(sql)) {
@@ -678,9 +682,10 @@ public class GroupStore {
                 }
                 statement.setBytes(5, UuidUtil.toByteArray(groupV2.getDistributionId().asUuid()));
                 statement.setBoolean(6, groupV2.isBlocked());
-                statement.setBoolean(7, groupV2.isPermissionDenied());
-                statement.setBytes(8, KeyUtils.createRawStorageId());
-                statement.setBoolean(9, groupV2.isProfileSharingEnabled());
+                statement.setLong(7, groupV2.getBlockedAt());
+                statement.setBoolean(8, groupV2.isPermissionDenied());
+                statement.setBytes(9, KeyUtils.createRawStorageId());
+                statement.setBoolean(10, groupV2.isProfileSharingEnabled());
                 statement.executeUpdate();
             }
         } else {
@@ -691,7 +696,7 @@ public class GroupStore {
     private List<GroupInfoV2> getGroupsV2() {
         final var sql = (
                 """
-                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.profile_sharing, g.permission_denied, g.storage_record
+                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.blocked_at, g.profile_sharing, g.permission_denied, g.storage_record
                 FROM %s g
                 """
         ).formatted(TABLE_GROUP_V2);
@@ -709,7 +714,7 @@ public class GroupStore {
     public GroupInfoV2 getGroup(Connection connection, GroupIdV2 groupIdV2) throws SQLException {
         final var sql = (
                 """
-                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.profile_sharing, g.permission_denied, g.storage_record
+                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.blocked_at, g.profile_sharing, g.permission_denied, g.storage_record
                 FROM %s g
                 WHERE g.group_id = ?
                 """
@@ -743,7 +748,7 @@ public class GroupStore {
     public GroupInfoV2 getGroupV2(Connection connection, StorageId storageId) throws SQLException {
         final var sql = (
                 """
-                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.profile_sharing, g.permission_denied, g.storage_record
+                SELECT g.group_id, g.master_key, g.group_data, g.distribution_id, g.blocked, g.blocked_at, g.profile_sharing, g.permission_denied, g.storage_record
                 FROM %s g
                 WHERE g.storage_id = ?
                 """
@@ -766,6 +771,7 @@ public class GroupStore {
             final var groupData = resultSet.getBytes("group_data");
             final var distributionId = resultSet.getBytes("distribution_id");
             final var blocked = resultSet.getBoolean("blocked");
+            final var blockedAt = resultSet.getLong("blocked_at");
             final var profileSharingEnabled = resultSet.getBoolean("profile_sharing");
             final var permissionDenied = resultSet.getBoolean("permission_denied");
             final var storageRecord = resultSet.getBytes("storage_record");
@@ -774,6 +780,7 @@ public class GroupStore {
                     groupData == null ? null : DecryptedGroup.ADAPTER.decode(groupData),
                     DistributionId.from(UuidUtil.parseOrThrow(distributionId)),
                     blocked,
+                    blockedAt,
                     profileSharingEnabled,
                     permissionDenied,
                     storageRecord,
@@ -800,7 +807,7 @@ public class GroupStore {
     private List<GroupInfoV1> getGroupsV1() {
         final var sql = (
                 """
-                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.archived, g.storage_record
+                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.blocked_at, g.archived, g.storage_record
                 FROM %s g
                 """
         ).formatted(TABLE_GROUP_V1_MEMBER, TABLE_GROUP_V1);
@@ -818,7 +825,7 @@ public class GroupStore {
     public GroupInfoV1 getGroup(Connection connection, GroupIdV1 groupIdV1) throws SQLException {
         final var sql = (
                 """
-                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.archived, g.storage_record
+                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.blocked_at, g.archived, g.storage_record
                 FROM %s g
                 WHERE g.group_id = ?
                 """
@@ -852,7 +859,7 @@ public class GroupStore {
     public GroupInfoV1 getGroupV1(Connection connection, StorageId storageId) throws SQLException {
         final var sql = (
                 """
-                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.archived, g.storage_record
+                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.blocked_at, g.archived, g.storage_record
                 FROM %s g
                 WHERE g.storage_id = ?
                 """
@@ -882,6 +889,7 @@ public class GroupStore {
                   .collect(Collectors.toSet());
         final var expirationTime = resultSet.getInt("expiration_time");
         final var blocked = resultSet.getBoolean("blocked");
+        final var blockedAt = resultSet.getLong("blocked_at");
         final var archived = resultSet.getBoolean("archived");
         final var storageRecord = resultSet.getBytes("storage_record");
         return new GroupInfoV1(GroupId.v1(groupId),
@@ -891,6 +899,7 @@ public class GroupStore {
                 color,
                 expirationTime,
                 blocked,
+                blockedAt,
                 archived,
                 storageRecord);
     }
@@ -902,7 +911,7 @@ public class GroupStore {
     private GroupInfoV1 getGroupV1ByV2Id(Connection connection, GroupIdV2 groupIdV2) throws SQLException {
         final var sql = (
                 """
-                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.archived, g.storage_record
+                SELECT g.group_id, g.group_id_v2, g.name, g.color, (select group_concat(gm.recipient_id) from %s gm where gm.group_id = g._id) as members, g.expiration_time, g.blocked, g.blocked_at, g.archived, g.storage_record
                 FROM %s g
                 WHERE g.group_id_v2 = ?
                 """

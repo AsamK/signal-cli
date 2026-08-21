@@ -24,6 +24,7 @@ import org.whispersystems.signalservice.internal.storage.protos.ContactRecord.Id
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -54,6 +55,29 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         this.selfAci = account.getAci();
         this.selfPni = account.getPni();
         this.selfNumber = account.getNumber();
+    }
+
+    public void prepare(final Collection<SignalContactRecord> remoteRecords) throws SQLException {
+        for (final var remoteRecord : remoteRecords) {
+            if (isInvalid(remoteRecord)) {
+                continue;
+            }
+            final var remote = remoteRecord.getProto();
+            final var aci = ACI.parseOrNull(remote.aci, remote.aciBinary);
+            final var pni = PNI.parseOrNull(remote.pni, remote.pniBinary);
+            if (shouldSplitForStorageSync(remote.unregisteredAtTimestamp, aci, pni, remote.e164)) {
+                account.getRecipientStore().splitForStorageSyncIfNecessary(connection, aci);
+            }
+        }
+    }
+
+    static boolean shouldSplitForStorageSync(
+            final long unregisteredAtTimestamp,
+            final ACI aci,
+            final PNI pni,
+            final String e164
+    ) {
+        return unregisteredAtTimestamp > 0 && aci != null && pni == null && e164.isEmpty();
     }
 
     /**
@@ -205,6 +229,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .identityState(identityState)
                 .identityKey(identityKey)
                 .blocked(remote.blocked)
+                .blockedAtTimestamp(remote.blockedAtTimestamp)
                 .whitelisted(remote.whitelisted)
                 .archived(remote.archived)
                 .markedUnread(remote.markedUnread)
@@ -283,7 +308,9 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var contactNickGivenName = contact == null ? null : contact.nickNameGivenName();
         final var contactNickFamilyName = contact == null ? null : contact.nickNameFamilyName();
         final var contactNote = contact == null ? null : contact.note();
+        final var blockedAt = contact == null ? 0 : contact.blockedAt();
         if (blocked != contactProto.blocked
+                || blockedAt != contactProto.blockedAtTimestamp
                 || profileShared != contactProto.whitelisted
                 || archived != contactProto.archived
                 || hidden != contactProto.hidden
@@ -301,6 +328,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             logger.debug("Storing new or updated contact {}", recipientId);
             final var contactBuilder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
             final var newContact = contactBuilder.withIsBlocked(contactProto.blocked)
+                    .withBlockedAt(contactProto.blocked ? contactProto.blockedAtTimestamp : 0)
                     .withIsProfileSharingEnabled(contactProto.whitelisted)
                     .withIsArchived(contactProto.archived)
                     .withIsHidden(contactProto.hidden)

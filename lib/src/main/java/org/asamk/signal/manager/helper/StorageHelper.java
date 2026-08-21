@@ -14,6 +14,7 @@ import org.asamk.signal.manager.syncStorage.ContactRecordProcessor;
 import org.asamk.signal.manager.syncStorage.GroupV1RecordProcessor;
 import org.asamk.signal.manager.syncStorage.GroupV2RecordProcessor;
 import org.asamk.signal.manager.syncStorage.StickerPackRecordProcessor;
+import org.asamk.signal.manager.syncStorage.StorageSyncLoopDetector;
 import org.asamk.signal.manager.syncStorage.StorageSyncModels;
 import org.asamk.signal.manager.syncStorage.StorageSyncValidations;
 import org.asamk.signal.manager.syncStorage.WriteOperationResult;
@@ -61,11 +62,13 @@ public class StorageHelper {
     private final SignalAccount account;
     private final SignalDependencies dependencies;
     private final Context context;
+    private final StorageSyncLoopDetector storageSyncLoopDetector;
 
     public StorageHelper(final Context context) {
         this.account = context.getAccount();
         this.dependencies = context.getDependencies();
         this.context = context;
+        this.storageSyncLoopDetector = new StorageSyncLoopDetector(account::isMultiDevice);
     }
 
     public void syncDataWithStorage() throws IOException {
@@ -84,6 +87,7 @@ public class StorageHelper {
         final var storageServiceRepository = dependencies.getStorageServiceRepository();
         final var result = storageServiceRepository.getStorageManifestIfDifferentVersion(storageKey,
                 localManifestVersion);
+        final var fetchedRemoteManifest = result instanceof ManifestIfDifferentVersionResult.DifferentVersion;
 
         var needsForcePush = false;
         final var remoteManifest = switch (result) {
@@ -146,7 +150,10 @@ public class StorageHelper {
             needsForcePush = true;
         } else {
             try {
-                needsMultiDeviceSync = writeToStorage(storageKey, remoteManifest, needsForcePush);
+                needsMultiDeviceSync = writeToStorage(storageKey,
+                        remoteManifest,
+                        needsForcePush,
+                        fetchedRemoteManifest);
             } catch (RetryLaterException e) {
                 // TODO retry later
                 return;
@@ -288,7 +295,8 @@ public class StorageHelper {
     private boolean writeToStorage(
             final StorageKey storageKey,
             final SignalStorageManifest remoteManifest,
-            final boolean needsForcePush
+            final boolean needsForcePush,
+            final boolean fetchedRemoteManifest
     ) throws IOException, RetryLaterException {
         final WriteOperationResult remoteWriteOperation;
         try (final var connection = account.getAccountDatabase().getConnection()) {
@@ -326,6 +334,19 @@ public class StorageHelper {
 
         if (remoteWriteOperation.isEmpty()) {
             logger.debug("No remote writes needed. Still at version: {}", remoteManifest.version);
+            storageSyncLoopDetector.onConverged();
+            return false;
+        }
+
+        final var loopCheck = storageSyncLoopDetector.onWriteAttempt(remoteWriteOperation,
+                fetchedRemoteManifest,
+                false);
+        if (loopCheck instanceof StorageSyncLoopDetector.Decision.Denied denied) {
+            logger.warn(
+                    "Skipping remote write, another device is likely undoing it. Cause: {}, level: {}. WriteOperationResult :: {}",
+                    denied.cause(),
+                    denied.level(),
+                    remoteWriteOperation);
             return false;
         }
 
@@ -344,11 +365,18 @@ public class StorageHelper {
                         remoteWriteOperation.deletes());
         switch (result) {
             case WriteStorageRecordsResult.ConflictError ignored -> {
+                storageSyncLoopDetector.onWriteFailed();
                 logger.debug("Hit a conflict when trying to resolve the conflict! Retrying.");
                 throw new RetryLaterException();
             }
-            case WriteStorageRecordsResult.NetworkError networkError -> throw networkError.getException();
-            case WriteStorageRecordsResult.StatusCodeError statusCodeError -> throw statusCodeError.getException();
+            case WriteStorageRecordsResult.NetworkError networkError -> {
+                storageSyncLoopDetector.onWriteFailed();
+                throw networkError.getException();
+            }
+            case WriteStorageRecordsResult.StatusCodeError statusCodeError -> {
+                storageSyncLoopDetector.onWriteFailed();
+                throw statusCodeError.getException();
+            }
             case WriteStorageRecordsResult.Success ignored -> {
                 logger.debug("Saved new manifest. Now at version: {}", remoteWriteOperation.manifest().version);
                 storeManifestLocally(remoteWriteOperation.manifest());
@@ -424,7 +452,7 @@ public class StorageHelper {
             final var stickerPacks = account.getStickerStore()
                     .getStickerPacks(connection)
                     .stream()
-                    .filter(pack -> pack.isInstalled() || pack.deletedTimestamp() > 0)
+                    .filter(pack -> pack.storageId() != null)
                     .toList();
             newStickerPackStorageIds = generateStickerPackStorageIds(stickerPacks);
             for (final var stickerPack : stickerPacks) {
@@ -687,6 +715,13 @@ public class StorageHelper {
         final var groupV2RecordProcessor = new GroupV2RecordProcessor(account, connection);
         final var contactRecordProcessor = new ContactRecordProcessor(account, connection, context.getJobExecutor());
         final var stickerPackRecordProcessor = new StickerPackRecordProcessor(account, connection);
+
+        final var contactRecords = records.stream()
+                .filter(record -> record.getProto().contact != null)
+                .map(record -> StorageRecordConvertersKt.toSignalContactRecord(record.getProto().contact,
+                        record.getId()))
+                .toList();
+        contactRecordProcessor.prepare(contactRecords);
 
         for (final var record : records) {
             if (record.getProto().account != null) {
