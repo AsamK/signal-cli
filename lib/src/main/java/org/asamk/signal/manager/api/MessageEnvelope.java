@@ -4,6 +4,7 @@ import org.asamk.signal.manager.groups.GroupUtils;
 import org.asamk.signal.manager.helper.RecipientAddressResolver;
 import org.asamk.signal.manager.storage.recipients.RecipientResolver;
 import org.asamk.signal.manager.util.MimeUtils;
+import org.signal.core.models.ServiceId;
 import org.signal.libsignal.metadata.ProtocolException;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -1035,6 +1036,8 @@ public record MessageEnvelope(
                 ? recipientResolver.resolveRecipient(serviceId)
                 : envelope.isUnidentifiedSender() && content != null
                   ? recipientResolver.resolveRecipient(content.getSender())
+                        : exception instanceof InvalidEnvelopeContentException e && e.getSender() != null
+                          ? recipientResolver.resolveRecipient(ServiceId.parseOrThrow(e.getSender()))
                         : exception instanceof ProtocolException e
                           ? recipientResolver.resolveRecipient(e.getSender())
                                 : null;
@@ -1042,6 +1045,7 @@ public record MessageEnvelope(
                 ? envelope.getSourceDevice()
                 : content != null
                   ? content.getSenderDevice()
+                        : exception instanceof InvalidEnvelopeContentException e ? e.getSenderDevice()
                         : exception instanceof ProtocolException e ? e.getSenderDevice() : 0;
 
         Optional<Receipt> receipt;
