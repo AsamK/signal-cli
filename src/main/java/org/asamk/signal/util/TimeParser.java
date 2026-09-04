@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 public final class TimeParser {
 
     private static final Pattern DURATION_TOKEN = Pattern.compile("(\\d+(?:[.,]\\d+)?|\\ban?\\b)\\s*([a-zA-Z]+)");
-    private static final Pattern DURATION_ONLY = Pattern.compile("^(?:(?:\\d+(?:[.,]\\d+)?|an?)\\s*[a-zA-Z]+\\s*)+$");
     private static final Pattern DURATION_COLON = Pattern.compile("^(\\d+):(\\d{1,2})(?::(\\d{1,2}))?$");
     private static final Pattern UNIX_TIMESTAMP = Pattern.compile("^\\d{9,}$");
     private static final Pattern TIME_OF_DAY = Pattern.compile(
@@ -113,12 +112,19 @@ public final class TimeParser {
 
         // Separators between the parts: "2 hours, 30 minutes" / "2 hours and 30 minutes"
         text = text.replaceAll("\\band\\b|(?<!\\d),|,(?!\\d)", " ").replaceAll("\\s+", " ").trim();
-        if (!DURATION_ONLY.matcher(text).matches()) {
-            throw new TimeParseException("Invalid duration: " + input);
-        }
+        // Consume the text token by token, so that everything has to be part of an amount/unit pair
         final var matcher = DURATION_TOKEN.matcher(text);
         var result = Duration.ZERO;
-        while (matcher.find()) {
+        var position = 0;
+        while (position < text.length()) {
+            matcher.region(position, text.length());
+            if (!matcher.lookingAt()) {
+                throw new TimeParseException("Invalid duration: " + input);
+            }
+            position = matcher.end();
+            while (position < text.length() && text.charAt(position) == ' ') {
+                position++;
+            }
             final var amountText = matcher.group(1);
             final var unitText = matcher.group(2).toLowerCase(Locale.ROOT);
             final var unit = UNITS.get(unitText);
