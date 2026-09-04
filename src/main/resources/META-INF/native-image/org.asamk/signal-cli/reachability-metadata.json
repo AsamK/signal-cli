@@ -9752,6 +9752,29 @@
       "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$NotificationProfileManualOverride"
     },
     {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$NotificationProfileManualOverride$Builder"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$NotificationProfileManualOverride$Companion"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$NotificationProfileManualOverride$ManuallyEnabled",
+      "fields": [
+        {
+          "name": "endAtTimestampMs"
+        },
+        {
+          "name": "id"
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$NotificationProfileManualOverride$ManuallyEnabled$Builder"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$NotificationProfileManualOverride$ManuallyEnabled$Companion"
+    },
+    {
       "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$PhoneNumberSharingMode"
     },
     {
@@ -9885,6 +9908,59 @@
       ]
     },
     {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.NotificationProfile",
+      "fields": [
+        {
+          "name": "allowAllCalls"
+        },
+        {
+          "name": "allowAllMentions"
+        },
+        {
+          "name": "allowedMembers"
+        },
+        {
+          "name": "color"
+        },
+        {
+          "name": "createdAtMs"
+        },
+        {
+          "name": "deletedAtTimestampMs"
+        },
+        {
+          "name": "emoji"
+        },
+        {
+          "name": "id"
+        },
+        {
+          "name": "name"
+        },
+        {
+          "name": "scheduleDaysEnabled"
+        },
+        {
+          "name": "scheduleEnabled"
+        },
+        {
+          "name": "scheduleEndTime"
+        },
+        {
+          "name": "scheduleStartTime"
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.NotificationProfile$Builder"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.NotificationProfile$Companion"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.NotificationProfile$DayOfWeek"
+    },
+    {
       "type": "org.whispersystems.signalservice.internal.storage.protos.OptionalBool"
     },
     {
@@ -9898,6 +9974,46 @@
           "name": "readKey_"
         }
       ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.Recipient",
+      "fields": [
+        {
+          "name": "contact"
+        },
+        {
+          "name": "groupMasterKey"
+        },
+        {
+          "name": "legacyGroupId"
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.Recipient$Builder"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.Recipient$Companion"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.Recipient$Contact",
+      "fields": [
+        {
+          "name": "e164"
+        },
+        {
+          "name": "serviceId"
+        },
+        {
+          "name": "serviceIdBinary"
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.Recipient$Contact$Builder"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.Recipient$Contact$Companion"
     },
     {
       "type": "org.whispersystems.signalservice.internal.storage.protos.StickerPackRecord",
