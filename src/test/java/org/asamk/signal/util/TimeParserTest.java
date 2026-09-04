@@ -77,6 +77,11 @@ class TimeParserTest {
         assertThrows(TimeParser.TimeParseException.class, () -> duration("18:00pm"));
         assertThrows(TimeParser.TimeParseException.class, () -> duration("PT"));
         assertThrows(TimeParser.TimeParseException.class, () -> duration("soon"));
+        assertThrows(TimeParser.TimeParseException.class, () -> duration("2h xyz"));
+        assertThrows(TimeParser.TimeParseException.class, () -> duration("2h 30"));
+        assertThrows(TimeParser.TimeParseException.class, () -> duration("hours 2"));
+        // Must fail fast, without regex backtracking blowing up
+        assertThrows(TimeParser.TimeParseException.class, () -> duration("a" + "Aa".repeat(5000)));
     }
 
     @Test
