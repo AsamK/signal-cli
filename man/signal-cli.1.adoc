@@ -231,6 +231,46 @@ Indicates if Signal should send/show typing indicators.
 *--link-previews* {true,false}::
 Indicates if Signal should generate link previews.
 
+=== listNotificationProfiles
+
+Show the notification profiles of this account and the current manual override.
+Notification profiles are created and edited in the official Signal apps and are received via storage sync,
+so run receive (or any other command that triggers a sync) at least once after creating a profile.
+
+In JSON output mode an object with the fields `manualOverride` and `profiles` is returned.
+
+=== setNotificationProfile
+
+Manually turn a notification profile on or off.
+The change is synced to all devices via storage service, the same way the official apps do it.
+Unlike the official apps, any duration or end time can be chosen.
+
+*-p* PROFILE, *--profile* PROFILE::
+Name (case insensitive) or id of the notification profile to turn on.
+Required together with `--for` or `--until`.
+
+*--for* DURATION::
+Turn the profile on for the given duration.
+Accepts compact durations (`90m`, `1h37m`, `1d 2h 30m 15s`), words (`2 hours 30 minutes`, `an hour`),
+decimals (`1.5h`), `H:MM` or `H:MM:SS` and ISO-8601 durations (`PT2H30M`).
+Supported units are ms, s/sec/seconds, m/min/minutes, h/hr/hours, d/days and w/weeks.
+A plain number without unit is rejected.
+
+*--until* TIME::
+Turn the profile on until the given point in time.
+Accepts a time of day (`18:00`, `6:30pm`, `noon`, `midnight`), optionally prefixed with `today` or `tomorrow`,
+a date and time (`2026-12-24 18:00`, `2026-12-24T18:00:00Z`, `2026-12-24T18:00:00+01:00`), a date (`2026-12-24`, start of day),
+a unix timestamp in seconds or milliseconds, or `forever` to keep the profile on until it is turned off manually.
+A bare time of day refers to the next occurrence of that time.
+Times without an explicit zone are interpreted in the local time zone.
+
+*--disable*::
+Turn the currently active profile off.
+A scheduled profile stays off until its current schedule window ends.
+
+*--clear*::
+Remove the manual override, so profiles are activated by their schedule again.
+
 === setPin
 
 Set a registration lock pin, to prevent others from registering your account's phone number.

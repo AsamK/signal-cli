@@ -30,6 +30,9 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
+import org.asamk.signal.manager.api.NotificationProfile;
+import org.asamk.signal.manager.api.NotificationProfileNotFoundException;
+import org.asamk.signal.manager.api.NotificationProfileOverride;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.PinLockMissingException;
@@ -119,6 +122,23 @@ public interface Manager extends Closeable {
     Configuration getConfiguration();
 
     void updateConfiguration(Configuration configuration) throws NotPrimaryDeviceException;
+
+    /**
+     * Get the notification profiles known for this account.
+     * Profiles are created and edited in the official clients and received via storage sync.
+     */
+    List<NotificationProfile> getNotificationProfiles();
+
+    /**
+     * Get the current manual notification profile override (manually enabled or disabled profile).
+     */
+    NotificationProfileOverride getNotificationProfileOverride();
+
+    /**
+     * Manually enable or disable a notification profile, or clear the manual override.
+     * The change is synced to all devices via storage service.
+     */
+    void setNotificationProfileOverride(NotificationProfileOverride override) throws NotificationProfileNotFoundException;
 
     /**
      * Update the user's profile.
