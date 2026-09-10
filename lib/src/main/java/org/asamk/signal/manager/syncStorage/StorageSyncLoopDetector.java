@@ -20,6 +20,8 @@ public final class StorageSyncLoopDetector {
     private final LeakyBucket rateBucket = new LeakyBucket(100,
             Duration.ofMinutes(10).toMillis(),
             new InMemoryBucketState());
+    private boolean lastAttemptChargedContent;
+    private boolean lastAttemptChargedRate;
 
     public StorageSyncLoopDetector(final BooleanSupplier isMultiDevice) {
         this.isMultiDevice = isMultiDevice;
@@ -39,6 +41,8 @@ public final class StorageSyncLoopDetector {
             final boolean isRetry,
             final long now
     ) {
+        lastAttemptChargedContent = false;
+        lastAttemptChargedRate = false;
         if (!isMultiDevice.getAsBoolean() || isRetry) {
             return Decision.Allowed.INSTANCE;
         }
@@ -56,9 +60,11 @@ public final class StorageSyncLoopDetector {
 
         if (chargeContent) {
             contentBucket.use(now);
+            lastAttemptChargedContent = true;
         }
         if (fetchedRemoteManifest) {
             rateBucket.use(now);
+            lastAttemptChargedRate = true;
         }
         if (fingerprint != null) {
             remember(fingerprint);
@@ -72,8 +78,14 @@ public final class StorageSyncLoopDetector {
     }
 
     synchronized void onWriteFailed(final long now) {
-        contentBucket.refund(now);
-        rateBucket.refund(now);
+        if (lastAttemptChargedContent) {
+            contentBucket.refund(now);
+            lastAttemptChargedContent = false;
+        }
+        if (lastAttemptChargedRate) {
+            rateBucket.refund(now);
+            lastAttemptChargedRate = false;
+        }
     }
 
     public synchronized void onConverged() {

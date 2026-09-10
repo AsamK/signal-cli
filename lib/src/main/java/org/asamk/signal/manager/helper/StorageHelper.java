@@ -414,7 +414,7 @@ public class StorageHelper {
             final WriteOperationResult writeOperation,
             final Set<StorageId> identityConflictsPendingRepair
     ) {
-        return !writeOperation.inserts().isEmpty() && writeOperation.inserts()
+        return writeOperation.deletes().isEmpty() && !writeOperation.inserts().isEmpty() && writeOperation.inserts()
                 .stream()
                 .allMatch(record -> identityConflictsPendingRepair.contains(record.getId()));
     }
