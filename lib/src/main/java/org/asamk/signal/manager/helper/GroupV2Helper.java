@@ -758,8 +758,14 @@ class GroupV2Helper {
         var authCredentialResponse = groupApiCredentials.get(todaySeconds);
         final var aci = getSelfAci();
         final var pni = getSelfPni();
+        final var authCredentialSalt = context.getAccount().getAuthCredentialSalt();
         return dependencies.getGroupsV2Api()
-                .getGroupsV2AuthorizationString(aci, pni, todaySeconds, groupSecretParams, authCredentialResponse);
+                .getGroupsV2AuthorizationString(aci,
+                        pni,
+                        authCredentialSalt,
+                        todaySeconds,
+                        groupSecretParams,
+                        authCredentialResponse);
     }
 
     private ACI getSelfAci() {

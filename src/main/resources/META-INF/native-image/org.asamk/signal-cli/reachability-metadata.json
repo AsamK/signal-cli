@@ -9780,6 +9780,9 @@
       ]
     },
     {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$UnreadBadgeType"
+    },
+    {
       "type": "org.whispersystems.signalservice.internal.storage.protos.AccountRecord$UsernameLink",
       "allDeclaredFields": true
     },
@@ -10967,6 +10970,12 @@
     },
     {
       "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_*.properties"
+    },
+    {
+      "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_de.properties"
+    },
+    {
+      "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_de_DE.properties"
     },
     {
       "glob": "net/sourceforge/argparse4j/internal/ArgumentParserImpl_en.properties"
