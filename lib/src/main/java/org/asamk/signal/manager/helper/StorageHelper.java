@@ -293,8 +293,7 @@ public class StorageHelper {
                 logger.debug("Found {} of the known-unknowns remotely.", remote.size());
 
                 processKnownRecords(connection, remote, identityConflictsPendingRepair);
-                account.getUnknownStorageIdStore()
-                        .deleteUnknownStorageIds(connection, remote.stream().map(SignalStorageRecord::getId).toList());
+                account.getUnknownStorageIdStore().deleteUnknownStorageIds(connection, knownUnknownIds);
             }
             connection.commit();
         } catch (SQLException e) {
@@ -317,10 +316,8 @@ public class StorageHelper {
             var idDifference = findIdDifference(remoteManifest.storageIds, localStorageIds);
             logger.debug("ID Difference :: {}", idDifference);
 
-            final var unknownOnlyLocal = idDifference.localOnlyIds()
-                    .stream()
-                    .filter(id -> !KNOWN_TYPES.contains(id.getType()))
-                    .toList();
+            final var unknownStorageIds = account.getUnknownStorageIdStore().getUnknownStorageIds(connection);
+            final var unknownOnlyLocal = findUnknownOnlyLocalStorageIds(idDifference.localOnlyIds(), unknownStorageIds);
 
             if (!unknownOnlyLocal.isEmpty()) {
                 logger.debug("Storage ids with unknown type: {} to delete", unknownOnlyLocal.size());
@@ -404,6 +401,13 @@ public class StorageHelper {
             }
             default -> throw new IllegalStateException("Unexpected value: " + result);
         }
+    }
+
+    static List<StorageId> findUnknownOnlyLocalStorageIds(
+            final List<StorageId> localOnlyStorageIds,
+            final Set<StorageId> unknownStorageIds
+    ) {
+        return localOnlyStorageIds.stream().filter(unknownStorageIds::contains).toList();
     }
 
     static boolean containsOnlyIdentityConflictsPendingRepair(

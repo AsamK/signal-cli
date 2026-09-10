@@ -9,10 +9,22 @@ import org.whispersystems.signalservice.internal.storage.protos.StorageRecord;
 import java.util.List;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StorageHelperTest {
+
+    @Test
+    void removesKnownTypeLocalOnlyIdsStoredAsUnknown() {
+        final var staleStickerPackId = StorageId.forStickerPack(new byte[]{1});
+        final var localContactId = StorageId.forContact(new byte[]{2});
+
+        final var result = StorageHelper.findUnknownOnlyLocalStorageIds(List.of(staleStickerPackId, localContactId),
+                Set.of(staleStickerPackId));
+
+        assertEquals(List.of(staleStickerPackId), result);
+    }
 
     @Test
     void defersWritesContainingOnlyIdentityConflictsPendingRepair() {

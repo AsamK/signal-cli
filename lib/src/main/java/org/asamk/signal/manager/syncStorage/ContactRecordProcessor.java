@@ -98,8 +98,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
     ) {
         return remoteIdentityKeySize > 0 && (
                 statesDiffer || localIdentityKeySize == 0 || localUnregisteredAtTimestamp > 0 || (
-                        unrepairableIdentityKeyConflict
-                                && !isPrimaryDevice
+                        unrepairableIdentityKeyConflict && !isPrimaryDevice
                 )
         );
     }
