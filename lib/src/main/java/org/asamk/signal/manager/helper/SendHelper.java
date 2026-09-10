@@ -637,11 +637,11 @@ public class SendHelper {
         Set<RecipientId> senderKeyTargets = groupInfo.getDistributionId() == null || groupSendEndorsements == null
                 ? Set.of()
                 : targetRecipientIds.stream()
-                  .filter(s -> this.isSenderKeyCapable(s,
-                          addressesMap.get(s),
-                          unidentifiedAccessesMap.get(s),
-                          groupSendEndorsements))
-                  .collect(Collectors.toSet());
+                        .filter(s -> this.isSenderKeyCapable(s,
+                                addressesMap.get(s),
+                                unidentifiedAccessesMap.get(s),
+                                groupSendEndorsements))
+                        .collect(Collectors.toSet());
         if (senderKeyTargets.size() < 2) {
             logger.debug("Too few sender-key-capable users ({}). Doing all legacy sends.", senderKeyTargets.size());
             senderKeyTargets = Set.of();
@@ -705,11 +705,11 @@ public class SendHelper {
             final var expirationMs = Instant.ofEpochMilli(groupSendEndorsementsExpirationMs);
             final var groupSendTokens = groupSendEndorsements != null && groupSecretParams != null
                     ? legacyTargets.stream()
-                      .map(groupSendEndorsements::get)
-                      .map(endorsement -> Optional.ofNullable(endorsement)
-                                          .map(e -> e.toFullToken(groupSecretParams, expirationMs))
-                                          .orElse(null))
-                      .toList()
+                    .map(groupSendEndorsements::get)
+                    .map(endorsement -> Optional.ofNullable(endorsement)
+                            .map(e -> e.toFullToken(groupSecretParams, expirationMs))
+                            .orElse(null))
+                    .toList()
                     : null;
             final var sealedSenderAccesses = SealedSenderAccess.forFanOutGroupSend(groupSendTokens,
                     senderCertificate,

@@ -959,7 +959,7 @@ public class SignalAccount implements Closeable {
                             profile.isUnrestrictedUnidentifiedAccess()
                                     ? Profile.UnidentifiedAccessMode.UNRESTRICTED
                                     : profile.getUnidentifiedAccess() != null
-                                      ? Profile.UnidentifiedAccessMode.ENABLED
+                                            ? Profile.UnidentifiedAccessMode.ENABLED
                                             : Profile.UnidentifiedAccessMode.DISABLED,
                             capabilities,
                             null);

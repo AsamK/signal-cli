@@ -115,7 +115,7 @@ public class LegacyJsonIdentityKeyStore {
                         var trustLevel = trustedKey.hasNonNull("trustLevel") ? TrustLevel.fromInt(trustedKey.get(
                                 "trustLevel").asInt()) : TrustLevel.TRUSTED_UNVERIFIED;
                         var added = trustedKey.hasNonNull("addedTimestamp") ? new Date(trustedKey.get("addedTimestamp")
-                                                                                       .asLong()) : new Date();
+                                .asLong()) : new Date();
                         identities.add(new LegacyIdentityInfo(address, id, trustLevel, added));
                     } catch (InvalidKeyException e) {
                         logger.warn("Error while decoding key for {}: {}", trustedKeyName, e.getMessage());
