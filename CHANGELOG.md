@@ -1,6 +1,20 @@
 # Changelog
 
-## [Unreleased]
+## [0.14.8] - 2026-09-10
+
+### Added
+
+- Add terminateGroup command to terminate a group for everyone
+- Include isVoiceNote in receive JSON and JSON-RPC attachment payloads
+
+### Improved
+
+- Prevent more storage sync loops
+
+### Fixed
+
+- Fix graalvm issue with image dimension probing
+- Fix issue with sticker storage sync
 
 ## [0.14.7] - 2026-08-01
 
