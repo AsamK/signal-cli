@@ -80,6 +80,28 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         return unregisteredAtTimestamp > 0 && aci != null && pni == null && e164.isEmpty();
     }
 
+    static boolean shouldUseRemoteIdentityKey(
+            final boolean isPrimaryDevice,
+            final boolean statesDiffer,
+            final int remoteIdentityKeySize,
+            final int localIdentityKeySize,
+            final long localUnregisteredAtTimestamp,
+            final boolean unrepairableIdentityKeyConflict
+    ) {
+        return remoteIdentityKeySize > 0 && (statesDiffer
+                || localIdentityKeySize == 0
+                || localUnregisteredAtTimestamp > 0
+            || (unrepairableIdentityKeyConflict && !isPrimaryDevice));
+    }
+
+    @Override
+    protected String describeRecord(final SignalContactRecord record) {
+        final var proto = record.getProto();
+        final var aci = ACI.parseOrNull(proto.aci, proto.aciBinary);
+        final var pni = PNI.parseOrNull(proto.pni, proto.pniBinary);
+        return "[" + firstNonNull(aci, pni) + "]";
+    }
+
     /**
      * Error cases:
      * - You can't have a contact record without an ACI or PNI.
@@ -154,30 +176,27 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var remoteIdentityKeySize = remote.identityKey.size();
         final var localIdentityKeySize = local.identityKey.size();
         final var statesDiffer = remote.identityState != local.identityState;
+        final var identityKeysExistAndConflict = remoteIdentityKeySize > 0
+            && localIdentityKeySize > 0
+            && !remote.identityKey.equals(local.identityKey);
+        final var conflictAci = firstNonNull(localAci, remoteAci);
+        final var unrepairableIdentityKeyConflict = identityKeysExistAndConflict && conflictAci == null;
 
-        if (remoteIdentityKeySize > 0 && (!account.isPrimaryDevice() || statesDiffer || localIdentityKeySize == 0)) {
+        if (shouldUseRemoteIdentityKey(account.isPrimaryDevice(),
+            statesDiffer,
+            remoteIdentityKeySize,
+            localIdentityKeySize,
+            local.unregisteredAtTimestamp,
+            unrepairableIdentityKeyConflict)) {
             identityState = remote.identityState;
             identityKey = remote.identityKey;
         } else {
             identityState = local.identityState;
-            // Only use local's identity key if:
-            // 1. Contact has ACI or PNI
-            // 2. Remote also has an identity key (if remote size=0, respect that decision)
-            if (hasLocalIdentity && localIdentityKeySize > 0 && remoteIdentityKeySize > 0) {
+            if (hasLocalIdentity && localIdentityKeySize > 0) {
                 identityKey = local.identityKey;
             } else {
                 identityKey = ByteString.EMPTY;
             }
-        }
-
-        if (localAci != null
-                && local.identityKey.size() > 0
-                && remote.identityKey.size() > 0
-                && !local.identityKey.equals(remote.identityKey)) {
-            logger.debug("The local and remote identity keys do not match for {}. Enqueueing a profile fetch.",
-                    localAci);
-            final var address = getRecipientAddress(local);
-            jobExecutor.enqueueJob(new DownloadProfileJob(address));
         }
 
         PNI pni;
@@ -213,6 +232,17 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             e164 = firstNonEmpty(remote.e164, local.e164);
         }
 
+        if (identityKeysExistAndConflict) {
+            if (conflictAci != null) {
+                logger.debug("Identity keys conflict for {}. Enqueueing a profile fetch.", conflictAci);
+                jobExecutor.enqueueJob(new DownloadProfileJob(new RecipientAddress(conflictAci, pni, e164)));
+            } else {
+                logger.debug("Identity keys conflict for {}. No ACI, so no profile fetch is possible.", localPni);
+            }
+        } else if (identityKey.size() > 0 && remoteIdentityKeySize == 0) {
+            logger.debug("Remote identity key is missing for {}. Keeping ours.", firstNonNull(localAci, localPni));
+        }
+
         final var remoteProfileKey = remote.profileKey.size() == 0
                 || KeyUtils.profileKeyOrNull(remote.profileKey.toByteArray()) == null
                 ? ByteString.EMPTY
@@ -237,7 +267,9 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .hideStory(remote.hideStory)
                 .unregisteredAtTimestamp(remote.unregisteredAtTimestamp)
                 .hidden(remote.hidden)
-                .pniSignatureVerified(remote.pniSignatureVerified || local.pniSignatureVerified)
+                .pniSignatureVerified((remote.pniSignatureVerified || local.pniSignatureVerified)
+                    && pni != null
+                    && pni.isValid())
                 .nickname(remote.nickname)
                 .note(remote.note)
                 .avatarColor(remote.avatarColor);
