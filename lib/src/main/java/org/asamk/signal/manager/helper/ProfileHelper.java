@@ -103,8 +103,16 @@ public final class ProfileHelper {
         return getRecipientProfiles(recipientIds, false);
     }
 
-    public void refreshRecipientProfile(RecipientId recipientId) {
-        getRecipientProfile(recipientId, true);
+    public boolean refreshRecipientProfile(RecipientId recipientId) {
+        try {
+            blockingGetProfile(retrieveProfile(recipientId, SignalServiceProfile.RequestType.PROFILE, false));
+            return true;
+        } catch (IOException e) {
+            logger.warn("Failed to retrieve profile for {}, ignoring: {}",
+                    context.getRecipientHelper().resolveSignalServiceAddress(recipientId).getIdentifier(),
+                    e.getMessage());
+            return false;
+        }
     }
 
     public void refreshRecipientProfiles(Collection<RecipientId> recipientIds) {

@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.asamk.signal.manager.util.Utils.handleResponseException;
@@ -88,6 +89,7 @@ public class StorageHelper {
         final var result = storageServiceRepository.getStorageManifestIfDifferentVersion(storageKey,
                 localManifestVersion);
         final var fetchedRemoteManifest = result instanceof ManifestIfDifferentVersionResult.DifferentVersion;
+        final Set<StorageId> identityConflictsPendingRepair = new HashSet<>();
 
         var needsForcePush = false;
         final var remoteManifest = switch (result) {
@@ -116,13 +118,16 @@ public class StorageHelper {
 
             if (remoteManifest.version > localManifestVersion) {
                 logger.trace("Remote version was newer, reading records.");
-                needsForcePush = readDataFromStorage(storageKey, localManifest, remoteManifest);
+                needsForcePush = readDataFromStorage(storageKey,
+                        localManifest,
+                        remoteManifest,
+                        identityConflictsPendingRepair);
             } else if (remoteManifest.version < localManifest.version) {
                 logger.debug("Remote storage manifest version was older. User might have switched accounts.");
             }
             logger.trace("Done reading data from remote storage");
 
-            readRecordsWithPreviouslyUnknownTypes(storageKey, remoteManifest);
+            readRecordsWithPreviouslyUnknownTypes(storageKey, remoteManifest, identityConflictsPendingRepair);
         }
 
         logger.trace("Adding missing storageIds to local data");
@@ -153,7 +158,8 @@ public class StorageHelper {
                 needsMultiDeviceSync = writeToStorage(storageKey,
                         remoteManifest,
                         needsForcePush,
-                        fetchedRemoteManifest);
+                        fetchedRemoteManifest,
+                        identityConflictsPendingRepair);
             } catch (RetryLaterException e) {
                 // TODO retry later
                 return;
@@ -198,7 +204,8 @@ public class StorageHelper {
     private boolean readDataFromStorage(
             final StorageKey storageKey,
             final SignalStorageManifest localManifest,
-            final SignalStorageManifest remoteManifest
+            final SignalStorageManifest remoteManifest,
+            final Set<StorageId> identityConflictsPendingRepair
     ) throws IOException {
         var needsForcePush = false;
         try (final var connection = account.getAccountDatabase().getConnection()) {
@@ -225,7 +232,9 @@ public class StorageHelper {
                             remoteOnlyRecords.size());
                 }
 
-                final var listListPair = processKnownRecords(connection, remoteOnlyRecords);
+                final var listListPair = processKnownRecords(connection,
+                        remoteOnlyRecords,
+                        identityConflictsPendingRepair);
                 final var unknownInserts = listListPair.first();
                 final var updatedStorageIds = listListPair.second();
                 final var oldUnregisteredLocalOnlyIds = new HashSet<>(idDifference.localOnlyIds());
@@ -268,7 +277,8 @@ public class StorageHelper {
 
     private void readRecordsWithPreviouslyUnknownTypes(
             final StorageKey storageKey,
-            final SignalStorageManifest remoteManifest
+            final SignalStorageManifest remoteManifest,
+            final Set<StorageId> identityConflictsPendingRepair
     ) throws IOException {
         try (final var connection = account.getAccountDatabase().getConnection()) {
             connection.setAutoCommit(false);
@@ -282,7 +292,7 @@ public class StorageHelper {
 
                 logger.debug("Found {} of the known-unknowns remotely.", remote.size());
 
-                processKnownRecords(connection, remote);
+                processKnownRecords(connection, remote, identityConflictsPendingRepair);
                 account.getUnknownStorageIdStore()
                         .deleteUnknownStorageIds(connection, remote.stream().map(SignalStorageRecord::getId).toList());
             }
@@ -296,7 +306,8 @@ public class StorageHelper {
             final StorageKey storageKey,
             final SignalStorageManifest remoteManifest,
             final boolean needsForcePush,
-            final boolean fetchedRemoteManifest
+            final boolean fetchedRemoteManifest,
+            final Set<StorageId> identityConflictsPendingRepair
     ) throws IOException, RetryLaterException {
         final WriteOperationResult remoteWriteOperation;
         try (final var connection = account.getAccountDatabase().getConnection()) {
@@ -335,6 +346,15 @@ public class StorageHelper {
         if (remoteWriteOperation.isEmpty()) {
             logger.debug("No remote writes needed. Still at version: {}", remoteManifest.version);
             storageSyncLoopDetector.onConverged();
+            return false;
+        }
+
+        final var onlyIdentityConflictsPendingRepair = containsOnlyIdentityConflictsPendingRepair(remoteWriteOperation,
+                identityConflictsPendingRepair);
+        if (onlyIdentityConflictsPendingRepair) {
+            logger.warn(
+                    "Deferring remote write until the profile fetch says whose identity key is correct. WriteOperationResult :: {}",
+                    remoteWriteOperation);
             return false;
         }
 
@@ -384,6 +404,15 @@ public class StorageHelper {
             }
             default -> throw new IllegalStateException("Unexpected value: " + result);
         }
+    }
+
+    static boolean containsOnlyIdentityConflictsPendingRepair(
+            final WriteOperationResult writeOperation,
+            final Set<StorageId> identityConflictsPendingRepair
+    ) {
+        return !writeOperation.inserts().isEmpty() && writeOperation.inserts()
+                .stream()
+                .allMatch(record -> identityConflictsPendingRepair.contains(record.getId()));
     }
 
     private void forcePushToStorage(
@@ -705,7 +734,8 @@ public class StorageHelper {
 
     private Pair<List<StorageId>, List<StorageId>> processKnownRecords(
             final Connection connection,
-            List<SignalStorageRecord> records
+            List<SignalStorageRecord> records,
+            final Set<StorageId> identityConflictsPendingRepair
     ) throws SQLException {
         final var unknownRecords = new ArrayList<StorageId>();
         final var processedRecords = new ArrayList<StorageId>();
@@ -713,7 +743,10 @@ public class StorageHelper {
         final var accountRecordProcessor = new AccountRecordProcessor(account, connection, context.getJobExecutor());
         final var groupV1RecordProcessor = new GroupV1RecordProcessor(account, connection);
         final var groupV2RecordProcessor = new GroupV2RecordProcessor(account, connection);
-        final var contactRecordProcessor = new ContactRecordProcessor(account, connection, context.getJobExecutor());
+        final var contactRecordProcessor = new ContactRecordProcessor(account,
+                connection,
+                context.getJobExecutor(),
+                identityConflictsPendingRepair);
         final var stickerPackRecordProcessor = new StickerPackRecordProcessor(account, connection);
 
         final var contactRecords = records.stream()

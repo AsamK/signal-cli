@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import okio.ByteString;
@@ -47,11 +48,18 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
     private final SignalAccount account;
     private final Connection connection;
     private final JobExecutor jobExecutor;
+    private final Set<StorageId> identityConflictsPendingRepair;
 
-    public ContactRecordProcessor(SignalAccount account, Connection connection, final JobExecutor jobExecutor) {
+    public ContactRecordProcessor(
+            SignalAccount account,
+            Connection connection,
+            final JobExecutor jobExecutor,
+            final Set<StorageId> identityConflictsPendingRepair
+    ) {
         this.account = account;
         this.connection = connection;
         this.jobExecutor = jobExecutor;
+        this.identityConflictsPendingRepair = identityConflictsPendingRepair;
         this.selfAci = account.getAci();
         this.selfPni = account.getPni();
         this.selfNumber = account.getNumber();
@@ -88,10 +96,12 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
             final long localUnregisteredAtTimestamp,
             final boolean unrepairableIdentityKeyConflict
     ) {
-        return remoteIdentityKeySize > 0 && (statesDiffer
-                || localIdentityKeySize == 0
-                || localUnregisteredAtTimestamp > 0
-            || (unrepairableIdentityKeyConflict && !isPrimaryDevice));
+        return remoteIdentityKeySize > 0 && (
+                statesDiffer || localIdentityKeySize == 0 || localUnregisteredAtTimestamp > 0 || (
+                        unrepairableIdentityKeyConflict
+                                && !isPrimaryDevice
+                )
+        );
     }
 
     @Override
@@ -177,17 +187,17 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         final var localIdentityKeySize = local.identityKey.size();
         final var statesDiffer = remote.identityState != local.identityState;
         final var identityKeysExistAndConflict = remoteIdentityKeySize > 0
-            && localIdentityKeySize > 0
-            && !remote.identityKey.equals(local.identityKey);
+                && localIdentityKeySize > 0
+                && !remote.identityKey.equals(local.identityKey);
         final var conflictAci = firstNonNull(localAci, remoteAci);
         final var unrepairableIdentityKeyConflict = identityKeysExistAndConflict && conflictAci == null;
 
         if (shouldUseRemoteIdentityKey(account.isPrimaryDevice(),
-            statesDiffer,
-            remoteIdentityKeySize,
-            localIdentityKeySize,
-            local.unregisteredAtTimestamp,
-            unrepairableIdentityKeyConflict)) {
+                statesDiffer,
+                remoteIdentityKeySize,
+                localIdentityKeySize,
+                local.unregisteredAtTimestamp,
+                unrepairableIdentityKeyConflict)) {
             identityState = remote.identityState;
             identityKey = remote.identityKey;
         } else {
@@ -235,7 +245,7 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
         if (identityKeysExistAndConflict) {
             if (conflictAci != null) {
                 logger.debug("Identity keys conflict for {}. Enqueueing a profile fetch.", conflictAci);
-                jobExecutor.enqueueJob(new DownloadProfileJob(new RecipientAddress(conflictAci, pni, e164)));
+                jobExecutor.enqueueJob(new DownloadProfileJob(new RecipientAddress(conflictAci, pni, e164), true));
             } else {
                 logger.debug("Identity keys conflict for {}. No ACI, so no profile fetch is possible.", localPni);
             }
@@ -268,8 +278,8 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 .unregisteredAtTimestamp(remote.unregisteredAtTimestamp)
                 .hidden(remote.hidden)
                 .pniSignatureVerified((remote.pniSignatureVerified || local.pniSignatureVerified)
-                    && pni != null
-                    && pni.isValid())
+                        && pni != null
+                        && pni.isValid())
                 .nickname(remote.nickname)
                 .note(remote.note)
                 .avatarColor(remote.avatarColor);
@@ -304,6 +314,9 @@ public class ContactRecordProcessor extends DefaultStorageRecordProcessor<Signal
 
         final var matchesLocal = doProtosMatch(merged, local);
         if (matchesLocal) {
+            if (identityKeysExistAndConflict && conflictAci != null) {
+                identityConflictsPendingRepair.add(localRecord.getId());
+            }
             return localRecord;
         }
 

@@ -100,8 +100,8 @@ public final class StorageSyncModels {
         final var builder = SignalContactRecord.Companion.newBuilder(recipient.getStorageRecord())
                 .e164(address.number().orElse(""))
                 .username(address.username().orElse(""))
-            .pniSignatureVerified(address.pni().map(PNI::isValid).orElse(false)
-                && recipient.isPniSignatureVerified())
+                .pniSignatureVerified(address.pni().map(PNI::isValid).orElse(false)
+                        && recipient.isPniSignatureVerified())
                 .profileKey(recipient.getProfileKey() == null
                         ? ByteString.EMPTY
                         : ByteString.of(recipient.getProfileKey().serialize()));
