@@ -6191,6 +6191,22 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.internal.LinkedDeviceInternal_ReturnConverter",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "fromNative",
+          "parameterTypes": [
+            "java.lang.Object",
+            "java.lang.Object",
+            "java.lang.Object",
+            "java.lang.Object",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.internal.NativeHandleGuard$SimpleOwner",
       "jniAccessible": true,
       "fields": [
