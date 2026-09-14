@@ -3240,6 +3240,9 @@
       "allDeclaredConstructors": true
     },
     {
+      "type": "org.asamk.signal.json.JsonGroupCallUpdate"
+    },
+    {
       "type": "org.asamk.signal.json.JsonGroupInfo",
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
@@ -6251,6 +6254,18 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.net.ChallengeOption",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "CAPTCHA"
+        },
+        {
+          "name": "PUSH_CHALLENGE"
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.net.ChatConnection$ListenerBridge",
       "jniAccessible": true,
       "methods": [
@@ -6374,7 +6389,74 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.net.DeviceIdNotFoundException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.MismatchedDeviceException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "org.signal.libsignal.net.MismatchedDeviceException$Entry[]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.MismatchedDeviceException$Entry",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "byte[]",
+            "int[]",
+            "int[]",
+            "int[]"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.net.NetworkException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.RateLimitChallengeException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String",
+            "org.signal.libsignal.net.ChallengeOption[]",
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.RequestUnauthorizedException",
       "jniAccessible": true,
       "methods": [
         {
@@ -6398,7 +6480,55 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.net.ServerSideErrorException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.ServiceIdNotFoundException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.TimeoutException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.net.TransportFailureException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.UnexpectedResponseException",
       "jniAccessible": true,
       "methods": [
         {
@@ -6419,6 +6549,18 @@
             "int",
             "java.lang.String",
             "java.lang.Object[]",
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.signal.libsignal.net.UploadTooLargeException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
             "java.lang.String"
           ]
         }
@@ -6506,6 +6648,13 @@
         {
           "name": "<init>",
           "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.signal.libsignal.protocol.SignalProtocolAddress",
             "java.lang.String"
           ]
         }
