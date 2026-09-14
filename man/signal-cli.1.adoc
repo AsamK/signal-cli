@@ -344,6 +344,13 @@ Data URI encoded attachments must follow the RFC 2397.
 Additionally a file name can be added:
 e.g.: `data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>`
 
+*--attachment-dimensions* [WIDTHxHEIGHT [WIDTHxHEIGHT ...]]::
+Specify positive integer display dimensions for the attachment at the same position in `--attachment`.
+Use dimensions after applying video rotation. An empty string or omitted trailing entry keeps automatic image dimension detection; video dimensions are not detected.
+Extra entries or malformed dimensions are rejected.
+JSON-RPC uses `attachmentDimensions`, e.g. `["", "1080x1920"]`.
+e.g.: `--attachment a.jpg clip.mp4 --attachment-dimensions '' 1080x1920`
+
 *--view-once*::
 Send the message as a view once message.
 A conformant client will only allow the receiver to view the message once.

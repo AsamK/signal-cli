@@ -112,6 +112,9 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--voice-note")
                 .action(Arguments.storeTrue())
                 .help("Mark audio attachments as voice notes. Voice notes are displayed inline in Signal clients.");
+        subparser.addArgument("--attachment-dimensions")
+                .nargs("*")
+                .help("Specify displayed WIDTHxHEIGHT for each attachment in order. Use an empty string to skip one.");
     }
 
     @Override
@@ -174,6 +177,9 @@ public class SendCommand implements JsonRpcLocalCommand {
         }
         final var viewOnce = Boolean.TRUE.equals(ns.getBoolean("view-once"));
         final var voiceNote = Boolean.TRUE.equals(ns.getBoolean("voice-note"));
+
+        final var attachmentDimensions = parseAttachmentDimensions(ns.getList("attachment-dimensions"),
+                attachments.size());
 
         final var selfNumber = m.getSelfNumber();
 
@@ -249,6 +255,7 @@ public class SendCommand implements JsonRpcLocalCommand {
         try {
             final var message = new Message(messageText,
                     attachments,
+                    attachmentDimensions,
                     viewOnce,
                     voiceNote,
                     mentions,
@@ -278,6 +285,35 @@ public class SendCommand implements JsonRpcLocalCommand {
         } catch (InvalidStickerException e) {
             throw new UserErrorException("Failed to send sticker: " + e.getMessage(), e);
         }
+    }
+
+    private List<Message.AttachmentDimensions> parseAttachmentDimensions(
+            List<String> values,
+            int attachmentCount
+    ) throws UserErrorException {
+        if (values == null) {
+            return List.of();
+        }
+        if (values.size() > attachmentCount) {
+            throw new UserErrorException("More attachment dimensions than attachments");
+        }
+        final var dimensions = new ArrayList<Message.AttachmentDimensions>(values.size());
+        for (final var value : values) {
+            if ("".equals(value)) {
+                dimensions.add(Message.AttachmentDimensions.UNKNOWN);
+                continue;
+            }
+            if (value == null || !value.matches("[1-9][0-9]*x[1-9][0-9]*")) {
+                throw new UserErrorException("Attachment dimensions must be positive WIDTHxHEIGHT or an empty string");
+            }
+            final var parts = value.split("x");
+            try {
+                dimensions.add(new Message.AttachmentDimensions(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])));
+            } catch (IllegalArgumentException e) {
+                throw new UserErrorException("Attachment dimensions exceed the supported integer range");
+            }
+        }
+        return dimensions;
     }
 
     private List<Message.Mention> parseMentions(

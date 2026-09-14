@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.util;
 
+import org.asamk.signal.manager.api.Message.AttachmentDimensions;
 import org.junit.jupiter.api.Test;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 
@@ -40,6 +41,19 @@ class AttachmentUtilsTest {
 
         assertEquals(0, attachment.getWidth());
         assertEquals(0, attachment.getHeight());
+        assertArrayEquals(bytes, attachment.getInputStream().readAllBytes());
+    }
+
+    @Test
+    public void createAttachmentStream_setsSuppliedVideoDimensionsWithoutReadingVideo() throws Exception {
+        final var bytes = "opaque video bytes".getBytes();
+        final var details = new StreamDetails(new ByteArrayInputStream(bytes), "video/mp4", bytes.length);
+        final var attachment = AttachmentUtils.createAttachmentStream(details,
+                Optional.of("clip.mp4"), false, new AttachmentDimensions(1080, 1920), null);
+
+        assertEquals(1080, attachment.getWidth());
+        assertEquals(1920, attachment.getHeight());
+        assertEquals(Optional.empty(), attachment.getBlurHash());
         assertArrayEquals(bytes, attachment.getInputStream().readAllBytes());
     }
 

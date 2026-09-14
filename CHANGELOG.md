@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `send --attachment-dimensions` to supply displayed attachment dimensions for correctly sized video placeholders
+
 ## [0.14.8] - 2026-09-10
 
 ### Added
