@@ -45,15 +45,16 @@ class AttachmentUtilsTest {
     }
 
     @Test
-    public void createAttachmentStream_setsSuppliedVideoDimensionsWithoutReadingVideo() throws Exception {
+    public void createAttachmentStream_setsSuppliedDimensionsAndBlurHash() throws Exception {
         final var bytes = "opaque video bytes".getBytes();
+        final var blurHash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
         final var details = new StreamDetails(new ByteArrayInputStream(bytes), "video/mp4", bytes.length);
         final var attachment = AttachmentUtils.createAttachmentStream(details,
-                Optional.of("clip.mp4"), false, new AttachmentDimensions(1080, 1920), null);
+                Optional.of("clip.mp4"), false, new AttachmentDimensions(1080, 1920), blurHash, null);
 
         assertEquals(1080, attachment.getWidth());
         assertEquals(1920, attachment.getHeight());
-        assertEquals(Optional.empty(), attachment.getBlurHash());
+        assertEquals(Optional.of(blurHash), attachment.getBlurHash());
         assertArrayEquals(bytes, attachment.getInputStream().readAllBytes());
     }
 

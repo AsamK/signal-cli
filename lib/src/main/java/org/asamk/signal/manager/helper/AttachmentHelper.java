@@ -54,9 +54,10 @@ public class AttachmentHelper {
     public List<SignalServiceAttachment> uploadAttachments(
             final List<String> attachments,
             final List<AttachmentDimensions> dimensions,
+            final List<String> blurHashes,
             boolean voiceNote
     ) throws AttachmentInvalidException, IOException {
-        final var attachmentStreams = createAttachmentStreams(attachments, dimensions, voiceNote);
+        final var attachmentStreams = createAttachmentStreams(attachments, dimensions, blurHashes, voiceNote);
 
         try {
             // Upload attachments here, so we only upload once even for multiple recipients
@@ -72,9 +73,14 @@ public class AttachmentHelper {
         }
     }
 
+    public List<SignalServiceAttachment> uploadAttachments(final List<String> attachments) throws AttachmentInvalidException, IOException {
+        return uploadAttachments(attachments, List.of(), List.of(), false);
+    }
+
     private List<SignalServiceAttachmentStream> createAttachmentStreams(
             List<String> attachments,
             List<AttachmentDimensions> dimensions,
+            List<String> blurHashes,
             boolean voiceNote
     ) throws AttachmentInvalidException, IOException {
         if (attachments == null) {
@@ -82,8 +88,9 @@ public class AttachmentHelper {
         }
         final var signalServiceAttachments = new ArrayList<SignalServiceAttachmentStream>(attachments.size());
         for (var i = 0; i < attachments.size(); i++) {
-            final var size = i < dimensions.size() ? dimensions.get(i) : AttachmentDimensions.UNKNOWN;
-            signalServiceAttachments.add(getAttachmentStream(attachments.get(i), size, voiceNote));
+            final var size = i < dimensions.size() ? dimensions.get(i) : null;
+            final var blurHash = i < blurHashes.size() && !blurHashes.get(i).isEmpty() ? blurHashes.get(i) : null;
+            signalServiceAttachments.add(getAttachmentStream(attachments.get(i), size, blurHash, voiceNote));
         }
         return signalServiceAttachments;
     }
@@ -91,6 +98,7 @@ public class AttachmentHelper {
     private SignalServiceAttachmentStream getAttachmentStream(
             final String attachment,
             final AttachmentDimensions dimensions,
+            final String blurHash,
             final boolean voiceNote
     ) throws AttachmentInvalidException {
         try {
@@ -117,6 +125,7 @@ public class AttachmentHelper {
                     streamDetailsAndFileName.second(),
                     voiceNote,
                     dimensions,
+                    blurHash,
                     uploadSpec);
         } catch (IOException e) {
             throw new AttachmentInvalidException(attachment, e);
@@ -131,7 +140,7 @@ public class AttachmentHelper {
     }
 
     public SignalServiceAttachmentPointer uploadAttachment(String attachment) throws IOException, AttachmentInvalidException {
-        final var attachmentStream = getAttachmentStream(attachment, AttachmentDimensions.UNKNOWN, false);
+        final var attachmentStream = getAttachmentStream(attachment, null, null, false);
         return uploadAttachment(attachmentStream);
     }
 

@@ -29,6 +29,7 @@ public class AttachmentUtils {
             Optional<String> name,
             boolean voiceNote,
             AttachmentDimensions dimensions,
+            String blurHash,
             ResumableUploadSpec resumableUploadSpec
     ) throws ResumeLocationInvalidException, IOException {
         final var uploadTimestamp = System.currentTimeMillis();
@@ -39,8 +40,9 @@ public class AttachmentUtils {
                 .withLength(streamDetails.getLength())
                 .withFileName(name.orElse(null))
                 .withVoiceNote(voiceNote)
-                .withWidth(dimensions.width() > 0 ? dimensions.width() : probedStream.width())
-                .withHeight(dimensions.height() > 0 ? dimensions.height() : probedStream.height())
+                .withBlurHash(blurHash)
+                .withWidth(dimensions != null ? dimensions.width() : probedStream.width())
+                .withHeight(dimensions != null ? dimensions.height() : probedStream.height())
                 .withUploadTimestamp(uploadTimestamp)
                 .withResumableUploadSpec(resumableUploadSpec)
                 .withUuid(UUID.randomUUID())
@@ -52,7 +54,7 @@ public class AttachmentUtils {
             Optional<String> name,
             ResumableUploadSpec resumableUploadSpec
     ) throws ResumeLocationInvalidException, IOException {
-        return createAttachmentStream(streamDetails, name, false, AttachmentDimensions.UNKNOWN, resumableUploadSpec);
+        return createAttachmentStream(streamDetails, name, false, null, null, resumableUploadSpec);
     }
 
     /**
