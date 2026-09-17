@@ -10,5 +10,8 @@ public interface ProvisioningManager {
 
     URI getDeviceLinkUri() throws TimeoutException, IOException;
 
+    /**
+     * Completes linking and returns the account's phone number, or ACI if it has no number.
+     */
     String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExistsException;
 }

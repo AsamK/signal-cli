@@ -42,6 +42,18 @@ public class PhoneNumberFormatter {
             throw new InvalidNumberException("No valid characters found.");
         }
 
+        if (localNumber == null) {
+            if (!number.startsWith("+")) {
+                throw new InvalidNumberException("Use an international number including the country code for a numberless account.");
+            }
+            try {
+                final var util = PhoneNumberUtil.getInstance();
+                return util.format(util.parse(number, null), PhoneNumberFormat.E164);
+            } catch (NumberParseException e) {
+                throw new InvalidNumberException("Invalid international phone number.");
+            }
+        }
+
         try {
             PhoneNumberUtil util = PhoneNumberUtil.getInstance();
             PhoneNumber localNumberObject = util.parse(localNumber, null);

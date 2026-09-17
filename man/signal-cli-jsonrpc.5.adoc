@@ -76,6 +76,9 @@ Messages are then sent similar to the automatic mode, but wrapped in a subscript
 When the daemon/jsonRpc command is started without an account parameter (-a), signal-cli will provide all local accounts and additional commands to register (`register`) and link (`startLink`, `finishLink`) new accounts.
 
 In multi-account mode, requests for a single account require an additional `account` param.
+For an account without a phone number, this parameter must be its ACI (Account ID).
+`listAccounts` returns the ACI in `aci` and a null `number` for these accounts.
+Receive events identify them by ACI in the `account` field.
 
 REQUEST: `{"jsonrpc":"2.0","method":"listGroups","id":"my special mark","params":{"account":"+33123456789"}}`
 
@@ -132,7 +135,10 @@ Params:
 
 REQUEST: `{"jsonrpc":"2.0","method":"finishLink","id":"6","params":{"deviceLinkUri":"sgnl://linkdevice?uuid=X&pub_key=X","deviceName":"new-name"}}`
 
-RESPONSE: `{"jsonrpc":"2.0","result":{"deviceLinkUri":"sgnl://linkdevice?uuid=X&pub_key=X"},"id":"6"}`
+RESPONSE: `{"jsonrpc":"2.0","result":{"number":null,"aci":"11111111-1111-4111-8111-111111111111"},"id":"6"}`
+
+The `number` field contains the phone number for a numbered account. Linking a numberless
+account uses the same QR flow; no Account Key is supplied to `finishLink`.
 
 == Examples
 

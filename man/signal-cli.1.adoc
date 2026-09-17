@@ -65,6 +65,7 @@ Make sure you have full read/write access to the given directory.
 *-a* ACCOUNT, *--account* ACCOUNT::
 Specify your phone number, that will be your identifier.
 The phone number must include the country calling code, i.e. the number must start with a "+" sign.
+An ACI (Account ID) can also select an existing account and is required for an account without a phone number.
 
 This flag must not be given for the `link` command.
 It is optional for the `daemon` command.

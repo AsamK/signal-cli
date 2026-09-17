@@ -65,15 +65,25 @@ public class SignalAccountFiles {
         return accountsStore.getAllNumbers();
     }
 
+    public Set<String> getAllLocalAccountIdentifiers() throws IOException {
+        return accountsStore.getAllAccounts().stream()
+                .map(a -> a.number() != null ? a.number() : a.uuid())
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
     public MultiAccountManager initMultiAccountManager() throws IOException {
         final var managerPairs = accountsStore.getAllAccounts().parallelStream().map(a -> {
+            final var identifier = a.number() != null ? a.number() : a.uuid();
             try {
-                return new Pair<Manager, Throwable>(initManagerByNumber(a.number(), a.path()), null);
+                final var manager = a.number() != null
+                        ? initManagerByNumber(a.number(), a.path())
+                        : initManagerByAci(ACI.parseOrThrow(a.uuid()), a.path());
+                return new Pair<Manager, Throwable>(manager, null);
             } catch (NotRegisteredException e) {
-                logger.warn("Ignoring {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
+                logger.warn("Ignoring {}: {} ({})", identifier, e.getMessage(), e.getClass().getSimpleName());
                 return null;
             } catch (AccountCheckException | IOException e) {
-                logger.error("Failed to load {}: {} ({})", a.number(), e.getMessage(), e.getClass().getSimpleName());
+                logger.error("Failed to load {}: {} ({})", identifier, e.getMessage(), e.getClass().getSimpleName());
                 return new Pair<Manager, Throwable>(null, e);
             }
         }).filter(Objects::nonNull).toList();

@@ -63,11 +63,14 @@ public class AccountsStore {
     public synchronized Set<AccountsStorage.Account> getAllAccounts() throws IOException {
         return readAccounts().stream()
                 .filter(a -> a.environment() == null || serviceEnvironment.equals(a.environment()))
-                .filter(a -> a.number() != null)
+                .filter(a -> a.number() != null || a.uuid() != null)
                 .collect(Collectors.toSet());
     }
 
     public synchronized String getPathByNumber(String number) throws IOException {
+        if (number == null) {
+            return null;
+        }
         return readAccounts().stream()
                 .filter(a -> a.environment() == null || serviceEnvironment.equals(a.environment()))
                 .filter(a -> number.equals(a.number()))
@@ -101,7 +104,7 @@ public class AccountsStore {
             if (number != null && number.equals(a.number())) {
                 return new AccountsStorage.Account(a.path(), a.environment(), null, a.uuid());
             }
-            if (aci != null && aci.toString().equals(a.toString())) {
+            if (aci != null && aci.toString().equals(a.uuid())) {
                 return new AccountsStorage.Account(a.path(), a.environment(), a.number(), null);
             }
 

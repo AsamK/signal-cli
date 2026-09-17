@@ -121,7 +121,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
             } else {
                 // Phone number — check already loaded managers
                 var existing = managers.stream()
-                        .filter(m -> m.getSelfNumber().equals(identifier))
+                        .filter(m -> identifier.equals(m.getSelfNumber()))
                         .findFirst()
                         .orElse(null);
                 if (existing != null) {
