@@ -58,6 +58,20 @@ class AttachmentUtilsTest {
         assertArrayEquals(bytes, attachment.getInputStream().readAllBytes());
     }
 
+    @Test
+    public void createAttachmentStream_skipsProbingWhenDimensionsSupplied() throws Exception {
+        final var imageBytes = pngBytes(37, 21);
+        final var stream = new ByteArrayInputStream(imageBytes);
+        final var details = new StreamDetails(stream, "image/png", imageBytes.length);
+        final var attachment = AttachmentUtils.createAttachmentStream(details,
+                Optional.of("meme.png"), false, new AttachmentDimensions(100, 200), null, null);
+
+        assertEquals(imageBytes.length, stream.available());
+        assertEquals(100, attachment.getWidth());
+        assertEquals(200, attachment.getHeight());
+        assertArrayEquals(imageBytes, attachment.getInputStream().readAllBytes());
+    }
+
     private static byte[] pngBytes(final int width, final int height) throws Exception {
         final var image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         final var out = new ByteArrayOutputStream();

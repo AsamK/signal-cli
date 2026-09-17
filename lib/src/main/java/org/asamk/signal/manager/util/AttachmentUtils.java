@@ -33,7 +33,9 @@ public class AttachmentUtils {
             ResumableUploadSpec resumableUploadSpec
     ) throws ResumeLocationInvalidException, IOException {
         final var uploadTimestamp = System.currentTimeMillis();
-        final var probedStream = probeImageDimensions(streamDetails);
+        final var probedStream = dimensions != null
+                ? new ProbedStream(streamDetails.getStream(), dimensions.width(), dimensions.height())
+                : probeImageDimensions(streamDetails);
         return SignalServiceAttachmentStream.newStreamBuilder()
                 .withStream(probedStream.inputStream())
                 .withContentType(streamDetails.getContentType())
@@ -41,8 +43,8 @@ public class AttachmentUtils {
                 .withFileName(name.orElse(null))
                 .withVoiceNote(voiceNote)
                 .withBlurHash(blurHash)
-                .withWidth(dimensions != null ? dimensions.width() : probedStream.width())
-                .withHeight(dimensions != null ? dimensions.height() : probedStream.height())
+                .withWidth(probedStream.width())
+                .withHeight(probedStream.height())
                 .withUploadTimestamp(uploadTimestamp)
                 .withResumableUploadSpec(resumableUploadSpec)
                 .withUuid(UUID.randomUUID())
