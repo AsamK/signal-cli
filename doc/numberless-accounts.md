@@ -48,8 +48,9 @@ account has no phone number, and `Signal.getSelfACI` returns the ACI.
 
 Run `./gradlew test installDist` with JDK 25. Regression tests cover the linking
 request (including ACI authentication and omission of PNI keys), numbered-account
-linking, missing group credential salts, persisted account reload, account discovery,
-group membership lookup, recipient-number formatting, and JSON account identifiers.
+linking, missing group credential salts, persisted account reload, account discovery
+(including superseded accounts and legacy indexes), group membership lookup,
+recipient-number formatting, and JSON account identifiers.
 
 D-Bus transport tests require a session bus. To run them on an isolated bus, use
 `dbus-run-session -- ./gradlew --no-daemon :test --tests '*NumberlessDbusTest*' --rerun-tasks`.
