@@ -45,10 +45,7 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
 
     @Override
     public List<String> getAccountNumbers() {
-        return signalControl.listAccounts()
-                .stream()
-                .map(a -> getRemoteObject(a, Signal.class).getSelfNumber())
-                .toList();
+        return getManagers().stream().map(Manager::getSelfNumber).toList();
     }
 
     @Override
@@ -74,8 +71,8 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
-    public Manager getManager(final String phoneNumber) {
-        return new DbusManagerImpl(getRemoteObject(signalControl.getAccount(phoneNumber), Signal.class),
+    public Manager getManager(final String identifier) {
+        return new DbusManagerImpl(getRemoteObject(signalControl.getAccount(identifier), Signal.class),
                 connection,
                 busname);
     }

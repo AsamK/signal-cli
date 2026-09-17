@@ -27,9 +27,22 @@ Receive events use the ACI in their `account` field when there is no phone numbe
 REST wrappers must understand those nullable numbers and ACI selectors before they
 can be assumed compatible.
 
-Numberless accounts are supported through the CLI and JSON-RPC interfaces. The
-D-Bus interface still assumes phone-number-based account identifiers and does not
-support numberless accounts.
+Numberless accounts are also supported through D-Bus. Start
+`signal-cli daemon --dbus`, then use the ACI with the D-Bus client:
+
+```sh
+signal-cli --dbus -a YOUR_ACCOUNT_ACI listGroups
+signal-cli --dbus -a YOUR_ACCOUNT_ACI send --note-to-self -m 'Numberless account test'
+```
+
+In multi-account mode, D-Bus exports numberless accounts under
+`/org/asamk/Signal/ACI`, with the ACI's hyphens replaced by underscores. Numbered
+accounts retain their phone-number-based paths. Use `SignalControl.listAccounts`
+or `SignalControl.getAccount` to discover paths; `getAccount` accepts either a
+phone number or an ACI. `Signal.getSelfNumber` returns an empty string when the
+account has no phone number, and `Signal.getSelfACI` returns the ACI.
+`Signal.listRecipientIdentifiers` includes contacts without a phone number;
+`Signal.listNumbers` continues to return only phone numbers.
 
 ## Validation
 
@@ -38,6 +51,13 @@ request (including ACI authentication and omission of PNI keys), numbered-accoun
 linking, missing group credential salts, persisted account reload, account discovery,
 group membership lookup, recipient-number formatting, and JSON account identifiers.
 
+D-Bus transport tests require a session bus. To run them on an isolated bus, use
+`dbus-run-session -- ./gradlew --no-daemon :test --tests '*NumberlessDbusTest*' --rerun-tasks`.
+These tests exercise the D-Bus server and client with a local test backend, including
+mixed accounts, direct and group messages, self-directed operations, and account
+removal. They do not contact Signal. Without a session bus, only the D-Bus unit
+tests run and the transport tests are skipped.
+
 Live acceptance requires a real mobile account and is separate from these tests:
 
 1. Link a newly created secondary device using the numberless mobile account.
@@ -45,6 +65,8 @@ Live acceptance requires a real mobile account and is separate from these tests:
 3. Send and receive a Note to Self message and a DM with a second account.
 4. Receive a group message, list the group, and send a reply to that test group.
 5. Run the JSON-RPC daemon, restart it, and repeat receiving and sending by ACI.
+6. Repeat with `daemon --dbus` and the `--dbus -a YOUR_ACCOUNT_ACI` client, checking
+   direct messages, group messages, and Note to Self.
 
 Only one signal-cli process may open an account's state at a time. Stop the daemon
 before running one-off commands against the same configuration directory.
