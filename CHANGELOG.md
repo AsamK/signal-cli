@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `send --attachment-dimensions` and `--attachment-blurhash` to set the placeholder shown before an attachment is downloaded
+
 ## [0.14.8] - 2026-09-10
 
 ### Added

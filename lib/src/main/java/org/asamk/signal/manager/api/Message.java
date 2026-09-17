@@ -6,6 +6,8 @@ import java.util.Optional;
 public record Message(
         String messageText,
         List<String> attachments,
+        List<AttachmentDimensions> attachmentDimensions,
+        List<String> attachmentBlurHashes,
         boolean viewOnce,
         boolean voiceNote,
         List<Mention> mentions,
@@ -16,6 +18,8 @@ public record Message(
         List<TextStyle> textStyles,
         boolean urgent
 ) {
+
+    public record AttachmentDimensions(int width, int height) {}
 
     public record Mention(RecipientIdentifier.Single recipient, int start, int length) {}
 

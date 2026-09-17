@@ -344,6 +344,15 @@ Data URI encoded attachments must follow the RFC 2397.
 Additionally a file name can be added:
 e.g.: `data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>`
 
+*--attachment-dimensions* [WIDTHxHEIGHT [WIDTHxHEIGHT ...]]::
+Specify the displayed dimensions (after rotation) of the attachment at the same position in `--attachment`.
+Use an empty string to skip one; image dimensions are otherwise detected automatically.
+
+*--attachment-blurhash* [BLURHASH [BLURHASH ...]]::
+Specify a BlurHash (https://blurha.sh) for the attachment at the same position in `--attachment`, which clients show while it's downloading.
+Use an empty string to skip one.
+e.g.: `--attachment a.jpg clip.mp4 --attachment-dimensions '' 1080x1920 --attachment-blurhash '' 'LEHV6nWB2yk8pyo0adR*.7kCMdnj'`
+
 *--view-once*::
 Send the message as a view once message.
 A conformant client will only allow the receiver to view the message once.
