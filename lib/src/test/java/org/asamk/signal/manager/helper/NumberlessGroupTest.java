@@ -24,18 +24,34 @@ class NumberlessGroupTest {
     void findsOurGroupMembershipByAciWhenPniIsAbsent() throws Exception {
         final var aci = ACI.parseOrThrow("11111111-1111-4111-8111-111111111111");
         final var otherAci = ACI.parseOrThrow("22222222-2222-4222-8222-222222222222");
-        try (final var account = SignalAccount.createLinkedAccount(directory.toFile(), "account",
-                ServiceEnvironment.STAGING, Settings.DEFAULT);
-             final var context = new Context(account, null, null, null, null, null)) {
-            account.setProvisioningData(null, aci, null, "test-password", new byte[]{1},
-                    KeyUtils.generateIdentityKeyPair(), null, KeyUtils.createProfileKey(), null, new byte[32], null);
+        try (final var account = SignalAccount.createLinkedAccount(directory.toFile(),
+                "account",
+                ServiceEnvironment.STAGING,
+                Settings.DEFAULT); final var context = new Context(account, null, null, null, null, null)) {
+            account.setProvisioningData(null,
+                    aci,
+                    null,
+                    "test-password",
+                    new byte[]{1},
+                    KeyUtils.generateIdentityKeyPair(),
+                    null,
+                    KeyUtils.createProfileKey(),
+                    null,
+                    new byte[32],
+                    null);
             final var otherMember = new DecryptedMember.Builder().aciBytes(otherAci.toByteString())
-                    .joinedAtRevision(1).build();
+                    .joinedAtRevision(1)
+                    .build();
             final var selfMember = new DecryptedMember.Builder().aciBytes(aci.toByteString())
-                    .joinedAtRevision(4).build();
-            final var group = new DecryptedGroup.Builder().revision(9).members(List.of(otherMember, selfMember)).build();
+                    .joinedAtRevision(4)
+                    .build();
+            final var group = new DecryptedGroup.Builder().revision(9)
+                    .members(List.of(otherMember, selfMember))
+                    .build();
             assertEquals(4, context.getGroupV2Helper().findRevisionWeWereAdded(group));
-            assertEquals(9, context.getGroupV2Helper().findRevisionWeWereAdded(group.newBuilder().members(List.of(otherMember)).build()));
+            assertEquals(9,
+                    context.getGroupV2Helper()
+                            .findRevisionWeWereAdded(group.newBuilder().members(List.of(otherMember)).build()));
         }
     }
 }

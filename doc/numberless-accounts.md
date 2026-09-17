@@ -1,8 +1,8 @@
 # Linking an account without a phone number
 
-This branch adds secondary-device linking for accounts registered without a phone
-number, such as those created in Signal Android 8.28. It does not implement creating
-or recovering a primary numberless account using an Account Key.
+signal-cli can link as a secondary device to an account registered without a phone
+number, such as those created in Signal Android 8.28. Creating or recovering a
+primary numberless account using an Account Key is not supported.
 
 Run `signal-cli link -n signal-cli`, then scan the QR code from the mobile app's
 Linked devices screen. The linking URI advertises `capabilities=nopni`. If linking
@@ -26,6 +26,10 @@ return an `aci` field alongside `number`; `number` is null for a numberless acco
 Receive events use the ACI in their `account` field when there is no phone number.
 REST wrappers must understand those nullable numbers and ACI selectors before they
 can be assumed compatible.
+
+Numberless accounts are supported through the CLI and JSON-RPC interfaces. The
+D-Bus interface still assumes phone-number-based account identifiers and does not
+support numberless accounts.
 
 ## Validation
 

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class SignalAccountFiles {
 
@@ -66,9 +67,10 @@ public class SignalAccountFiles {
     }
 
     public Set<String> getAllLocalAccountIdentifiers() throws IOException {
-        return accountsStore.getAllAccounts().stream()
+        return accountsStore.getAllAccounts()
+                .stream()
                 .map(a -> a.number() != null ? a.number() : a.uuid())
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
     }
 
     public MultiAccountManager initMultiAccountManager() throws IOException {

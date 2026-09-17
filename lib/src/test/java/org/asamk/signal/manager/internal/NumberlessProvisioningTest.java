@@ -14,6 +14,7 @@ import org.signal.core.models.ServiceId.ACI;
 import org.signal.core.models.ServiceId.PNI;
 import org.signal.libsignal.net.RequestResult;
 import org.signal.network.api.RegistrationApiV2;
+import org.signal.network.api.RegistrationApiV2.RegisterAsLinkedDeviceError;
 import org.signal.network.rest.SignalRestClient;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
@@ -24,6 +25,7 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicReference;
 
+import okhttp3.Credentials;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -50,8 +52,8 @@ class NumberlessProvisioningTest {
     @Test
     void numberlessProvisioningRequiresGroupCredentialSalt() {
         assertThrows(IOException.class, () -> ProvisioningManagerImpl.parsePni(new ProvisionMessage.Builder().build()));
-        assertThrows(IOException.class, () -> ProvisioningManagerImpl.parsePni(new ProvisionMessage.Builder()
-                .authCredentialSalt(ByteString.EMPTY).build()));
+        final var emptySalt = new ProvisionMessage.Builder().authCredentialSalt(ByteString.EMPTY).build();
+        assertThrows(IOException.class, () -> ProvisioningManagerImpl.parsePni(emptySalt));
         assertNull(ProvisioningManagerImpl.toRegistrationPreKeys(null));
     }
 
@@ -60,10 +62,12 @@ class NumberlessProvisioningTest {
         final var message = new ProvisionMessage.Builder().authCredentialSalt(ByteString.of(new byte[32]));
         assertNull(ProvisioningManagerImpl.parsePni(message.build()));
         assertThrows(IOException.class, () -> ProvisioningManagerImpl.parsePni(message.pni(PNI_ID.toString()).build()));
-        assertThrows(IllegalArgumentException.class, () -> ProvisioningManagerImpl.parsePni(
-                new ProvisionMessage.Builder().number("+12025550123").build()));
-        assertEquals(PNI_ID, ProvisioningManagerImpl.parsePni(new ProvisionMessage.Builder()
-                .number("+12025550123").pni(PNI_ID.toString()).build()));
+        assertThrows(IllegalArgumentException.class,
+                () -> ProvisioningManagerImpl.parsePni(new ProvisionMessage.Builder().number("+12025550123").build()));
+        assertEquals(PNI_ID,
+                ProvisioningManagerImpl.parsePni(new ProvisionMessage.Builder().number("+12025550123")
+                        .pni(PNI_ID.toString())
+                        .build()));
     }
 
     @Test
@@ -85,29 +89,57 @@ class NumberlessProvisioningTest {
             final var buffer = new Buffer();
             chain.request().body().writeTo(buffer);
             body.set(mapper.readTree(buffer.readUtf8()));
-            return new Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
-                    .code(200).message("OK")
-                    .body(ResponseBody.create("{\"deviceId\":2}", MediaType.get("application/json"))).build();
+            return new Response.Builder().request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(ResponseBody.create("{\"deviceId\":2}", MediaType.get("application/json")))
+                    .build();
         }).build();
         final var config = ServiceConfig.getServiceEnvironmentConfig(ServiceEnvironment.STAGING, "signal-cli-test");
-        final var restClient = new SignalRestClient(config.signalServiceConfiguration(), "signal-cli-test",
-                null, false, 1000L, new SecureRandom(), client);
+        final var restClient = new SignalRestClient(config.signalServiceConfiguration(),
+                "signal-cli-test",
+                null,
+                false,
+                1000L,
+                new SecureRandom(),
+                client);
         final var api = new RegistrationApiV2(restClient, false);
 
-        try (final var account = SignalAccount.createLinkedAccount(directory.toFile(), "account",
-                ServiceEnvironment.STAGING, Settings.DEFAULT)) {
-            account.setProvisioningData(number, ACI_ID, pni, "test-password", new byte[]{1},
-                    KeyUtils.generateIdentityKeyPair(), pni == null ? null : KeyUtils.generateIdentityKeyPair(),
-                    KeyUtils.createProfileKey(), null, new byte[32], null);
+        try (final var account = SignalAccount.createLinkedAccount(directory.toFile(),
+                "account",
+                ServiceEnvironment.STAGING,
+                Settings.DEFAULT)) {
+            account.setProvisioningData(number,
+                    ACI_ID,
+                    pni,
+                    "test-password",
+                    new byte[]{1},
+                    KeyUtils.generateIdentityKeyPair(),
+                    pni == null ? null : KeyUtils.generateIdentityKeyPair(),
+                    KeyUtils.createProfileKey(),
+                    null,
+                    new byte[32],
+                    null);
             final var aciKeys = KeyUtils.generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
-            final var pniKeys = pni == null ? null : KeyUtils.generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
-            final var deviceId = ProvisioningManagerImpl.registerLinkedDevice(api, account, "test-code", aciKeys, pniKeys);
+            final var pniKeys = pni == null
+                    ? null
+                    : KeyUtils.generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
+            final var deviceId = ProvisioningManagerImpl.registerLinkedDevice(api,
+                    account,
+                    "test-code",
+                    aciKeys,
+                    pniKeys);
 
             assertEquals(2, deviceId);
             assertEquals("PUT", request.get().method());
             assertEquals("/v1/devices/link", request.get().url().encodedPath());
-            assertEquals(okhttp3.Credentials.basic(ACI_ID.toString(), "test-password"), request.get().header("Authorization"));
-            assertTrue(body.get().path("accountAttributes").path("capabilities").path("optionalPhoneNumber").asBoolean());
+            assertEquals(Credentials.basic(ACI_ID.toString(), "test-password"), request.get().header("Authorization"));
+            assertTrue(body.get()
+                    .path("accountAttributes")
+                    .path("capabilities")
+                    .path("optionalPhoneNumber")
+                    .asBoolean());
             assertTrue(body.get().hasNonNull("aciSignedPreKey"));
             assertTrue(body.get().hasNonNull("aciPqLastResortPreKey"));
             assertEquals(pni != null, body.get().has("pniSignedPreKey"));
@@ -122,10 +154,12 @@ class NumberlessProvisioningTest {
     @Test
     @SuppressWarnings("unchecked")
     void linkingErrorsAreReportedWithoutCrashingOrIncludingServerBody() {
-        assertThrows(AuthorizationFailedException.class, () -> ProvisioningManagerImpl.getLinkedDeviceId(
-                new RequestResult.NonSuccess<>(RegistrationApiV2.RegisterAsLinkedDeviceError.IncorrectVerification.INSTANCE)));
-        final var error = assertThrows(IOException.class, () -> ProvisioningManagerImpl.getLinkedDeviceId(
-                new RequestResult.NonSuccess<>(new RegistrationApiV2.RegisterAsLinkedDeviceError.InvalidRequest("secret payload"))));
+        final var incorrectVerification = RegisterAsLinkedDeviceError.IncorrectVerification.INSTANCE;
+        assertThrows(AuthorizationFailedException.class,
+                () -> ProvisioningManagerImpl.getLinkedDeviceId(new RequestResult.NonSuccess<>(incorrectVerification)));
+        final var invalidRequest = new RegisterAsLinkedDeviceError.InvalidRequest("secret payload");
+        final var error = assertThrows(IOException.class,
+                () -> ProvisioningManagerImpl.getLinkedDeviceId(new RequestResult.NonSuccess<>(invalidRequest)));
         assertFalse(error.getMessage().contains("secret payload"));
     }
 }

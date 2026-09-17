@@ -29,6 +29,7 @@ import org.signal.libsignal.protocol.util.KeyHelper;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.libsignal.usernames.Username;
 import org.signal.network.api.AccountApiV2;
+import org.signal.network.api.AccountApiV2.SetAccountAttributesError;
 import org.signal.network.exceptions.NonSuccessfulResponseCodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,8 +144,8 @@ public class AccountHelper {
         final var number = whoAmI.getNumber();
         final var aci = ACI.parseOrThrow(whoAmI.getAci());
         final var pni = whoAmI.getPni() == null ? null : PNI.parseOrThrow(whoAmI.getPni());
-        if (Objects.equals(number, account.getNumber()) && aci.equals(account.getAci())
-                && Objects.equals(pni, account.getPni())) {
+        if (Objects.equals(number, account.getNumber()) && aci.equals(account.getAci()) && Objects.equals(pni,
+                account.getPni())) {
             return;
         }
 
@@ -570,14 +571,16 @@ public class AccountHelper {
 
     public void updateAccountAttributes() throws IOException {
         if (account.getNumber() != null) {
-            handleResponseException(dependencies.getAccountApi().setAccountAttributes(account.getAccountAttributes(null)));
+            handleResponseException(dependencies.getAccountApi()
+                    .setAccountAttributes(account.getAccountAttributes(null)));
             return;
         }
         final var api = new AccountApiV2(dependencies.getAuthenticatedSignalWebSocket());
-        final RequestResult<Unit, ? extends AccountApiV2.SetAccountAttributesError> result =
-                runSuspendBlocking(cont -> api.setAccountAttributes(account.getAccountAttributesV2(), cont));
+        final RequestResult<Unit, ? extends SetAccountAttributesError> result = runSuspendBlocking(cont -> api.setAccountAttributes(
+                account.getAccountAttributesV2(),
+                cont));
         if (result instanceof RequestResult.NonSuccess<?> failure) {
-            if (failure.getError() instanceof AccountApiV2.SetAccountAttributesError.Unauthorized) {
+            if (failure.getError() instanceof SetAccountAttributesError.Unauthorized) {
                 throw new AuthorizationFailedException(401, "Authorization failed!");
             }
             throw new IOException("Account attribute update rate limited; try again later");

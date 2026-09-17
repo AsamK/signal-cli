@@ -30,7 +30,9 @@ public class ListAccountsCommand implements JsonRpcMultiLocalCommand {
         final var managers = c.getManagers();
         switch (outputWriter) {
             case JsonWriter jsonWriter -> {
-                final var jsonAccounts = managers.stream().map(m -> new JsonAccount(m.getSelfNumber(), m.getSelfACI())).toList();
+                final var jsonAccounts = managers.stream()
+                        .map(m -> new JsonAccount(m.getSelfNumber(), m.getSelfACI()))
+                        .toList();
                 jsonWriter.write(jsonAccounts);
             }
             case PlainTextWriter plainTextWriter -> {

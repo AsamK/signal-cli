@@ -44,7 +44,8 @@ public class PhoneNumberFormatter {
 
         if (localNumber == null) {
             if (!number.startsWith("+")) {
-                throw new InvalidNumberException("Use an international number including the country code for a numberless account.");
+                throw new InvalidNumberException(
+                        "Use an international number including the country code for a numberless account.");
             }
             try {
                 final var util = PhoneNumberUtil.getInstance();

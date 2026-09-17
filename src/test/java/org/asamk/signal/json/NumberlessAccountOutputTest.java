@@ -52,7 +52,8 @@ class NumberlessAccountOutputTest {
     }
 
     private static Manager manager(final String number) {
-        return (Manager) Proxy.newProxyInstance(Manager.class.getClassLoader(), new Class<?>[]{Manager.class},
+        return (Manager) Proxy.newProxyInstance(Manager.class.getClassLoader(),
+                new Class<?>[]{Manager.class},
                 (proxy, method, args) -> {
                     if (method.isDefault()) {
                         return InvocationHandler.invokeDefault(proxy, method, args);

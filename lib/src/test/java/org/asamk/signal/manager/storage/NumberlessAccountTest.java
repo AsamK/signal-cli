@@ -27,10 +27,21 @@ class NumberlessAccountTest {
         final var identity = KeyUtils.generateIdentityKeyPair();
         final var salt = new byte[32];
         salt[0] = 42;
-        try (final var account = SignalAccount.createLinkedAccount(directory.toFile(), "account",
-                ServiceEnvironment.STAGING, Settings.DEFAULT)) {
-            account.setProvisioningData(null, aci, null, "test-password", new byte[]{1}, identity,
-                    null, KeyUtils.createProfileKey(), null, salt, null);
+        try (final var account = SignalAccount.createLinkedAccount(directory.toFile(),
+                "account",
+                ServiceEnvironment.STAGING,
+                Settings.DEFAULT)) {
+            account.setProvisioningData(null,
+                    aci,
+                    null,
+                    "test-password",
+                    new byte[]{1},
+                    identity,
+                    null,
+                    KeyUtils.createProfileKey(),
+                    null,
+                    salt,
+                    null);
             account.finishLinking(2, KeyUtils.generatePreKeysForType(account.getAccountData(ServiceIdType.ACI)), null);
         }
 

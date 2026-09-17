@@ -35,6 +35,8 @@ import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.ecc.ECPrivateKey;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.signal.network.api.RegistrationApiV2;
+import org.signal.network.api.RegistrationApiV2.LinkDeviceResponse;
+import org.signal.network.api.RegistrationApiV2.RegisterAsLinkedDeviceError;
 import org.signal.network.rest.SignalRestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,7 +164,8 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
         final var accountExists = accountPath != null && SignalAccount.accountFileExists(pathConfig.dataPath(),
                 accountPath);
         if (accountExists && !canRelinkExistingAccount(accountPath)) {
-            throw new UserAlreadyExistsException(identifier, SignalAccount.getFileName(pathConfig.dataPath(), accountPath));
+            throw new UserAlreadyExistsException(identifier,
+                    SignalAccount.getFileName(pathConfig.dataPath(), accountPath));
         }
         if (accountPath == null) {
             accountPath = accountsStore.addAccount(number, aci);
@@ -179,7 +182,7 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
             pniIdentity = pni == null
                     ? null
                     : new IdentityKeyPair(new IdentityKey(msg.pniIdentityKeyPublic.toByteArray()),
-                    new ECPrivateKey(msg.pniIdentityKeyPrivate.toByteArray()));
+                            new ECPrivateKey(msg.pniIdentityKeyPrivate.toByteArray()));
             profileKey = msg.profileKey == null
                     ? KeyUtils.createProfileKey()
                     : new ProfileKey(msg.profileKey.toByteArray());
@@ -232,9 +235,14 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
                     : generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
 
             logger.debug("Finishing new device registration");
-            final var registrationApi = new RegistrationApiV2(new SignalRestClient(
-                    serviceEnvironmentConfig.signalServiceConfiguration(), userAgent), false);
-            final var deviceId = registerLinkedDevice(registrationApi, account, msg.provisioningCode, aciPreKeys, pniPreKeys);
+            final var restClient = new SignalRestClient(serviceEnvironmentConfig.signalServiceConfiguration(),
+                    userAgent);
+            final var registrationApi = new RegistrationApiV2(restClient, false);
+            final var deviceId = registerLinkedDevice(registrationApi,
+                    account,
+                    msg.provisioningCode,
+                    aciPreKeys,
+                    pniPreKeys);
 
             account.finishLinking(deviceId, aciPreKeys, pniPreKeys);
             linkingFinished = true;
@@ -291,8 +299,10 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
         if (message.number != null) {
             return PNI.parseOrThrow(message.pni, message.pniBinary);
         }
-        if (message.pni != null || message.pniBinary != null
-                || message.pniIdentityKeyPublic != null || message.pniIdentityKeyPrivate != null) {
+        if (message.pni != null
+                || message.pniBinary != null
+                || message.pniIdentityKeyPublic != null
+                || message.pniIdentityKeyPrivate != null) {
             throw new IOException("Provisioning message has PNI material without a phone number");
         }
         if (message.authCredentialSalt == null || message.authCredentialSalt.size() == 0) {
@@ -314,32 +324,32 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
                 attrs.getPniRegistrationId(),
                 attrs.getName(),
                 attrs.getCapabilities());
-        final RequestResult<RegistrationApiV2.LinkDeviceResponse, ? extends RegistrationApiV2.RegisterAsLinkedDeviceError> result =
-                runSuspendBlocking(cont -> registrationApi.registerAsSecondaryDevice(account.getAci(),
-                        account.getPassword(),
-                        provisioningCode,
-                        deviceAttributes,
-                        toRegistrationPreKeys(aciPreKeys),
-                        toRegistrationPreKeys(pniPreKeys),
-                        null,
-                        cont));
+        final RequestResult<LinkDeviceResponse, ? extends RegisterAsLinkedDeviceError> result = runSuspendBlocking(cont -> registrationApi.registerAsSecondaryDevice(
+                account.getAci(),
+                account.getPassword(),
+                provisioningCode,
+                deviceAttributes,
+                toRegistrationPreKeys(aciPreKeys),
+                toRegistrationPreKeys(pniPreKeys),
+                null,
+                cont));
         return getLinkedDeviceId(result);
     }
 
     static int getLinkedDeviceId(
-            final RequestResult<RegistrationApiV2.LinkDeviceResponse, ? extends RegistrationApiV2.RegisterAsLinkedDeviceError> result
+            final RequestResult<LinkDeviceResponse, ? extends RegisterAsLinkedDeviceError> result
     ) throws IOException {
         if (result instanceof RequestResult.NonSuccess<?> failure) {
             throw switch (failure.getError()) {
-                case RegistrationApiV2.RegisterAsLinkedDeviceError.IncorrectVerification ignored ->
+                case RegisterAsLinkedDeviceError.IncorrectVerification ignored ->
                         new AuthorizationFailedException(403, "Device verification failed");
-                case RegistrationApiV2.RegisterAsLinkedDeviceError.MissingCapability ignored ->
+                case RegisterAsLinkedDeviceError.MissingCapability ignored ->
                         new IOException("Linked device is missing a required account capability");
-                case RegistrationApiV2.RegisterAsLinkedDeviceError.MaxLinkedDevices ignored ->
+                case RegisterAsLinkedDeviceError.MaxLinkedDevices ignored ->
                         new IOException("Account has reached its linked device limit");
-                case RegistrationApiV2.RegisterAsLinkedDeviceError.InvalidRequest ignored ->
+                case RegisterAsLinkedDeviceError.InvalidRequest ignored ->
                         new IOException("Signal rejected the device linking request");
-                case RegistrationApiV2.RegisterAsLinkedDeviceError.RateLimited ignored ->
+                case RegisterAsLinkedDeviceError.RateLimited ignored ->
                         new IOException("Device linking rate limited; try again later");
                 default -> new IOException("Unexpected device linking response");
             };
@@ -348,8 +358,11 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
     }
 
     static RegistrationApiV2.PreKeyCollection toRegistrationPreKeys(final PreKeyCollection preKeys) {
-        return preKeys == null ? null : new RegistrationApiV2.PreKeyCollection(preKeys.getIdentityKey(),
-                preKeys.getSignedPreKey(), preKeys.getLastResortKyberPreKey());
+        return preKeys == null
+                ? null
+                : new RegistrationApiV2.PreKeyCollection(preKeys.getIdentityKey(),
+                        preKeys.getSignedPreKey(),
+                        preKeys.getLastResortKyberPreKey());
     }
 
     @Override
