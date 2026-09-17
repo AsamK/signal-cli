@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.util;
 
+import org.asamk.signal.manager.api.Message.AttachmentDimensions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentStream;
@@ -27,16 +28,21 @@ public class AttachmentUtils {
             StreamDetails streamDetails,
             Optional<String> name,
             boolean voiceNote,
+            AttachmentDimensions dimensions,
+            String blurHash,
             ResumableUploadSpec resumableUploadSpec
     ) throws ResumeLocationInvalidException, IOException {
         final var uploadTimestamp = System.currentTimeMillis();
-        final var probedStream = probeImageDimensions(streamDetails);
+        final var probedStream = dimensions != null
+                ? new ProbedStream(streamDetails.getStream(), dimensions.width(), dimensions.height())
+                : probeImageDimensions(streamDetails);
         return SignalServiceAttachmentStream.newStreamBuilder()
                 .withStream(probedStream.inputStream())
                 .withContentType(streamDetails.getContentType())
                 .withLength(streamDetails.getLength())
                 .withFileName(name.orElse(null))
                 .withVoiceNote(voiceNote)
+                .withBlurHash(blurHash)
                 .withWidth(probedStream.width())
                 .withHeight(probedStream.height())
                 .withUploadTimestamp(uploadTimestamp)
@@ -50,7 +56,7 @@ public class AttachmentUtils {
             Optional<String> name,
             ResumableUploadSpec resumableUploadSpec
     ) throws ResumeLocationInvalidException, IOException {
-        return createAttachmentStream(streamDetails, name, false, resumableUploadSpec);
+        return createAttachmentStream(streamDetails, name, false, null, null, resumableUploadSpec);
     }
 
     /**
