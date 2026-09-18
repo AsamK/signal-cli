@@ -208,14 +208,15 @@ public class App {
     private static String getAccountIfOnlyOne(final SignalAccountFiles signalAccountFiles) throws IOErrorException, UserErrorException {
         Set<String> accounts;
         try {
-            accounts = signalAccountFiles.getAllLocalAccountNumbers();
+            accounts = signalAccountFiles.getAllLocalAccountIdentifiers();
         } catch (IOException e) {
             throw new IOErrorException("Failed to load local accounts file", e);
         }
         if (accounts.isEmpty()) {
             throw new UserErrorException("No local users found, you first need to register or link an account");
         } else if (accounts.size() > 1) {
-            throw new UserErrorException("Multiple users found, you need to specify an account (phone number) with -a");
+            throw new UserErrorException(
+                    "Multiple users found, you need to specify an account (phone number or ACI) with -a");
         }
         return accounts.stream().findFirst().get();
     }

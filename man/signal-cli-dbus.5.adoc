@@ -15,9 +15,13 @@ signal-cli-dbus - A commandline and dbus interface for the Signal messenger
 
 *signal-cli* [--verbose] [--data-dir DATA_DIR] [-a ACCOUNT] [-o {plain-text,json}] daemon [--dbus] [--dbus-system]
 
-*dbus-send* [--system | --session] [--print-reply] --type=method_call --dest="org.asamk.Signal" /org/asamk/Signal[/_<phonenumber>] org.asamk.Signal.<method> [string:<string argument>] [array:<type>:<array argument>]
+*dbus-send* [--system | --session] [--print-reply] --type=method_call --dest="org.asamk.Signal" /org/asamk/Signal[/<account-id>] org.asamk.Signal.<method> [string:<string argument>] [array:<type>:<array argument>]
 
-Note: when daemon was started without explicit `-a ACCOUNT`, the `dbus-send` command requires adding the phone number in `/org/asamk/Signal/_<phonenumber>`.
+Note: when daemon was started without explicit `-a ACCOUNT`, use the account's
+object path returned by `org.asamk.SignalControl.listAccounts` or
+`org.asamk.SignalControl.getAccount`. Numbered accounts use
+`/org/asamk/Signal/_<phonenumber>`. Accounts without a phone number use
+`/org/asamk/Signal/<ACI>`, with hyphens replaced by underscores.
 
 == Description
 
@@ -49,6 +53,11 @@ All Exceptions begin with "org.asamk.Signal.Error." which is omitted here for be
 
 Phone numbers always have the format +<countrycode><regional number>
 
+For an account without a phone number, use its ACI (Account ID) with the
+`signal-cli --dbus -a ACCOUNT` client. ACI selectors also work for numbered accounts.
+An account without a phone number cannot infer the country code of a recipient;
+use a complete international phone number, an ACI, or a Signal username.
+
 == Methods
 
 === SignalControl interface
@@ -73,10 +82,28 @@ For example:
 dbus-send --session --dest=org.asamk.Signal --type=method_call --print-reply /org/asamk/Signal org.asamk.Signal.link string:"My secondary client" | tr '\n' '\0' | sed 's/.*string //g' | sed 's/\"//g' | qrencode -s10 -tANSI256
 ----
 
-listAccounts() -> accountList<as>::
+listAccounts() -> accountList<ao>::
 * accountList : Array of all attached accounts in DBus object path form
 
 Exceptions: None
+
+getAccount(identifier<s>) -> account<o>::
+* identifier : Phone number or ACI of an attached account
+* account : DBus object path of the account
+
+Exceptions: org.asamk.SignalControl.Error.Failure if the account is unknown
+
+startLink() -> deviceLinkUri<s>::
+* deviceLinkUri : Provisioning URI to scan with the primary Signal device
+
+finishLink(deviceLinkUri<s>, newDeviceName<s>) -> identifier<s>::
+* deviceLinkUri : URI returned by startLink
+* newDeviceName : Name for the linked device
+* identifier : Phone number of the linked account, or its ACI when it has no phone number
+
+Both linking methods support accounts with or without a phone number.
+
+Exceptions: org.asamk.SignalControl.Error.Failure
 
 register(number<s>, voiceVerification<b>) -> <>::
 * number : Phone number
@@ -115,9 +142,10 @@ Exceptions: None
 
 The following methods listen to the account's object path, which is constructed as follows:
 
-- for single-account mode: "/org/asamk/Signal/"
-- for multi-account mode: "/org/asamk/Signal/" + DBusNumber
-* DBusNumber: account's phone number, with underscore (_) replacing plus (+)
+- for single-account mode: "/org/asamk/Signal"
+- for multi-account mode: "/org/asamk/Signal/" + DBusIdentifier
+* DBusIdentifier: account's phone number with underscore (_) replacing plus (+),
+  or its ACI with underscores replacing hyphens when there is no phone number
 
 getContactName(number<s>) -> name<s>::
 * number : Phone number
@@ -135,7 +163,12 @@ May result in e.g. two entries if a contact and profile name is set.
 Exceptions: None
 
 getSelfNumber() -> number<s>::
-* number : Your phone number
+* number : Your phone number, or an empty string for an account without a phone number
+
+Exceptions: None
+
+getSelfACI() -> aci<s>::
+* aci : Your account's ACI (Account ID), available with or without a phone number
 
 Exceptions: None
 
@@ -164,6 +197,14 @@ listNumbers() -> numbers<as>::
 * numbers : String array of all known numbers
 
 This is a concatenated list of all defined contacts as well of profiles known (e.g. peer group members or sender of received messages)
+
+Exceptions: None
+
+listRecipientIdentifiers() -> identifiers<as>::
+* identifiers : String array of known recipient identifiers, including recipients without a phone number
+
+Uses phone numbers where known and includes ACIs for recipients without a phone
+number. Unlike `listNumbers`, this method also includes numberless recipients.
 
 Exceptions: None
 

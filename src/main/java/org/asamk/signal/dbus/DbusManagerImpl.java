@@ -56,6 +56,7 @@ import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.asamk.signal.manager.api.UsernameStatus;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.errors.UnknownMethod;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
@@ -77,6 +78,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -110,7 +112,8 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public String getSelfNumber() {
-        return signal.getSelfNumber();
+        final var number = signal.getSelfNumber();
+        return number.isEmpty() ? null : number;
     }
 
     @Override
@@ -438,7 +441,7 @@ public class DbusManagerImpl implements Manager {
             numbers.forEach(n -> signal.sendTyping(n, action == TypingAction.STOP));
             return 0L;
         }, () -> {
-            signal.sendTyping(signal.getSelfNumber(), action == TypingAction.STOP);
+            signal.sendTyping(getSelfIdentifier(), action == TypingAction.STOP);
             return 0L;
         }, groupId -> {
             signal.sendGroupTyping(groupId, action == TypingAction.STOP);
@@ -486,7 +489,7 @@ public class DbusManagerImpl implements Manager {
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         return handleMessage(recipients,
                 numbers -> signal.sendRemoteDeleteMessage(targetSentTimestamp, numbers),
-                () -> signal.sendRemoteDeleteMessage(targetSentTimestamp, signal.getSelfNumber()),
+                () -> signal.sendRemoteDeleteMessage(targetSentTimestamp, getSelfIdentifier()),
                 groupId -> signal.sendGroupRemoteDeleteMessage(targetSentTimestamp, groupId));
     }
 
@@ -510,7 +513,7 @@ public class DbusManagerImpl implements Manager {
                         remove,
                         targetAuthor.getIdentifier(),
                         targetSentTimestamp,
-                        signal.getSelfNumber()),
+                        getSelfIdentifier()),
                 groupId -> signal.sendGroupMessageReaction(emoji,
                         remove,
                         targetAuthor.getIdentifier(),
@@ -809,43 +812,46 @@ public class DbusManagerImpl implements Manager {
             final Collection<RecipientIdentifier.Single> addresses,
             final Optional<String> name
     ) {
-        final var numbers = addresses.stream()
-                .filter(s -> s instanceof RecipientIdentifier.Number)
-                .map(s -> ((RecipientIdentifier.Number) s).number())
+        final var identifiers = addresses.stream()
+                .map(RecipientIdentifier.Single::getIdentifier)
                 .collect(Collectors.toSet());
-        return signal.listNumbers().stream().filter(n -> addresses.isEmpty() || numbers.contains(n)).map(n -> {
-            final var contactBlocked = signal.isContactBlocked(n);
-            if (blocked.isPresent() && blocked.get() != contactBlocked) {
-                return null;
-            }
-            final var contactName = signal.getContactName(n);
-            if (onlyContacts && contactName.isEmpty()) {
-                return null;
-            }
-            if (name.isPresent() && !name.get().equals(contactName)) {
-                return null;
-            }
-            return Recipient.newBuilder()
-                    .withAddress(new RecipientAddress(n))
-                    .withContact(new Contact(contactName,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            0,
-                            1,
-                            0,
-                            false,
-                            contactBlocked,
-                            0,
-                            false,
-                            false,
-                            false,
-                            null))
-                    .build();
-        }).filter(Objects::nonNull).toList();
+        return listRecipientIdentifiers().stream()
+                .filter(n -> addresses.isEmpty() || identifiers.contains(n))
+                .map(n -> {
+                    final var contactBlocked = signal.isContactBlocked(n);
+                    if (blocked.isPresent() && blocked.get() != contactBlocked) {
+                        return null;
+                    }
+                    final var contactName = signal.getContactName(n);
+                    if (onlyContacts && contactName.isEmpty()) {
+                        return null;
+                    }
+                    if (name.isPresent() && !name.get().equals(contactName)) {
+                        return null;
+                    }
+                    return Recipient.newBuilder()
+                            .withAddress(getRecipientAddress(n))
+                            .withContact(new Contact(contactName,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    0,
+                                    1,
+                                    0,
+                                    false,
+                                    contactBlocked,
+                                    0,
+                                    false,
+                                    false,
+                                    false,
+                                    null))
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Override
@@ -870,16 +876,16 @@ public class DbusManagerImpl implements Manager {
                     (String) group.get("Description").getValue(),
                     GroupInviteLinkUrl.fromUri((String) group.get("GroupInviteLink").getValue()),
                     ((List<String>) group.get("Members").getValue()).stream()
-                            .map(m -> new GroupMember(new RecipientAddress(m), admins.contains(m), null, null))
+                            .map(m -> new GroupMember(getRecipientAddress(m), admins.contains(m), null, null))
                             .collect(Collectors.toSet()),
                     ((List<String>) group.get("PendingMembers").getValue()).stream()
-                            .map(RecipientAddress::new)
+                            .map(DbusManagerImpl::getRecipientAddress)
                             .collect(Collectors.toSet()),
                     ((List<String>) group.get("RequestingMembers").getValue()).stream()
-                            .map(RecipientAddress::new)
+                            .map(DbusManagerImpl::getRecipientAddress)
                             .collect(Collectors.toSet()),
                     ((List<String>) group.get("Banned").getValue()).stream()
-                            .map(RecipientAddress::new)
+                            .map(DbusManagerImpl::getRecipientAddress)
                             .collect(Collectors.toSet()),
                     (boolean) group.get("IsBlocked").getValue(),
                     (int) group.get("MessageExpirationTimer").getValue(),
@@ -910,7 +916,10 @@ public class DbusManagerImpl implements Manager {
         final var group = getRemoteObject(identityPath, Signal.Identity.class).GetAll("org.asamk.Signal.Identity");
         final var aci = (String) group.get("Uuid").getValue();
         final var number = (String) group.get("Number").getValue();
-        return new Identity(new RecipientAddress(aci, null, number, null),
+        return new Identity(new RecipientAddress(aci.isEmpty() ? null : aci,
+                null,
+                number.isEmpty() ? null : number,
+                null),
                 (byte[]) group.get("Fingerprint").getValue(),
                 (String) group.get("SafetyNumber").getValue(),
                 (byte[]) group.get("ScannableSafetyNumber").getValue(),
@@ -1073,6 +1082,23 @@ public class DbusManagerImpl implements Manager {
         return string == null ? "" : string;
     }
 
+    private static RecipientAddress getRecipientAddress(final String identifier) {
+        try {
+            return new RecipientAddress(UUID.fromString(identifier));
+        } catch (IllegalArgumentException e) {
+            return new RecipientAddress(identifier);
+        }
+    }
+
+    private List<String> listRecipientIdentifiers() {
+        try {
+            return signal.listRecipientIdentifiers();
+        } catch (UnknownMethod e) {
+            // Older daemons only expose recipients with a known phone number.
+            return signal.listNumbers();
+        }
+    }
+
     private <T extends DBusInterface> T getRemoteObject(final DBusPath path, final Class<T> type) {
         try {
             return connection.getRemoteObject(busname, path.getPath(), type);
@@ -1085,7 +1111,7 @@ public class DbusManagerImpl implements Manager {
         try {
             this.dbusMsgHandler = messageReceived -> {
                 final var extras = messageReceived.getExtras();
-                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(messageReceived.getSender())),
+                final var envelope = new MessageEnvelope(Optional.of(getRecipientAddress(messageReceived.getSender())),
                         0,
                         messageReceived.getTimestamp(),
                         0,
@@ -1132,7 +1158,7 @@ public class DbusManagerImpl implements Manager {
             connection.addSigHandler(Signal.MessageReceivedV2.class, signal, this.dbusMsgHandler);
             this.dbusEditMsgHandler = messageReceived -> {
                 final var extras = messageReceived.getExtras();
-                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(messageReceived.getSender())),
+                final var envelope = new MessageEnvelope(Optional.of(getRecipientAddress(messageReceived.getSender())),
                         0,
                         messageReceived.getTimestamp(),
                         0,
@@ -1186,7 +1212,7 @@ public class DbusManagerImpl implements Manager {
                     case "delivery" -> MessageEnvelope.Receipt.Type.DELIVERY;
                     default -> MessageEnvelope.Receipt.Type.UNKNOWN;
                 };
-                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(receiptReceived.getSender())),
+                final var envelope = new MessageEnvelope(Optional.of(getRecipientAddress(receiptReceived.getSender())),
                         0,
                         receiptReceived.getTimestamp(),
                         0,
@@ -1207,7 +1233,7 @@ public class DbusManagerImpl implements Manager {
 
             this.dbusSyncHandler = syncReceived -> {
                 final var extras = syncReceived.getExtras();
-                final var envelope = new MessageEnvelope(Optional.of(new RecipientAddress(syncReceived.getSource())),
+                final var envelope = new MessageEnvelope(Optional.of(getRecipientAddress(syncReceived.getSource())),
                         0,
                         syncReceived.getTimestamp(),
                         0,
@@ -1221,7 +1247,7 @@ public class DbusManagerImpl implements Manager {
                                 syncReceived.getTimestamp(),
                                 syncReceived.getDestination().isEmpty()
                                         ? Optional.empty()
-                                        : Optional.of(new RecipientAddress(syncReceived.getDestination())),
+                                        : Optional.of(getRecipientAddress(syncReceived.getDestination())),
                                 Set.of(),
                                 Optional.of(new MessageEnvelope.Data(syncReceived.getTimestamp(),
                                         syncReceived.getGroupId().length > 0
@@ -1326,7 +1352,7 @@ public class DbusManagerImpl implements Manager {
 
         final List<Map<String, Variant<?>>> mentions = getValue(extras, "mentions");
         return mentions.stream()
-                .map(a -> new MessageEnvelope.Data.Mention(new RecipientAddress(this.<String>getValue(a, "recipient")),
+                .map(a -> new MessageEnvelope.Data.Mention(getRecipientAddress(this.<String>getValue(a, "recipient")),
                         getValue(a, "start"),
                         getValue(a, "length")))
                 .toList();
