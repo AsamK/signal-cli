@@ -31,6 +31,8 @@ import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
+import org.asamk.signal.manager.api.NotificationProfile;
+import org.asamk.signal.manager.api.NotificationProfileOverride;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
@@ -687,6 +689,21 @@ public class DbusManagerImpl implements Manager {
 
     @Override
     public List<StickerPack> getStickerPacks() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<NotificationProfile> getNotificationProfiles() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public NotificationProfileOverride getNotificationProfileOverride() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setNotificationProfileOverride(final NotificationProfileOverride override) {
         throw new UnsupportedOperationException();
     }
 
