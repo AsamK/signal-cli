@@ -43,7 +43,7 @@ record JsonDataMessage(
     static JsonDataMessage from(MessageEnvelope.Data dataMessage, Manager m) {
         final var timestamp = dataMessage.timestamp();
         final var groupInfo = dataMessage.groupContext().isPresent() ? JsonGroupInfo.from(dataMessage.groupContext()
-                                                                                          .get(), m) : null;
+                .get(), m) : null;
         final var storyContext = dataMessage.storyContext().isPresent()
                 ? JsonStoryContext.from(dataMessage.storyContext().get())
                 : null;
@@ -59,32 +59,32 @@ record JsonDataMessage(
         final var quote = dataMessage.quote().isPresent() ? JsonQuote.from(dataMessage.quote().get()) : null;
         final var payment = dataMessage.payment().isPresent() ? JsonPayment.from(dataMessage.payment().get()) : null;
         final var mentions = !dataMessage.mentions().isEmpty() ? dataMessage.mentions()
-                                                                 .stream()
-                                                                 .map(JsonMention::from)
-                                                                 .toList() : null;
+                .stream()
+                .map(JsonMention::from)
+                .toList() : null;
         final var previews = !dataMessage.previews().isEmpty() ? dataMessage.previews()
-                                                                 .stream()
-                                                                 .map(JsonPreview::from)
-                                                                 .toList() : null;
+                .stream()
+                .map(JsonPreview::from)
+                .toList() : null;
         final var remoteDelete = dataMessage.remoteDeleteId().isPresent()
                 ? new JsonRemoteDelete(dataMessage.remoteDeleteId().get())
                 : null;
         final var attachments = !dataMessage.attachments().isEmpty() ? dataMessage.attachments()
-                                                                       .stream()
-                                                                       .map(JsonAttachment::from)
-                                                                       .toList() : null;
+                .stream()
+                .map(JsonAttachment::from)
+                .toList() : null;
         final var sticker = dataMessage.sticker().isPresent() ? JsonSticker.from(dataMessage.sticker().get()) : null;
         final var contacts = !dataMessage.sharedContacts().isEmpty() ? dataMessage.sharedContacts()
-                                                                       .stream()
-                                                                       .map(JsonSharedContact::from)
-                                                                       .toList() : null;
+                .stream()
+                .map(JsonSharedContact::from)
+                .toList() : null;
         final var pollCreate = dataMessage.pollCreate().map(JsonPollCreate::from).orElse(null);
         final var pollVote = dataMessage.pollVote().map(JsonPollVote::from).orElse(null);
         final var pollTerminate = dataMessage.pollTerminate().map(JsonPollTerminate::from).orElse(null);
         final var textStyles = !dataMessage.textStyles().isEmpty() ? dataMessage.textStyles()
-                                                                     .stream()
-                                                                     .map(JsonTextStyle::from)
-                                                                     .toList() : null;
+                .stream()
+                .map(JsonTextStyle::from)
+                .toList() : null;
         final var pinMessage = dataMessage.pinMessage().map(JsonPinMessage::from).orElse(null);
         final var unpinMessage = dataMessage.unpinMessage().map(JsonUnpinMessage::from).orElse(null);
         final var adminDelete = dataMessage.adminDelete().map(JsonAdminDelete::from).orElse(null);

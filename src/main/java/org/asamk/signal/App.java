@@ -224,9 +224,9 @@ public class App {
     private OutputWriter getOutputWriter(final Command command) throws UserErrorException {
         final var outputTypeInput = ns.<OutputType>get("output");
         final var outputType = outputTypeInput == null ? command.getSupportedOutputTypes()
-                                                         .stream()
-                                                         .findFirst()
-                                                         .orElse(null) : outputTypeInput;
+                .stream()
+                .findFirst()
+                .orElse(null) : outputTypeInput;
         final var writer = new BufferedWriter(new OutputStreamWriter(System.out, IOUtils.getConsoleCharset()));
         final var outputWriter = outputType == null
                 ? null

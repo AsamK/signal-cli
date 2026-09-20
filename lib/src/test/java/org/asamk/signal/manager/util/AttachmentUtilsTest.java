@@ -50,7 +50,11 @@ class AttachmentUtilsTest {
         final var blurHash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
         final var details = new StreamDetails(new ByteArrayInputStream(bytes), "video/mp4", bytes.length);
         final var attachment = AttachmentUtils.createAttachmentStream(details,
-                Optional.of("clip.mp4"), false, new AttachmentDimensions(1080, 1920), blurHash, null);
+                Optional.of("clip.mp4"),
+                false,
+                new AttachmentDimensions(1080, 1920),
+                blurHash,
+                null);
 
         assertEquals(1080, attachment.getWidth());
         assertEquals(1920, attachment.getHeight());
@@ -64,7 +68,11 @@ class AttachmentUtilsTest {
         final var stream = new ByteArrayInputStream(imageBytes);
         final var details = new StreamDetails(stream, "image/png", imageBytes.length);
         final var attachment = AttachmentUtils.createAttachmentStream(details,
-                Optional.of("meme.png"), false, new AttachmentDimensions(100, 200), null, null);
+                Optional.of("meme.png"),
+                false,
+                new AttachmentDimensions(100, 200),
+                null,
+                null);
 
         assertEquals(imageBytes.length, stream.available());
         assertEquals(100, attachment.getWidth());

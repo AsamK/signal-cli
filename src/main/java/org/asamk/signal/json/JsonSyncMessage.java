@@ -50,9 +50,9 @@ record JsonSyncMessage(
         }
 
         final var readMessages = !syncMessage.read().isEmpty() ? syncMessage.read()
-                                                                 .stream()
-                                                                 .map(JsonSyncReadMessage::from)
-                                                                 .toList() : null;
+                .stream()
+                .map(JsonSyncReadMessage::from)
+                .toList() : null;
 
         final JsonSyncMessageType type;
         if (syncMessage.contacts().isPresent()) {

@@ -614,8 +614,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             writer.println("Size: {}{}",
                     attachment.size().isPresent() ? attachment.size().get() + " bytes" : "<unavailable>",
                     attachment.preview().isPresent() ? " (Preview is available: "
-                                                       + attachment.preview().get().length
-                                                       + " bytes)" : "");
+                            + attachment.preview().get().length
+                            + " bytes)" : "");
         }
         if (attachment.thumbnail().isPresent()) {
             writer.println("Thumbnail:");

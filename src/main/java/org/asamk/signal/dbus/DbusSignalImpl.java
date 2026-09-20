@@ -715,7 +715,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                     retryAfterMilliseconds == null
                             ? ""
                             : ", retry at " + DateUtils.formatTimestamp(System.currentTimeMillis()
-                                                                        + retryAfterMilliseconds)
+                                    + retryAfterMilliseconds)
             ));
         }
 
