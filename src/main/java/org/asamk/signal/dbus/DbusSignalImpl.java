@@ -138,7 +138,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public String getSelfNumber() {
-        return m.getSelfNumber();
+        return emptyIfNull(m.getSelfNumber());
     }
 
     @Override
@@ -799,6 +799,15 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
                 .stream()
                 .map(r -> r.getAddress().number().orElse(null))
                 .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    @Override
+    public List<String> listRecipientIdentifiers() {
+        return m.getRecipients(false, Optional.empty(), Set.of(), Optional.empty())
+                .stream()
+                .map(r -> r.getAddress().getLegacyIdentifier())
                 .distinct()
                 .toList();
     }

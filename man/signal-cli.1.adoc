@@ -65,6 +65,7 @@ Make sure you have full read/write access to the given directory.
 *-a* ACCOUNT, *--account* ACCOUNT::
 Specify your phone number, that will be your identifier.
 The phone number must include the country calling code, i.e. the number must start with a "+" sign.
+An ACI (Account ID) can also select an existing account and is required for an account without a phone number.
 
 This flag must not be given for the `link` command.
 It is optional for the `daemon` command.
@@ -249,6 +250,10 @@ This shows a "sgnl://linkdevice?uuid=..." URI.
 If you want to connect to another signal-cli instance, you can just use this URI.
 If you want to link to an Android/iOS device, scan the QR code that signal-cli prints in the terminal with the Signal app.
 If signal-cli is not running in a terminal, only the URI is printed and you can create a QR code from it yourself (e.g. with qrencode).
+
+Accounts without a phone number can also be linked.
+After linking, use the account's ACI (Account ID) with `-a`; recipient phone numbers must include the international country code.
+Creating or recovering a primary account without a phone number using an Account Key is not supported.
 
 *-n* NAME, *--name* NAME::
 Optionally specify a name to describe this new device.

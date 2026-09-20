@@ -339,7 +339,7 @@ public final class IncomingMessageHandler {
             throw new AssertionError(e);
         }
 
-        if (account.getPni().equals(destination.serviceId)) {
+        if (destination.serviceId.equals(account.getPni())) {
             account.getRecipientStore().markNeedsPniSignature(sender, true);
         } else if (account.getAci().equals(destination.serviceId)) {
             account.getRecipientStore().markNeedsPniSignature(sender, false);
@@ -1124,7 +1124,7 @@ public final class IncomingMessageHandler {
         if (destination == null || destination.isUnknown()) {
             throw new InvalidMessageException("Missing destination");
         }
-        if (!account.getAci().equals(destination) && !account.getPni().equals(destination)) {
+        if (!destination.equals(account.getAci()) && !destination.equals(account.getPni())) {
             throw new InvalidMessageException("Message not intended for this account");
         }
         return new DeviceAddress(account.getRecipientResolver().resolveRecipient(destination),

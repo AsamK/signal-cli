@@ -8,8 +8,6 @@ import java.util.function.Consumer;
 
 public interface MultiAccountManager extends AutoCloseable {
 
-    List<String> getAccountNumbers();
-
     List<Manager> getManagers();
 
     void addOnManagerAddedHandler(Consumer<Manager> handler);

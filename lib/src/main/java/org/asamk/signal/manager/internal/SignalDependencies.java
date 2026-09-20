@@ -8,6 +8,7 @@ import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.libsignal.net.Network;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
+import org.signal.network.api.AccountApiV2;
 import org.signal.network.api.AttachmentApi;
 import org.signal.network.api.CallingApi;
 import org.signal.network.api.CdsApi;
@@ -73,6 +74,7 @@ public class SignalDependencies {
 
     private SignalServiceAccountManager accountManager;
     private AccountApi accountApi;
+    private AccountApiV2 accountApiV2;
     private RateLimitChallengeApi rateLimitChallengeApi;
     private CdsApi cdsApi;
     private UsernameApi usernameApi;
@@ -219,6 +221,11 @@ public class SignalDependencies {
 
     public AccountApi getAccountApi() {
         return getOrCreate(() -> accountApi, () -> accountApi = new AccountApi(getAuthenticatedSignalWebSocket()));
+    }
+
+    public AccountApiV2 getAccountApiV2() {
+        return getOrCreate(() -> accountApiV2,
+                () -> accountApiV2 = new AccountApiV2(getAuthenticatedSignalWebSocket()));
     }
 
     public RateLimitChallengeApi getRateLimitChallengeApi() {

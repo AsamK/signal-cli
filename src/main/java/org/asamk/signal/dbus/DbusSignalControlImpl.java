@@ -159,11 +159,19 @@ public class DbusSignalControlImpl implements org.asamk.SignalControl {
 
     @Override
     public List<DBusPath> listAccounts() {
-        return c.getAccountNumbers().stream().map(u -> new DBusPath(DbusConfig.getObjectPath(u))).toList();
+        return c.getManagers()
+                .stream()
+                .map(m -> new DBusPath(DbusConfig.getObjectPath(m.getSelfIdentifier())))
+                .toList();
     }
 
     @Override
-    public DBusPath getAccount(final String number) {
-        return new DBusPath(DbusConfig.getObjectPath(number));
+    public DBusPath getAccount(final String identifier) {
+        final var manager = c.getManagers()
+                .stream()
+                .filter(m -> identifier.equals(m.getSelfNumber()) || identifier.equals(m.getSelfACI()))
+                .findFirst()
+                .orElseThrow(() -> new Error.Failure("Unknown account: " + identifier));
+        return new DBusPath(DbusConfig.getObjectPath(manager.getSelfIdentifier()));
     }
 }

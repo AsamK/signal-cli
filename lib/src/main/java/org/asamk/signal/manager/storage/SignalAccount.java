@@ -71,6 +71,7 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.protocol.util.KeyHelper;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
+import org.signal.network.api.RegistrationApiV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountDataStore;
@@ -350,7 +351,9 @@ public class SignalAccount implements Closeable {
         this.registered = true;
         this.deviceId = deviceId;
         setPreKeys(ServiceIdType.ACI, aciPreKeys);
-        setPreKeys(ServiceIdType.PNI, pniPreKeys);
+        if (pniPreKeys != null) {
+            setPreKeys(ServiceIdType.PNI, pniPreKeys);
+        }
         save();
     }
 
@@ -1424,6 +1427,29 @@ public class SignalAccount implements Closeable {
 
     public AccountAttributes.Capabilities getAccountCapabilities() {
         return getCapabilities(isPrimaryDevice());
+    }
+
+    public RegistrationApiV2.AccountAttributes getAccountAttributesV2() {
+        final var attributes = getAccountAttributes(null);
+        final var capabilities = attributes.getCapabilities();
+        return new RegistrationApiV2.AccountAttributes(attributes.getSignalingKey(),
+                attributes.getRegistrationId(),
+                attributes.getVoice(),
+                attributes.getVideo(),
+                attributes.getFetchesMessages(),
+                attributes.getRegistrationLock(),
+                attributes.getUnidentifiedAccessKey(),
+                attributes.getUnrestrictedUnidentifiedAccess(),
+                number == null ? null : attributes.getDiscoverableByPhoneNumber(),
+                new RegistrationApiV2.AccountAttributes.Capabilities(capabilities.getStorage(),
+                        capabilities.getVersionedExpirationTimer(),
+                        capabilities.getAttachmentBackfill(),
+                        capabilities.getSpqr(),
+                        capabilities.getUsernameChangeSyncMessage(),
+                        capabilities.getOptionalPhoneNumber()),
+                attributes.getName(),
+                getPni() == null ? null : attributes.getPniRegistrationId(),
+                attributes.getRecoveryPassword());
     }
 
     public ServiceId getAccountId(ServiceIdType serviceIdType) {
