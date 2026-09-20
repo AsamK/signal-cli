@@ -63,7 +63,7 @@ public class AccountsStore {
     public synchronized Set<AccountsStorage.Account> getAllAccounts() throws IOException {
         return readAccounts().stream()
                 .filter(a -> a.environment() == null || serviceEnvironment.equals(a.environment()))
-                .filter(a -> a.number() != null || (a.uuid() != null && Boolean.TRUE.equals(a.numberless())))
+                .filter(a -> a.number() != null || a.uuid() != null)
                 .collect(Collectors.toSet());
     }
 
@@ -98,15 +98,14 @@ public class AccountsStore {
                 return new AccountsStorage.Account(a.path(),
                         serviceEnvironment,
                         number,
-                        aci == null ? null : aci.toString(),
-                        number == null && aci != null);
+                        aci == null ? null : aci.toString());
             }
 
             if (number != null && number.equals(a.number())) {
-                return new AccountsStorage.Account(a.path(), a.environment(), null, a.uuid(), false);
+                return new AccountsStorage.Account(a.path(), a.environment(), null, a.uuid());
             }
             if (aci != null && aci.toString().equals(a.uuid())) {
-                return new AccountsStorage.Account(a.path(), a.environment(), a.number(), null, false);
+                return new AccountsStorage.Account(a.path(), a.environment(), a.number(), null);
             }
 
             return a;
@@ -118,8 +117,7 @@ public class AccountsStore {
         final var account = new AccountsStorage.Account(accountPath,
                 serviceEnvironment,
                 number,
-                aci == null ? null : aci.toString(),
-                number == null && aci != null);
+                aci == null ? null : aci.toString());
         updateAccounts(accounts -> {
             final var existingAccounts = accounts.stream().map(a -> {
                 if (a.environment() != null && !serviceEnvironment.equals(a.environment())) {
@@ -127,10 +125,10 @@ public class AccountsStore {
                 }
 
                 if (number != null && number.equals(a.number())) {
-                    return new AccountsStorage.Account(a.path(), a.environment(), null, a.uuid(), false);
+                    return new AccountsStorage.Account(a.path(), a.environment(), null, a.uuid());
                 }
                 if (aci != null && aci.toString().equals(a.uuid())) {
-                    return new AccountsStorage.Account(a.path(), a.environment(), a.number(), null, false);
+                    return new AccountsStorage.Account(a.path(), a.environment(), a.number(), null);
                 }
 
                 return a;
@@ -161,7 +159,7 @@ public class AccountsStore {
     private void createInitialAccounts() throws IOException {
         final var legacyAccountPaths = getLegacyAccountPaths();
         final var accountsStorage = new AccountsStorage(legacyAccountPaths.stream()
-                .map(number -> new AccountsStorage.Account(number, null, number, null, false))
+                .map(number -> new AccountsStorage.Account(number, null, number, null))
                 .toList(), CURRENT_STORAGE_VERSION);
 
         IOUtils.createPrivateDirectories(dataPath);
@@ -204,32 +202,8 @@ public class AccountsStore {
             } else if (accountsVersion < CURRENT_STORAGE_VERSION) {
                 storage = upgradeAccountsFile(fileChannel, storage, accountsVersion);
             }
-            final var accounts = storage.accounts().stream().map(this::resolveNumberlessAccount).toList();
-            if (!accounts.equals(storage.accounts())) {
-                saveAccountsLocked(fileChannel, new AccountsStorage(accounts, storage.version()));
-            }
-            return accounts;
+            return storage.accounts();
         }
-    }
-
-    private AccountsStorage.Account resolveNumberlessAccount(final AccountsStorage.Account entry) {
-        if (entry.numberless() != null) {
-            return entry;
-        }
-
-        var numberless = false;
-        if (entry.number() == null && entry.uuid() != null) {
-            // Older entries also lose their number when another account takes it over.
-            try (final var account = accountLoader.loadAccountOrNull(entry.path())) {
-                if (account == null) {
-                    // Keep the entry unresolved so a locked or unavailable account can be checked later.
-                    return entry;
-                }
-                numberless = account.getNumber() == null && account.getAci() != null && entry.uuid()
-                        .equals(account.getAci().toString());
-            }
-        }
-        return new AccountsStorage.Account(entry.path(), entry.environment(), entry.number(), entry.uuid(), numberless);
     }
 
     private AccountsStorage upgradeAccountsFile(
@@ -252,8 +226,7 @@ public class AccountsStore {
                         return new AccountsStorage.Account(a.path(),
                                 getServiceEnvironmentString(account.getServiceEnvironment()),
                                 a.number(),
-                                a.uuid(),
-                                a.numberless());
+                                a.uuid());
                     }
                 }).toList();
             }

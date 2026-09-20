@@ -4012,8 +4012,7 @@
             "java.lang.String",
             "java.lang.String",
             "java.lang.String",
-            "java.lang.String",
-            "java.lang.Boolean"
+            "java.lang.String"
           ]
         },
         {
@@ -4022,10 +4021,6 @@
         },
         {
           "name": "number",
-          "parameterTypes": []
-        },
-        {
-          "name": "numberless",
           "parameterTypes": []
         },
         {
