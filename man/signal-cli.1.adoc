@@ -248,7 +248,8 @@ Remove the registration lock pin.
 Link to an existing device, instead of registering a new number.
 This shows a "sgnl://linkdevice?uuid=..." URI.
 If you want to connect to another signal-cli instance, you can just use this URI.
-If you want to link to an Android/iOS device, create a QR code with the URI (e.g. with qrencode) and scan that in the Signal app.
+If you want to link to an Android/iOS device, scan the QR code that signal-cli prints in the terminal with the Signal app.
+If signal-cli is not running in a terminal, only the URI is printed and you can create a QR code from it yourself (e.g. with qrencode).
 
 *-n* NAME, *--name* NAME::
 Optionally specify a name to describe this new device.
