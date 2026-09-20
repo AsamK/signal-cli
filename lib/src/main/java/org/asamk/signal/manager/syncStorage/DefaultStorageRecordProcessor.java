@@ -84,8 +84,15 @@ abstract class DefaultStorageRecordProcessor<E extends SignalRecord<?>> implemen
         return Collections.unmodifiableSet(updatedStorageIds);
     }
 
+    /**
+     * Optional extra identifying detail about a record, included in every log line for it.
+     */
+    protected String describeRecord(E record) {
+        return "";
+    }
+
     private void debug(StorageId i, E record, String message) {
-        logger.debug("[{}][{}] {}", i, record.getClass().getSimpleName(), message);
+        logger.debug("[{}][{}]{} {}", i, record.getClass().getSimpleName(), describeRecord(record), message);
     }
 
     /**

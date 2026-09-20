@@ -9,9 +9,15 @@ public class DownloadProfileJob implements Job {
 
     private static final Logger logger = LoggerFactory.getLogger(DownloadProfileJob.class);
     private final RecipientAddress address;
+    private final boolean resolveIdentityKeyConflict;
 
     public DownloadProfileJob(RecipientAddress address) {
+        this(address, false);
+    }
+
+    public DownloadProfileJob(RecipientAddress address, boolean resolveIdentityKeyConflict) {
         this.address = address;
+        this.resolveIdentityKeyConflict = resolveIdentityKeyConflict;
     }
 
     @Override
@@ -19,6 +25,9 @@ public class DownloadProfileJob implements Job {
         logger.trace("Refreshing profile for {}", address);
         final var account = context.getAccount();
         final var recipientId = account.getRecipientStore().resolveRecipient(address);
-        context.getProfileHelper().refreshRecipientProfile(recipientId);
+        final var refreshed = context.getProfileHelper().refreshRecipientProfile(recipientId);
+        if (refreshed && resolveIdentityKeyConflict) {
+            context.getJobExecutor().enqueueJob(new SyncStorageJob());
+        }
     }
 }

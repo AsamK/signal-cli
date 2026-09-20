@@ -267,19 +267,19 @@ public record MessageEnvelope(
                         quote.getMentions() == null
                                 ? List.of()
                                 : quote.getMentions()
-                                  .stream()
-                                  .map(m -> Mention.from(m, recipientResolver, addressResolver))
-                                  .toList(),
+                                        .stream()
+                                        .map(m -> Mention.from(m, recipientResolver, addressResolver))
+                                        .toList(),
                         quote.getAttachments() == null
                                 ? List.of()
                                 : quote.getAttachments().stream().map(a -> Attachment.from(a, fileProvider)).toList(),
                         quote.getBodyRanges() == null
                                 ? List.of()
                                 : quote.getBodyRanges()
-                                  .stream()
-                                  .filter(r -> r.style != null)
-                                  .map(TextStyle::from)
-                                  .toList());
+                                        .stream()
+                                        .filter(r -> r.style != null)
+                                        .map(TextStyle::from)
+                                        .toList());
             }
         }
 
@@ -598,7 +598,7 @@ public record MessageEnvelope(
                         Boolean.TRUE.equals(pinnedMessage.getForever())
                                 ? -1
                                 : pinnedMessage.getPinDurationInSeconds() == null
-                                  ? 0
+                                        ? 0
                                         : pinnedMessage.getPinDurationInSeconds());
             }
         }
@@ -1034,14 +1034,14 @@ public record MessageEnvelope(
         final var source = !envelope.isUnidentifiedSender() && serviceId != null
                 ? recipientResolver.resolveRecipient(serviceId)
                 : envelope.isUnidentifiedSender() && content != null
-                  ? recipientResolver.resolveRecipient(content.getSender())
+                        ? recipientResolver.resolveRecipient(content.getSender())
                         : exception instanceof ProtocolException e
-                          ? recipientResolver.resolveRecipient(e.getSender())
+                                ? recipientResolver.resolveRecipient(e.getSender())
                                 : null;
         final var sourceDevice = envelope.hasSourceDevice()
                 ? envelope.getSourceDevice()
                 : content != null
-                  ? content.getSenderDevice()
+                        ? content.getSenderDevice()
                         : exception instanceof ProtocolException e ? e.getSenderDevice() : 0;
 
         Optional<Receipt> receipt;

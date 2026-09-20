@@ -78,10 +78,8 @@ public class StickerUtils {
                 throw new StickerPackInvalidException("Could not find find " + pack.cover().file());
             }
 
-            var contentType = pack.cover().contentType() != null && !pack.cover().contentType().isEmpty()
-                    ? pack.cover()
-                      .contentType()
-                    : getContentType(rootPath, zip, pack.cover().file());
+            var contentType = pack.cover().contentType() != null && !pack.cover().contentType().isEmpty() ? pack.cover()
+                    .contentType() : getContentType(rootPath, zip, pack.cover().file());
             cover = new SignalServiceStickerManifestUpload.StickerInfo(data.first(),
                     data.second(),
                     Optional.ofNullable(pack.cover().emoji()).orElse(""),

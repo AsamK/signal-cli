@@ -602,6 +602,7 @@ public class AccountHelper {
         account.setMultiDevice(devices.size() > 1);
     }
 
+    @SuppressWarnings("unchecked")
     public void migrateRegistrationPin() throws IOException {
         var masterKey = account.getOrCreatePinMasterKey();
 
@@ -609,6 +610,7 @@ public class AccountHelper {
         handleResponseException(dependencies.getAccountApi().enableRegistrationLock(masterKey));
     }
 
+    @SuppressWarnings("unchecked")
     public void setRegistrationPin(String pin) throws IOException {
         var masterKey = account.getOrCreatePinMasterKey();
 
@@ -619,6 +621,7 @@ public class AccountHelper {
         updateAccountAttributes();
     }
 
+    @SuppressWarnings("unchecked")
     public void removeRegistrationPin() throws IOException {
         // Remove KBS Pin
         context.getPinHelper().removeRegistrationLockPin();

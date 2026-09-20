@@ -55,7 +55,7 @@ public class ContactHelper {
         final var version = contact == null
                 ? 1
                 : contact.messageExpirationTimeVersion() == Integer.MAX_VALUE
-                  ? Integer.MAX_VALUE
+                        ? Integer.MAX_VALUE
                         : contact.messageExpirationTimeVersion() + 1;
         account.getContactStore()
                 .storeContact(recipientId,
