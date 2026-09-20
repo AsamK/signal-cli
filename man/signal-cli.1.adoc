@@ -19,7 +19,8 @@ signal-cli - A commandline interface for the Signal messenger
 
 signal-cli is a commandline interface for libsignal-service-java.
 It supports registering, verifying, sending and receiving messages.
-For registering you need a phone number where you can receive SMS or incoming calls.
+Accounts can be registered using a phone number that can receive SMS or incoming calls.
+Existing accounts can also be recovered using the Account Key and Recovery Key shown by Signal Android.
 signal-cli was primarily developed to be used on servers to notify admins of important events.
 For this use-case, it has a dbus and a JSON-RPC interface, that can be used to send messages from other programs.
 
@@ -65,7 +66,8 @@ Make sure you have full read/write access to the given directory.
 *-a* ACCOUNT, *--account* ACCOUNT::
 Specify your phone number, that will be your identifier.
 The phone number must include the country calling code, i.e. the number must start with a "+" sign.
-An ACI (Account ID) can also select an existing account and is required for an account without a phone number.
+An ACI (the Account Key shown by Signal Android) can also select an account and is required for an account without a phone number.
+The Account Key can be given as 32 hexadecimal characters or as a UUID with dashes.
 
 This flag must not be given for the `link` command.
 It is optional for the `daemon` command.
@@ -103,12 +105,13 @@ Disable message send log (for resending messages that recipient couldn't decrypt
 
 === register
 
-Register a phone number with SMS or voice verification.
-Use the verify command to complete the verification.
+Register a phone number with SMS or voice verification, or recover an existing account using its Account Key and Recovery Key.
+Use the verify command to complete SMS or voice verification.
 
 If the account is just deactivated, the register command will just reactivate account, without requiring an SMS verification.
 By default the unregister command just deactivates the account, in which case it can be reactivated without sms verification if the local data is still available.
 If the account was deleted (with --delete-account) it cannot be reactivated.
+If normal recovery of an existing local account fails and its Account Key and Recovery Key are available locally, recovery using those credentials is attempted before SMS verification.
 
 *-v*, *--voice*::
 The verification should be done over voice, not SMS.
@@ -121,11 +124,23 @@ For the staging environment, use: https://signalcaptchas.org/staging/registratio
 After solving the captcha, right-click on the "Open Signal" link and copy the link.
 
 *--reregister*::
-Register even if account is already registered.
+Register even if the local account is already registered.
+This option is required when using `--recovery-key` with an account that is still marked as registered locally.
+
+*--recovery-key* RECOVERY-KEY::
+Recover an existing account using the 64-character Recovery Key shown by Signal Android.
+Specify the corresponding ACI (Account Key) with `-a`.
+This option cannot be combined with `--voice` or `--captcha`.
+
+*--totp* TOKEN::
+The six-digit TOTP token requested during Account Key and Recovery Key based account recovery.
+If automatic account recovery reports that a TOTP token is required, rerun `register` with both `--recovery-key` and `--totp`.
+This option requires `--recovery-key`.
+This option cannot be combined with `--voice` or `--captcha`.
 
 === verify
 
-Verify the number using the code received via SMS or voice.
+Verify a number using the code received via SMS or voice.
 
 VERIFICATIONCODE::
 The verification code.
@@ -252,8 +267,8 @@ If you want to link to an Android/iOS device, scan the QR code that signal-cli p
 If signal-cli is not running in a terminal, only the URI is printed and you can create a QR code from it yourself (e.g. with qrencode).
 
 Accounts without a phone number can also be linked.
-After linking, use the account's ACI (Account ID) with `-a`; recipient phone numbers must include the international country code.
-Creating or recovering a primary account without a phone number using an Account Key is not supported.
+After linking, use the account's ACI (Account Key) with `-a`; recipient phone numbers must include the international country code.
+Existing primary accounts without a phone number can be recovered using the `register --recovery-key` command.
 
 *-n* NAME, *--name* NAME::
 Optionally specify a name to describe this new device.

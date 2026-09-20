@@ -211,6 +211,11 @@ public class SignalAccountFiles {
             String number,
             Consumer<Manager> newManagerListener
     ) throws IOException {
+        final var aci = ACI.parseOrNull(number);
+        if (aci != null) {
+            return initRegistrationManager(aci, newManagerListener);
+        }
+
         final var accountPath = accountsStore.getPathByNumber(number);
         if (accountPath == null || !SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)) {
             final var newAccountPath = accountPath == null ? accountsStore.addAccount(number, null) : accountPath;
@@ -243,6 +248,45 @@ public class SignalAccountFiles {
         }
         account.initDatabase();
 
+        return new RegistrationManagerImpl(account,
+                pathConfig,
+                serviceEnvironmentConfig,
+                userAgent,
+                newManagerListener,
+                new AccountFileUpdaterImpl(accountsStore, accountPath));
+    }
+
+    private RegistrationManager initRegistrationManager(
+            final ACI aci,
+            final Consumer<Manager> newManagerListener
+    ) throws IOException {
+        final var accountPath = accountsStore.getPathByAci(aci);
+        if (accountPath == null || !SignalAccount.accountFileExists(pathConfig.dataPath(), accountPath)) {
+            final var newAccountPath = accountPath == null ? accountsStore.addAccount(null, aci) : accountPath;
+            final var account = SignalAccount.create(pathConfig.dataPath(),
+                    newAccountPath,
+                    null,
+                    aci,
+                    serviceEnvironment,
+                    KeyUtils.generateIdentityKeyPair(),
+                    KeyUtils.generateIdentityKeyPair(),
+                    KeyUtils.createProfileKey(),
+                    settings);
+            account.initDatabase();
+            return new RegistrationManagerImpl(account,
+                    pathConfig,
+                    serviceEnvironmentConfig,
+                    userAgent,
+                    newManagerListener,
+                    new AccountFileUpdaterImpl(accountsStore, newAccountPath));
+        }
+
+        final var account = SignalAccount.load(pathConfig.dataPath(), accountPath, true, settings);
+        if (!aci.equals(account.getAci())) {
+            account.close();
+            throw new IOException("ACI in account file doesn't match expected ACI: " + account.getAci());
+        }
+        account.initDatabase();
         return new RegistrationManagerImpl(account,
                 pathConfig,
                 serviceEnvironmentConfig,

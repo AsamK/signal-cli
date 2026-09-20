@@ -142,7 +142,7 @@ public class App {
         final var outputWriter = getOutputWriter(command);
         final var commandHandler = new CommandHandler(ns, outputWriter);
 
-        var account = ns.getString("account");
+        var account = AccountIdentifier.normalize(ns.getString("account"));
 
         final var useDbus = Boolean.TRUE.equals(ns.getBoolean("global-dbus"));
         final var useDbusSystem = Boolean.TRUE.equals(ns.getBoolean("global-dbus-system"));
@@ -187,8 +187,8 @@ public class App {
         }
 
         if (command instanceof RegistrationCommand registrationCommand) {
-            if (!Manager.isValidNumber(account, null)) {
-                throw new UserErrorException("Invalid account (phone number), make sure you include the country code.");
+            if (!Manager.isValidNumber(account, null) && !Manager.isValidAci(account)) {
+                throw new UserErrorException("Invalid account (E164 phone number or Account Key).");
             }
             handleRegistrationCommand(registrationCommand, account, signalAccountFiles, commandHandler);
             return;
