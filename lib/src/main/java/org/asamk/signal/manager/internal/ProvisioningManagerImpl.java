@@ -19,6 +19,7 @@ package org.asamk.signal.manager.internal;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.ProvisioningManager;
 import org.asamk.signal.manager.Settings;
+import org.asamk.signal.manager.api.BadRequestException;
 import org.asamk.signal.manager.api.UserAlreadyExistsException;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.storage.SignalAccount;
@@ -29,7 +30,6 @@ import org.signal.core.models.ServiceId.ACI;
 import org.signal.core.models.ServiceId.PNI;
 import org.signal.core.models.backup.MediaRootBackupKey;
 import org.signal.core.util.crypto.DeviceNameCipher;
-import org.signal.libsignal.net.RequestResult;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.ecc.ECPrivateKey;
@@ -69,8 +69,7 @@ import kotlinx.coroutines.BuildersKt;
 import kotlinx.coroutines.CoroutineScope;
 
 import static org.asamk.signal.manager.util.KeyUtils.generatePreKeysForType;
-import static org.asamk.signal.manager.util.Utils.handleResponseException;
-import static org.asamk.signal.manager.util.Utils.runSuspendBlocking;
+import static org.asamk.signal.manager.util.Utils.handleResponseExceptionSuspend;
 
 public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
 
@@ -324,23 +323,19 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
                 attrs.getPniRegistrationId(),
                 attrs.getName(),
                 attrs.getCapabilities());
-        final RequestResult<LinkDeviceResponse, ? extends RegisterAsLinkedDeviceError> result = runSuspendBlocking(cont -> registrationApi.registerAsSecondaryDevice(
-                account.getAci(),
-                account.getPassword(),
-                provisioningCode,
-                deviceAttributes,
-                toRegistrationPreKeys(aciPreKeys),
-                toRegistrationPreKeys(pniPreKeys),
-                null,
-                cont));
-        return getLinkedDeviceId(result);
-    }
-
-    static int getLinkedDeviceId(
-            final RequestResult<LinkDeviceResponse, ? extends RegisterAsLinkedDeviceError> result
-    ) throws IOException {
-        if (result instanceof RequestResult.NonSuccess<?> failure) {
-            throw switch (failure.getError()) {
+        try {
+            final LinkDeviceResponse result = handleResponseExceptionSuspend(cont -> registrationApi.registerAsSecondaryDevice(
+                    account.getAci(),
+                    account.getPassword(),
+                    provisioningCode,
+                    deviceAttributes,
+                    toRegistrationPreKeys(aciPreKeys),
+                    toRegistrationPreKeys(pniPreKeys),
+                    null,
+                    cont));
+            return result.getDeviceId();
+        } catch (BadRequestException e) {
+            throw switch (e.getError()) {
                 case RegisterAsLinkedDeviceError.IncorrectVerification ignored ->
                         new AuthorizationFailedException(403, "Device verification failed");
                 case RegisterAsLinkedDeviceError.MissingCapability ignored ->
@@ -354,7 +349,6 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
                 default -> new IOException("Unexpected device linking response");
             };
         }
-        return handleResponseException(result).getDeviceId();
     }
 
     static RegistrationApiV2.PreKeyCollection toRegistrationPreKeys(final PreKeyCollection preKeys) {

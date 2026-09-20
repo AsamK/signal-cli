@@ -40,13 +40,6 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
-    public List<String> getAccountNumbers() {
-        synchronized (managers) {
-            return managers.stream().map(Manager::getSelfNumber).toList();
-        }
-    }
-
-    @Override
     public List<Manager> getManagers() {
         synchronized (managers) {
             return new ArrayList<>(managers);

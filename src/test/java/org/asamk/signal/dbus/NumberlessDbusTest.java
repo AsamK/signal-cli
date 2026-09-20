@@ -24,7 +24,6 @@ import org.asamk.signal.manager.internal.MultiAccountManagerImpl;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
-import org.freedesktop.dbus.errors.UnknownMethod;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -94,25 +93,6 @@ class NumberlessDbusTest {
                         : new RecipientIdentifier.Number(number));
     }
 
-    @Test
-    void readsContactsFromOlderDaemonsWithoutTheNewRecipientListingMethod() {
-        final var account = new TestAccount(NUMBER, ACI);
-        account.recipients = List.of(Recipient.newBuilder().withAddress(new RecipientAddress(NUMBER)).build());
-        final var signal = new DbusSignalImpl(account.manager, null, DbusConfig.getObjectPath(), true) {
-            @Override
-            public List<String> listRecipientIdentifiers() {
-                throw new UnknownMethod("Not implemented by this daemon");
-            }
-        };
-        final var client = new DbusManagerImpl(signal, null, "org.asamk.Signal.Test");
-        assertEquals(NUMBER,
-                client.getRecipients(false, Optional.empty(), Set.of(), Optional.empty())
-                        .getFirst()
-                        .getAddress()
-                        .number()
-                        .orElseThrow());
-    }
-
     // Run with: dbus-run-session -- ./gradlew --no-daemon :test --tests '*NumberlessDbusTest*' --rerun-tasks
     @Nested
     @Timeout(20)
@@ -148,7 +128,7 @@ class NumberlessDbusTest {
 
                 final var client = new DbusMultiAccountManagerImpl(control, connection, busname);
                 assertEquals(3, client.getManagers().size());
-                assertEquals(2, client.getAccountNumbers().stream().filter(n -> n == null).count());
+                assertEquals(2, client.getManagers().stream().filter(m -> m.getSelfNumber() == null).count());
                 assertNull(client.getManager(ACI).getSelfNumber());
                 assertEquals(NUMBER, client.getManager(OTHER_ACI).getSelfNumber());
 

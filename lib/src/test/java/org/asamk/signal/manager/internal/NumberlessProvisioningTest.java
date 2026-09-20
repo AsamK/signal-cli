@@ -10,11 +10,11 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.signal.core.models.ServiceId.ACI;
 import org.signal.core.models.ServiceId.PNI;
-import org.signal.libsignal.net.RequestResult;
 import org.signal.network.api.RegistrationApiV2;
-import org.signal.network.api.RegistrationApiV2.RegisterAsLinkedDeviceError;
 import org.signal.network.rest.SignalRestClient;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
@@ -36,7 +36,7 @@ import okio.Buffer;
 import okio.ByteString;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,15 +72,35 @@ class NumberlessProvisioningTest {
 
     @Test
     void numberlessLinkRequestOmitsPniAndAuthenticatesWithAci() throws Exception {
-        checkLinkRequest(null, null);
+        checkLinkRequest(null, null, 200, null);
     }
 
     @Test
     void numberedLinkRequestStillIncludesPniKeys() throws Exception {
-        checkLinkRequest("+12025550123", PNI_ID);
+        checkLinkRequest("+12025550123", PNI_ID, 200, null);
     }
 
-    private void checkLinkRequest(final String number, final PNI pni) throws Exception {
+    @ParameterizedTest
+    @CsvSource({
+            "422, Signal rejected the device linking request",
+            "403, [403] Device verification failed",
+            "409, Linked device is missing a required account capability",
+            "411, Account has reached its linked device limit",
+            "429, Device linking rate limited; try again later"
+    })
+    void linkingErrorsAreReportedWithoutCrashingOrIncludingServerBody(
+            final int statusCode,
+            final String errorMessage
+    ) throws Exception {
+        checkLinkRequest(null, null, statusCode, errorMessage);
+    }
+
+    private void checkLinkRequest(
+            final String number,
+            final PNI pni,
+            final int statusCode,
+            final String errorMessage
+    ) throws Exception {
         final var request = new AtomicReference<Request>();
         final var body = new AtomicReference<JsonNode>();
         final var mapper = new ObjectMapper();
@@ -91,9 +111,10 @@ class NumberlessProvisioningTest {
             body.set(mapper.readTree(buffer.readUtf8()));
             return new Response.Builder().request(chain.request())
                     .protocol(Protocol.HTTP_1_1)
-                    .code(200)
-                    .message("OK")
-                    .body(ResponseBody.create("{\"deviceId\":2}", MediaType.get("application/json")))
+                    .code(statusCode)
+                    .message("Test response")
+                    .body(ResponseBody.create(statusCode == 200 ? "{\"deviceId\":2}" : "secret payload",
+                            MediaType.get("application/json")))
                     .build();
         }).build();
         final var config = ServiceConfig.getServiceEnvironmentConfig(ServiceEnvironment.STAGING, "signal-cli-test");
@@ -125,13 +146,21 @@ class NumberlessProvisioningTest {
             final var pniKeys = pni == null
                     ? null
                     : KeyUtils.generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
-            final var deviceId = ProvisioningManagerImpl.registerLinkedDevice(api,
-                    account,
-                    "test-code",
-                    aciKeys,
-                    pniKeys);
-
-            assertEquals(2, deviceId);
+            if (statusCode == 200) {
+                assertEquals(2,
+                        ProvisioningManagerImpl.registerLinkedDevice(api, account, "test-code", aciKeys, pniKeys));
+            } else {
+                final var error = assertThrows(IOException.class,
+                        () -> ProvisioningManagerImpl.registerLinkedDevice(api,
+                                account,
+                                "test-code",
+                                aciKeys,
+                                pniKeys));
+                assertEquals(errorMessage, error.getMessage());
+                if (statusCode == 403) {
+                    assertInstanceOf(AuthorizationFailedException.class, error);
+                }
+            }
             assertEquals("PUT", request.get().method());
             assertEquals("/v1/devices/link", request.get().url().encodedPath());
             assertEquals(Credentials.basic(ACI_ID.toString(), "test-password"), request.get().header("Authorization"));
@@ -149,17 +178,5 @@ class NumberlessProvisioningTest {
             client.dispatcher().executorService().shutdown();
             client.connectionPool().evictAll();
         }
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    void linkingErrorsAreReportedWithoutCrashingOrIncludingServerBody() {
-        final var incorrectVerification = RegisterAsLinkedDeviceError.IncorrectVerification.INSTANCE;
-        assertThrows(AuthorizationFailedException.class,
-                () -> ProvisioningManagerImpl.getLinkedDeviceId(new RequestResult.NonSuccess<>(incorrectVerification)));
-        final var invalidRequest = new RegisterAsLinkedDeviceError.InvalidRequest("secret payload");
-        final var error = assertThrows(IOException.class,
-                () -> ProvisioningManagerImpl.getLinkedDeviceId(new RequestResult.NonSuccess<>(invalidRequest)));
-        assertFalse(error.getMessage().contains("secret payload"));
     }
 }

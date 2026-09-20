@@ -65,7 +65,7 @@ For a numbered account, ACCOUNT is your phone number in international format and
 should start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list
 of all country codes.)
 For a linked account without a phone number, use its ACI (Account ID) instead.
-See [numberless accounts](doc/numberless-accounts.md) for details.
+See the [wiki](https://github.com/AsamK/signal-cli/wiki) for further documentation.
 
 * Link to an existing account
 

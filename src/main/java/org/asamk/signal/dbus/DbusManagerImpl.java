@@ -56,7 +56,6 @@ import org.asamk.signal.manager.api.UsernameLinkUrl;
 import org.asamk.signal.manager.api.UsernameStatus;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
-import org.freedesktop.dbus.errors.UnknownMethod;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
@@ -815,7 +814,8 @@ public class DbusManagerImpl implements Manager {
         final var identifiers = addresses.stream()
                 .map(RecipientIdentifier.Single::getIdentifier)
                 .collect(Collectors.toSet());
-        return listRecipientIdentifiers().stream()
+        return signal.listRecipientIdentifiers()
+                .stream()
                 .filter(n -> addresses.isEmpty() || identifiers.contains(n))
                 .map(n -> {
                     final var contactBlocked = signal.isContactBlocked(n);
@@ -1087,15 +1087,6 @@ public class DbusManagerImpl implements Manager {
             return new RecipientAddress(UUID.fromString(identifier));
         } catch (IllegalArgumentException e) {
             return new RecipientAddress(identifier);
-        }
-    }
-
-    private List<String> listRecipientIdentifiers() {
-        try {
-            return signal.listRecipientIdentifiers();
-        } catch (UnknownMethod e) {
-            // Older daemons only expose recipients with a known phone number.
-            return signal.listNumbers();
         }
     }
 

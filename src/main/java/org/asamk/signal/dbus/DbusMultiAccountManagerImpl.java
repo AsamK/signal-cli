@@ -44,11 +44,6 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
-    public List<String> getAccountNumbers() {
-        return getManagers().stream().map(Manager::getSelfNumber).toList();
-    }
-
-    @Override
     public List<Manager> getManagers() {
         return signalControl.listAccounts()
                 .stream()
