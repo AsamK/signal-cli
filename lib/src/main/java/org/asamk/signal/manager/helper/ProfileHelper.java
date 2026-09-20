@@ -103,8 +103,16 @@ public final class ProfileHelper {
         return getRecipientProfiles(recipientIds, false);
     }
 
-    public void refreshRecipientProfile(RecipientId recipientId) {
-        getRecipientProfile(recipientId, true);
+    public boolean refreshRecipientProfile(RecipientId recipientId) {
+        try {
+            blockingGetProfile(retrieveProfile(recipientId, SignalServiceProfile.RequestType.PROFILE, false));
+            return true;
+        } catch (IOException e) {
+            logger.warn("Failed to retrieve profile for {}, ignoring: {}",
+                    context.getRecipientHelper().resolveSignalServiceAddress(recipientId).getIdentifier(),
+                    e.getMessage());
+            return false;
+        }
     }
 
     public void refreshRecipientProfiles(Collection<RecipientId> recipientIds) {
@@ -193,11 +201,9 @@ public final class ProfileHelper {
         if (uploadProfile) {
             final var streamDetails = avatar != null && avatar.isPresent()
                     ? Utils.createStreamDetails(avatar.get())
-                      .first()
-                    : forceUploadAvatar && avatar == null
-                      ? context.getAvatarStore()
-                        .retrieveProfileAvatar(account.getSelfRecipientAddress())
-                            : null;
+                    .first()
+                    : forceUploadAvatar && avatar == null ? context.getAvatarStore()
+                            .retrieveProfileAvatar(account.getSelfRecipientAddress()) : null;
             try (streamDetails) {
                 final var avatarUploadParams = streamDetails != null
                         ? AvatarUploadParams.forAvatar(streamDetails)

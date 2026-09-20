@@ -66,6 +66,29 @@ class StorageSyncLoopDetectorTest {
     }
 
     @Test
+    void failedWriteRefundsOnlyBucketsChargedByLatestAttempt() {
+        final var contentDetector = new StorageSyncLoopDetector(() -> true);
+        final var repeatedWrite = writeWithInsert(1);
+        for (var index = 0; index < 4; index++) {
+            assertAllowed(contentDetector.onWriteAttempt(repeatedWrite, true, false, NOW));
+        }
+        final var deleteOnlyWrite = new WriteOperationResult(null, List.of(), List.of(new byte[]{1}));
+        assertAllowed(contentDetector.onWriteAttempt(deleteOnlyWrite, true, false, NOW));
+        contentDetector.onWriteFailed(NOW);
+        assertEquals(new StorageSyncLoopDetector.Decision.Denied(StorageSyncLoopDetector.Cause.REPEATED_PAYLOAD, 3),
+                contentDetector.onWriteAttempt(repeatedWrite, true, false, NOW));
+
+        final var rateDetector = new StorageSyncLoopDetector(() -> true);
+        for (var index = 0; index < 100; index++) {
+            assertAllowed(rateDetector.onWriteAttempt(deleteOnlyWrite, true, false, NOW));
+        }
+        assertAllowed(rateDetector.onWriteAttempt(deleteOnlyWrite, false, false, NOW));
+        rateDetector.onWriteFailed(NOW);
+        assertEquals(new StorageSyncLoopDetector.Decision.Denied(StorageSyncLoopDetector.Cause.WRITE_RATE, 100),
+                rateDetector.onWriteAttempt(deleteOnlyWrite, true, false, NOW));
+    }
+
+    @Test
     void rateBucketLimitsDeleteOnlyWrites() {
         final var detector = new StorageSyncLoopDetector(() -> true);
         final var write = new WriteOperationResult(null, List.of(), List.of(new byte[]{1}));

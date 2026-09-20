@@ -36,6 +36,7 @@ import static org.asamk.signal.util.SendMessageResultUtils.outputResult;
 public class SendCommand implements JsonRpcLocalCommand {
 
     private static final Logger logger = LoggerFactory.getLogger(SendCommand.class);
+    private static final String BLURHASH_DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~";
 
     @Override
     public String getName() {
@@ -112,6 +113,13 @@ public class SendCommand implements JsonRpcLocalCommand {
         subparser.addArgument("--voice-note")
                 .action(Arguments.storeTrue())
                 .help("Mark audio attachments as voice notes. Voice notes are displayed inline in Signal clients.");
+        subparser.addArgument("--attachment-dimensions")
+                .nargs("*")
+                .help("Specify displayed WIDTHxHEIGHT for each attachment in order. Use an empty string to skip one.");
+        subparser.addArgument("--attachment-blurhash")
+                .nargs("*")
+                .help("Specify a BlurHash (https://blurha.sh) for each attachment in order, which clients show "
+                        + "while it's downloading. Use an empty string to skip one.");
     }
 
     @Override
@@ -174,6 +182,13 @@ public class SendCommand implements JsonRpcLocalCommand {
         }
         final var viewOnce = Boolean.TRUE.equals(ns.getBoolean("view-once"));
         final var voiceNote = Boolean.TRUE.equals(ns.getBoolean("voice-note"));
+
+        final var dimensionStrings = ns.<String>getList("attachment-dimensions");
+        final var attachmentDimensions = dimensionStrings == null
+                ? List.<Message.AttachmentDimensions>of()
+                : parseAttachmentDimensions(dimensionStrings);
+        final var blurHashes = ns.<String>getList("attachment-blurhash");
+        final var attachmentBlurHashes = blurHashes == null ? List.<String>of() : parseAttachmentBlurHashes(blurHashes);
 
         final var selfNumber = m.getSelfNumber();
 
@@ -249,6 +264,8 @@ public class SendCommand implements JsonRpcLocalCommand {
         try {
             final var message = new Message(messageText,
                     attachments,
+                    attachmentDimensions,
+                    attachmentBlurHashes,
                     viewOnce,
                     voiceNote,
                     mentions,
@@ -278,6 +295,46 @@ public class SendCommand implements JsonRpcLocalCommand {
         } catch (InvalidStickerException e) {
             throw new UserErrorException("Failed to send sticker: " + e.getMessage(), e);
         }
+    }
+
+    private List<Message.AttachmentDimensions> parseAttachmentDimensions(
+            final List<String> dimensionStrings
+    ) throws UserErrorException {
+        final var dimensionPattern = Pattern.compile("([1-9]\\d*)x([1-9]\\d*)");
+        final var dimensions = new ArrayList<Message.AttachmentDimensions>();
+        for (final var dimension : dimensionStrings) {
+            if (dimension.isEmpty()) {
+                dimensions.add(null);
+                continue;
+            }
+            final var matcher = dimensionPattern.matcher(dimension);
+            if (!matcher.matches()) {
+                throw new UserErrorException("Invalid attachment dimensions syntax ("
+                        + dimension
+                        + ") expected 'WIDTHxHEIGHT'");
+            }
+            dimensions.add(new Message.AttachmentDimensions(Integer.parseInt(matcher.group(1)),
+                    Integer.parseInt(matcher.group(2))));
+        }
+        return dimensions;
+    }
+
+    private List<String> parseAttachmentBlurHashes(final List<String> blurHashes) throws UserErrorException {
+        for (final var blurHash : blurHashes) {
+            if (!blurHash.isEmpty() && !isValidBlurHash(blurHash)) {
+                throw new UserErrorException("Invalid attachment BlurHash (" + blurHash + ")");
+            }
+        }
+        return blurHashes;
+    }
+
+    // Same check the BlurHash decoders make: the first digit fixes the length.
+    private static boolean isValidBlurHash(final String blurHash) {
+        if (blurHash.length() < 6) {
+            return false;
+        }
+        final var sizeFlag = BLURHASH_DIGITS.indexOf(blurHash.charAt(0));
+        return blurHash.length() == 4 + 2 * (sizeFlag % 9 + 1) * (sizeFlag / 9 + 1);
     }
 
     private List<Message.Mention> parseMentions(

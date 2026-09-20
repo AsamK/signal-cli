@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.util;
 
+import org.asamk.signal.manager.api.BadRequestException;
 import org.asamk.signal.manager.api.Pair;
 import org.signal.core.models.ServiceId;
 import org.signal.libsignal.net.BadRequestError;
@@ -194,8 +195,8 @@ public class Utils {
             }
         } else if (result instanceof RequestResult.RetryableNetworkError e) {
             throw e.getNetworkError();
-        } else if (result instanceof RequestResult.NonSuccess) {
-            throw new AssertionError();
+        } else if (result instanceof RequestResult.NonSuccess<?> e) {
+            throw new BadRequestException(e.getError());
         }
         throw new IllegalStateException("Unexpected value: " + result);
     }

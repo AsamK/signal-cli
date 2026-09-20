@@ -1791,9 +1791,9 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                 profileCapabilities == null
                         ? Set.of()
                         : Arrays.stream(profileCapabilities.split(","))
-                          .map(Profile.Capability::valueOfOrNull)
-                          .filter(Objects::nonNull)
-                          .collect(Collectors.toSet()),
+                                .map(Profile.Capability::valueOfOrNull)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toSet()),
                 PhoneNumberSharingMode.valueOfOrNull(resultSet.getString("profile_phone_number_sharing")));
     }
 

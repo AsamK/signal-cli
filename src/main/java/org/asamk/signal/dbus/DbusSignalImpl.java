@@ -242,6 +242,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
         try {
             final var message = new Message(messageText,
                     attachments,
+                    List.of(),
+                    List.of(),
                     false,
                     false,
                     List.of(),
@@ -409,6 +411,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
         try {
             final var message = new Message(messageText,
                     attachments,
+                    List.of(),
+                    List.of(),
                     false,
                     false,
                     List.of(),
@@ -456,6 +460,8 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
         try {
             final var message = new Message(messageText,
                     attachments,
+                    List.of(),
+                    List.of(),
                     false,
                     false,
                     List.of(),

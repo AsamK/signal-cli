@@ -321,10 +321,10 @@ public class MessageSendLogStore implements AutoCloseable {
             return content.dataMessage == null
                     ? null
                     : content.dataMessage.group != null && content.dataMessage.group.id != null
-                      ? content.dataMessage.group.id.toByteArray()
+                            ? content.dataMessage.group.id.toByteArray()
                             : content.dataMessage.groupV2 != null && content.dataMessage.groupV2.masterKey != null
-                              ? GroupUtils.getGroupIdV2(new GroupMasterKey(content.dataMessage.groupV2.masterKey.toByteArray()))
-                                .serialize()
+                                    ? GroupUtils.getGroupIdV2(new GroupMasterKey(content.dataMessage.groupV2.masterKey.toByteArray()))
+                                    .serialize()
                                     : null;
         } catch (InvalidInputException e) {
             logger.warn("Failed to parse groupId id from content");

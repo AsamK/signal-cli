@@ -41,7 +41,9 @@ public class SendPollVoteCommand implements JsonRpcLocalCommand {
                 .help("If self is part of recipients/groups send a normal message, not a sync message.")
                 .action(Arguments.storeTrue());
 
-        subparser.addArgument("--poll-author").help("Specify the number of the author of the poll message.");
+        subparser.addArgument("--poll-author")
+                .help("Specify the number of the author of the poll message.")
+                .required(true);
         subparser.addArgument("--poll-timestamp")
                 .type(long.class)
                 .help("Specify the timestamp of the original poll message.")

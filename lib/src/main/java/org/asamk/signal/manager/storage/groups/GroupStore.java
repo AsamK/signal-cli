@@ -884,9 +884,9 @@ public class GroupStore {
         final var members = membersString == null
                 ? Set.<RecipientId>of()
                 : Arrays.stream(membersString.split(","))
-                  .map(Integer::valueOf)
-                  .map(recipientIdCreator::create)
-                  .collect(Collectors.toSet());
+                        .map(Integer::valueOf)
+                        .map(recipientIdCreator::create)
+                        .collect(Collectors.toSet());
         final var expirationTime = resultSet.getInt("expiration_time");
         final var blocked = resultSet.getBoolean("blocked");
         final var blockedAt = resultSet.getLong("blocked_at");

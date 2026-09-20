@@ -24,6 +24,13 @@ class StorageRecordProcessorTest {
     }
 
     @Test
+    void linkedDeviceUsesRemoteIdentityKeyForUnrepairableConflict() {
+        assertTrue(ContactRecordProcessor.shouldUseRemoteIdentityKey(false, false, 33, 33, 0, true));
+        assertFalse(ContactRecordProcessor.shouldUseRemoteIdentityKey(true, false, 33, 33, 0, true));
+        assertFalse(ContactRecordProcessor.shouldUseRemoteIdentityKey(false, false, 33, 33, 0, false));
+    }
+
+    @Test
     void keepsOlderLocalStickerDeletion() {
         assertTrue(StickerPackRecordProcessor.shouldKeepLocalDeletion(200, 100));
         assertFalse(StickerPackRecordProcessor.shouldKeepLocalDeletion(100, 200));
