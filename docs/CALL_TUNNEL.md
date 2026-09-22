@@ -31,6 +31,29 @@ to JSON-RPC clients, which use them to connect audio via platform APIs.
 
 ---
 
+## Multi-device compatibility
+
+A tunnel supporting device-aware hangup/busy handling includes
+`"signalingVersion": 2` in its `ready` event. The separate
+`{"type":"signalingCapabilities","version":2}` event is also accepted for
+compatibility with tunnels advertising capabilities separately.
+
+For this capability, signal-cli forwards incoming `receivedHangup` messages with
+`senderDeviceId`, numeric `hangupType` (0 normal, 1 accepted elsewhere, 2 declined
+elsewhere, 3 busy elsewhere, 4 permission needed), and `deviceId` identifying the
+accepted/declined device. `receivedBusy` carries `senderDeviceId`. RingRTC decides
+which device connection should end.
+
+Outgoing signaling events may include `receiverDeviceId`: an integer targets
+one device, explicit null broadcasts, and an absent field retains the legacy
+call target. A `sendHangup` also carries `deviceId` for the accepted/declined
+device; this is distinct from its delivery target.
+
+An older tunnel keeps the existing direct hangup/busy cleanup and notification
+filtering. An older CLI ignores the added capability and target fields. Either
+project can upgrade independently; complete multi-device behavior requires both.
+The account's local device-ID fix is independent of this protocol extension.
+
 ## Spawning the Tunnel
 
 For each call, signal-cli:
