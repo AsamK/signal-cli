@@ -168,7 +168,7 @@ public class AttachmentHelper {
         try {
             attachmentStore.storeAttachment(pointer, outputStream -> this.retrieveAttachment(pointer, outputStream));
         } catch (IOException e) {
-            logger.warn("Failed to download attachment ({}), ignoring: {}", pointer.getRemoteId(), e.getMessage());
+            logger.warn("Failed to download attachment ({}), ignoring", pointer.getRemoteId(), e);
         }
     }
 
