@@ -311,6 +311,9 @@ public class CallManager implements AutoCloseable {
             return;
         }
         synchronized (state) {
+            if (activeCalls.get(callId) != state) {
+                return;
+            }
             if (state.multiDeviceSignaling == null && type != null && type != HangupMessage.Type.NORMAL) {
                 state.pendingRemoteNotifications.add(() -> handleIncomingHangup(sender, callId, senderDeviceId, type, deviceId));
                 return;
@@ -333,7 +336,7 @@ public class CallManager implements AutoCloseable {
             case NEED_PERMISSION -> 4;
         });
         message.put("deviceId", deviceId);
-        sendControlMessage(state, writeJson(message));
+        sendRemoteControlMessage(state, message);
     }
 
     public void handleIncomingBusy(final RecipientId sender, final long callId, final int senderDeviceId) {
@@ -348,7 +351,15 @@ public class CallManager implements AutoCloseable {
         var message = mapper.createObjectNode();
         message.put("type", "receivedBusy");
         message.put("senderDeviceId", senderDeviceId);
-        sendControlMessage(state, writeJson(message));
+        sendRemoteControlMessage(state, message);
+    }
+
+    private void sendRemoteControlMessage(CallState state, ObjectNode message) {
+        synchronized (state) {
+            if (activeCalls.get(state.callId) == state) {
+                sendControlMessage(state, writeJson(message));
+            }
+        }
     }
 
     // --- Internal helpers ---
@@ -768,13 +779,23 @@ public class CallManager implements AutoCloseable {
         }
     }
 
+    CallState removeCall(final long callId) {
+        var state = activeCalls.get(callId);
+        if (state == null) return null;
+        synchronized (state) {
+            if (!activeCalls.remove(callId, state)) return null;
+            state.pendingRemoteNotifications.clear();
+            state.state = CallInfo.State.ENDED;
+            return state;
+        }
+    }
+
     void endCall(final long callId, final String reason) {
-        var state = activeCalls.remove(callId);
+        var state = removeCall(callId);
+        if (state == null) return;
         dependencies.getAuthenticatedSignalWebSocket().removeKeepAliveToken("call" + callId);
         dependencies.getUnauthenticatedSignalWebSocket().removeKeepAliveToken("call" + callId);
-        if (state == null) return;
 
-        state.state = CallInfo.State.ENDED;
         fireCallEvent(state, reason);
         logger.debug("Call {} ended: {}", callIdUnsigned(callId), reason);
 

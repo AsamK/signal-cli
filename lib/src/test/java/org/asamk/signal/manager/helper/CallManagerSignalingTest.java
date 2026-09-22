@@ -26,6 +26,10 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -104,9 +108,63 @@ class CallManagerSignalingTest {
     @Test
     void doesNotReplayNotificationsAfterCallRemoval() throws Exception {
         manager.handleIncomingHangup(state.recipientId, state.callId, 1, HangupMessage.Type.ACCEPTED, 2);
-        calls.clear();
+        manager.removeCall(state.callId);
         events("{\"type\":\"ready\",\"signalingVersion\":2}");
         assertEquals("", output.toString());
+        assertTrue(state.pendingRemoteNotifications.isEmpty());
+    }
+
+    @Test
+    void callRemovalWaitsForInFlightNotification() throws Exception {
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var registeredAtWrite = new AtomicBoolean();
+        var failure = new AtomicReference<Throwable>();
+        state.controlWriter = new PrintWriter(output, true) {
+            @Override
+            public void println(String line) {
+                entered.countDown();
+                try {
+                    if (!release.await(5, TimeUnit.SECONDS)) throw new AssertionError("write gate timed out");
+                    registeredAtWrite.set(calls.containsKey(state.callId));
+                    super.println(line);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError(e);
+                }
+            }
+        };
+        manager.handleIncomingHangup(state.recipientId, state.callId, 1, HangupMessage.Type.ACCEPTED, 2);
+        var negotiation = new Thread(() -> {
+            try {
+                events("{\"type\":\"ready\",\"signalingVersion\":2}");
+            } catch (Throwable e) {
+                failure.set(e);
+            }
+        });
+        var cancellation = new Thread(() -> manager.removeCall(state.callId));
+        negotiation.start();
+        try {
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            cancellation.start();
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (cancellation.getState() != Thread.State.BLOCKED && cancellation.isAlive()
+                    && System.nanoTime() < deadline) {
+                Thread.onSpinWait();
+            }
+            assertEquals(Thread.State.BLOCKED, cancellation.getState());
+            assertTrue(calls.containsKey(state.callId));
+        } finally {
+            release.countDown();
+            negotiation.join(5000);
+            cancellation.join(5000);
+        }
+        assertFalse(negotiation.isAlive());
+        assertFalse(cancellation.isAlive());
+        assertNull(failure.get());
+        assertTrue(registeredAtWrite.get());
+        assertFalse(calls.containsKey(state.callId));
+        assertEquals(CallInfo.State.ENDED, state.state);
         assertTrue(state.pendingRemoteNotifications.isEmpty());
     }
 
