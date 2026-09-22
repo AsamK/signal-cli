@@ -463,17 +463,9 @@ public final class IncomingMessageHandler {
             }
         });
 
-        callMessage.getHangupMessage().ifPresent(hangup -> {
-            // Only NORMAL hangups actually end the call. ACCEPTED/DECLINED/BUSY
-            // are multi-device notifications irrelevant for single-device signal-cli.
-            var hangupType = hangup.getType();
-            if (hangupType == org.whispersystems.signalservice.api.messages.calls.HangupMessage.Type.NORMAL
-                    || hangupType == null) {
-                callManager.handleIncomingHangup(hangup.getId());
-            }
-        });
-
-        callMessage.getBusyMessage().ifPresent(busy -> callManager.handleIncomingBusy(busy.getId()));
+        callMessage.getHangupMessage().ifPresent(hangup ->
+                callManager.handleIncomingHangup(sender, hangup.getId(), deviceId, hangup.getType(), hangup.getDeviceId()));
+        callMessage.getBusyMessage().ifPresent(busy -> callManager.handleIncomingBusy(sender, busy.getId(), deviceId));
     }
 
     private boolean handlePniSignatureMessage(
