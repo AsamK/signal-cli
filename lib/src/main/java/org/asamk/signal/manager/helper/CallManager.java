@@ -276,7 +276,7 @@ public class CallManager implements AutoCloseable {
         answerMsg.put("receiverIdentityKey", java.util.Base64.getEncoder().encodeToString(localIdentityKey));
         sendControlMessage(state, writeJson(answerMsg));
 
-        if (!state.multiDeviceSignaling) {
+        if (!Boolean.TRUE.equals(state.multiDeviceSignaling)) {
             state.deviceId = deviceId;
         }
         if (state.state != CallInfo.State.CONNECTED && state.state != CallInfo.State.RECONNECTING) {
@@ -310,7 +310,13 @@ public class CallManager implements AutoCloseable {
         if (state == null || !state.recipientId.equals(sender)) {
             return;
         }
-        if (!state.multiDeviceSignaling) {
+        synchronized (state) {
+            if (state.multiDeviceSignaling == null && type != null && type != HangupMessage.Type.NORMAL) {
+                state.pendingRemoteNotifications.add(() -> handleIncomingHangup(sender, callId, senderDeviceId, type, deviceId));
+                return;
+            }
+        }
+        if (!Boolean.TRUE.equals(state.multiDeviceSignaling)) {
             if (type == null || type == HangupMessage.Type.NORMAL) {
                 endCall(callId, "remote_hangup");
             }
@@ -335,7 +341,7 @@ public class CallManager implements AutoCloseable {
         if (state == null || !state.recipientId.equals(sender)) {
             return;
         }
-        if (!state.multiDeviceSignaling) {
+        if (!Boolean.TRUE.equals(state.multiDeviceSignaling)) {
             endCall(callId, "remote_busy");
             return;
         }
@@ -500,6 +506,17 @@ public class CallManager implements AutoCloseable {
         return writeJson(config);
     }
 
+    private void setSignalingVersion(CallState state, int version) {
+        synchronized (state) {
+            state.multiDeviceSignaling = version >= 2;
+            var pending = List.copyOf(state.pendingRemoteNotifications);
+            state.pendingRemoteNotifications.clear();
+            for (var notification : pending) {
+                notification.run();
+            }
+        }
+    }
+
     private void readControlEvents(CallState state, java.io.InputStream inputStream) {
         try (var reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
@@ -512,9 +529,17 @@ public class CallManager implements AutoCloseable {
                     var json = mapper.readTree(line);
                     var type = json.has("type") ? json.get("type").asText() : "";
 
+                    if (state.multiDeviceSignaling == null && switch (type) {
+                        case "sendOffer", "sendAnswer", "sendIce", "sendHangup", "sendBusy", "stateChange" -> true;
+                        default -> false;
+                    }) {
+                        setSignalingVersion(state, 1);
+                    }
                     switch (type) {
                         case "ready" -> {
-                            state.multiDeviceSignaling = json.path("signalingVersion").asInt(1) >= 2;
+                            if (json.has("signalingVersion")) {
+                                setSignalingVersion(state, json.path("signalingVersion").asInt(1));
+                            }
                             if (json.has("inputDeviceName")) {
                                 state.inputDeviceName = json.get("inputDeviceName").asText();
                             }
@@ -527,7 +552,7 @@ public class CallManager implements AutoCloseable {
                                     state.outputDeviceName);
                         }
                         case "signalingCapabilities" -> {
-                            state.multiDeviceSignaling = json.path("version").asInt(1) >= 2;
+                            setSignalingVersion(state, json.path("version").asInt(1));
                         }
                         case "sendOffer" -> {
                             var opaqueB64 = json.get("opaque").asText();
@@ -553,7 +578,7 @@ public class CallManager implements AutoCloseable {
                             var hangupType = json.has("hangupType")
                                     ? json.get("hangupType").asText("normal")
                                     : "normal";
-                            if (!state.multiDeviceSignaling && hangupType.contains("onanotherdevice")) {
+                            if (!Boolean.TRUE.equals(state.multiDeviceSignaling) && hangupType.contains("onanotherdevice")) {
                                 break;
                             }
                             logSendMessageResult(sendHangupViaSignal(state, hangupType,
@@ -818,7 +843,9 @@ public class CallManager implements AutoCloseable {
         volatile CallInfo.State state;
         final RecipientId recipientId;
         volatile Integer deviceId;
-        volatile boolean multiDeviceSignaling;
+        // Unknown until capabilities or the first legacy call event arrive.
+        volatile Boolean multiDeviceSignaling;
+        final List<Runnable> pendingRemoteNotifications = new ArrayList<>();
         final boolean isOutgoing;
         volatile String inputDeviceName;
         volatile String outputDeviceName;

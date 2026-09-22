@@ -52,7 +52,11 @@ device; this is distinct from its delivery target.
 An older tunnel keeps the existing direct hangup/busy cleanup and notification
 filtering. An older CLI ignores the added capability and target fields. Either
 project can upgrade independently; complete multi-device behavior requires both.
-The account's local device-ID fix is independent of this protocol extension.
+Linked accounts also require the local device-ID correction included in this branch.
+Notifications received before capability negotiation are retained until the version
+is known. An unversioned `ready` alone does not settle negotiation: a subsequent
+capability event enables version 2; a first legacy signaling/state event selects
+legacy behavior.
 
 ## Spawning the Tunnel
 
