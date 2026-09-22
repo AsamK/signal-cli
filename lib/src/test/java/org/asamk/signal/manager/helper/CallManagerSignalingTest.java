@@ -71,6 +71,46 @@ class CallManagerSignalingTest {
     }
 
     @Test
+    void replaysAcceptedNotificationReceivedBeforeReady() throws Exception {
+        manager.handleIncomingHangup(state.recipientId, state.callId, 1, HangupMessage.Type.ACCEPTED, 2);
+        assertEquals("", output.toString());
+        events("{\"type\":\"ready\",\"signalingVersion\":2}");
+        var message = MAPPER.readTree(output.toString());
+        assertEquals("receivedHangup", message.path("type").asText());
+        assertEquals(1, message.path("hangupType").asInt());
+        assertEquals(2, message.path("deviceId").asInt());
+        assertTrue(state.pendingRemoteNotifications.isEmpty());
+    }
+
+    @Test
+    void separateCapabilitiesDoNotLoseEarlyNotification() throws Exception {
+        manager.handleIncomingHangup(state.recipientId, state.callId, 1, HangupMessage.Type.DECLINED, 2);
+        events("{\"type\":\"ready\"}");
+        assertEquals("", output.toString());
+        events("{\"type\":\"signalingCapabilities\",\"version\":2}");
+        assertEquals(2, MAPPER.readTree(output.toString()).path("hangupType").asInt());
+    }
+
+    @Test
+    void legacyCallEventResolvesPendingNotification() throws Exception {
+        manager.handleIncomingHangup(state.recipientId, state.callId, 1, HangupMessage.Type.ACCEPTED, 2);
+        events("{\"type\":\"ready\"}\n{\"type\":\"stateChange\",\"state\":\"Connected\"}");
+        assertEquals(Boolean.FALSE, state.multiDeviceSignaling);
+        assertTrue(state.pendingRemoteNotifications.isEmpty());
+        assertEquals("", output.toString());
+        assertEquals(CallInfo.State.CONNECTED, state.state);
+    }
+
+    @Test
+    void doesNotReplayNotificationsAfterCallRemoval() throws Exception {
+        manager.handleIncomingHangup(state.recipientId, state.callId, 1, HangupMessage.Type.ACCEPTED, 2);
+        calls.clear();
+        events("{\"type\":\"ready\",\"signalingVersion\":2}");
+        assertEquals("", output.toString());
+        assertTrue(state.pendingRemoteNotifications.isEmpty());
+    }
+
+    @Test
     void readyNegotiatesBeforeCallEvents() throws Exception {
         events("{\"type\":\"ready\",\"signalingVersion\":2}");
         manager.handleIncomingHangup(state.recipientId, state.callId, 2, HangupMessage.Type.NORMAL, 0);
