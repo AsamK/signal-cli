@@ -28,11 +28,14 @@ public class ServiceConfig {
     public static final int MAXIMUM_ONE_OFF_REQUEST_SIZE = 3;
     public static final long UNREGISTERED_LIFESPAN = TimeUnit.DAYS.toMillis(30);
 
-    public static AccountAttributes.Capabilities getCapabilities(boolean isPrimaryDevice) {
+    public static AccountAttributes.Capabilities getCapabilities(
+            final boolean isPrimaryDevice,
+            final boolean hasPhoneNumber
+    ) {
         final var attachmentBackfill = !isPrimaryDevice;
         final var spqr = true;
         final var usernameSyncChangeMessage = !isPrimaryDevice;
-        final var optionalPhoneNumber = !isPrimaryDevice;
+        final var optionalPhoneNumber = !isPrimaryDevice || !hasPhoneNumber;
         return new AccountAttributes.Capabilities(true,
                 true,
                 attachmentBackfill,

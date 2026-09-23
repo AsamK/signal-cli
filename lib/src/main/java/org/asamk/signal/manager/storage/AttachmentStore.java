@@ -8,9 +8,11 @@ import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemo
 import org.whispersystems.signalservice.api.util.StreamDetails;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 public class AttachmentStore {
@@ -51,8 +53,23 @@ public class AttachmentStore {
 
     private void storeAttachment(final File attachmentFile, final AttachmentStorer storer) throws IOException {
         createAttachmentsDir();
-        try (OutputStream output = new FileOutputStream(attachmentFile)) {
-            storer.store(output);
+        final var temporaryFile = Files.createTempFile(attachmentsPath.toPath(),
+                attachmentFile.getName() + ".",
+                ".tmp");
+        try {
+            try (OutputStream output = Files.newOutputStream(temporaryFile)) {
+                storer.store(output);
+            }
+            try {
+                Files.move(temporaryFile,
+                        attachmentFile.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporaryFile, attachmentFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temporaryFile);
         }
     }
 

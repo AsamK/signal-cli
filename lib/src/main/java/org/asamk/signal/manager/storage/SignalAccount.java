@@ -71,6 +71,7 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.protocol.util.KeyHelper;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
+import org.signal.network.api.RegistrationApiV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountDataStore;
@@ -234,6 +235,28 @@ public class SignalAccount implements Closeable {
             ProfileKey profileKey,
             final Settings settings
     ) throws IOException {
+        return create(dataPath,
+                accountPath,
+                number,
+                null,
+                serviceEnvironment,
+                aciIdentityKey,
+                pniIdentityKey,
+                profileKey,
+                settings);
+    }
+
+    public static SignalAccount create(
+            File dataPath,
+            String accountPath,
+            String number,
+            ACI aci,
+            ServiceEnvironment serviceEnvironment,
+            IdentityKeyPair aciIdentityKey,
+            IdentityKeyPair pniIdentityKey,
+            ProfileKey profileKey,
+            final Settings settings
+    ) throws IOException {
         IOUtils.createPrivateDirectories(dataPath);
         var fileName = getFileName(dataPath, accountPath);
         if (!fileName.exists()) {
@@ -251,6 +274,7 @@ public class SignalAccount implements Closeable {
         signalAccount.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
 
         signalAccount.dataPath = dataPath;
+        signalAccount.aciAccountData.setServiceId(aci);
         signalAccount.aciAccountData.setIdentityKeyPair(aciIdentityKey);
         signalAccount.pniAccountData.setIdentityKeyPair(pniIdentityKey);
         signalAccount.aciAccountData.setLocalRegistrationId(KeyHelper.generateRegistrationId(false));
@@ -350,7 +374,9 @@ public class SignalAccount implements Closeable {
         this.registered = true;
         this.deviceId = deviceId;
         setPreKeys(ServiceIdType.ACI, aciPreKeys);
-        setPreKeys(ServiceIdType.PNI, pniPreKeys);
+        if (pniPreKeys != null) {
+            setPreKeys(ServiceIdType.PNI, pniPreKeys);
+        }
         save();
     }
 
@@ -392,6 +418,53 @@ public class SignalAccount implements Closeable {
         clearSessionId();
     }
 
+    public void finishRecoveryRegistration(
+            final ACI aci,
+            final PNI pni,
+            final String number,
+            final AccountEntropyPool accountEntropyPool,
+            final byte[] authCredentialSalt,
+            final PreKeyCollection aciPreKeys,
+            final PreKeyCollection pniPreKeys
+    ) {
+        this.pinMasterKey = null;
+        this.accountEntropyPool = accountEntropyPool;
+        this.authCredentialSalt = authCredentialSalt;
+        this.number = number;
+        getKeyValueStore().storeEntry(storageManifestVersion, -1L);
+        this.setStorageManifest(null);
+        this.storageKey = null;
+        this.encryptedDeviceName = null;
+        this.deviceId = SignalServiceAddress.DEFAULT_DEVICE_ID;
+        this.isMultiDevice = false;
+        this.registered = true;
+        this.aciAccountData.setServiceId(aci);
+        this.pniAccountData.setServiceId(pni);
+        if (pni == null) {
+            this.pniAccountData.setIdentityKeyPair(null);
+        }
+        init();
+        this.registrationLockPin = null;
+        setLastReceiveTimestamp(0L);
+        setLastAppliedPniChangeServerTimestamp(0L);
+        save();
+
+        setPreKeys(ServiceIdType.ACI, aciPreKeys);
+        if (pni != null && pniPreKeys != null) {
+            setPreKeys(ServiceIdType.PNI, pniPreKeys);
+        }
+        aciAccountData.getSessionStore().archiveAllSessions();
+        pniAccountData.getSessionStore().archiveAllSessions();
+        getSenderKeyStore().deleteAll();
+        getRecipientTrustedResolver().resolveSelfRecipientTrusted(getSelfRecipientAddress());
+        trustSelfIdentity(ServiceIdType.ACI);
+        if (pni != null) {
+            trustSelfIdentity(ServiceIdType.PNI);
+        }
+        getKeyValueStore().storeEntry(lastRecipientsRefresh, null);
+        clearSessionId();
+    }
+
     public void initDatabase() {
         getAccountDatabase();
     }
@@ -401,7 +474,7 @@ public class SignalAccount implements Closeable {
     }
 
     private void migrateLegacyConfigs() {
-        if (isPrimaryDevice() && getPniIdentityKeyPair() == null) {
+        if (isPrimaryDevice() && (number != null || getPni() != null) && getPniIdentityKeyPair() == null) {
             logger.trace("Migrating legacy parts of account file");
             setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
@@ -1423,7 +1496,56 @@ public class SignalAccount implements Closeable {
     }
 
     public AccountAttributes.Capabilities getAccountCapabilities() {
-        return getCapabilities(isPrimaryDevice());
+        return getCapabilities(isPrimaryDevice(), number != null);
+    }
+
+    public RegistrationApiV2.AccountAttributes getAccountAttributesV2() {
+        return getAccountAttributesV2(false, getRegistrationLock());
+    }
+
+    public RegistrationApiV2.AccountAttributes getAccountAttributesV2(
+            final boolean includePniRegistrationId,
+            final String registrationLock
+    ) {
+        return getAccountAttributesV2(includePniRegistrationId,
+                registrationLock,
+                getRecoveryPassword(),
+                number == null ? null : isDiscoverableByPhoneNumber());
+    }
+
+    public RegistrationApiV2.AccountAttributes getAccountAttributesV2ForRecovery(
+            final String registrationLock,
+            final String recoveryPassword
+    ) {
+        return getAccountAttributesV2(true, registrationLock, recoveryPassword, null);
+    }
+
+    private RegistrationApiV2.AccountAttributes getAccountAttributesV2(
+            final boolean includePniRegistrationId,
+            final String registrationLock,
+            final String recoveryPassword,
+            final Boolean discoverableByPhoneNumber
+    ) {
+        final var attributes = getAccountAttributes(null);
+        final var capabilities = attributes.getCapabilities();
+        return new RegistrationApiV2.AccountAttributes(attributes.getSignalingKey(),
+                attributes.getRegistrationId(),
+                attributes.getVoice(),
+                attributes.getVideo(),
+                attributes.getFetchesMessages(),
+                registrationLock,
+                attributes.getUnidentifiedAccessKey(),
+                attributes.getUnrestrictedUnidentifiedAccess(),
+                discoverableByPhoneNumber,
+                new RegistrationApiV2.AccountAttributes.Capabilities(capabilities.getStorage(),
+                        capabilities.getVersionedExpirationTimer(),
+                        capabilities.getAttachmentBackfill(),
+                        capabilities.getSpqr(),
+                        capabilities.getUsernameChangeSyncMessage(),
+                        capabilities.getOptionalPhoneNumber()),
+                attributes.getName(),
+                includePniRegistrationId || getPni() != null ? attributes.getPniRegistrationId() : null,
+                recoveryPassword);
     }
 
     public ServiceId getAccountId(ServiceIdType serviceIdType) {
@@ -1633,6 +1755,10 @@ public class SignalAccount implements Closeable {
             accountEntropyPool = AccountEntropyPool.Companion.generate();
             save();
         }
+        return accountEntropyPool;
+    }
+
+    public AccountEntropyPool getAccountEntropyPool() {
         return accountEntropyPool;
     }
 
