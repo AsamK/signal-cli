@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ContainerNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.asamk.signal.AccountIdentifier;
 import org.asamk.signal.commands.Command;
 import org.asamk.signal.commands.JsonRpcMultiCommand;
 import org.asamk.signal.commands.JsonRpcRegistrationCommand;
@@ -126,7 +127,7 @@ public class SignalJsonRpcCommandHandler {
 
     private Manager getManagerFromParams(final ContainerNode<?> params) throws JsonRpcException {
         if (params != null && params.hasNonNull("account")) {
-            final var manager = c.getManager(params.get("account").asText());
+            final var manager = c.getManager(AccountIdentifier.normalize(params.get("account").asText()));
             ((ObjectNode) params).remove("account");
             if (manager == null) {
                 throw new JsonRpcException(new JsonRpcResponse.Error(JsonRpcResponse.Error.INVALID_PARAMS,
@@ -140,7 +141,7 @@ public class SignalJsonRpcCommandHandler {
 
     private Pair<String, RegistrationManager> getRegistrationManagerFromParams(final ContainerNode<?> params) {
         if (params != null && params.has("account")) {
-            final var account = params.get("account").asText();
+            final var account = AccountIdentifier.normalize(params.get("account").asText());
             ((ObjectNode) params).remove("account");
             try {
                 return new Pair<>(account, c.getNewRegistrationManager(account));

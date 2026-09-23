@@ -5,6 +5,7 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.PinLockedException;
+import org.asamk.signal.manager.api.TotpRequiredException;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 
 import java.io.IOException;
@@ -51,6 +52,15 @@ public class DbusRegistrationManagerImpl implements RegistrationManager {
         } else {
             signalControl.verifyWithPin(number, verificationCode, pin);
         }
+    }
+
+    @Override
+    public void registerWithRecoveryKey(
+            final String recoveryKey,
+            final boolean forceRegister,
+            final Integer totp
+    ) throws IOException, TotpRequiredException {
+        throw new IOException("Recovery-key registration is not supported over D-Bus");
     }
 
     @Override

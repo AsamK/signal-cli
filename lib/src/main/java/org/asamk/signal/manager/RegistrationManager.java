@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.TotpRequiredException;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 
 import java.io.Closeable;
@@ -17,12 +18,18 @@ public interface RegistrationManager extends Closeable {
             boolean voiceVerification,
             String captcha,
             final boolean forceRegister
-    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethodNotAvailableException;
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, TotpRequiredException, VerificationMethodNotAvailableException;
 
     void verifyAccount(
             String verificationCode,
             String pin
     ) throws IOException, PinLockedException, IncorrectPinException, PinLockMissingException;
+
+    void registerWithRecoveryKey(
+            String recoveryKey,
+            boolean forceRegister,
+            Integer totp
+    ) throws IOException, RateLimitException, TotpRequiredException;
 
     void deleteLocalAccountData() throws IOException;
 

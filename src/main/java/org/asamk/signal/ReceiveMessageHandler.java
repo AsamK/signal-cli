@@ -39,7 +39,7 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
         writer.println("Envelope from: {} (device: {}) to {}",
                 source.map(this::formatContact).orElse("unknown source"),
                 envelope.sourceDevice(),
-                m.getSelfNumber());
+                m.getSelfIdentifier());
         writer.println("Timestamp: {}", DateUtils.formatTimestamp(envelope.timestamp()));
         writer.println("Server timestamps: received: {} delivered: {}",
                 DateUtils.formatTimestamp(envelope.serverReceivedTimestamp()),
@@ -55,13 +55,13 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
                 final var recipientName = e.getSender().getLegacyIdentifier();
                 writer.println(
                         "Use 'signal-cli -a {} listIdentities -n {}', verify the key and run 'signal-cli -a {} trust -v \"FINGER_PRINT\" {}' to mark it as trusted",
-                        m.getSelfNumber(),
+                        m.getSelfIdentifier(),
                         recipientName,
-                        m.getSelfNumber(),
+                        m.getSelfIdentifier(),
                         recipientName);
                 writer.println(
                         "If you don't care about security, use 'signal-cli -a {} trust -a {}' to trust it without verification",
-                        m.getSelfNumber(),
+                        m.getSelfIdentifier(),
                         recipientName);
             } else {
                 writer.println("Exception: {} ({})", exception.getMessage(), exception.getClass().getSimpleName());
@@ -614,8 +614,8 @@ public class ReceiveMessageHandler implements Manager.ReceiveMessageHandler {
             writer.println("Size: {}{}",
                     attachment.size().isPresent() ? attachment.size().get() + " bytes" : "<unavailable>",
                     attachment.preview().isPresent() ? " (Preview is available: "
-                                                       + attachment.preview().get().length
-                                                       + " bytes)" : "");
+                            + attachment.preview().get().length
+                            + " bytes)" : "");
         }
         if (attachment.thumbnail().isPresent()) {
             writer.println("Thumbnail:");

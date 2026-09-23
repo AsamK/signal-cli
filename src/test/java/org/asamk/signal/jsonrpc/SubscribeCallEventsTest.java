@@ -73,11 +73,6 @@ class SubscribeCallEventsTest {
         }
 
         @Override
-        public List<String> getAccountNumbers() {
-            return managers.stream().map(Manager::getSelfNumber).toList();
-        }
-
-        @Override
         public List<Manager> getManagers() {
             return managers;
         }

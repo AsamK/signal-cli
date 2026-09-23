@@ -15,6 +15,7 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.TotpRequiredException;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.util.CommandUtil;
@@ -41,6 +42,8 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
         subparser.addArgument("--reregister")
                 .action(Arguments.storeTrue())
                 .help("Register even if account is already registered");
+        subparser.addArgument("--recovery-key").help("Recover an account using its 64-character Signal Recovery Key.");
+        subparser.addArgument("--totp").help("A six-digit TOTP token required for account recovery.");
     }
 
     @Override
@@ -48,8 +51,10 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
         final boolean voiceVerification = Boolean.TRUE.equals(ns.getBoolean("voice"));
         final var captcha = ns.getString("captcha");
         final var reregister = Boolean.TRUE.equals(ns.getBoolean("reregister"));
+        final var recoveryKey = ns.getString("recovery-key");
+        final var totp = ns.getString("totp");
 
-        register(m, voiceVerification, captcha, reregister);
+        register(m, voiceVerification, captcha, reregister, recoveryKey, totp);
     }
 
     @Override
@@ -68,15 +73,53 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
             final RegistrationManager m,
             final JsonWriter jsonWriter
     ) throws CommandException {
-        register(m, Boolean.TRUE.equals(request.voice()), request.captcha(), Boolean.TRUE.equals(request.reregister()));
+        register(m,
+                Boolean.TRUE.equals(request.voice()),
+                request.captcha(),
+                Boolean.TRUE.equals(request.reregister()),
+                request.recoveryKey(),
+                request.totp());
     }
 
     private void register(
             final RegistrationManager m,
             final boolean voiceVerification,
             final String captcha,
-            final boolean reregister
+            final boolean reregister,
+            final String recoveryKey,
+            final String totpValue
     ) throws CommandException {
+        if (recoveryKey == null && totpValue != null) {
+            throw new UserErrorException("--totp requires --recovery-key");
+        }
+
+        final Integer totp;
+        if (totpValue == null) {
+            totp = null;
+        } else if (!totpValue.matches("[0-9]{6}")) {
+            throw new UserErrorException("TOTP token must contain exactly six digits");
+        } else {
+            totp = Integer.parseInt(totpValue);
+        }
+
+        if (recoveryKey != null) {
+            if (voiceVerification || captcha != null) {
+                throw new UserErrorException("--recovery-key cannot be combined with --voice or --captcha");
+            }
+            try {
+                m.registerWithRecoveryKey(recoveryKey, reregister, totp);
+            } catch (RateLimitException e) {
+                final var message = CommandUtil.getRateLimitMessage(e);
+                throw new RateLimitErrorException(message, e);
+            } catch (TotpRequiredException e) {
+                throw new UserErrorException("A TOTP token is required; rerun register with --totp TOKEN");
+            } catch (IOException e) {
+                throw new IOErrorException("Failed to register: %s (%s)".formatted(e.getMessage(),
+                        e.getClass().getSimpleName()), e);
+            }
+            return;
+        }
+
         try {
             m.register(voiceVerification, captcha, reregister);
         } catch (RateLimitException e) {
@@ -87,6 +130,9 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
             throw new UserErrorException(message);
         } catch (NonNormalizedPhoneNumberException e) {
             throw new UserErrorException("Failed to register: " + e.getMessage(), e);
+        } catch (TotpRequiredException e) {
+            throw new UserErrorException(
+                    "A TOTP token is required; rerun register with --recovery-key RECOVERY-KEY --totp TOKEN");
         } catch (IOException e) {
             throw new IOErrorException("Failed to register: %s (%s)".formatted(e.getMessage(),
                     e.getClass().getSimpleName()), e);
@@ -99,5 +145,11 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
         }
     }
 
-    public record RegistrationParams(Boolean voice, String captcha, Boolean reregister) {}
+    public record RegistrationParams(
+            Boolean voice,
+            String captcha,
+            Boolean reregister,
+            String recoveryKey,
+            String totp
+    ) {}
 }

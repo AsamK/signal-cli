@@ -5,6 +5,7 @@ It supports registering, verifying, sending and receiving messages.
 signal-cli uses a [patched libsignal-service-java](https://github.com/Turasa/libsignal-service-java),
 extracted from the [Signal-Android source code](https://github.com/signalapp/Signal-Android/tree/main/lib/libsignal-service).
 For registering you need a phone number where you can receive SMS or incoming calls.
+Existing accounts without a phone number can be linked from a compatible Signal mobile app.
 
 signal-cli is primarily intended to be used on servers to notify admins of important events.
 For this use-case, it has a daemon mode with JSON-RPC interface ([man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-jsonrpc.5.adoc))
@@ -60,14 +61,16 @@ For a complete usage overview please read
 the [man page](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli.1.adoc) and
 the [wiki](https://github.com/AsamK/signal-cli/wiki).
 
-Important: The ACCOUNT is your phone number in international format and must include the country calling code. Hence it
+For a numbered account, ACCOUNT is your phone number in international format and must include the country calling code. Hence it
 should start with a "+" sign. (See [Wikipedia](https://en.wikipedia.org/wiki/List_of_country_calling_codes) for a list
 of all country codes.)
+For a linked account without a phone number, use its ACI (Account ID) instead.
+See the [wiki](https://github.com/AsamK/signal-cli/wiki) for further documentation.
 
 * Link to an existing account
 
-  If you have an existing Signal account associated
-  with a number, you can link signal-cli to it with:
+  If you have an existing Signal account, with or without a phone number,
+  you can link signal-cli to it with:
 
       signal-cli link
 

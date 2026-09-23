@@ -18,12 +18,14 @@ package org.asamk.signal.manager.internal;
 
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.RegistrationManager;
+import org.asamk.signal.manager.api.BadRequestException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.IncorrectPinException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
+import org.asamk.signal.manager.api.TotpRequiredException;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.manager.config.ServiceConfig;
@@ -33,10 +35,14 @@ import org.asamk.signal.manager.helper.PinHelper;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.NumberVerificationUtils;
+import org.signal.core.models.AccountEntropyPool;
 import org.signal.core.models.MasterKey;
 import org.signal.core.models.ServiceId.ACI;
 import org.signal.core.models.ServiceId.PNI;
 import org.signal.libsignal.usernames.BaseUsernameException;
+import org.signal.network.api.RegistrationApiV2;
+import org.signal.network.api.RegistrationApiV2.RegisterAccountError;
+import org.signal.network.rest.SignalRestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -50,14 +56,24 @@ import org.whispersystems.signalservice.api.svr.SecureValueRecovery;
 import org.whispersystems.signalservice.internal.push.VerifyAccountResponse;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.function.Consumer;
 
+import static org.asamk.signal.manager.internal.ProvisioningManagerImpl.toRegistrationPreKeys;
 import static org.asamk.signal.manager.util.KeyUtils.generatePreKeysForType;
 import static org.asamk.signal.manager.util.Utils.handleResponseException;
+import static org.asamk.signal.manager.util.Utils.handleResponseExceptionSuspend;
 
 public class RegistrationManagerImpl implements RegistrationManager {
 
     private static final Logger logger = LoggerFactory.getLogger(RegistrationManagerImpl.class);
+
+    private static final class RecoveryRequestFailedException extends IOException {
+
+        private RecoveryRequestFailedException(final String message, final Throwable cause) {
+            super(message, cause);
+        }
+    }
 
     private SignalAccount account;
     private final PathConfig pathConfig;
@@ -107,7 +123,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
             boolean voiceVerification,
             String captcha,
             final boolean forceRegister
-    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, VerificationMethodNotAvailableException {
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, TotpRequiredException, VerificationMethodNotAvailableException {
         if (account.isRegistered()
                 && account.getServiceEnvironment() != null
                 && account.getServiceEnvironment() != serviceEnvironmentConfig.type()) {
@@ -128,6 +144,13 @@ public class RegistrationManagerImpl implements RegistrationManager {
             final var recoveryPassword = account.getRecoveryPassword();
             if (recoveryPassword != null && account.isPrimaryDevice() && attemptReregisterAccount(recoveryPassword)) {
                 return;
+            }
+            if (account.getAci() != null && account.getAccountEntropyPool() != null && attemptRecoverAccount(null)) {
+                return;
+            }
+
+            if (account.getNumber() == null) {
+                throw new IOException("Failed to recover account using its ACI and Account Entropy Pool");
             }
 
             final var registrationApi = unauthenticatedAccountManager.getRegistrationApi();
@@ -182,6 +205,108 @@ public class RegistrationManagerImpl implements RegistrationManager {
         }
 
         finishAccountRegistration(response, pin, masterKey, aciPreKeys, pniPreKeys);
+    }
+
+    @Override
+    public void registerWithRecoveryKey(
+            final String recoveryKey,
+            final boolean forceRegister,
+            final Integer totp
+    ) throws IOException, RateLimitException, TotpRequiredException {
+        if (account.getAci() == null) {
+            throw new IOException("Recovery-key registration requires an ACI account identifier");
+        }
+        if (account.isRegistered() && !forceRegister) {
+            throw new IOException("Account is already registered; use --reregister to register it again");
+        }
+        final var accountEntropyPool = AccountEntropyPool.Companion.parseOrNull(recoveryKey);
+        if (accountEntropyPool == null || !AccountEntropyPool.Companion.isFullyValid(accountEntropyPool.getValue())) {
+            throw new IOException("Invalid recovery key");
+        }
+        recoverAccount(totp, false, accountEntropyPool);
+    }
+
+    private boolean attemptRecoverAccount(
+            final Integer totp
+    ) throws IOException, RateLimitException, TotpRequiredException {
+        final var accountEntropyPool = account.getAccountEntropyPool();
+        try {
+            recoverAccount(totp, false, accountEntropyPool);
+            logger.info("Reregistered existing account using its ACI and Account Entropy Pool.");
+            return true;
+        } catch (TotpRequiredException | RateLimitException e) {
+            throw e;
+        } catch (RecoveryRequestFailedException e) {
+            logger.debug("Failed to reregister account using its ACI and Account Entropy Pool", e);
+            return false;
+        }
+    }
+
+    private void recoverAccount(
+            final Integer totp,
+            final boolean includeRegistrationLock,
+            final AccountEntropyPool accountEntropyPool
+    ) throws IOException, RateLimitException, TotpRequiredException {
+        if (account.getPniIdentityKeyPair() == null) {
+            account.setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
+        }
+
+        final var aciPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.ACI));
+        final var pniPreKeys = generatePreKeysForType(account.getAccountData(ServiceIdType.PNI));
+        final var masterKey = accountEntropyPool.deriveMasterKey();
+        final var recoveryPassword = masterKey.deriveRegistrationRecoveryPassword();
+        final var registrationLock = includeRegistrationLock ? masterKey.deriveRegistrationLock() : null;
+        final var restClient = new SignalRestClient(serviceEnvironmentConfig.signalServiceConfiguration(), userAgent);
+        final var registrationApi = new RegistrationApiV2(restClient, true);
+
+        final RegistrationApiV2.RegisterAccountResponse response;
+        try {
+            response = handleResponseExceptionSuspend(cont -> registrationApi.registerAccount(null,
+                    account.getPassword(),
+                    null,
+                    recoveryPassword,
+                    null,
+                    account.getAccountAttributesV2ForRecovery(registrationLock, recoveryPassword),
+                    toRegistrationPreKeys(aciPreKeys),
+                    toRegistrationPreKeys(pniPreKeys),
+                    null,
+                    true,
+                    account.getAci(),
+                    totp,
+                    cont));
+        } catch (BadRequestException e) {
+            switch (e.getError()) {
+                case RegisterAccountError.RegistrationLock ignored -> {
+                    if (includeRegistrationLock) {
+                        throw new RecoveryRequestFailedException("Registration lock recovery failed", e);
+                    }
+                    recoverAccount(totp, true, accountEntropyPool);
+                    return;
+                }
+                case RegisterAccountError.TotpMissingOrIncorrect ignored -> throw new TotpRequiredException();
+                case RegisterAccountError.RegistrationRecoveryPasswordIncorrect ignored ->
+                        throw new RecoveryRequestFailedException("Account key or recovery key is incorrect", e);
+                case RegisterAccountError.RateLimited ignored -> throw new RateLimitException(null);
+                case RegisterAccountError.PostQuantumRatchetRequired ignored ->
+                    throw new IOException("signal-cli is too old to register this account", e);
+                default -> throw new IOException("Signal rejected recovery-key registration", e);
+            }
+        }
+
+        final var aci = ACI.parseOrThrow(response.getAci());
+        final var pni = response.getPni() == null ? null : PNI.parseOrThrow(response.getPni());
+        final var authCredentialSalt = response.getAuthCredentialSalt() == null
+                ? null
+                : Base64.getDecoder().decode(response.getAuthCredentialSalt());
+        account.finishRecoveryRegistration(aci,
+                pni,
+                response.getE164(),
+                accountEntropyPool,
+                authCredentialSalt,
+                aciPreKeys,
+                pni == null ? null : pniPreKeys);
+        accountFileUpdater.updateAccountIdentifiers(response.getE164(), aci);
+        finishManagerRegistration(response.getStorageCapable());
     }
 
     @Override
@@ -291,13 +416,17 @@ public class RegistrationManagerImpl implements RegistrationManager {
         account.finishRegistration(aci, pni, masterKey, pin, aciPreKeys, pniPreKeys);
         accountFileUpdater.updateAccountIdentifiers(account.getNumber(), aci);
 
+        finishManagerRegistration(response.isStorageCapable());
+    }
+
+    private void finishManagerRegistration(final boolean storageCapable) throws IOException {
         ManagerImpl m = null;
         try {
             m = new ManagerImpl(account, pathConfig, accountFileUpdater, serviceEnvironmentConfig, userAgent);
             account = null;
 
             m.refreshPreKeys();
-            if (response.isStorageCapable()) {
+            if (storageCapable) {
                 m.syncRemoteStorage();
             }
             // Set an initial empty profile so user can be added to groups

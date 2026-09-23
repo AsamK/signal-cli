@@ -1,6 +1,7 @@
 package org.asamk.signal.jsonrpc;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ContainerNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 
+import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,8 @@ import java.util.stream.StreamSupport;
 public class JsonRpcReader {
 
     private static final Logger logger = LoggerFactory.getLogger(JsonRpcReader.class);
+    private static final int MAX_JSON_STRING_LENGTH =
+            ((ServiceConfig.MAX_ATTACHMENT_SIZE + 2) / 3) * 4 + 1024;
 
     private final JsonRpcSender jsonRpcSender;
     private final ObjectMapper objectMapper;
@@ -34,14 +38,22 @@ public class JsonRpcReader {
         this.jsonRpcSender = jsonRpcSender;
         this.input = null;
         this.lineSupplier = lineSupplier;
-        this.objectMapper = Util.createJsonObjectMapper();
+        this.objectMapper = createObjectMapper();
     }
 
     public JsonRpcReader(final JsonRpcSender jsonRpcSender, final InputStream input) {
         this.jsonRpcSender = jsonRpcSender;
         this.input = input;
         this.lineSupplier = null;
-        this.objectMapper = Util.createJsonObjectMapper();
+        this.objectMapper = createObjectMapper();
+    }
+
+    private static ObjectMapper createObjectMapper() {
+        final var objectMapper = Util.createJsonObjectMapper();
+        objectMapper.getFactory().setStreamReadConstraints(StreamReadConstraints.builder()
+                .maxStringLength(MAX_JSON_STRING_LENGTH)
+                .build());
+        return objectMapper;
     }
 
     public void readMessages(final RequestHandler requestHandler, final Consumer<JsonRpcResponse> responseHandler) {

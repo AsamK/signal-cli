@@ -34,14 +34,14 @@ public record JsonQuote(
                 : null;
 
         final var attachments = !quote.attachments().isEmpty() ? quote.attachments()
-                                                                 .stream()
-                                                                 .map(JsonQuotedAttachment::from)
-                                                                 .toList() : List.<JsonQuotedAttachment>of();
+                .stream()
+                .map(JsonQuotedAttachment::from)
+                .toList() : List.<JsonQuotedAttachment>of();
 
         final var textStyles = !quote.textStyles().isEmpty() ? quote.textStyles()
-                                                               .stream()
-                                                               .map(JsonTextStyle::from)
-                                                               .toList() : null;
+                .stream()
+                .map(JsonTextStyle::from)
+                .toList() : null;
 
         return new JsonQuote(id, author, authorNumber, authorUuid, text, mentions, attachments, textStyles);
     }

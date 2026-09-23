@@ -40,13 +40,6 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
-    public List<String> getAccountNumbers() {
-        synchronized (managers) {
-            return managers.stream().map(Manager::getSelfNumber).toList();
-        }
-    }
-
-    @Override
     public List<Manager> getManagers() {
         synchronized (managers) {
             return new ArrayList<>(managers);
@@ -121,7 +114,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
             } else {
                 // Phone number — check already loaded managers
                 var existing = managers.stream()
-                        .filter(m -> m.getSelfNumber().equals(identifier))
+                        .filter(m -> identifier.equals(m.getSelfNumber()))
                         .findFirst()
                         .orElse(null);
                 if (existing != null) {

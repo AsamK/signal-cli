@@ -99,6 +99,14 @@ public interface Manager extends Closeable {
     String getSelfACI();
 
     /**
+     * Returns the phone number for numbered accounts, or the ACI for numberless accounts.
+     */
+    default String getSelfIdentifier() {
+        final var number = getSelfNumber();
+        return number != null ? number : getSelfACI();
+    }
+
+    /**
      * This is used for checking a set of phone numbers for registration on Signal
      *
      * @param numbers The set of phone number in question

@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.helper;
 
+import org.asamk.signal.manager.api.BadRequestException;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.DeviceLinkUrl;
 import org.asamk.signal.manager.api.IncorrectPinException;
@@ -27,6 +28,7 @@ import org.signal.libsignal.protocol.state.SignedPreKeyRecord;
 import org.signal.libsignal.protocol.util.KeyHelper;
 import org.signal.libsignal.usernames.BaseUsernameException;
 import org.signal.libsignal.usernames.Username;
+import org.signal.network.api.AccountApiV2.SetAccountAttributesError;
 import org.signal.network.exceptions.NonSuccessfulResponseCodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,10 +98,10 @@ public class AccountHelper {
             } else {
                 context.getPreKeyHelper().refreshPreKeysIfNecessary();
             }
-            if (account.getPni() == null) {
+            if (account.getPni() == null && account.getNumber() != null) {
                 checkWhoAmiI();
             }
-            if (!account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
+            if (!account.isPrimaryDevice() && account.getPni() != null && account.getPniIdentityKeyPair() == null) {
                 throw new IOException("Missing PNI identity key, relinking required");
             }
             if (account.getPreviousStorageVersion() < 10
@@ -138,8 +140,9 @@ public class AccountHelper {
         final var whoAmI = dependencies.getAccountManager().getWhoAmI();
         final var number = whoAmI.getNumber();
         final var aci = ACI.parseOrThrow(whoAmI.getAci());
-        final var pni = PNI.parseOrThrow(whoAmI.getPni());
-        if (number.equals(account.getNumber()) && aci.equals(account.getAci()) && pni.equals(account.getPni())) {
+        final var pni = whoAmI.getPni() == null ? null : PNI.parseOrThrow(whoAmI.getPni());
+        if (Objects.equals(number, account.getNumber()) && aci.equals(account.getAci()) && Objects.equals(pni,
+                account.getPni())) {
             return;
         }
 
@@ -150,7 +153,7 @@ public class AccountHelper {
         account.setNumber(number);
         account.setAci(aci);
         account.setPni(pni);
-        if (account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
+        if (pni != null && account.isPrimaryDevice() && account.getPniIdentityKeyPair() == null) {
             account.setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
         account.getRecipientTrustedResolver().resolveSelfRecipientTrusted(account.getSelfRecipientAddress());
@@ -564,7 +567,20 @@ public class AccountHelper {
     }
 
     public void updateAccountAttributes() throws IOException {
-        handleResponseException(dependencies.getAccountApi().setAccountAttributes(account.getAccountAttributes(null)));
+        if (account.getNumber() != null) {
+            handleResponseException(dependencies.getAccountApi()
+                    .setAccountAttributes(account.getAccountAttributes(null)));
+            return;
+        }
+        try {
+            handleResponseExceptionSuspend(cont -> dependencies.getAccountApiV2()
+                    .setAccountAttributes(account.getAccountAttributesV2(), cont));
+        } catch (BadRequestException e) {
+            if (e.getError() instanceof SetAccountAttributesError.Unauthorized) {
+                throw new AuthorizationFailedException(401, "Authorization failed!");
+            }
+            throw new IOException("Account attribute update rate limited; try again later");
+        }
     }
 
     public void addDevice(DeviceLinkUrl deviceLinkInfo) throws IOException, org.asamk.signal.manager.api.DeviceLimitExceededException {

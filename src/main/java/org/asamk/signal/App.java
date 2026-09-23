@@ -142,7 +142,7 @@ public class App {
         final var outputWriter = getOutputWriter(command);
         final var commandHandler = new CommandHandler(ns, outputWriter);
 
-        var account = ns.getString("account");
+        var account = AccountIdentifier.normalize(ns.getString("account"));
 
         final var useDbus = Boolean.TRUE.equals(ns.getBoolean("global-dbus"));
         final var useDbusSystem = Boolean.TRUE.equals(ns.getBoolean("global-dbus-system"));
@@ -187,8 +187,8 @@ public class App {
         }
 
         if (command instanceof RegistrationCommand registrationCommand) {
-            if (!Manager.isValidNumber(account, null)) {
-                throw new UserErrorException("Invalid account (phone number), make sure you include the country code.");
+            if (!Manager.isValidNumber(account, null) && !Manager.isValidAci(account)) {
+                throw new UserErrorException("Invalid account (E164 phone number or Account Key).");
             }
             handleRegistrationCommand(registrationCommand, account, signalAccountFiles, commandHandler);
             return;
@@ -208,14 +208,15 @@ public class App {
     private static String getAccountIfOnlyOne(final SignalAccountFiles signalAccountFiles) throws IOErrorException, UserErrorException {
         Set<String> accounts;
         try {
-            accounts = signalAccountFiles.getAllLocalAccountNumbers();
+            accounts = signalAccountFiles.getAllLocalAccountIdentifiers();
         } catch (IOException e) {
             throw new IOErrorException("Failed to load local accounts file", e);
         }
         if (accounts.isEmpty()) {
             throw new UserErrorException("No local users found, you first need to register or link an account");
         } else if (accounts.size() > 1) {
-            throw new UserErrorException("Multiple users found, you need to specify an account (phone number) with -a");
+            throw new UserErrorException(
+                    "Multiple users found, you need to specify an account (phone number or ACI) with -a");
         }
         return accounts.stream().findFirst().get();
     }
@@ -223,9 +224,9 @@ public class App {
     private OutputWriter getOutputWriter(final Command command) throws UserErrorException {
         final var outputTypeInput = ns.<OutputType>get("output");
         final var outputType = outputTypeInput == null ? command.getSupportedOutputTypes()
-                                                         .stream()
-                                                         .findFirst()
-                                                         .orElse(null) : outputTypeInput;
+                .stream()
+                .findFirst()
+                .orElse(null) : outputTypeInput;
         final var writer = new BufferedWriter(new OutputStreamWriter(System.out, IOUtils.getConsoleCharset()));
         final var outputWriter = outputType == null
                 ? null
