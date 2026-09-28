@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URI;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,7 +45,7 @@ class SseInitialFlushTest {
     void setUp() throws Exception {
         port = freePort();
         final Manager manager = ManagerMock.create("+10000000000");
-        handler = new HttpServerHandler(new InetSocketAddress("127.0.0.1", port), manager);
+        handler = new HttpServerHandler(new InetSocketAddress("127.0.0.1", port), Duration.ofSeconds(15), manager);
         handler.init();
     }
 
