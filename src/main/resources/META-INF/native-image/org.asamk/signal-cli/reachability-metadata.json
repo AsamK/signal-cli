@@ -9584,6 +9584,61 @@
       ]
     },
     {
+      "type": "org.whispersystems.signalservice.internal.push.StickerUploadAttributes",
+      "fields": [
+        {
+          "name": "acl"
+        },
+        {
+          "name": "algorithm"
+        },
+        {
+          "name": "credential"
+        },
+        {
+          "name": "date"
+        },
+        {
+          "name": "id"
+        },
+        {
+          "name": "key"
+        },
+        {
+          "name": "policy"
+        },
+        {
+          "name": "signature"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.push.StickerUploadAttributesResponse",
+      "fields": [
+        {
+          "name": "manifest"
+        },
+        {
+          "name": "packId"
+        },
+        {
+          "name": "stickers"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.whispersystems.signalservice.internal.push.SubmitRecaptchaChallengePayload",
       "allDeclaredFields": true
     },
