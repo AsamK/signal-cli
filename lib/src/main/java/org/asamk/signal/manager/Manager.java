@@ -17,6 +17,7 @@ import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
+import org.asamk.signal.manager.api.HistoryExportResult;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
@@ -367,6 +368,16 @@ public interface Manager extends Closeable {
     List<StickerPack> getStickerPacks();
 
     void requestAllSyncData() throws IOException;
+
+    /**
+     * Exports a linked-device history transfer using the same message model as live receive.
+     */
+    default HistoryExportResult exportHistory(
+            final ReceiveMessageHandler handler,
+            final boolean deleteAfterExport
+    ) throws IOException {
+        throw new UnsupportedOperationException("History export is not supported by this manager backend");
+    }
 
     /**
      * Add a handler to receive new messages.

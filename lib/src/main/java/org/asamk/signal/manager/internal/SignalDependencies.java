@@ -8,6 +8,7 @@ import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.libsignal.net.Network;
 import org.signal.libsignal.protocol.SignalProtocolAddress;
 import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
+import org.signal.network.NetworkResult;
 import org.signal.network.api.AccountApiV2;
 import org.signal.network.api.AttachmentApi;
 import org.signal.network.api.CallingApi;
@@ -19,6 +20,7 @@ import org.signal.network.api.UsernameApi;
 import org.signal.network.rest.SignalRestClient;
 import org.signal.network.service.CdnService;
 import org.signal.network.service.StorageServiceService;
+import org.signal.network.websocket.WebSocketRequestMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountManager;
@@ -33,6 +35,7 @@ import org.whispersystems.signalservice.api.groupsv2.GroupsV2Api;
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations;
 import org.whispersystems.signalservice.api.keys.KeysApi;
 import org.whispersystems.signalservice.api.keys.PreKeyRepository;
+import org.whispersystems.signalservice.api.link.TransferArchiveResponse;
 import org.whispersystems.signalservice.api.message.MessageApi;
 import org.whispersystems.signalservice.api.profiles.ProfileApi;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
@@ -56,9 +59,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import kotlin.jvm.JvmClassMappingKt;
+
 public class SignalDependencies {
 
     private static final Logger logger = LoggerFactory.getLogger(SignalDependencies.class);
+    private static final int HISTORY_TRANSFER_SERVER_POLL_SECONDS = 5;
 
     private final Object LOCK = new Object();
 
@@ -252,6 +258,21 @@ public class SignalDependencies {
     public LinkDeviceApi getLinkDeviceApi() {
         return getOrCreate(() -> linkDeviceApi,
                 () -> linkDeviceApi = new LinkDeviceApi(getAuthenticatedSignalWebSocket()));
+    }
+
+    public NetworkResult<TransferArchiveResponse> waitForPrimaryDeviceHistory() {
+        // LinkDeviceApi exposes this operation with a Kotlin Duration parameter, whose JVM method name is
+        // mangled and therefore cannot be called from Java. Keep the same typed converter over the public
+        // authenticated websocket until signal-network provides a Java-callable overload. The server poll
+        // stays below SignalWebSocket.request's 10-second client timeout.
+        final var request = new WebSocketRequestMessage.Builder()
+                .verb("GET")
+                .path("/v1/devices/transfer_archive?timeout=" + HISTORY_TRANSFER_SERVER_POLL_SECONDS)
+                .build();
+        final var converter = new NetworkResult.LongPollingWebSocketConverter<>(JvmClassMappingKt.getKotlinClass(
+                TransferArchiveResponse.class));
+        return NetworkResult.Companion.fromWebSocket(converter,
+                () -> getAuthenticatedSignalWebSocket().request(request));
     }
 
     private StorageServiceApi getStorageServiceApi() {

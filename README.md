@@ -74,6 +74,16 @@ See the [wiki](https://github.com/AsamK/signal-cli/wiki) for further documentati
 
       signal-cli link
 
+  To let the primary device offer a message-history transfer while linking, use:
+
+      signal-cli link --import-history
+
+  After a successful transfer, export the history as receive-compatible JSON lines with:
+
+      signal-cli -a ACCOUNT --output=json export-history
+
+  Attachment metadata is included in exported messages; attachment payloads are not downloaded.
+
 * Register a number (with SMS verification)
 
   Alternatively, if you don't have an existing Signal

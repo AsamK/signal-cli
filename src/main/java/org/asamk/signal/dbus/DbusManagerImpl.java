@@ -18,6 +18,7 @@ import org.asamk.signal.manager.api.GroupMember;
 import org.asamk.signal.manager.api.GroupNotFoundException;
 import org.asamk.signal.manager.api.GroupPermission;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
+import org.asamk.signal.manager.api.HistoryExportResult;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.IdentityVerificationCode;
 import org.asamk.signal.manager.api.InactiveGroupLinkException;
@@ -695,6 +696,14 @@ public class DbusManagerImpl implements Manager {
     @Override
     public void requestAllSyncData() throws IOException {
         signal.sendSyncRequest();
+    }
+
+    @Override
+    public HistoryExportResult exportHistory(
+            final ReceiveMessageHandler handler,
+            final boolean deleteAfterExport
+    ) {
+        throw new UnsupportedOperationException("History export is only available with a local account store");
     }
 
     @Override

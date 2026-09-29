@@ -3720,6 +3720,52 @@
       "type": "org.asamk.signal.manager.internal.SignalWebSocketHealthMonitor$KeepAliveSender"
     },
     {
+      "type": "org.asamk.signal.manager.helper.HistoryTransferStore$Metadata",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "int",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.Integer",
+            "java.lang.String",
+            "long"
+          ]
+        },
+        {
+          "name": "aci",
+          "parameterTypes": []
+        },
+        {
+          "name": "backupKey",
+          "parameterTypes": []
+        },
+        {
+          "name": "cdn",
+          "parameterTypes": []
+        },
+        {
+          "name": "cdnKey",
+          "parameterTypes": []
+        },
+        {
+          "name": "createdAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "generation",
+          "parameterTypes": []
+        },
+        {
+          "name": "version",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.manager.storage.SignalAccount$Storage",
       "allDeclaredFields": true,
       "methods": [

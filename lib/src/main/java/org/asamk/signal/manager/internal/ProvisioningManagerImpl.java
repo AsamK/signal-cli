@@ -29,6 +29,7 @@ import org.signal.core.models.AccountEntropyPool;
 import org.signal.core.models.ServiceId.ACI;
 import org.signal.core.models.ServiceId.PNI;
 import org.signal.core.models.backup.MediaRootBackupKey;
+import org.signal.core.models.backup.MessageBackupKey;
 import org.signal.core.util.crypto.DeviceNameCipher;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
@@ -82,9 +83,11 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
     private final AccountsStore accountsStore;
 
     private final String password;
+    private final IdentityKeyPair tempIdentityKey;
     private final CompletableFuture<String> urlFuture = new CompletableFuture<>();
     private final CompletableFuture<SecondaryProvisioningCipher.ProvisioningDecryptResult<ProvisionMessage>> messageFuture = new CompletableFuture<>();
-    private final Closeable socketHandle;
+    private Closeable socketHandle;
+    private Boolean historyRequested;
 
     public ProvisioningManagerImpl(
             PathConfig pathConfig,
@@ -99,25 +102,21 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
         this.newManagerListener = newManagerListener;
         this.accountsStore = accountsStore;
 
-        final IdentityKeyPair tempIdentityKey = KeyUtils.generateIdentityKeyPair();
+        tempIdentityKey = KeyUtils.generateIdentityKeyPair();
         password = KeyUtils.createPassword();
-
-        socketHandle = ProvisioningSocket.Companion.start(new ProvisioningSocket.Mode.Link(false),
-                tempIdentityKey,
-                serviceEnvironmentConfig.signalServiceConfiguration(),
-                (id, t) -> {
-                    urlFuture.completeExceptionally(t);
-                    messageFuture.completeExceptionally(t);
-                },
-                new ProvisioningBlock());
     }
 
     @Override
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
+        return getDeviceLinkUri(false);
+    }
+
+    @Override
+    public URI getDeviceLinkUri(final boolean importHistory) throws TimeoutException, IOException {
+        startSocket(importHistory);
         try {
             var url = urlFuture.get(30, TimeUnit.SECONDS);
-            // Mode.Link(false) does not advertise any capabilities itself.
-            return new URI(url + "&capabilities=nopni");
+            return withCapabilities(url, importHistory);
         } catch (java.util.concurrent.TimeoutException e) {
             throw new TimeoutException("Timed out waiting for provisioning URL");
         } catch (InterruptedException e) {
@@ -132,6 +131,15 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
 
     @Override
     public String finishDeviceLink(String deviceName) throws IOException, TimeoutException, UserAlreadyExistsException {
+        return finishDeviceLink(deviceName, false);
+    }
+
+    @Override
+    public String finishDeviceLink(
+            final String deviceName,
+            final boolean importHistory
+    ) throws IOException, TimeoutException, UserAlreadyExistsException {
+        startSocket(importHistory);
         SecondaryProvisioningCipher.ProvisioningDecryptResult<ProvisionMessage> decryptResult;
         try {
             decryptResult = messageFuture.get(120, TimeUnit.SECONDS);
@@ -271,6 +279,21 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
                             e);
                 }
 
+                if (importHistory && msg.ephemeralBackupKey != null && msg.ephemeralBackupKey.size() > 0) {
+                    final MessageBackupKey backupKey;
+                    try {
+                        backupKey = new MessageBackupKey(msg.ephemeralBackupKey.toByteArray());
+                    } catch (IllegalArgumentException e) {
+                        throw new IOException("Primary device provided an invalid history backup key", e);
+                    }
+                    final var outcome = m.downloadLinkHistory(backupKey);
+                    if (outcome == org.asamk.signal.manager.helper.HistoryTransferHelper.DownloadOutcome.DECLINED) {
+                        logger.info("Primary device continued without transferring message history");
+                    }
+                } else if (importHistory) {
+                    logger.info("Primary device continued without transferring message history");
+                }
+
                 if (newManagerListener != null) {
                     newManagerListener.accept(m);
                     m = null;
@@ -361,7 +384,42 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
 
     @Override
     public void close() throws IOException {
-        socketHandle.close();
+        if (socketHandle != null) {
+            socketHandle.close();
+        }
+    }
+
+    static URI withCapabilities(final String url, final boolean importHistory) throws URISyntaxException {
+        if (!importHistory) {
+            return new URI(url + (url.contains("?") ? "&" : "?") + "capabilities=nopni");
+        }
+        final var marker = "capabilities=backup5";
+        final var markerIndex = url.indexOf(marker);
+        final var markerEnd = markerIndex + marker.length();
+        if (markerIndex < 0
+                || (markerIndex > 0 && url.charAt(markerIndex - 1) != '?' && url.charAt(markerIndex - 1) != '&')
+                || (markerEnd < url.length() && url.charAt(markerEnd) != '&' && url.charAt(markerEnd) != '#')) {
+            throw new URISyntaxException(url, "History-capable provisioning URL is missing backup5");
+        }
+        return new URI(url.substring(0, markerEnd) + ",nopni" + url.substring(markerEnd));
+    }
+
+    private synchronized void startSocket(final boolean importHistory) throws IOException {
+        if (historyRequested != null) {
+            if (historyRequested != importHistory) {
+                throw new IOException("Provisioning mode cannot be changed after generating the link URI");
+            }
+            return;
+        }
+        historyRequested = importHistory;
+        socketHandle = ProvisioningSocket.Companion.start(new ProvisioningSocket.Mode.Link(importHistory),
+                tempIdentityKey,
+                serviceEnvironmentConfig.signalServiceConfiguration(),
+                (id, t) -> {
+                    urlFuture.completeExceptionally(t);
+                    messageFuture.completeExceptionally(t);
+                },
+                new ProvisioningBlock());
     }
 
     private void cleanupPartialAccount(final SignalAccount account, final String accountPath, final Exception cause) {
