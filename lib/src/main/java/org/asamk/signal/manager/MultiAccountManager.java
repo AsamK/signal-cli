@@ -18,6 +18,13 @@ public interface MultiAccountManager extends AutoCloseable {
 
     URI getNewProvisioningDeviceLinkUri() throws TimeoutException, IOException;
 
+    default URI getNewProvisioningDeviceLinkUri(final boolean importHistory) throws TimeoutException, IOException {
+        if (importHistory) {
+            throw new UnsupportedOperationException("History transfer is not supported by this manager backend");
+        }
+        return getNewProvisioningDeviceLinkUri();
+    }
+
     ProvisioningManager getProvisioningManagerFor(URI deviceLinkUri);
 
     RegistrationManager getNewRegistrationManager(String account) throws IOException;

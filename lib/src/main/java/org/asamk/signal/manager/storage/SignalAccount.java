@@ -202,6 +202,10 @@ public class SignalAccount implements Closeable {
         return dataPath;
     }
 
+    public File getAccountDataPath() {
+        return getUserPath(dataPath, accountPath);
+    }
+
     public static SignalAccount load(
             File dataPath,
             String accountPath,

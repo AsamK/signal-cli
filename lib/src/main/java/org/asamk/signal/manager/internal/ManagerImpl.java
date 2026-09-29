@@ -31,6 +31,7 @@ import org.asamk.signal.manager.api.Group;
 import org.asamk.signal.manager.api.GroupId;
 import org.asamk.signal.manager.api.GroupInviteLinkUrl;
 import org.asamk.signal.manager.api.GroupNotFoundException;
+import org.asamk.signal.manager.api.HistoryExportResult;
 import org.asamk.signal.manager.api.GroupSendingNotAllowedException;
 import org.asamk.signal.manager.api.Identity;
 import org.asamk.signal.manager.api.IdentityVerificationCode;
@@ -76,6 +77,7 @@ import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.helper.AccountFileUpdater;
 import org.asamk.signal.manager.helper.Context;
+import org.asamk.signal.manager.helper.HistoryTransferHelper;
 import org.asamk.signal.manager.helper.RecipientHelper.RegisteredUser;
 import org.asamk.signal.manager.jobs.RefreshRecipientsJob;
 import org.asamk.signal.manager.jobs.SyncStorageJob;
@@ -98,6 +100,7 @@ import org.asamk.signal.manager.util.StickerUtils;
 import org.signal.core.models.ServiceId;
 import org.signal.core.models.ServiceId.ACI;
 import org.signal.core.models.ServiceId.PNI;
+import org.signal.core.models.backup.MessageBackupKey;
 import org.signal.core.util.Hex;
 import org.signal.core.util.crypto.DeviceName;
 import org.signal.core.util.crypto.DeviceNameCipher;
@@ -1498,6 +1501,19 @@ public class ManagerImpl implements Manager {
     public void requestAllSyncData() {
         context.getSyncHelper().requestAllSyncData();
         syncRemoteStorage();
+    }
+
+    @Override
+    public HistoryExportResult exportHistory(
+            final ReceiveMessageHandler handler,
+            final boolean deleteAfterExport
+    ) throws IOException {
+        return new HistoryTransferHelper(context).export(handler, deleteAfterExport);
+    }
+
+    HistoryTransferHelper.DownloadOutcome downloadLinkHistory(final MessageBackupKey ephemeralBackupKey)
+            throws IOException {
+        return new HistoryTransferHelper(context).saveAndDownload(ephemeralBackupKey);
     }
 
     void syncRemoteStorage() {

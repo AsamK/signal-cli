@@ -135,8 +135,13 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
 
     @Override
     public URI getNewProvisioningDeviceLinkUri() throws TimeoutException, IOException {
+        return getNewProvisioningDeviceLinkUri(false);
+    }
+
+    @Override
+    public URI getNewProvisioningDeviceLinkUri(final boolean importHistory) throws TimeoutException, IOException {
         final var provisioningManager = getNewProvisioningManager();
-        final var deviceLinkUri = provisioningManager.getDeviceLinkUri();
+        final var deviceLinkUri = provisioningManager.getDeviceLinkUri(importHistory);
         provisioningManagers.put(deviceLinkUri, provisioningManager);
         return deviceLinkUri;
     }

@@ -15,6 +15,7 @@ public class Commands {
         addCommand(new BlockCommand());
         addCommand(new DaemonCommand());
         addCommand(new DeleteLocalAccountDataCommand());
+        addCommand(new ExportHistoryCommand());
         addCommand(new FinishChangeNumberCommand());
         addCommand(new FinishLinkCommand());
         addCommand(new HangupCallCommand());
