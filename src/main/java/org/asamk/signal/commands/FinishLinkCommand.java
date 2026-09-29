@@ -56,7 +56,7 @@ public class FinishLinkCommand implements JsonRpcMultiCommand<FinishLinkCommand.
         }
         final String identifier;
         try {
-            identifier = provisioningManager.finishDeviceLink(deviceName);
+            identifier = provisioningManager.finishDeviceLink(deviceName, Boolean.TRUE.equals(request.importHistory()));
         } catch (TimeoutException e) {
             throw new UserErrorException("Link request timed out, please try again.");
         } catch (IOException e) {
@@ -77,7 +77,7 @@ public class FinishLinkCommand implements JsonRpcMultiCommand<FinishLinkCommand.
         jsonWriter.write(new JsonFinishLink(manager.getSelfNumber(), manager.getSelfACI()));
     }
 
-    public record FinishLinkParams(String deviceLinkUri, String deviceName) {}
+    public record FinishLinkParams(String deviceLinkUri, String deviceName, Boolean importHistory) {}
 
     private record JsonFinishLink(String number, String aci) {}
 }
