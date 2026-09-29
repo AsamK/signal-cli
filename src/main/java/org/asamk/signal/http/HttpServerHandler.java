@@ -5,13 +5,13 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import org.asamk.signal.commands.Commands;
-import org.asamk.signal.json.JsonReceiveMessageHandler;
 import org.asamk.signal.jsonrpc.JsonRpcReader;
 import org.asamk.signal.jsonrpc.JsonRpcResponse;
 import org.asamk.signal.jsonrpc.JsonRpcSender;
 import org.asamk.signal.jsonrpc.SignalJsonRpcCommandHandler;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.MultiAccountManager;
+import org.asamk.signal.manager.api.MessageEnvelope;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.util.Util;
 import org.slf4j.Logger;
@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +35,7 @@ public class HttpServerHandler implements AutoCloseable {
     private final ObjectMapper objectMapper = Util.createJsonObjectMapper();
 
     private final InetSocketAddress address;
+    private final Duration keepAliveInterval;
 
     private final SignalJsonRpcCommandHandler commandHandler;
     private final MultiAccountManager c;
@@ -41,17 +43,24 @@ public class HttpServerHandler implements AutoCloseable {
     private HttpServer server;
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private final Set<String> allowedHosts;
+    private final SseEventBuffer eventBuffer = new SseEventBuffer(objectMapper);
 
-    public HttpServerHandler(final InetSocketAddress address, final Manager m) {
+    public HttpServerHandler(final InetSocketAddress address, final Duration keepAliveInterval, final Manager m) {
         this.address = address;
+        this.keepAliveInterval = keepAliveInterval;
         commandHandler = new SignalJsonRpcCommandHandler(m, Commands::getCommand);
         this.c = null;
         this.m = m;
         this.allowedHosts = buildAllowedHosts(address);
     }
 
-    public HttpServerHandler(final InetSocketAddress address, final MultiAccountManager c) {
+    public HttpServerHandler(
+            final InetSocketAddress address,
+            final Duration keepAliveInterval,
+            final MultiAccountManager c
+    ) {
         this.address = address;
+        this.keepAliveInterval = keepAliveInterval;
         commandHandler = new SignalJsonRpcCommandHandler(c, Commands::getCommand);
         this.c = c;
         this.m = null;
@@ -93,6 +102,7 @@ public class HttpServerHandler implements AutoCloseable {
             // Increase this delay when https://bugs.openjdk.org/browse/JDK-8304065 is fixed
             server.stop(2);
             server = null;
+            eventBuffer.close();
             shutdown.set(false);
         }
     }
@@ -199,22 +209,27 @@ public class HttpServerHandler implements AutoCloseable {
 
             // Flush HTTP response headers to the client immediately.
             // Without this, the JVM HttpServer buffers everything until a later write
-            // in the keep-alive loop (15 s), causing clients with shorter timeouts
+            // in the keep-alive loop, causing clients with shorter timeouts
             // (e.g. 10 s) to abort before receiving the initial response.
             httpExchange.getResponseBody().flush();
 
             final var shouldStop = new AtomicBoolean(false);
-            final var handlers = subscribeReceiveHandlers(managers, sender, () -> {
-                shouldStop.set(true);
-                synchronized (this) {
-                    this.notifyAll();
-                }
-            });
+            managers.forEach(eventBuffer::record);
+            final var client = eventBuffer.connect(managers,
+                    sender,
+                    httpExchange.getRequestHeaders().getFirst("Last-Event-ID"),
+                    () -> {
+                        shouldStop.set(true);
+                        synchronized (this) {
+                            this.notifyAll();
+                        }
+                    });
+            final var handlers = subscribeReceiveHandlers(managers);
 
             try {
                 while (true) {
                     synchronized (this) {
-                        wait(15_000);
+                        wait(keepAliveInterval.toMillis());
                     }
                     if (shouldStop.get() || shutdown.get()) {
                         break;
@@ -227,6 +242,7 @@ public class HttpServerHandler implements AutoCloseable {
                     }
                 }
             } finally {
+                eventBuffer.disconnect(client);
                 for (final var pair : handlers) {
                     unsubscribeReceiveHandler(pair);
                 }
@@ -276,19 +292,17 @@ public class HttpServerHandler implements AutoCloseable {
         throw new AssertionError("Unreachable state");
     }
 
-    private List<Pair<Manager, Manager.ReceiveMessageHandler>> subscribeReceiveHandlers(
-            final List<Manager> managers,
-            final ServerSentEventSender sender,
-            Callable unsubscribe
-    ) {
+    /**
+     * The events are sent by eventBuffer, these handlers only keep the managers receiving while the client is connected.
+     */
+    private List<Pair<Manager, Manager.ReceiveMessageHandler>> subscribeReceiveHandlers(final List<Manager> managers) {
         return managers.stream().map(m1 -> {
-            final var receiveMessageHandler = new JsonReceiveMessageHandler(m1, s -> {
-                try {
-                    sender.sendEvent(null, "receive", List.of(objectMapper.writeValueAsString(s)));
-                } catch (IOException e) {
-                    unsubscribe.call();
+            // An anonymous class instead of a lambda, as every connection needs its own handler instance
+            final var receiveMessageHandler = new Manager.ReceiveMessageHandler() {
+                @Override
+                public void handleMessage(final MessageEnvelope envelope, final Throwable e) {
                 }
-            });
+            };
             m1.addReceiveHandler(receiveMessageHandler);
             return new Pair<>(m1, (Manager.ReceiveMessageHandler) receiveMessageHandler);
         }).toList();
@@ -298,11 +312,6 @@ public class HttpServerHandler implements AutoCloseable {
         final var m = pair.first();
         final var handler = pair.second();
         m.removeReceiveHandler(handler);
-    }
-
-    private interface Callable {
-
-        void call();
     }
 
     private Set<String> buildAllowedHosts(final InetSocketAddress address) {

@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.Channel;
 import java.nio.channels.ServerSocketChannel;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SequencedCollection;
@@ -69,6 +70,10 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
                 .nargs("?")
                 .setConst("localhost:8080")
                 .help("Expose a JSON-RPC interface as http endpoint (default localhost:8080).");
+        subparser.addArgument("--sse-keepalive-interval")
+                .type(int.class)
+                .setDefault(15)
+                .help("Seconds between keep-alive messages on the http events endpoint (default 15).");
         subparser.addArgument("--no-receive-stdout")
                 .help("Don’t print received messages to stdout.")
                 .action(Arguments.storeTrue());
@@ -188,7 +193,11 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         final var httpAddress = ns.getString("http");
         if (httpAddress != null) {
             final var address = IOUtils.parseInetSocketAddress(httpAddress);
-            daemonHandler.runHttp(address);
+            final var keepAliveInterval = ns.getInt("sse-keepalive-interval");
+            if (keepAliveInterval < 1) {
+                throw new UserErrorException("--sse-keepalive-interval must be at least 1 second.");
+            }
+            daemonHandler.runHttp(address, Duration.ofSeconds(keepAliveInterval));
         }
 
         final var isDbusSystem = Boolean.TRUE.equals(ns.getBoolean("dbus-system"));
@@ -235,7 +244,10 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
         public abstract void runDbus(boolean isDbusSystem, final String busname) throws CommandException;
 
-        public abstract void runHttp(InetSocketAddress address) throws CommandException;
+        public abstract void runHttp(
+                InetSocketAddress address,
+                Duration keepAliveInterval
+        ) throws CommandException;
 
         protected final void runSocket(final SocketHandler socketHandler) {
             socketHandler.init();
@@ -291,8 +303,11 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         }
 
         @Override
-        public void runHttp(InetSocketAddress address) throws CommandException {
-            runHttp(new HttpServerHandler(address, m));
+        public void runHttp(
+                final InetSocketAddress address,
+                final Duration keepAliveInterval
+        ) throws CommandException {
+            runHttp(new HttpServerHandler(address, keepAliveInterval, m));
         }
     }
 
@@ -316,8 +331,11 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         }
 
         @Override
-        public void runHttp(final InetSocketAddress address) throws CommandException {
-            runHttp(new HttpServerHandler(address, c));
+        public void runHttp(
+                final InetSocketAddress address,
+                final Duration keepAliveInterval
+        ) throws CommandException {
+            runHttp(new HttpServerHandler(address, keepAliveInterval, c));
         }
     }
 }
