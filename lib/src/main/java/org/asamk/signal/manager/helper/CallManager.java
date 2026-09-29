@@ -276,8 +276,12 @@ public class CallManager implements AutoCloseable {
         answerMsg.put("receiverIdentityKey", java.util.Base64.getEncoder().encodeToString(localIdentityKey));
         sendControlMessage(state, writeJson(answerMsg));
 
-        state.deviceId = deviceId;
-        state.state = CallInfo.State.CONNECTING;
+        if (!Boolean.TRUE.equals(state.multiDeviceSignaling)) {
+            state.deviceId = deviceId;
+        }
+        if (state.state != CallInfo.State.CONNECTED && state.state != CallInfo.State.RECONNECTING) {
+            state.state = CallInfo.State.CONNECTING;
+        }
         fireCallEvent(state, null);
 
         logger.debug("Received answer for call {}", callIdUnsigned(callId));
@@ -300,18 +304,62 @@ public class CallManager implements AutoCloseable {
         logger.debug("Forwarded ICE candidate to tunnel for call {}", callIdUnsigned(callId));
     }
 
-    public void handleIncomingHangup(final long callId) {
-        if (callEventListeners.isEmpty() && !activeCalls.containsKey(callId)) {
+    public void handleIncomingHangup(final RecipientId sender, final long callId, final int senderDeviceId,
+            final HangupMessage.Type type, final int deviceId) {
+        var state = activeCalls.get(callId);
+        if (state == null || !state.recipientId.equals(sender)) {
             return;
         }
-        endCall(callId, "remote_hangup");
+        synchronized (state) {
+            if (activeCalls.get(callId) != state) {
+                return;
+            }
+            if (state.multiDeviceSignaling == null && type != null && type != HangupMessage.Type.NORMAL) {
+                state.pendingRemoteNotifications.add(() -> handleIncomingHangup(sender, callId, senderDeviceId, type, deviceId));
+                return;
+            }
+        }
+        if (!Boolean.TRUE.equals(state.multiDeviceSignaling)) {
+            if (type == null || type == HangupMessage.Type.NORMAL) {
+                endCall(callId, "remote_hangup");
+            }
+            return;
+        }
+        var message = mapper.createObjectNode();
+        message.put("type", "receivedHangup");
+        message.put("senderDeviceId", senderDeviceId);
+        message.put("hangupType", type == null ? 0 : switch (type) {
+            case NORMAL -> 0;
+            case ACCEPTED -> 1;
+            case DECLINED -> 2;
+            case BUSY -> 3;
+            case NEED_PERMISSION -> 4;
+        });
+        message.put("deviceId", deviceId);
+        sendRemoteControlMessage(state, message);
     }
 
-    public void handleIncomingBusy(final long callId) {
-        if (callEventListeners.isEmpty() && !activeCalls.containsKey(callId)) {
+    public void handleIncomingBusy(final RecipientId sender, final long callId, final int senderDeviceId) {
+        var state = activeCalls.get(callId);
+        if (state == null || !state.recipientId.equals(sender)) {
             return;
         }
-        endCall(callId, "remote_busy");
+        if (!Boolean.TRUE.equals(state.multiDeviceSignaling)) {
+            endCall(callId, "remote_busy");
+            return;
+        }
+        var message = mapper.createObjectNode();
+        message.put("type", "receivedBusy");
+        message.put("senderDeviceId", senderDeviceId);
+        sendRemoteControlMessage(state, message);
+    }
+
+    private void sendRemoteControlMessage(CallState state, ObjectNode message) {
+        synchronized (state) {
+            if (activeCalls.get(state.callId) == state) {
+                sendControlMessage(state, writeJson(message));
+            }
+        }
     }
 
     // --- Internal helpers ---
@@ -458,11 +506,26 @@ public class CallManager implements AutoCloseable {
     }
 
     private String buildConfig(CallState state) {
+        return buildConfig(state, account.getDeviceId());
+    }
+
+    static String buildConfig(CallState state, int localDeviceId) {
         var config = mapper.createObjectNode();
         config.put("call_id", Utils.callIdUnsigned(state.callId));
         config.put("is_outgoing", state.isOutgoing);
-        config.put("local_device_id", 1);
+        config.put("local_device_id", localDeviceId);
         return writeJson(config);
+    }
+
+    private void setSignalingVersion(CallState state, int version) {
+        synchronized (state) {
+            state.multiDeviceSignaling = version >= 2;
+            var pending = List.copyOf(state.pendingRemoteNotifications);
+            state.pendingRemoteNotifications.clear();
+            for (var notification : pending) {
+                notification.run();
+            }
+        }
     }
 
     private void readControlEvents(CallState state, java.io.InputStream inputStream) {
@@ -477,8 +540,17 @@ public class CallManager implements AutoCloseable {
                     var json = mapper.readTree(line);
                     var type = json.has("type") ? json.get("type").asText() : "";
 
+                    if (state.multiDeviceSignaling == null && switch (type) {
+                        case "sendOffer", "sendAnswer", "sendIce", "sendHangup", "sendBusy", "stateChange" -> true;
+                        default -> false;
+                    }) {
+                        setSignalingVersion(state, 1);
+                    }
                     switch (type) {
                         case "ready" -> {
+                            if (json.has("signalingVersion")) {
+                                setSignalingVersion(state, json.path("signalingVersion").asInt(1));
+                            }
                             if (json.has("inputDeviceName")) {
                                 state.inputDeviceName = json.get("inputDeviceName").asText();
                             }
@@ -490,15 +562,18 @@ public class CallManager implements AutoCloseable {
                                     state.inputDeviceName,
                                     state.outputDeviceName);
                         }
+                        case "signalingCapabilities" -> {
+                            setSignalingVersion(state, json.path("version").asInt(1));
+                        }
                         case "sendOffer" -> {
                             var opaqueB64 = json.get("opaque").asText();
                             var opaque = java.util.Base64.getDecoder().decode(opaqueB64);
-                            logSendMessageResult(sendOfferViaSignal(state, opaque));
+                            logSendMessageResult(sendOfferViaSignal(state, opaque, receiverDeviceId(state, json)));
                         }
                         case "sendAnswer" -> {
                             var opaqueB64 = json.get("opaque").asText();
                             var opaque = java.util.Base64.getDecoder().decode(opaqueB64);
-                            logSendMessageResult(sendAnswerViaSignal(state, opaque));
+                            logSendMessageResult(sendAnswerViaSignal(state, opaque, receiverDeviceId(state, json)));
                         }
                         case "sendIce" -> {
                             var candidatesArr = json.get("candidates");
@@ -506,7 +581,7 @@ public class CallManager implements AutoCloseable {
                             for (var c : candidatesArr) {
                                 opaqueList.add(java.util.Base64.getDecoder().decode(c.get("opaque").asText()));
                             }
-                            logSendMessageResult(sendIceViaSignal(state, opaqueList));
+                            logSendMessageResult(sendIceViaSignal(state, opaqueList, receiverDeviceId(state, json)));
                         }
                         case "sendHangup" -> {
                             // RingRTC wants us to send a hangup message via Signal protocol.
@@ -514,16 +589,14 @@ public class CallManager implements AutoCloseable {
                             var hangupType = json.has("hangupType")
                                     ? json.get("hangupType").asText("normal")
                                     : "normal";
-                            // Skip multi-device hangup types — signal-cli is single-device,
-                            // and sending these to the remote peer causes it to terminate the call.
-                            if (hangupType.contains("onanotherdevice")) {
-                                logger.debug("Ignoring multi-device hangup type: {}", hangupType);
-                            } else {
-                                logSendMessageResult(sendHangupViaSignal(state, hangupType));
+                            if (!Boolean.TRUE.equals(state.multiDeviceSignaling) && hangupType.contains("onanotherdevice")) {
+                                break;
                             }
+                            logSendMessageResult(sendHangupViaSignal(state, hangupType,
+                                    json.path("deviceId").asInt(0), receiverDeviceId(state, json)));
                         }
                         case "sendBusy" -> {
-                            logSendMessageResult(sendBusyViaSignal(state));
+                            logSendMessageResult(sendBusyViaSignal(state, receiverDeviceId(state, json)));
                         }
                         case "stateChange" -> {
                             var ringrtcState = json.get("state").asText();
@@ -612,45 +685,55 @@ public class CallManager implements AutoCloseable {
         }
     }
 
-    private SendMessageResult sendOfferViaSignal(CallState state, byte[] opaque) {
+    private static Integer receiverDeviceId(CallState state, com.fasterxml.jackson.databind.JsonNode event) {
+        var value = event.get("receiverDeviceId");
+        return value == null ? state.deviceId : value.isNull() ? null : value.intValue();
+    }
+
+    private SendMessageResult sendOfferViaSignal(CallState state, byte[] opaque, Integer receiverDeviceId) {
         var offerMessage = new OfferMessage(state.callId, OfferMessage.Type.AUDIO_CALL, opaque);
-        var callMessage = SignalServiceCallMessage.forOffer(offerMessage, state.deviceId);
+        var callMessage = SignalServiceCallMessage.forOffer(offerMessage, receiverDeviceId);
         final var result = context.getSendHelper().sendCallMessage(callMessage, state.recipientId);
         logger.debug("Sent offer via Signal for call {}", callIdUnsigned(state.callId));
         return result;
     }
 
-    private SendMessageResult sendAnswerViaSignal(CallState state, byte[] opaque) {
+    private SendMessageResult sendAnswerViaSignal(CallState state, byte[] opaque, Integer receiverDeviceId) {
         var answerMessage = new AnswerMessage(state.callId, opaque);
-        var callMessage = SignalServiceCallMessage.forAnswer(answerMessage, state.deviceId);
+        var callMessage = SignalServiceCallMessage.forAnswer(answerMessage, receiverDeviceId);
         final var result = context.getSendHelper().sendCallMessage(callMessage, state.recipientId);
         logger.debug("Sent answer via Signal for call {}", callIdUnsigned(state.callId));
         return result;
     }
 
-    private SendMessageResult sendIceViaSignal(CallState state, List<byte[]> opaqueList) {
+    private SendMessageResult sendIceViaSignal(CallState state, List<byte[]> opaqueList, Integer receiverDeviceId) {
         var iceUpdates = opaqueList.stream().map(opaque -> new IceUpdateMessage(state.callId, opaque)).toList();
-        var callMessage = SignalServiceCallMessage.forIceUpdates(iceUpdates, state.deviceId);
+        var callMessage = SignalServiceCallMessage.forIceUpdates(iceUpdates, receiverDeviceId);
         final var result = context.getSendHelper().sendCallMessage(callMessage, state.recipientId);
         logger.debug("Sent {} ICE candidates via Signal for call {}", opaqueList.size(), callIdUnsigned(state.callId));
         return result;
     }
 
-    private SendMessageResult sendBusyViaSignal(CallState state) {
+    private SendMessageResult sendBusyViaSignal(CallState state, Integer receiverDeviceId) {
         var busyMessage = new BusyMessage(state.callId);
-        var callMessage = SignalServiceCallMessage.forBusy(busyMessage, state.deviceId);
+        var callMessage = SignalServiceCallMessage.forBusy(busyMessage, receiverDeviceId);
         return context.getSendHelper().sendCallMessage(callMessage, state.recipientId);
     }
 
-    private SendMessageResult sendHangupViaSignal(CallState state, String hangupType) {
+    private static SignalServiceCallMessage hangupMessage(long callId, String hangupType, int deviceId, Integer receiverDeviceId) {
         var type = switch (hangupType) {
             case "accepted", "acceptedonanotherdevice" -> HangupMessage.Type.ACCEPTED;
             case "declined", "declinedonanotherdevice" -> HangupMessage.Type.DECLINED;
             case "busy", "busyonanotherdevice" -> HangupMessage.Type.BUSY;
+            case "needpermission" -> HangupMessage.Type.NEED_PERMISSION;
             default -> HangupMessage.Type.NORMAL;
         };
-        var hangupMessage = new HangupMessage(state.callId, type, 0);
-        var callMessage = SignalServiceCallMessage.forHangup(hangupMessage, state.deviceId);
+        var hangupMessage = new HangupMessage(callId, type, deviceId);
+        return SignalServiceCallMessage.forHangup(hangupMessage, receiverDeviceId);
+    }
+
+    private SendMessageResult sendHangupViaSignal(CallState state, String hangupType, int deviceId, Integer receiverDeviceId) {
+        var callMessage = hangupMessage(state.callId, hangupType, deviceId, receiverDeviceId);
         final var result = context.getSendHelper().sendCallMessage(callMessage, state.recipientId);
         logger.debug("Sent hangup ({}) via Signal for call {}", hangupType, callIdUnsigned(state.callId));
         return result;
@@ -696,13 +779,23 @@ public class CallManager implements AutoCloseable {
         }
     }
 
-    private void endCall(final long callId, final String reason) {
-        var state = activeCalls.remove(callId);
+    CallState removeCall(final long callId) {
+        var state = activeCalls.get(callId);
+        if (state == null) return null;
+        synchronized (state) {
+            if (!activeCalls.remove(callId, state)) return null;
+            state.pendingRemoteNotifications.clear();
+            state.state = CallInfo.State.ENDED;
+            return state;
+        }
+    }
+
+    void endCall(final long callId, final String reason) {
+        var state = removeCall(callId);
+        if (state == null) return;
         dependencies.getAuthenticatedSignalWebSocket().removeKeepAliveToken("call" + callId);
         dependencies.getUnauthenticatedSignalWebSocket().removeKeepAliveToken("call" + callId);
-        if (state == null) return;
 
-        state.state = CallInfo.State.ENDED;
         fireCallEvent(state, reason);
         logger.debug("Call {} ended: {}", callIdUnsigned(callId), reason);
 
@@ -771,6 +864,9 @@ public class CallManager implements AutoCloseable {
         volatile CallInfo.State state;
         final RecipientId recipientId;
         volatile Integer deviceId;
+        // Unknown until capabilities or the first legacy call event arrive.
+        volatile Boolean multiDeviceSignaling;
+        final List<Runnable> pendingRemoteNotifications = new ArrayList<>();
         final boolean isOutgoing;
         volatile String inputDeviceName;
         volatile String outputDeviceName;
