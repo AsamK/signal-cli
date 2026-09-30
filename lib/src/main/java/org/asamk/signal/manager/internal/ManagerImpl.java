@@ -47,6 +47,9 @@ import org.asamk.signal.manager.api.MessageEnvelope.Sync.MessageRequestResponse;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.NotAGroupMemberException;
 import org.asamk.signal.manager.api.NotPrimaryDeviceException;
+import org.asamk.signal.manager.api.NotificationProfile;
+import org.asamk.signal.manager.api.NotificationProfileNotFoundException;
+import org.asamk.signal.manager.api.NotificationProfileOverride;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PendingAdminApprovalException;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
@@ -93,6 +96,7 @@ import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.MimeUtils;
+import org.asamk.signal.manager.util.NotificationProfileUtils;
 import org.asamk.signal.manager.util.PhoneNumberFormatter;
 import org.asamk.signal.manager.util.StickerUtils;
 import org.signal.core.models.ServiceId;
@@ -124,7 +128,10 @@ import org.whispersystems.signalservice.api.messages.calls.OfferMessage;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
+import org.whispersystems.signalservice.api.storage.SignalAccountRecord;
+import org.whispersystems.signalservice.api.storage.StorageId;
 import org.whispersystems.signalservice.api.util.StreamDetails;
+import org.whispersystems.signalservice.internal.storage.protos.AccountRecord;
 import org.whispersystems.signalservice.internal.util.Util;
 
 import java.io.ByteArrayInputStream;
@@ -135,6 +142,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -383,6 +391,73 @@ public class ManagerImpl implements Manager {
             configurationStore.setLinkPreviews(configuration.linkPreviews().get());
         }
         context.getSyncHelper().sendConfigurationMessage();
+        syncRemoteStorage();
+    }
+
+    @Override
+    public List<NotificationProfile> getNotificationProfiles() {
+        final var profiles = new ArrayList<NotificationProfile>();
+        for (final var local : account.getNotificationProfileStore().getNotificationProfiles()) {
+            if (local.deletedTimestamp() > 0 || local.storageRecord() == null) {
+                continue;
+            }
+            try {
+                profiles.add(NotificationProfileUtils.toApi(local));
+            } catch (IOException e) {
+                logger.warn("Ignoring notification profile {} with invalid storage record",
+                        NotificationProfileUtils.formatProfileId(local.profileId()));
+            }
+        }
+        return profiles;
+    }
+
+    @Override
+    public NotificationProfileOverride getNotificationProfileOverride() {
+        final byte[] storageRecord;
+        try (final var connection = account.getAccountDatabase().getConnection()) {
+            storageRecord = account.getRecipientStore()
+                    .getRecipient(connection, account.getSelfRecipientId())
+                    .getStorageRecord();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to read notification profile override", e);
+        }
+        if (storageRecord == null) {
+            return new NotificationProfileOverride.None();
+        }
+        try {
+            return NotificationProfileUtils.toApi(AccountRecord.ADAPTER.decode(storageRecord).notificationProfileManualOverride);
+        } catch (IOException e) {
+            logger.warn("Failed to decode local account storage record", e);
+            return new NotificationProfileOverride.None();
+        }
+    }
+
+    @Override
+    public void setNotificationProfileOverride(final NotificationProfileOverride override) throws NotificationProfileNotFoundException {
+        try (final var connection = account.getAccountDatabase().getConnection()) {
+            connection.setAutoCommit(false);
+            if (override instanceof NotificationProfileOverride.Enabled enabled) {
+                final var profile = account.getNotificationProfileStore()
+                        .getNotificationProfile(connection, enabled.profileId());
+                if (profile == null || profile.deletedTimestamp() > 0) {
+                    throw new NotificationProfileNotFoundException("Notification profile not found: "
+                            + NotificationProfileUtils.formatProfileId(enabled.profileId()));
+                }
+            }
+
+            final var selfRecipientId = account.getSelfRecipientId();
+            final var self = account.getRecipientStore().getRecipient(connection, selfRecipientId);
+            final var builder = SignalAccountRecord.Companion.newBuilder(self.getStorageRecord());
+            builder.notificationProfileManualOverride(NotificationProfileUtils.toProto(override));
+
+            // Store the updated record under a fresh storage id, so the next sync pushes it
+            final var storageId = StorageId.forAccount(KeyUtils.createRawStorageId());
+            account.getRecipientStore()
+                    .storeStorageRecord(connection, selfRecipientId, storageId, builder.build().encode());
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update notification profile override", e);
+        }
         syncRemoteStorage();
     }
 
