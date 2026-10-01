@@ -1,5 +1,6 @@
 package org.asamk.signal.manager.helper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.asamk.signal.manager.api.CallInfo;
 import org.asamk.signal.manager.storage.recipients.TestRecipientId;
 import org.asamk.signal.manager.util.Utils;
@@ -22,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Uses reflection to access private static helpers without changing production visibility.
  */
 class CallManagerTest {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // --- Reflection helpers for private static methods ---
 
@@ -175,6 +178,17 @@ class CallManagerTest {
             }
         }
         assertTrue(foundDifferent, "generateCallId returned same value 21 times in a row");
+    }
+
+    @Test
+    void buildConfig_usesProvidedLinkedDeviceId() throws Exception {
+        var state = makeCallState(123L, CallInfo.State.RINGING_OUTGOING);
+
+        var config = OBJECT_MAPPER.readTree(CallManager.buildConfig(state, 7));
+
+        assertEquals(7, config.get("local_device_id").intValue());
+        assertEquals(123L, config.get("call_id").longValue());
+        assertTrue(config.get("is_outgoing").booleanValue());
     }
 
     // ========================================================================
