@@ -50,6 +50,8 @@ The final parenthetical value (such as "boolean:") is the type indicator used by
 Exceptions are the names of the Java Exceptions returned in the body field.
 They typically contain an additional message with details.
 All Exceptions begin with "org.asamk.Signal.Error." which is omitted here for better readability.
+When sending a message, AttachmentInvalid means an attachment could not be read or uploaded, and the message
+was not sent to anyone; Failure may mean that it reached some recipients.
 
 Phone numbers always have the format +<countrycode><regional number>
 
