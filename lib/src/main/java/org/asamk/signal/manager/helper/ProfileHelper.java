@@ -365,7 +365,7 @@ public final class ProfileHelper {
             }
 
             if (recipientId.equals(account.getSelfRecipientId())) {
-                final var isUnrestricted = encryptedProfile.isUnrestrictedUnidentifiedAccess();
+                final var isUnrestricted = encryptedProfile.getUnrestrictedUnidentifiedAccess();
                 if (account.isUnrestrictedUnidentifiedAccess() != isUnrestricted) {
                     account.setUnrestrictedUnidentifiedAccess(isUnrestricted);
                 }

@@ -1416,6 +1416,9 @@
       ]
     },
     {
+      "type": "java.math.BigDecimal"
+    },
+    {
       "type": "java.math.BigInteger"
     },
     {
@@ -1772,6 +1775,9 @@
       "type": "kotlin.Any"
     },
     {
+      "type": "kotlin.Array"
+    },
+    {
       "type": "kotlin.Boolean"
     },
     {
@@ -1946,42 +1952,7 @@
     },
     {
       "type": "kotlin.reflect.jvm.internal.impl.resolve.scopes.DescriptorKindFilter",
-      "allPublicFields": true,
-      "fields": [
-        {
-          "name": "ALL"
-        },
-        {
-          "name": "CALLABLES"
-        },
-        {
-          "name": "CLASSIFIERS"
-        },
-        {
-          "name": "Companion"
-        },
-        {
-          "name": "FUNCTIONS"
-        },
-        {
-          "name": "NON_SINGLETON_CLASSIFIERS"
-        },
-        {
-          "name": "PACKAGES"
-        },
-        {
-          "name": "SINGLETON_CLASSIFIERS"
-        },
-        {
-          "name": "TYPE_ALIASES"
-        },
-        {
-          "name": "VALUES"
-        },
-        {
-          "name": "VARIABLES"
-        }
-      ]
+      "allPublicFields": true
     },
     {
       "type": "kotlinx.coroutines.AwaitAll"
@@ -2513,6 +2484,10 @@
       "type": "org.asamk.signal.commands.ListAccountsCommand$JsonAccount",
       "allDeclaredFields": true,
       "methods": [
+        {
+          "name": "aci",
+          "parameterTypes": []
+        },
         {
           "name": "number",
           "parameterTypes": []
@@ -5119,6 +5094,15 @@
       ]
     },
     {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.XMSS$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.bouncycastle.jcajce.provider.asymmetric.edec.SignatureSpi$Ed25519",
       "methods": [
         {
@@ -7185,6 +7169,9 @@
       "allDeclaredFields": true
     },
     {
+      "type": "org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredentialResponse"
+    },
+    {
       "type": "org.signal.libsignal.zkgroup.profiles.ProfileKey",
       "allDeclaredFields": true
     },
@@ -8321,6 +8308,13 @@
         {
           "name": "<init>",
           "parameterTypes": []
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "int",
+            "int"
+          ]
         }
       ]
     },
@@ -8464,6 +8458,12 @@
       "allDeclaredConstructors": true
     },
     {
+      "type": "org.whispersystems.signalservice.api.profiles.SignalServiceProfile$Companion"
+    },
+    {
+      "type": "org.whispersystems.signalservice.api.profiles.SignalServiceProfile$RequestType"
+    },
+    {
       "type": "org.whispersystems.signalservice.api.profiles.SignalServiceProfileWrite",
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
@@ -8471,7 +8471,13 @@
     },
     {
       "type": "org.whispersystems.signalservice.api.provisioning.ProvisioningMessage",
-      "allDeclaredFields": true
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "getBody",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "org.whispersystems.signalservice.api.push.ServiceId",
@@ -8920,7 +8926,19 @@
       "allDeclaredConstructors": true
     },
     {
+      "type": "org.whispersystems.signalservice.internal.push.AuthCredentials$Companion"
+    },
+    {
       "type": "org.whispersystems.signalservice.internal.push.ByteArrayDeserializerBase64",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.push.ByteArraySerializerBase64NoPadding",
       "methods": [
         {
           "name": "<init>",
@@ -8935,6 +8953,13 @@
         {
           "name": "<init>",
           "parameterTypes": []
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String"
+          ]
         }
       ]
     },
@@ -9097,6 +9122,14 @@
           "parameterTypes": []
         },
         {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "org.signal.libsignal.protocol.kem.KEMPublicKey",
+            "byte[]"
+          ]
+        },
+        {
           "name": "getKeyId",
           "parameterTypes": []
         },
@@ -9181,6 +9214,9 @@
       "allDeclaredFields": true,
       "allDeclaredMethods": true,
       "allDeclaredConstructors": true
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.push.MismatchedDevices$Companion"
     },
     {
       "type": "org.whispersystems.signalservice.internal.push.OneTimePreKeyCounts",

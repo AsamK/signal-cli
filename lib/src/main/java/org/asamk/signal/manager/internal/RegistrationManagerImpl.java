@@ -25,7 +25,7 @@ import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.PinLockMissingException;
 import org.asamk.signal.manager.api.PinLockedException;
 import org.asamk.signal.manager.api.RateLimitException;
-import org.asamk.signal.manager.api.TotpRequiredException;
+import org.asamk.signal.manager.api.TwoFactorRequired;
 import org.asamk.signal.manager.api.UpdateProfile;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.manager.config.ServiceConfig;
@@ -123,7 +123,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
             boolean voiceVerification,
             String captcha,
             final boolean forceRegister
-    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, TotpRequiredException, VerificationMethodNotAvailableException {
+    ) throws IOException, CaptchaRequiredException, NonNormalizedPhoneNumberException, RateLimitException, TwoFactorRequired, VerificationMethodNotAvailableException {
         if (account.isRegistered()
                 && account.getServiceEnvironment() != null
                 && account.getServiceEnvironment() != serviceEnvironmentConfig.type()) {
@@ -212,7 +212,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
             final String recoveryKey,
             final boolean forceRegister,
             final Integer totp
-    ) throws IOException, RateLimitException, TotpRequiredException {
+    ) throws IOException, RateLimitException, TwoFactorRequired {
         if (account.getAci() == null) {
             throw new IOException("Recovery-key registration requires an ACI account identifier");
         }
@@ -228,13 +228,13 @@ public class RegistrationManagerImpl implements RegistrationManager {
 
     private boolean attemptRecoverAccount(
             final Integer totp
-    ) throws IOException, RateLimitException, TotpRequiredException {
+    ) throws IOException, RateLimitException, TwoFactorRequired {
         final var accountEntropyPool = account.getAccountEntropyPool();
         try {
             recoverAccount(totp, false, accountEntropyPool);
             logger.info("Reregistered existing account using its ACI and Account Entropy Pool.");
             return true;
-        } catch (TotpRequiredException | RateLimitException e) {
+        } catch (TwoFactorRequired | RateLimitException e) {
             throw e;
         } catch (RecoveryRequestFailedException e) {
             logger.debug("Failed to reregister account using its ACI and Account Entropy Pool", e);
@@ -246,7 +246,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
             final Integer totp,
             final boolean includeRegistrationLock,
             final AccountEntropyPool accountEntropyPool
-    ) throws IOException, RateLimitException, TotpRequiredException {
+    ) throws IOException, RateLimitException, TwoFactorRequired {
         if (account.getPniIdentityKeyPair() == null) {
             account.setPniIdentityKeyPair(KeyUtils.generateIdentityKeyPair());
         }
@@ -273,6 +273,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
                     true,
                     account.getAci(),
                     totp,
+                    null,
                     cont));
         } catch (BadRequestException e) {
             switch (e.getError()) {
@@ -283,7 +284,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
                     recoverAccount(totp, true, accountEntropyPool);
                     return;
                 }
-                case RegisterAccountError.TotpMissingOrIncorrect ignored -> throw new TotpRequiredException();
+                case RegisterAccountError.TwoFactorRequired ignored -> throw new TwoFactorRequired();
                 case RegisterAccountError.RegistrationRecoveryPasswordIncorrect ignored ->
                         throw new RecoveryRequestFailedException("Account key or recovery key is incorrect", e);
                 case RegisterAccountError.RateLimited ignored -> throw new RateLimitException(null);
@@ -416,7 +417,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
         account.finishRegistration(aci, pni, masterKey, pin, aciPreKeys, pniPreKeys);
         accountFileUpdater.updateAccountIdentifiers(account.getNumber(), aci);
 
-        finishManagerRegistration(response.isStorageCapable());
+        finishManagerRegistration(response.getStorageCapable());
     }
 
     private void finishManagerRegistration(final boolean storageCapable) throws IOException {
