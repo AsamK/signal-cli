@@ -67,6 +67,8 @@ class SubscribeCallEventsTest {
 
         final List<Manager> managers;
         final List<Consumer<Manager>> addedHandlers = new ArrayList<>();
+        final List<Consumer<Manager>> removedHandlers = new ArrayList<>();
+        int addedHandlerRegistrationCount;
 
         StubMultiAccountManager(List<Manager> managers) {
             this.managers = new ArrayList<>(managers);
@@ -79,11 +81,23 @@ class SubscribeCallEventsTest {
 
         @Override
         public void addOnManagerAddedHandler(Consumer<Manager> handler) {
+            addedHandlerRegistrationCount++;
             addedHandlers.add(handler);
         }
 
         @Override
+        public void removeOnManagerAddedHandler(Consumer<Manager> handler) {
+            addedHandlers.remove(handler);
+        }
+
+        @Override
         public void addOnManagerRemovedHandler(Consumer<Manager> handler) {
+            removedHandlers.add(handler);
+        }
+
+        @Override
+        public void removeOnManagerRemovedHandler(Consumer<Manager> handler) {
+            removedHandlers.remove(handler);
         }
 
         @Override
@@ -223,8 +237,9 @@ class SubscribeCallEventsTest {
 
         assertEquals(1, manager1.state().addCallEventListenerCount.get(), "manager1 should have one listener");
         assertEquals(1, manager2.state().addCallEventListenerCount.get(), "manager2 should have one listener");
-        // Also registers an onManagerAdded handler for receive and one for call events
-        assertEquals(2, multi.addedHandlers.size(), "should register onManagerAdded handlers");
+        assertEquals(2, multi.addedHandlerRegistrationCount, "should register onManagerAdded handlers");
+        assertEquals(0, multi.addedHandlers.size(), "should remove onManagerAdded handlers after connection closes");
+        assertEquals(0, multi.removedHandlers.size(), "should not register onManagerRemoved handlers in manual mode");
     }
 
     @Test
@@ -262,5 +277,18 @@ class SubscribeCallEventsTest {
         assertEquals(0,
                 manager1.state().addCallEventListenerCount.get(),
                 "call events should not be auto-subscribed in multi mode");
+    }
+
+    @Test
+    void multiAccountConnectionRemovesAllManagerHandlersWhenReceiveIsEnabled() {
+        var manager = createManager("+15551111111");
+        var multi = new StubMultiAccountManager(List.of(manager.manager()));
+        var handler = new SignalJsonRpcDispatcherHandler(new CapturingJsonWriter(), () -> null, false);
+
+        handler.handleConnection(multi);
+
+        assertEquals(3, multi.addedHandlerRegistrationCount);
+        assertEquals(0, multi.addedHandlers.size(), "should remove all onManagerAdded handlers after close");
+        assertEquals(0, multi.removedHandlers.size(), "should remove onManagerRemoved handler after close");
     }
 }

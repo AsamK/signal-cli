@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -61,17 +62,31 @@ public class SignalJsonRpcDispatcherHandler {
     public void handleConnection(final MultiAccountManager c) {
         this.commandHandler = new SignalJsonRpcCommandHandler(c, this::getCommand);
 
+        final Consumer<Manager> onManagerAddedReceiveHandler = m -> subscribeReceive(m, true);
+        final Consumer<Manager> onManagerRemovedReceiveHandler = this::unsubscribeReceive;
+        final Consumer<Manager> onManagerAddedReceiveSubscriptionsHandler = m -> receiveHandlers
+            .forEach((subscriptionId, handlers) -> handlers.add(createReceiveHandler(m, subscriptionId, false)));
+        final Consumer<Manager> onManagerAddedCallEventSubscriptionsHandler = m -> callEventHandlers
+            .forEach((subscriptionId, handlers) -> handlers.add(createCallEventHandler(m, subscriptionId)));
+
         if (!noReceiveOnStart) {
             this.subscribeReceive(c.getManagers(), true);
-            c.addOnManagerAddedHandler(m -> subscribeReceive(m, true));
-            c.addOnManagerRemovedHandler(this::unsubscribeReceive);
+            c.addOnManagerAddedHandler(onManagerAddedReceiveHandler);
+            c.addOnManagerRemovedHandler(onManagerRemovedReceiveHandler);
         }
-        c.addOnManagerAddedHandler(m -> receiveHandlers.forEach((subscriptionId, handlers) -> handlers.add(
-                createReceiveHandler(m, subscriptionId, false))));
-        c.addOnManagerAddedHandler(m -> callEventHandlers.forEach((subscriptionId, handlers) -> handlers.add(
-                createCallEventHandler(m, subscriptionId))));
+        c.addOnManagerAddedHandler(onManagerAddedReceiveSubscriptionsHandler);
+        c.addOnManagerAddedHandler(onManagerAddedCallEventSubscriptionsHandler);
 
-        handleConnection();
+        try {
+            handleConnection();
+        } finally {
+            if (!noReceiveOnStart) {
+                c.removeOnManagerAddedHandler(onManagerAddedReceiveHandler);
+                c.removeOnManagerRemovedHandler(onManagerRemovedReceiveHandler);
+            }
+            c.removeOnManagerAddedHandler(onManagerAddedReceiveSubscriptionsHandler);
+            c.removeOnManagerAddedHandler(onManagerAddedCallEventSubscriptionsHandler);
+        }
     }
 
     public void handleConnection(final Manager m) {
