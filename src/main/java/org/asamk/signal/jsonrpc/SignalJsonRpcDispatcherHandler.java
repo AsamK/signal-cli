@@ -64,10 +64,10 @@ public class SignalJsonRpcDispatcherHandler {
 
         final Consumer<Manager> onManagerAddedReceiveHandler = m -> subscribeReceive(m, true);
         final Consumer<Manager> onManagerRemovedReceiveHandler = this::unsubscribeReceive;
-        final Consumer<Manager> onManagerAddedReceiveSubscriptionsHandler = m -> receiveHandlers
-            .forEach((subscriptionId, handlers) -> handlers.add(createReceiveHandler(m, subscriptionId, false)));
-        final Consumer<Manager> onManagerAddedCallEventSubscriptionsHandler = m -> callEventHandlers
-            .forEach((subscriptionId, handlers) -> handlers.add(createCallEventHandler(m, subscriptionId)));
+        final Consumer<Manager> onManagerAddedReceiveSubscriptionsHandler = m -> receiveHandlers.forEach((subscriptionId, handlers) -> handlers.add(
+                createReceiveHandler(m, subscriptionId, false)));
+        final Consumer<Manager> onManagerAddedCallEventSubscriptionsHandler = m -> callEventHandlers.forEach((subscriptionId, handlers) -> handlers.add(
+                createCallEventHandler(m, subscriptionId)));
 
         if (!noReceiveOnStart) {
             this.subscribeReceive(c.getManagers(), true);

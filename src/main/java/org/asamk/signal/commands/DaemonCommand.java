@@ -244,10 +244,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
 
         public abstract void runDbus(boolean isDbusSystem, final String busname) throws CommandException;
 
-        public abstract void runHttp(
-                InetSocketAddress address,
-                Duration keepAliveInterval
-        ) throws CommandException;
+        public abstract void runHttp(InetSocketAddress address, Duration keepAliveInterval) throws CommandException;
 
         protected final void runSocket(final SocketHandler socketHandler) {
             socketHandler.init();
@@ -303,10 +300,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         }
 
         @Override
-        public void runHttp(
-                final InetSocketAddress address,
-                final Duration keepAliveInterval
-        ) throws CommandException {
+        public void runHttp(final InetSocketAddress address, final Duration keepAliveInterval) throws CommandException {
             runHttp(new HttpServerHandler(address, keepAliveInterval, m));
         }
     }
@@ -331,10 +325,7 @@ public class DaemonCommand implements MultiLocalCommand, LocalCommand {
         }
 
         @Override
-        public void runHttp(
-                final InetSocketAddress address,
-                final Duration keepAliveInterval
-        ) throws CommandException {
+        public void runHttp(final InetSocketAddress address, final Duration keepAliveInterval) throws CommandException {
             runHttp(new HttpServerHandler(address, keepAliveInterval, c));
         }
     }

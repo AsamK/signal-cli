@@ -26,8 +26,7 @@ import java.util.stream.StreamSupport;
 public class JsonRpcReader {
 
     private static final Logger logger = LoggerFactory.getLogger(JsonRpcReader.class);
-    private static final int MAX_JSON_STRING_LENGTH =
-            ((ServiceConfig.MAX_ATTACHMENT_SIZE + 2) / 3) * 4 + 1024;
+    private static final int MAX_JSON_STRING_LENGTH = ((ServiceConfig.MAX_ATTACHMENT_SIZE + 2) / 3) * 4 + 1024;
 
     private final JsonRpcSender jsonRpcSender;
     private final ObjectMapper objectMapper;
@@ -50,9 +49,10 @@ public class JsonRpcReader {
 
     private static ObjectMapper createObjectMapper() {
         final var objectMapper = Util.createJsonObjectMapper();
-        objectMapper.getFactory().setStreamReadConstraints(StreamReadConstraints.builder()
-                .maxStringLength(MAX_JSON_STRING_LENGTH)
-                .build());
+        objectMapper.getFactory()
+                .setStreamReadConstraints(StreamReadConstraints.builder()
+                        .maxStringLength(MAX_JSON_STRING_LENGTH)
+                        .build());
         return objectMapper;
     }
 

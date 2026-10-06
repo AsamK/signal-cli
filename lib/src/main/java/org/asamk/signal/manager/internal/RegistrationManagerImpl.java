@@ -288,7 +288,7 @@ public class RegistrationManagerImpl implements RegistrationManager {
                         throw new RecoveryRequestFailedException("Account key or recovery key is incorrect", e);
                 case RegisterAccountError.RateLimited ignored -> throw new RateLimitException(null);
                 case RegisterAccountError.PostQuantumRatchetRequired ignored ->
-                    throw new IOException("signal-cli is too old to register this account", e);
+                        throw new IOException("signal-cli is too old to register this account", e);
                 default -> throw new IOException("Signal rejected recovery-key registration", e);
             }
         }
