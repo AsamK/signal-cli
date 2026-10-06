@@ -3,4 +3,4 @@ package org.asamk.signal.json;
 import io.micronaut.jsonschema.JsonSchema;
 
 @JsonSchema(title = "RemoteDelete")
-record JsonRemoteDelete(long timestamp) {}
+record JsonRemoteDelete(long targetTimestamp, @Deprecated long timestamp) {}

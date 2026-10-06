@@ -67,7 +67,7 @@ record JsonDataMessage(
                 .map(JsonPreview::from)
                 .toList() : null;
         final var remoteDelete = dataMessage.remoteDeleteId().isPresent()
-                ? new JsonRemoteDelete(dataMessage.remoteDeleteId().get())
+                ? new JsonRemoteDelete(dataMessage.remoteDeleteId().get(), dataMessage.remoteDeleteId().get())
                 : null;
         final var attachments = !dataMessage.attachments().isEmpty() ? dataMessage.attachments()
                 .stream()
