@@ -15,7 +15,7 @@ import org.asamk.signal.manager.RegistrationManager;
 import org.asamk.signal.manager.api.CaptchaRequiredException;
 import org.asamk.signal.manager.api.NonNormalizedPhoneNumberException;
 import org.asamk.signal.manager.api.RateLimitException;
-import org.asamk.signal.manager.api.TotpRequiredException;
+import org.asamk.signal.manager.api.TwoFactorRequired;
 import org.asamk.signal.manager.api.VerificationMethodNotAvailableException;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.util.CommandUtil;
@@ -111,7 +111,7 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
             } catch (RateLimitException e) {
                 final var message = CommandUtil.getRateLimitMessage(e);
                 throw new RateLimitErrorException(message, e);
-            } catch (TotpRequiredException e) {
+            } catch (TwoFactorRequired e) {
                 throw new UserErrorException("A TOTP token is required; rerun register with --totp TOKEN");
             } catch (IOException e) {
                 throw new IOErrorException("Failed to register: %s (%s)".formatted(e.getMessage(),
@@ -130,7 +130,7 @@ public class RegisterCommand implements RegistrationCommand, JsonRpcRegistration
             throw new UserErrorException(message);
         } catch (NonNormalizedPhoneNumberException e) {
             throw new UserErrorException("Failed to register: " + e.getMessage(), e);
-        } catch (TotpRequiredException e) {
+        } catch (TwoFactorRequired e) {
             throw new UserErrorException(
                     "A TOTP token is required; rerun register with --recovery-key RECOVERY-KEY --totp TOKEN");
         } catch (IOException e) {

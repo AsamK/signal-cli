@@ -560,9 +560,9 @@ public class AccountHelper {
         final List<DeviceInfo> devices = handleResponseExceptionSuspend(cont -> dependencies.getLinkDeviceApi()
                 .getDevices(cont));
         final var deviceId = account.getDeviceId();
-        final var device = devices.stream().filter(d -> d.id == deviceId).findFirst();
+        final var device = devices.stream().filter(d -> d.getId() == deviceId).findFirst();
         if (device.isPresent()) {
-            account.setEncryptedDeviceName(device.get().name);
+            account.setEncryptedDeviceName(device.get().getName());
         }
     }
 
