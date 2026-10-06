@@ -1,16 +1,22 @@
 package org.asamk.signal.manager.helper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.asamk.signal.manager.api.CallInfo;
+import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.recipients.TestRecipientId;
 import org.asamk.signal.manager.util.Utils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.math.BigInteger;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -22,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Uses reflection to access private static helpers without changing production visibility.
  */
 class CallManagerTest {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // --- Reflection helpers for private static methods ---
 
@@ -175,6 +183,38 @@ class CallManagerTest {
             }
         }
         assertTrue(foundDifferent, "generateCallId returned same value 21 times in a row");
+    }
+
+    @Test
+    void buildConfig_usesProvidedLinkedDeviceId() throws Exception {
+        var state = makeCallState(123L, CallInfo.State.RINGING_OUTGOING);
+
+        var config = OBJECT_MAPPER.readTree(CallManager.buildConfig(state, 7));
+
+        assertEquals(7, config.get("local_device_id").intValue());
+        assertEquals(123L, config.get("call_id").longValue());
+        assertTrue(config.get("is_outgoing").booleanValue());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1, true", "1, false", "2, true", "2, false", "127, true", "127, false"})
+    void buildConfig_readsAccountDeviceId(int deviceId, boolean outgoing) throws Exception {
+        var constructor = SignalAccount.class.getDeclaredConstructor(FileChannel.class, FileLock.class);
+        constructor.setAccessible(true);
+        var account = constructor.newInstance(null, null);
+        var deviceField = SignalAccount.class.getDeclaredField("deviceId");
+        deviceField.setAccessible(true);
+        deviceField.setInt(account, deviceId);
+        var builder = CallManager.class.getDeclaredMethod("buildConfig", CallManager.CallState.class);
+        builder.setAccessible(true);
+
+        try (var manager = new CallManager(new Context(account, null, null, null, null, null))) {
+            var state = new CallManager.CallState(-1L, CallInfo.State.IDLE, null, null, outgoing);
+            var config = new ObjectMapper().readTree((String) builder.invoke(manager, state));
+            assertEquals(deviceId, config.path("local_device_id").asInt());
+            assertEquals(outgoing, config.path("is_outgoing").asBoolean());
+            assertEquals("18446744073709551615", config.path("call_id").asText());
+        }
     }
 
     // ========================================================================
