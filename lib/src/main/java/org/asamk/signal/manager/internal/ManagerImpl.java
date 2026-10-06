@@ -90,7 +90,6 @@ import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
 import org.asamk.signal.manager.storage.stickers.StickerPack;
-import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.MimeUtils;
 import org.asamk.signal.manager.util.PhoneNumberFormatter;
@@ -124,10 +123,8 @@ import org.whispersystems.signalservice.api.messages.calls.OfferMessage;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
-import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Util;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -953,15 +950,8 @@ public class ManagerImpl implements Manager {
             final var remainder = result.getSecond();
             if (remainder != null) {
                 final var messageBytes = message.messageText().getBytes(StandardCharsets.UTF_8);
-                final var streamDetails = new StreamDetails(new ByteArrayInputStream(messageBytes),
-                        MimeUtils.LONG_TEXT,
-                        messageBytes.length);
-                final var uploadSpec = context.getAttachmentHelper().getResumableUploadSpec(streamDetails);
-                final var textAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
-                        Optional.empty(),
-                        uploadSpec);
                 messageBuilder.withBody(trimmed);
-                additionalAttachments.add(context.getAttachmentHelper().uploadAttachment(textAttachment));
+                additionalAttachments.add(context.getAttachmentHelper().uploadLongTextAttachment(messageBytes));
             } else {
                 messageBuilder.withBody(message.messageText());
             }
@@ -994,9 +984,12 @@ public class ManagerImpl implements Manager {
             final var quote = message.quote().get();
             final var quotedAttachments = new ArrayList<SignalServiceDataMessage.Quote.QuotedAttachment>();
             for (final var a : quote.attachments()) {
+                final var label = "quote thumbnail #" + (quotedAttachments.size() + 1);
                 final var quotedAttachment = new SignalServiceDataMessage.Quote.QuotedAttachment(a.contentType(),
                         a.filename(),
-                        a.preview() == null ? null : context.getAttachmentHelper().uploadAttachment(a.preview()));
+                        a.preview() == null
+                                ? null
+                                : context.getAttachmentHelper().uploadAttachment(a.preview(), label));
                 quotedAttachments.add(quotedAttachment);
             }
             messageBuilder.withQuote(new SignalServiceDataMessage.Quote(quote.timestamp(),
@@ -1027,10 +1020,7 @@ public class ManagerImpl implements Manager {
             if (streamDetails == null) {
                 throw new InvalidStickerException("Missing local sticker file");
             }
-            final var uploadSpec = context.getAttachmentHelper().getResumableUploadSpec(streamDetails);
-            final var stickerAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
-                    Optional.empty(),
-                    uploadSpec);
+            final var stickerAttachment = context.getAttachmentHelper().createStickerAttachmentStream(streamDetails);
             messageBuilder.withSticker(new SignalServiceDataMessage.Sticker(packId.serialize(),
                     stickerPack.packKey(),
                     stickerId,
@@ -1040,8 +1030,9 @@ public class ManagerImpl implements Manager {
         if (!message.previews().isEmpty()) {
             final var previews = new ArrayList<SignalServicePreview>(message.previews().size());
             for (final var p : message.previews()) {
+                final var label = "link preview image #" + (previews.size() + 1);
                 final var image = p.image().isPresent() ? context.getAttachmentHelper()
-                        .uploadAttachment(p.image().get()) : null;
+                        .uploadAttachment(p.image().get(), label) : null;
                 previews.add(new SignalServicePreview(p.url(),
                         p.title(),
                         p.description(),
