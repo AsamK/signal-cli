@@ -1510,15 +1510,18 @@ public class ManagerImpl implements Manager {
     private static final AtomicInteger threadNumber = new AtomicInteger(0);
 
     private void startReceiveThreadIfRequired() {
-        if (receiveThread != null || isReceivingSynchronous) {
+        if (isReceiveThreadAlive() || isReceivingSynchronous) {
             return;
         }
+        context.getReceiveHelper().clearStopRequest();
         receiveThread = Thread.ofPlatform().name("receive-" + threadNumber.getAndIncrement()).start(() -> {
             logger.debug("Starting receiving messages");
             context.getReceiveHelper().receiveMessagesContinuously(this::passReceivedMessageToHandlers);
             logger.debug("Finished receiving messages");
             synchronized (messageHandlers) {
-                receiveThread = null;
+                if (receiveThread == Thread.currentThread()) {
+                    receiveThread = null;
+                }
 
                 // Check if in the meantime another handler has been registered
                 if (!messageHandlers.isEmpty()) {
@@ -1527,6 +1530,13 @@ public class ManagerImpl implements Manager {
                 }
             }
         });
+    }
+
+    private boolean isReceiveThreadAlive() {
+        // The receive thread clears receiveThread itself when it has finished, so it stays set while the thread is
+        // still stopping and no second receive thread can be started in the meantime.
+        // A receive thread that died from an uncaught exception never clears it.
+        return receiveThread != null && receiveThread.isAlive();
     }
 
     private void passReceivedMessageToHandlers(MessageEnvelope envelope, Throwable e) {
@@ -1551,7 +1561,6 @@ public class ManagerImpl implements Manager {
                 return;
             }
             thread = receiveThread;
-            receiveThread = null;
         }
 
         stopReceiveThread(thread);
@@ -1607,11 +1616,12 @@ public class ManagerImpl implements Manager {
             ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException {
         synchronized (messageHandlers) {
-            if (isReceiving()) {
+            if (isReceiving() || isReceiveThreadAlive()) {
                 throw new AlreadyReceivingException("Already receiving message.");
             }
             isReceivingSynchronous = true;
             receiveThread = Thread.currentThread();
+            context.getReceiveHelper().clearStopRequest();
         }
         try {
             context.getReceiveHelper().receiveMessages(timeout, maxMessages, (envelope, e) -> {
@@ -2036,7 +2046,6 @@ public class ManagerImpl implements Manager {
             weakHandlers.clear();
             messageHandlers.clear();
             thread = receiveThread;
-            receiveThread = null;
         }
         if (thread != null) {
             stopReceiveThread(thread);

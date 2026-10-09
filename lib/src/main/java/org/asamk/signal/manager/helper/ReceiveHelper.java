@@ -42,8 +42,8 @@ public class ReceiveHelper {
 
     private ReceiveConfig receiveConfig = new ReceiveConfig(false, false, false, false, false);
     private boolean hasCaughtUpWithOldMessages = false;
-    private boolean isWaitingForMessage = false;
-    private boolean shouldStop = false;
+    private volatile boolean isWaitingForMessage = false;
+    private volatile boolean shouldStop = false;
     private Callable authenticationFailureListener;
     private Callable caughtUpWithOldMessagesListener;
 
@@ -69,6 +69,15 @@ public class ReceiveHelper {
     public boolean requestStopReceiveMessages() {
         this.shouldStop = true;
         return isWaitingForMessage;
+    }
+
+    /**
+     * Must only be called right before a new receive loop is started, while no other receive loop is running.
+     * Ending a receive loop doesn't clear the stop request, so a loop that was asked to stop can't continue
+     * receiving, e.g. by retrying in receiveMessagesContinuously after an IOException.
+     */
+    public void clearStopRequest() {
+        this.shouldStop = false;
     }
 
     public void receiveMessagesContinuously(Manager.ReceiveMessageHandler handler) {
@@ -111,7 +120,6 @@ public class ReceiveHelper {
             signalWebSocket.removeKeepAliveToken("receive");
             signalWebSocket.disconnect();
             webSocketStateDisposable.dispose();
-            shouldStop = false;
         }
     }
 
