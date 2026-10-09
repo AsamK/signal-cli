@@ -122,6 +122,8 @@ class NumberlessProvisioningTest {
                 "signal-cli-test",
                 null,
                 false,
+                config.signalServiceConfiguration(),
+                () -> null,
                 1000L,
                 new SecureRandom(),
                 client);

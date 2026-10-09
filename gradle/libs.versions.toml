@@ -4,7 +4,7 @@ coroutines = "1.11.0"
 junit = "6.1.3"
 micronaut-json-schema = "2.3.1"
 micronaut-core = "5.2.14"
-signal-service = "2.15.3_unofficial_154"
+signal-service = "2.15.3_unofficial_155"
 
 [libraries]
 bouncycastle = "org.bouncycastle:bcprov-jdk18on:1.86"

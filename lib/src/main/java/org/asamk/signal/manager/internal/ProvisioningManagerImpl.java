@@ -116,8 +116,7 @@ public class ProvisioningManagerImpl implements ProvisioningManager, Closeable {
     public URI getDeviceLinkUri() throws TimeoutException, IOException {
         try {
             var url = urlFuture.get(30, TimeUnit.SECONDS);
-            // Mode.Link(false) does not advertise any capabilities itself.
-            return new URI(url + "&capabilities=nopni");
+            return new URI(url);
         } catch (java.util.concurrent.TimeoutException e) {
             throw new TimeoutException("Timed out waiting for provisioning URL");
         } catch (InterruptedException e) {
