@@ -1,5 +1,7 @@
 package org.asamk.signal.commands;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import org.asamk.signal.commands.exceptions.CommandException;
 import org.asamk.signal.commands.exceptions.IOErrorException;
 import org.asamk.signal.commands.exceptions.UserErrorException;
@@ -12,7 +14,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.TimeoutException;
 
-public class StartLinkCommand implements JsonRpcMultiCommand<Void> {
+public class StartLinkCommand implements JsonRpcMultiCommand<StartLinkCommand.StartLinkParams> {
 
     private static final Logger logger = LoggerFactory.getLogger(StartLinkCommand.class);
 
@@ -22,14 +24,19 @@ public class StartLinkCommand implements JsonRpcMultiCommand<Void> {
     }
 
     @Override
+    public TypeReference<StartLinkParams> getRequestType() {
+        return new TypeReference<>() {};
+    }
+
+    @Override
     public void handleCommand(
-            final Void request,
+            final StartLinkParams request,
             final MultiAccountManager m,
             final JsonWriter jsonWriter
     ) throws CommandException {
         final URI deviceLinkUri;
         try {
-            deviceLinkUri = m.getNewProvisioningDeviceLinkUri();
+            deviceLinkUri = m.getNewProvisioningDeviceLinkUri(request != null && Boolean.TRUE.equals(request.importHistory()));
         } catch (TimeoutException e) {
             throw new UserErrorException("Device link creation timed out, please try again.");
         } catch (IOException e) {
@@ -38,6 +45,8 @@ public class StartLinkCommand implements JsonRpcMultiCommand<Void> {
 
         jsonWriter.write(new JsonLink(deviceLinkUri.toString()));
     }
+
+    public record StartLinkParams(Boolean importHistory) {}
 
     private record JsonLink(String deviceLinkUri) {}
 }

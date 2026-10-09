@@ -274,6 +274,26 @@ Existing primary accounts without a phone number can be recovered using the `reg
 Optionally specify a name to describe this new device.
 By default "cli" will be used.
 
+*--import-history*::
+Advertise support for linked-device history transfer in the QR code.
+The primary device will ask whether message history should be transferred.
+If accepted, signal-cli waits for and stores the encrypted transfer archive in the account's private data directory.
+If downloading is interrupted, `export-history` retries it using the saved transfer state.
+
+=== export-history
+
+Export the encrypted message history transferred while linking this account.
+The command supports JSON output and emits the same top-level account/envelope objects as `receive --output=json`, one per line.
+Valid history records that cannot be represented as receive envelopes are skipped and counted in the diagnostic log.
+Attachment metadata is exported, but attachment payloads are not downloaded.
+The encrypted archive and its key are retained by default, so the export can be repeated.
+
+Example: `signal-cli -a ACCOUNT --output=json export-history`
+
+*--delete-after-export*::
+Delete the encrypted archive and transfer key after the entire archive has been decoded and standard output has been flushed successfully.
+An invalid archive, decoding error, or failed output write leaves the transfer state available for another attempt.
+
 === addDevice
 
 Link another device to this device.

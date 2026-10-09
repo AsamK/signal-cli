@@ -107,6 +107,7 @@ dependencies {
 
     testImplementation(libs.junit.jupiter)
     testImplementation(platform(libs.junit.jupiter.bom))
+    testImplementation(libs.signalnetwork)
     testRuntimeOnly(libs.junit.launcher)
 }
 

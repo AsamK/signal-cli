@@ -5,6 +5,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
 
@@ -35,6 +36,9 @@ public class LinkCommand implements ProvisioningCommand {
     public void attachToSubparser(final Subparser subparser) {
         subparser.help("Link to an existing device, instead of registering a new number.");
         subparser.addArgument("-n", "--name").help("Specify a name to describe this new device.");
+        subparser.addArgument("--import-history")
+                .action(Arguments.storeTrue())
+                .help("Offer to transfer message history from the primary device.");
     }
 
     @Override
@@ -44,18 +48,19 @@ public class LinkCommand implements ProvisioningCommand {
             final OutputWriter outputWriter
     ) throws CommandException {
         final var writer = (PlainTextWriter) outputWriter;
+        final var importHistory = Boolean.TRUE.equals(ns.getBoolean("import-history"));
 
         var deviceName = ns.getString("name");
         if (deviceName == null) {
             deviceName = "cli";
         }
         try {
-            final URI deviceLinkUri = m.getDeviceLinkUri();
+            final URI deviceLinkUri = m.getDeviceLinkUri(importHistory);
             if (System.console() != null) {
                 printQrCode(writer, deviceLinkUri.toString());
             }
             writer.println("{}", deviceLinkUri);
-            var number = m.finishDeviceLink(deviceName);
+            var number = m.finishDeviceLink(deviceName, importHistory);
             writer.println("Associated with: {}", number);
         } catch (TimeoutException e) {
             throw new UserErrorException("Link request timed out, please try again.");
