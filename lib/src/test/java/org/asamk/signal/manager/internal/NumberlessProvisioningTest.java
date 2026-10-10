@@ -123,7 +123,7 @@ class NumberlessProvisioningTest {
                 null,
                 false,
                 config.signalServiceConfiguration(),
-                () -> null,
+                () -> false,
                 1000L,
                 new SecureRandom(),
                 client);
