@@ -6551,6 +6551,18 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.net.UsernameNotAvailableException",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.net.internal.BridgeChatListener",
       "jniAccessible": true
     },
@@ -7230,6 +7242,15 @@
     },
     {
       "type": "org.signal.network.util.JsonUtil$ServiceIdDeserializer",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.signal.network.util.JsonUtil$UuidDeserializer",
       "methods": [
         {
           "name": "<init>",
@@ -8971,7 +8992,21 @@
     },
     {
       "type": "org.whispersystems.signalservice.internal.push.ConfirmUsernameRequest",
-      "allDeclaredFields": true
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "getEncryptedUsername",
+          "parameterTypes": []
+        },
+        {
+          "name": "getUsernameHash",
+          "parameterTypes": []
+        },
+        {
+          "name": "getZkProof",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "org.whispersystems.signalservice.internal.push.ConfirmUsernameResponse",
