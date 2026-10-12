@@ -109,7 +109,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                                         r.getProfile().getPhoneNumberSharingMode() == null
                                                 ? ""
                                                 : String.valueOf(r.getProfile().getPhoneNumberSharingMode()
-                                                                 == PhoneNumberSharingMode.EVERYBODY),
+                                                        == PhoneNumberSharingMode.EVERYBODY),
                                         r.getDiscoverable() == null ? "" : String.valueOf(r.getDiscoverable()));
                     }
                 }
@@ -121,17 +121,17 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                     final var jsonInternal = !internal
                             ? null
                             : new JsonContact.JsonInternal(r.getProfile()
-                                                           .getCapabilities()
-                                                           .stream()
-                                                           .map(Enum::name)
-                                                           .toList(),
+                                    .getCapabilities()
+                                    .stream()
+                                    .map(Enum::name)
+                                    .toList(),
                                     r.getProfile().getUnidentifiedAccessMode() == Profile.UnidentifiedAccessMode.UNKNOWN
-                                    ? null
+                                            ? null
                                             : r.getProfile().getUnidentifiedAccessMode().name(),
                                     r.getProfile().getPhoneNumberSharingMode() == null
-                                    ? null
+                                            ? null
                                             : r.getProfile().getPhoneNumberSharingMode()
-                                              == PhoneNumberSharingMode.EVERYBODY,
+                                                    == PhoneNumberSharingMode.EVERYBODY,
                                     r.getDiscoverable());
                     return new JsonContact(address.number().orElse(null),
                             address.uuid().map(UUID::toString).orElse(null),
@@ -159,9 +159,9 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                                             r.getProfile().getAboutEmoji(),
                                             r.getProfile().getAvatarUrlPath() != null,
                                             r.getProfile().getMobileCoinAddress() == null
-                                            ? null
+                                                    ? null
                                                     : Base64.getEncoder()
-                                                      .encodeToString(r.getProfile().getMobileCoinAddress())),
+                                                            .encodeToString(r.getProfile().getMobileCoinAddress())),
                             jsonInternal);
                 }).toList();
                 writer.write(jsonContacts);

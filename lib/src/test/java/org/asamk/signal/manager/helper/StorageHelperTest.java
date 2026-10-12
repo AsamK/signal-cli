@@ -39,8 +39,8 @@ class StorageHelperTest {
                 Set.of(pendingId)));
         assertFalse(StorageHelper.containsOnlyIdentityConflictsPendingRepair(write(List.of()), Set.of(pendingId)));
         assertFalse(StorageHelper.containsOnlyIdentityConflictsPendingRepair(new WriteOperationResult(null,
-            List.of(pendingRecord),
-            List.of(new byte[]{3})), Set.of(pendingId)));
+                List.of(pendingRecord),
+                List.of(new byte[]{3})), Set.of(pendingId)));
     }
 
     private static SignalStorageRecord record(final StorageId id) {

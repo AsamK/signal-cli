@@ -31,9 +31,9 @@ public record JsonSharedContact(
                 : null;
 
         final var address = !contact.address().isEmpty() ? contact.address()
-                                                           .stream()
-                                                           .map(JsonContactAddress::from)
-                                                           .toList() : null;
+                .stream()
+                .map(JsonContactAddress::from)
+                .toList() : null;
 
         final var organization = contact.organization().orElse(null);
 

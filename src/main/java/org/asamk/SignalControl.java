@@ -37,7 +37,10 @@ public interface SignalControl extends DBusInterface {
 
     List<DBusPath> listAccounts();
 
-    DBusPath getAccount(String number);
+    /**
+     * Resolves a phone number or ACI to an exported account's object path.
+     */
+    DBusPath getAccount(String identifier) throws Error.Failure;
 
     interface Error {
 

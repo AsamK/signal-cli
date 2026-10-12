@@ -27,13 +27,13 @@ public record JsonSendMessageResult(
                 result.isSuccess()
                         ? Type.SUCCESS
                         : result.isRateLimitFailure()
-                          ? Type.RATE_LIMIT_FAILURE
+                                ? Type.RATE_LIMIT_FAILURE
                                 : result.isNetworkFailure()
-                                  ? Type.NETWORK_FAILURE
+                                        ? Type.NETWORK_FAILURE
                                         : result.isUnregisteredFailure()
-                                          ? Type.UNREGISTERED_FAILURE
+                                                ? Type.UNREGISTERED_FAILURE
                                                 : result.isInvalidPreKeyFailure()
-                                                  ? Type.INVALID_PRE_KEY_FAILURE
+                                                        ? Type.INVALID_PRE_KEY_FAILURE
                                                         : Type.IDENTITY_FAILURE,
                 result.proofRequiredFailure() != null ? result.proofRequiredFailure().getToken() : null,
                 rateLimitRetryAfterMilliseconds == null ? null : Math.ceilDiv(rateLimitRetryAfterMilliseconds, 1000L));

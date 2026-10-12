@@ -20,6 +20,9 @@ import java.util.Map;
  */
 public interface Signal extends DBusInterface {
 
+    /**
+     * Returns the account's phone number, or an empty string for a numberless account.
+     */
     String getSelfNumber();
 
     String getSelfACI();
@@ -185,6 +188,8 @@ public interface Signal extends DBusInterface {
     String version();
 
     List<String> listNumbers();
+
+    List<String> listRecipientIdentifiers();
 
     List<String> getContactNumber(final String name) throws Error.Failure;
 

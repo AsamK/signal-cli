@@ -67,7 +67,7 @@ public class DbusHandler implements AutoCloseable {
                 }
             });
             c.addOnManagerRemovedHandler(m -> {
-                final var path = DbusConfig.getObjectPath(m.getSelfNumber());
+                final var path = DbusConfig.getObjectPath(m.getSelfIdentifier());
                 try {
                     final var object = connection.getExportedObject(null, path);
                     if (object instanceof DbusSignalImpl dbusSignal) {
@@ -135,11 +135,11 @@ public class DbusHandler implements AutoCloseable {
         final var signal = new DbusSignalImpl(m, conn, objectPath, noReceiveOnStart);
         closeables.add(signal);
 
-        return Thread.ofPlatform().name("dbus-init-" + m.getSelfNumber()).start(signal::initObjects);
+        return Thread.ofPlatform().name("dbus-init-" + m.getSelfIdentifier()).start(signal::initObjects);
     }
 
     private Thread exportManager(final DBusConnection conn, final Manager m) {
-        final var objectPath = DbusConfig.getObjectPath(m.getSelfNumber());
+        final var objectPath = DbusConfig.getObjectPath(m.getSelfIdentifier());
         return exportDbusObject(conn, objectPath, m);
     }
 

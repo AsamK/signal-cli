@@ -555,7 +555,8 @@ public class SendHelper {
                         recipients,
                         unidentifiedAccess,
                         groupSendEndorsements,
-                        message),
+                        message,
+                        null),
                 recipientIds,
                 groupInfo,
                 false);
@@ -886,7 +887,8 @@ public class SendHelper {
 
         var address = context.getRecipientHelper().resolveSignalServiceAddress(recipientId);
         try {
-            final boolean includePniSignature = account.getRecipientStore().needsPniSignature(recipientId);
+            final boolean includePniSignature = account.getPni() != null && account.getRecipientStore()
+                    .needsPniSignature(recipientId);
             try {
                 return s.send(messageSender,
                         address,

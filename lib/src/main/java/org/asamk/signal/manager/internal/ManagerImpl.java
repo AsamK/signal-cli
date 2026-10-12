@@ -93,7 +93,6 @@ import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickerPacks.JsonStickerPack;
 import org.asamk.signal.manager.storage.stickerPacks.StickerPackStore;
 import org.asamk.signal.manager.storage.stickers.StickerPack;
-import org.asamk.signal.manager.util.AttachmentUtils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.asamk.signal.manager.util.MimeUtils;
 import org.asamk.signal.manager.util.NotificationProfileUtils;
@@ -130,11 +129,9 @@ import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.CdsiResourceExhaustedException;
 import org.whispersystems.signalservice.api.storage.SignalAccountRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
-import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.storage.protos.AccountRecord;
 import org.whispersystems.signalservice.internal.util.Util;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -1028,15 +1025,8 @@ public class ManagerImpl implements Manager {
             final var remainder = result.getSecond();
             if (remainder != null) {
                 final var messageBytes = message.messageText().getBytes(StandardCharsets.UTF_8);
-                final var streamDetails = new StreamDetails(new ByteArrayInputStream(messageBytes),
-                        MimeUtils.LONG_TEXT,
-                        messageBytes.length);
-                final var uploadSpec = context.getAttachmentHelper().getResumableUploadSpec(streamDetails);
-                final var textAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
-                        Optional.empty(),
-                        uploadSpec);
                 messageBuilder.withBody(trimmed);
-                additionalAttachments.add(context.getAttachmentHelper().uploadAttachment(textAttachment));
+                additionalAttachments.add(context.getAttachmentHelper().uploadLongTextAttachment(messageBytes));
             } else {
                 messageBuilder.withBody(message.messageText());
             }
@@ -1069,9 +1059,12 @@ public class ManagerImpl implements Manager {
             final var quote = message.quote().get();
             final var quotedAttachments = new ArrayList<SignalServiceDataMessage.Quote.QuotedAttachment>();
             for (final var a : quote.attachments()) {
+                final var label = "quote thumbnail #" + (quotedAttachments.size() + 1);
                 final var quotedAttachment = new SignalServiceDataMessage.Quote.QuotedAttachment(a.contentType(),
                         a.filename(),
-                        a.preview() == null ? null : context.getAttachmentHelper().uploadAttachment(a.preview()));
+                        a.preview() == null
+                                ? null
+                                : context.getAttachmentHelper().uploadAttachment(a.preview(), label));
                 quotedAttachments.add(quotedAttachment);
             }
             messageBuilder.withQuote(new SignalServiceDataMessage.Quote(quote.timestamp(),
@@ -1102,10 +1095,7 @@ public class ManagerImpl implements Manager {
             if (streamDetails == null) {
                 throw new InvalidStickerException("Missing local sticker file");
             }
-            final var uploadSpec = context.getAttachmentHelper().getResumableUploadSpec(streamDetails);
-            final var stickerAttachment = AttachmentUtils.createAttachmentStream(streamDetails,
-                    Optional.empty(),
-                    uploadSpec);
+            final var stickerAttachment = context.getAttachmentHelper().createStickerAttachmentStream(streamDetails);
             messageBuilder.withSticker(new SignalServiceDataMessage.Sticker(packId.serialize(),
                     stickerPack.packKey(),
                     stickerId,
@@ -1115,8 +1105,9 @@ public class ManagerImpl implements Manager {
         if (!message.previews().isEmpty()) {
             final var previews = new ArrayList<SignalServicePreview>(message.previews().size());
             for (final var p : message.previews()) {
+                final var label = "link preview image #" + (previews.size() + 1);
                 final var image = p.image().isPresent() ? context.getAttachmentHelper()
-                        .uploadAttachment(p.image().get()) : null;
+                        .uploadAttachment(p.image().get(), label) : null;
                 previews.add(new SignalServicePreview(p.url(),
                         p.title(),
                         p.description(),
@@ -1594,15 +1585,18 @@ public class ManagerImpl implements Manager {
     private static final AtomicInteger threadNumber = new AtomicInteger(0);
 
     private void startReceiveThreadIfRequired() {
-        if (receiveThread != null || isReceivingSynchronous) {
+        if (isReceiveThreadAlive() || isReceivingSynchronous) {
             return;
         }
+        context.getReceiveHelper().clearStopRequest();
         receiveThread = Thread.ofPlatform().name("receive-" + threadNumber.getAndIncrement()).start(() -> {
             logger.debug("Starting receiving messages");
             context.getReceiveHelper().receiveMessagesContinuously(this::passReceivedMessageToHandlers);
             logger.debug("Finished receiving messages");
             synchronized (messageHandlers) {
-                receiveThread = null;
+                if (receiveThread == Thread.currentThread()) {
+                    receiveThread = null;
+                }
 
                 // Check if in the meantime another handler has been registered
                 if (!messageHandlers.isEmpty()) {
@@ -1611,6 +1605,13 @@ public class ManagerImpl implements Manager {
                 }
             }
         });
+    }
+
+    private boolean isReceiveThreadAlive() {
+        // The receive thread clears receiveThread itself when it has finished, so it stays set while the thread is
+        // still stopping and no second receive thread can be started in the meantime.
+        // A receive thread that died from an uncaught exception never clears it.
+        return receiveThread != null && receiveThread.isAlive();
     }
 
     private void passReceivedMessageToHandlers(MessageEnvelope envelope, Throwable e) {
@@ -1635,7 +1636,6 @@ public class ManagerImpl implements Manager {
                 return;
             }
             thread = receiveThread;
-            receiveThread = null;
         }
 
         stopReceiveThread(thread);
@@ -1691,11 +1691,12 @@ public class ManagerImpl implements Manager {
             ReceiveMessageHandler handler
     ) throws IOException, AlreadyReceivingException {
         synchronized (messageHandlers) {
-            if (isReceiving()) {
+            if (isReceiving() || isReceiveThreadAlive()) {
                 throw new AlreadyReceivingException("Already receiving message.");
             }
             isReceivingSynchronous = true;
             receiveThread = Thread.currentThread();
+            context.getReceiveHelper().clearStopRequest();
         }
         try {
             context.getReceiveHelper().receiveMessages(timeout, maxMessages, (envelope, e) -> {
@@ -2120,7 +2121,6 @@ public class ManagerImpl implements Manager {
             weakHandlers.clear();
             messageHandlers.clear();
             thread = receiveThread;
-            receiveThread = null;
         }
         if (thread != null) {
             stopReceiveThread(thread);

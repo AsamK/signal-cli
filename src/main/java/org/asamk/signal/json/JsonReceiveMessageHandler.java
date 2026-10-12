@@ -23,7 +23,7 @@ public class JsonReceiveMessageHandler implements Manager.ReceiveMessageHandler 
     @Override
     public void handleMessage(MessageEnvelope envelope, Throwable exception) {
         final var object = new HashMap<String, Object>();
-        object.put("account", m.getSelfNumber());
+        object.put("account", m.getSelfIdentifier());
         if (exception != null) {
             object.put("exception", JsonError.from(exception));
         }

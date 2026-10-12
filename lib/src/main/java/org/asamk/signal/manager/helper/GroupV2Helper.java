@@ -136,7 +136,7 @@ class GroupV2Helper {
 
     int findRevisionWeWereAdded(DecryptedGroup partialDecryptedGroup) {
         ByteString aciBytes = getSelfAci().toByteString();
-        ByteString pniBytes = getSelfPni().toByteString();
+        ByteString pniBytes = getSelfPni() == null ? null : getSelfPni().toByteString();
         for (DecryptedMember decryptedMember : partialDecryptedGroup.members) {
             if (decryptedMember.aciBytes.equals(aciBytes) || decryptedMember.pniBytes.equals(pniBytes)) {
                 return decryptedMember.joinedAtRevision;
@@ -264,7 +264,7 @@ class GroupV2Helper {
         var pendingMembersList = groupInfoV2.getGroup().pendingMembers;
         final var selfAci = getSelfAci();
         var selfPendingMember = DecryptedGroupUtil.findPendingByServiceId(pendingMembersList, selfAci);
-        if (selfPendingMember.isEmpty()) {
+        if (selfPendingMember.isEmpty() && getSelfPni() != null) {
             selfPendingMember = DecryptedGroupUtil.findPendingByServiceId(pendingMembersList, getSelfPni());
         }
 

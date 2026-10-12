@@ -40,13 +40,6 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
-    public List<String> getAccountNumbers() {
-        synchronized (managers) {
-            return managers.stream().map(Manager::getSelfNumber).toList();
-        }
-    }
-
-    @Override
     public List<Manager> getManagers() {
         synchronized (managers) {
             return new ArrayList<>(managers);
@@ -75,6 +68,13 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
         }
     }
 
+    @Override
+    public void removeOnManagerAddedHandler(final Consumer<Manager> handler) {
+        synchronized (onManagerAddedHandlers) {
+            onManagerAddedHandlers.remove(handler);
+        }
+    }
+
     void removeManager(final Manager m) {
         synchronized (managers) {
             if (!managers.remove(m)) {
@@ -92,6 +92,13 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     public void addOnManagerRemovedHandler(final Consumer<Manager> handler) {
         synchronized (onManagerRemovedHandlers) {
             onManagerRemovedHandlers.add(handler);
+        }
+    }
+
+    @Override
+    public void removeOnManagerRemovedHandler(final Consumer<Manager> handler) {
+        synchronized (onManagerRemovedHandlers) {
+            onManagerRemovedHandlers.remove(handler);
         }
     }
 
@@ -121,7 +128,7 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
             } else {
                 // Phone number — check already loaded managers
                 var existing = managers.stream()
-                        .filter(m -> m.getSelfNumber().equals(identifier))
+                        .filter(m -> identifier.equals(m.getSelfNumber()))
                         .findFirst()
                         .orElse(null);
                 if (existing != null) {

@@ -55,7 +55,7 @@ public class DbusCommandHandler {
         try {
             if (command instanceof ProvisioningCommand c) {
                 if (account != null) {
-                    throw new UserErrorException("You cannot specify a account (phone number) when linking");
+                    throw new UserErrorException("You cannot specify an account when linking");
                 }
 
                 handleProvisioningCommand(c, dBusConn, busname, commandHandler);
@@ -74,7 +74,9 @@ public class DbusCommandHandler {
                 throw new UserErrorException("Command only works in multi-account mode");
             }
 
-            var accountObjectPath = account == null ? tryGetSingleAccountObjectPath(dBusConn, busname) : null;
+            var accountObjectPath = account == null
+                    ? tryGetSingleAccountObjectPath(dBusConn, busname)
+                    : getAccountObjectPath(account, dBusConn, busname);
             if (accountObjectPath == null) {
                 accountObjectPath = DbusConfig.getObjectPath(account);
             }
@@ -83,6 +85,24 @@ public class DbusCommandHandler {
             throw new UserErrorException("Command is not yet implemented via dbus", e);
         } catch (DBusExecutionException e) {
             throw new UnexpectedErrorException(e.getMessage(), e);
+        }
+    }
+
+    private static String getAccountObjectPath(
+            final String account,
+            final DBusConnection dBusConn,
+            final String busname
+    ) throws DBusException, CommandException {
+        final var control = dBusConn.getRemoteObject(busname, DbusConfig.getObjectPath(), SignalControl.class);
+        try {
+            return control.getAccount(account).getPath();
+        } catch (UnknownMethod e) {
+            // A single-account daemon exports Signal directly at the base path.
+            final var signal = dBusConn.getRemoteObject(busname, DbusConfig.getObjectPath(), Signal.class);
+            if (!account.equals(signal.getSelfNumber()) && !account.equals(signal.getSelfACI())) {
+                throw new UserErrorException("Unknown account: " + account);
+            }
+            return DbusConfig.getObjectPath();
         }
     }
 
@@ -97,7 +117,7 @@ public class DbusCommandHandler {
                 throw new UserErrorException("No local users found, you first need to register or link an account");
             } else if (accounts.size() > 1) {
                 throw new UserErrorException(
-                        "Multiple users found, you need to specify an account (phone number) with -a");
+                        "Multiple users found, you need to specify an account (phone number or ACI) with -a");
             }
 
             return accounts.getFirst().getPath();
