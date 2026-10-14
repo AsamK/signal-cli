@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `send --timestamp` to set the timestamp of the sent message instead of using the current time
+
 ## [0.14.9] - 2026-10-07
 
 ### Added

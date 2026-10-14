@@ -466,6 +466,9 @@ public class DbusManagerImpl implements Manager {
             final Set<RecipientIdentifier> recipients,
             final boolean notifySelf
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
+        if (message.timestamp().isPresent()) {
+            throw new UnsupportedOperationException("Custom message timestamps are not supported over D-Bus");
+        }
         return handleMessage(recipients,
                 numbers -> signal.sendMessage(message.messageText(), message.attachments(), numbers),
                 () -> signal.sendNoteToSelfMessage(message.messageText(), message.attachments()),
