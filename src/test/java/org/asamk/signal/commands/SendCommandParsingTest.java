@@ -13,13 +13,16 @@ import org.asamk.signal.testutil.ManagerMock;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SendCommandParsingTest {
 
@@ -111,6 +114,123 @@ class SendCommandParsingTest {
         for (final var value : List.of(BLUR_HASH + "0", "!" + BLUR_HASH.substring(1), "00000")) {
             assertThrows(UserErrorException.class, () -> send(blurHashNamespace(List.of(value))), value);
         }
+    }
+
+    @Test
+    void cliPassesTimestampIntoTheSentMessage() throws Exception {
+        final var parser = ArgumentParsers.newFor("signal-cli", DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS)
+                .includeArgumentNamesAsKeysInResult(true)
+                .build();
+        new SendCommand().attachToSubparser(parser.addSubparsers().addParser("send"));
+        final var timestamp = System.currentTimeMillis() - 5000;
+        final var message = send(parser.parseArgs(new String[]{
+                "send",
+                "--note-to-self",
+                "-m",
+                "hello",
+                "--timestamp",
+                String.valueOf(timestamp)
+        }));
+
+        assertEquals(Optional.of(timestamp), message.timestamp());
+    }
+
+    @Test
+    void jsonRpcPassesTimestampIntoTheSentMessage() throws Exception {
+        final var timestamp = System.currentTimeMillis() - 5000;
+        final var message = send(timestampNamespace(timestamp));
+        assertEquals(Optional.of(timestamp), message.timestamp());
+    }
+
+    @Test
+    void jsonRpcAcceptsIntegerTimestamp() throws Exception {
+        // JSON-RPC delivers small numbers as Integer
+        final var message = send(timestampNamespace(12345));
+        assertEquals(Optional.of(12345L), message.timestamp());
+    }
+
+    @Test
+    void omittedTimestampKeepsExistingBehavior() throws Exception {
+        final var message = send(new JsonRpcNamespace(Map.of("noteToSelf", true, "message", "hello")));
+        assertEquals(Optional.empty(), message.timestamp());
+    }
+
+    @Test
+    void rejectsInvalidTimestampsBeforeSending() {
+        final var now = System.currentTimeMillis();
+        for (final Object value : new Object[]{0L, -1L, now + 86_400_000L, 1.7548e12, "12345"}) {
+            assertThrows(UserErrorException.class, () -> send(timestampNamespace(value)), String.valueOf(value));
+        }
+    }
+
+    @Test
+    void rejectsTimestampWithEditTimestamp() {
+        final var e = assertThrows(UserErrorException.class,
+                () -> send(new JsonRpcNamespace(Map.of("noteToSelf",
+                        true,
+                        "message",
+                        "hello",
+                        "timestamp",
+                        System.currentTimeMillis() - 5000,
+                        "editTimestamp",
+                        System.currentTimeMillis() - 10000))));
+        assertTrue(e.getMessage().contains("--edit-timestamp"));
+    }
+
+    @Test
+    void rejectsTimestampWithEndSession() {
+        final var e = assertThrows(UserErrorException.class,
+                () -> send(new JsonRpcNamespace(Map.of("recipient",
+                        "+15550000000",
+                        "timestamp",
+                        System.currentTimeMillis() - 5000,
+                        "endSession",
+                        true))));
+        assertTrue(e.getMessage().contains("--end-session"));
+    }
+
+    // parseMessageTimestamp takes the current time as a parameter, so the bounds can be tested deterministically.
+
+    @Test
+    void parseMessageTimestampReturnsEmptyForNull() throws Exception {
+        assertEquals(Optional.empty(), SendCommand.parseMessageTimestamp(null, 1000L));
+    }
+
+    @Test
+    void parseMessageTimestampAcceptsTimestampJustBeforeNow() throws Exception {
+        assertEquals(Optional.of(999L), SendCommand.parseMessageTimestamp(999L, 1000L));
+    }
+
+    @Test
+    void parseMessageTimestampRejectsTimestampNotInThePast() {
+        for (final var value : List.of(1000L, 1001L)) {
+            final var e = assertThrows(UserErrorException.class,
+                    () -> SendCommand.parseMessageTimestamp(value, 1000L));
+            assertTrue(e.getMessage().contains("past"), String.valueOf(value));
+        }
+    }
+
+    @Test
+    void parseMessageTimestampRejectsZeroAndNegative() {
+        for (final var value : List.of(0L, -1L)) {
+            final var e = assertThrows(UserErrorException.class,
+                    () -> SendCommand.parseMessageTimestamp(value, 1000L));
+            assertTrue(e.getMessage().contains("positive"), String.valueOf(value));
+        }
+    }
+
+    @Test
+    void parseMessageTimestampRejectsNonIntegerTypes() {
+        final var outOfRange = BigInteger.valueOf(2).pow(64).add(BigInteger.ONE);
+        for (final Object value : new Object[]{outOfRange, 1.7548e12, "12345"}) {
+            final var e = assertThrows(UserErrorException.class,
+                    () -> SendCommand.parseMessageTimestamp(value, 1000000L));
+            assertTrue(e.getMessage().contains("integer"), String.valueOf(value));
+        }
+    }
+
+    private JsonRpcNamespace timestampNamespace(Object timestamp) {
+        return new JsonRpcNamespace(Map.of("noteToSelf", true, "message", "hello", "timestamp", timestamp));
     }
 
     private JsonRpcNamespace blurHashNamespace(List<String> blurHashes) {

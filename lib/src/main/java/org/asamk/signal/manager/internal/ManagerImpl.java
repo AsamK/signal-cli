@@ -692,7 +692,7 @@ public class ManagerImpl implements Manager {
             Set<RecipientIdentifier> recipients,
             boolean notifySelf
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
-        return sendMessage(messageBuilder, recipients, notifySelf, Optional.empty(), true);
+        return sendMessage(messageBuilder, recipients, notifySelf, Optional.empty(), Optional.empty(), true);
     }
 
     private SendMessageResults sendMessage(
@@ -700,10 +700,11 @@ public class ManagerImpl implements Manager {
             Set<RecipientIdentifier> recipients,
             boolean notifySelf,
             Optional<Long> editTargetTimestamp,
+            Optional<Long> messageTimestamp,
             boolean urgent
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
-        long timestamp = getNextMessageTimestamp();
+        long timestamp = messageTimestamp.orElseGet(this::getNextMessageTimestamp);
         messageBuilder.withTimestamp(timestamp);
         for (final var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.NoteToSelf || (
@@ -833,7 +834,12 @@ public class ManagerImpl implements Manager {
         }
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
-        return sendMessage(messageBuilder, recipients, notifySelf, Optional.empty(), message.urgent());
+        return sendMessage(messageBuilder,
+                recipients,
+                notifySelf,
+                Optional.empty(),
+                message.timestamp(),
+                message.urgent());
     }
 
     @Override
@@ -842,9 +848,17 @@ public class ManagerImpl implements Manager {
             Set<RecipientIdentifier> recipients,
             long editTargetTimestamp
     ) throws IOException, AttachmentInvalidException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException, UnregisteredRecipientException, InvalidStickerException {
+        if (message.timestamp().isPresent()) {
+            throw new IllegalArgumentException("A message timestamp cannot be combined with editing a message");
+        }
         final var messageBuilder = SignalServiceDataMessage.newBuilder();
         applyMessage(messageBuilder, message);
-        return sendMessage(messageBuilder, recipients, false, Optional.of(editTargetTimestamp), message.urgent());
+        return sendMessage(messageBuilder,
+                recipients,
+                false,
+                Optional.of(editTargetTimestamp),
+                Optional.empty(),
+                message.urgent());
     }
 
     @Override

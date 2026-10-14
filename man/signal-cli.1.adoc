@@ -440,6 +440,11 @@ Clear session state and send end session message.
 *--edit-timestamp*::
 Specify the timestamp of a previous message with the recipient or group to send an edited message.
 
+*--timestamp*::
+Specify the timestamp of the message in milliseconds since the epoch, instead of using the current time.
+Must be positive and in the past.
+Cannot be combined with *--edit-timestamp* or *--end-session*.
+
 *--no-urgent*::
 Send the message without the urgent flag, so no push notification is triggered for the recipient.
 The message will still be delivered in real-time if the recipient's app is active.
