@@ -636,31 +636,17 @@ class GroupV2Helper {
         final DecryptedGroupChange decryptedChange;
         final DecryptedGroup decryptedGroupState;
 
-        if (!changeActions.promote_members_pending_pni_aci_profile_key.isEmpty()) {
-            // The server fills in the ACI and PNI ciphertexts of a PNI promotion, so decrypt its signed change
-            final var signedGroupChange = dependencies.getGroupsV2Api()
-                    .patchGroup(changeActions, getGroupAuthForToday(groupSecretParams), Optional.empty());
-            final var groupId = groupSecretParams.getPublicParams().getGroupIdentifier();
-            try {
-                decryptedChange = groupOperations.decryptChange(signedGroupChange.group_change,
-                        DecryptChangeVerificationMode.verify(groupId)).orElseThrow();
-                decryptedGroupState = DecryptedGroupUtil.apply(previousGroupState, decryptedChange);
-            } catch (VerificationFailedException | InvalidGroupStateException | NotAbleToApplyGroupV2ChangeException e) {
-                throw new IOException(e);
-            }
-            groupInfoV2.setGroup(decryptedGroupState);
-            return new Pair<>(decryptedGroupState, signedGroupChange);
-        }
+        var signedGroupChange = dependencies.getGroupsV2Api()
+                .patchGroup(changeActions, getGroupAuthForToday(groupSecretParams), Optional.empty());
 
+        final var groupId = groupSecretParams.getPublicParams().getGroupIdentifier();
         try {
-            decryptedChange = groupOperations.decryptChange(changeActions, getSelfAci());
+            decryptedChange = groupOperations.decryptChange(signedGroupChange.group_change,
+                    DecryptChangeVerificationMode.verify(groupId)).orElseThrow();
             decryptedGroupState = DecryptedGroupUtil.apply(previousGroupState, decryptedChange);
         } catch (VerificationFailedException | InvalidGroupStateException | NotAbleToApplyGroupV2ChangeException e) {
             throw new IOException(e);
         }
-
-        var signedGroupChange = dependencies.getGroupsV2Api()
-                .patchGroup(changeActions, getGroupAuthForToday(groupSecretParams), Optional.empty());
 
         groupInfoV2.setGroup(decryptedGroupState);
 
