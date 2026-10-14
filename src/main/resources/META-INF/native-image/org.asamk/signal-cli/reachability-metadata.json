@@ -9651,6 +9651,12 @@
         {
           "name": "<init>",
           "parameterTypes": []
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.util.List"
+          ]
         }
       ]
     },

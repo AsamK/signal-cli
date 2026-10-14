@@ -285,6 +285,7 @@ done
 
 run_main -a "$NUMBER_1" --output="$OUTPUT" receive
 run_main -a "$NUMBER_1" removeDevice -d 2 || true
+run_main -a "$NUMBER_2" send "$NUMBER_1" -m "message-after-linked-device-removal"
 run_main -a "$NUMBER_1" removeDevice -d 2 || true
 
 ## Unregister
