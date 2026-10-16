@@ -7,6 +7,7 @@ import org.asamk.signal.manager.storage.configuration.ConfigurationStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.identities.IdentityInfo;
+import org.asamk.signal.manager.storage.notificationProfiles.NotificationProfile;
 import org.asamk.signal.manager.storage.recipients.Recipient;
 import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.signal.core.models.ServiceId.ACI;
@@ -17,6 +18,7 @@ import org.whispersystems.signalservice.api.storage.SignalAccountRecord;
 import org.whispersystems.signalservice.api.storage.SignalContactRecord;
 import org.whispersystems.signalservice.api.storage.SignalGroupV1Record;
 import org.whispersystems.signalservice.api.storage.SignalGroupV2Record;
+import org.whispersystems.signalservice.api.storage.SignalNotificationProfileRecord;
 import org.whispersystems.signalservice.api.storage.SignalStickerPackRecord;
 import org.whispersystems.signalservice.internal.storage.protos.AccountRecord;
 import org.whispersystems.signalservice.internal.storage.protos.AccountRecord.UsernameLink;
@@ -182,6 +184,15 @@ public final class StorageSyncModels {
             builder.deletedAtTimestamp(0);
         }
 
+        return builder.build();
+    }
+
+    public static org.whispersystems.signalservice.internal.storage.protos.NotificationProfile localToRemoteRecord(
+            NotificationProfile notificationProfile
+    ) {
+        // Notification profiles are never edited locally, the stored record is the source of truth.
+        final var builder = SignalNotificationProfileRecord.Companion.newBuilder(notificationProfile.storageRecord());
+        builder.id(ByteString.of(notificationProfile.profileId()));
         return builder.build();
     }
 
