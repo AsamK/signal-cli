@@ -65,7 +65,7 @@ public class ProfileUtils {
             final SignalServiceProfile encryptedProfile,
             final ProfileCipher profileCipher
     ) {
-        if (encryptedProfile.isUnrestrictedUnidentifiedAccess()) {
+        if (encryptedProfile.getUnrestrictedUnidentifiedAccess()) {
             return Profile.UnidentifiedAccessMode.UNRESTRICTED;
         }
 
@@ -81,11 +81,13 @@ public class ProfileUtils {
 
     public static HashSet<Profile.Capability> getCapabilities(final SignalServiceProfile encryptedProfile) {
         final var capabilities = new HashSet<Profile.Capability>();
-        if (encryptedProfile.getCapabilities().isStorage()) {
-            capabilities.add(Profile.Capability.storage);
-        }
-        if (encryptedProfile.getCapabilities().isStorageServiceEncryptionV2()) {
-            capabilities.add(Profile.Capability.storageServiceEncryptionV2Capability);
+        if (encryptedProfile.getCapabilities() != null) {
+            if (encryptedProfile.getCapabilities().getStorage()) {
+                capabilities.add(Profile.Capability.storage);
+            }
+            if (encryptedProfile.getCapabilities().getStorageServiceEncryptionV2()) {
+                capabilities.add(Profile.Capability.storageServiceEncryptionV2Capability);
+            }
         }
 
         return capabilities;

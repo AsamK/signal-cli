@@ -458,10 +458,14 @@ public class CallManager implements AutoCloseable {
     }
 
     private String buildConfig(CallState state) {
+        return buildConfig(state, account.getDeviceId());
+    }
+
+    static String buildConfig(CallState state, int localDeviceId) {
         var config = mapper.createObjectNode();
         config.put("call_id", Utils.callIdUnsigned(state.callId));
         config.put("is_outgoing", state.isOutgoing);
-        config.put("local_device_id", 1);
+        config.put("local_device_id", localDeviceId);
         return writeJson(config);
     }
 

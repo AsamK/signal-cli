@@ -555,7 +555,8 @@ public class SendHelper {
                         recipients,
                         unidentifiedAccess,
                         groupSendEndorsements,
-                        message),
+                        message,
+                        null),
                 recipientIds,
                 groupInfo,
                 false);

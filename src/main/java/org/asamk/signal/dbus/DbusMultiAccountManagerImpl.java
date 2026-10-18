@@ -59,9 +59,23 @@ public class DbusMultiAccountManagerImpl implements MultiAccountManager {
     }
 
     @Override
+    public void removeOnManagerAddedHandler(final Consumer<Manager> handler) {
+        synchronized (onManagerAddedHandlers) {
+            onManagerAddedHandlers.remove(handler);
+        }
+    }
+
+    @Override
     public void addOnManagerRemovedHandler(final Consumer<Manager> handler) {
         synchronized (onManagerRemovedHandlers) {
             onManagerRemovedHandlers.add(handler);
+        }
+    }
+
+    @Override
+    public void removeOnManagerRemovedHandler(final Consumer<Manager> handler) {
+        synchronized (onManagerRemovedHandlers) {
+            onManagerRemovedHandlers.remove(handler);
         }
     }
 

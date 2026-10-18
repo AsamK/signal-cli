@@ -585,6 +585,21 @@ public final class IncomingMessageHandler {
                 actions.addAll(dataResults.first());
                 longTexts.putAll(dataResults.second());
             }
+            if (message.getEditMessage().isPresent()) {
+                final var dataResults = handleSignalServiceDataMessage(message.getEditMessage()
+                                .get()
+                                .getDataMessage(),
+                        true,
+                        sender,
+                        destination == null
+                                ? null
+                                : new DeviceAddress(account.getRecipientResolver().resolveRecipient(destination),
+                                        destination.getServiceId(),
+                                        0),
+                        receiveConfig);
+                actions.addAll(dataResults.first());
+                longTexts.putAll(dataResults.second());
+            }
             if (message.getStoryMessage().isPresent()) {
                 actions.addAll(handleSignalServiceStoryMessage(message.getStoryMessage().get(),
                         sender.recipientId(),

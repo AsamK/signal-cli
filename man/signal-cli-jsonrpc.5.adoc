@@ -38,6 +38,11 @@ With `--http` signal-cli exposes three endpoints;
 * GET /api/v1/events : Returns a Server-Sent Events (SSE) stream of incoming messages
 * GET /api/v1/check : Responds with 200 OK if daemon is running
 
+Each event of `/api/v1/events` has an `id`.
+signal-cli keeps the last 1000 events in memory.
+A client that reconnects with a `Last-Event-ID` header first receives the events after that id.
+If the id is unknown, e.g. because signal-cli was restarted, all kept events are sent.
+
 == Basic usage
 
 In JSON-RPC mode, signal-cli will read requests from stdin.

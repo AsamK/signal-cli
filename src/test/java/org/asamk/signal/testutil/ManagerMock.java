@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ManagerMock {
@@ -24,7 +25,8 @@ public final class ManagerMock {
         public final AtomicInteger addCallEventListenerCount = new AtomicInteger(0);
         public final AtomicInteger removeCallEventListenerCount = new AtomicInteger(0);
 
-        public final List<Manager.ReceiveMessageHandler> receiveHandlers = new ArrayList<>();
+        // Written by server threads while tests read it
+        public final List<Manager.ReceiveMessageHandler> receiveHandlers = new CopyOnWriteArrayList<>();
         public final AtomicInteger addReceiveHandlerCount = new AtomicInteger(0);
         public final AtomicInteger removeReceiveHandlerCount = new AtomicInteger(0);
     }

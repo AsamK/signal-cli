@@ -11,6 +11,7 @@ import org.signal.libsignal.zkgroup.profiles.ClientZkProfileOperations;
 import org.signal.network.api.AccountApiV2;
 import org.signal.network.api.AttachmentApi;
 import org.signal.network.api.CallingApi;
+import org.signal.network.api.CdnApi;
 import org.signal.network.api.CdsApi;
 import org.signal.network.api.CertificateApi;
 import org.signal.network.api.LinkDeviceApi;
@@ -91,6 +92,7 @@ public class SignalDependencies {
     private ClientZkOperations clientZkOperations;
     private ProfileService profileService;
     private ProfileApi profileApi;
+    private CdnApi cdnApi;
     private CdnService cdnService;
     private PreKeyRepository preKeyRepository;
     private SignalRestClient signalRestClient;
@@ -271,7 +273,7 @@ public class SignalDependencies {
 
     public AttachmentApi getAttachmentApi() {
         return getOrCreate(() -> attachmentApi,
-                () -> attachmentApi = new AttachmentApi(getAuthenticatedSignalWebSocket(), getPushServiceSocket()));
+                () -> attachmentApi = new AttachmentApi(getAuthenticatedSignalWebSocket()));
     }
 
     public CallingApi getCallingApi() {
@@ -353,7 +355,7 @@ public class SignalDependencies {
 
     public CdnService getCdnService() {
         return getOrCreate(() -> cdnService,
-                () -> cdnService = new CdnService(getSignalRestClient(), getAttachmentApi()));
+                () -> cdnService = new CdnService(getCdnApi(), getAttachmentApi(), () -> null));
     }
 
     public PreKeyRepository getPreKeyRepository() {
@@ -378,7 +380,8 @@ public class SignalDependencies {
                         ServiceConfig.MAX_ENVELOPE_SIZE,
                         ServiceConfig.MAX_INCREMENTAL_MACS_PER_ENVELOPE,
                         () -> true,
-                        getPreKeyRepository()));
+                        getPreKeyRepository(),
+                        getCdnService()));
     }
 
     public List<SecureValueRecovery> getSecureValueRecovery() {
@@ -395,6 +398,10 @@ public class SignalDependencies {
                         getUnauthenticatedSignalWebSocket(),
                         getPushServiceSocket(),
                         getClientZkProfileOperations()));
+    }
+
+    public CdnApi getCdnApi() {
+        return getOrCreate(() -> cdnApi, () -> cdnApi = new CdnApi(getSignalRestClient()));
     }
 
     public ProfileService getProfileService() {

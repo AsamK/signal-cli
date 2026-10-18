@@ -1105,6 +1105,10 @@ Expose a JSON-RPC interface as http endpoint (default localhost:8080).
 The JSON-RPC endpoint is `/api/v1/rpc`. +
 See **signal-cli-jsonrpc**(5) for info on the JSON-RPC interface.
 
+*--sse-keepalive-interval* SECONDS::
+Seconds between keep-alive messages on the http events endpoint `/api/v1/events` (default 15).
+A shorter interval lets signal-cli notice sooner that a client has disconnected.
+
 *--dbus*::
 Export DBus interface on user bus. +
 See **signal-cli-dbus**(5) for info on the dbus interface.
