@@ -12,7 +12,11 @@ public interface MultiAccountManager extends AutoCloseable {
 
     void addOnManagerAddedHandler(Consumer<Manager> handler);
 
+    void removeOnManagerAddedHandler(Consumer<Manager> handler);
+
     void addOnManagerRemovedHandler(Consumer<Manager> handler);
+
+    void removeOnManagerRemovedHandler(Consumer<Manager> handler);
 
     Manager getManager(String phoneNumber);
 

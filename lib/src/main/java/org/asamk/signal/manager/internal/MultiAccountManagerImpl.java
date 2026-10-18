@@ -68,6 +68,13 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
         }
     }
 
+    @Override
+    public void removeOnManagerAddedHandler(final Consumer<Manager> handler) {
+        synchronized (onManagerAddedHandlers) {
+            onManagerAddedHandlers.remove(handler);
+        }
+    }
+
     void removeManager(final Manager m) {
         synchronized (managers) {
             if (!managers.remove(m)) {
@@ -85,6 +92,13 @@ public class MultiAccountManagerImpl implements MultiAccountManager {
     public void addOnManagerRemovedHandler(final Consumer<Manager> handler) {
         synchronized (onManagerRemovedHandlers) {
             onManagerRemovedHandlers.add(handler);
+        }
+    }
+
+    @Override
+    public void removeOnManagerRemovedHandler(final Consumer<Manager> handler) {
+        synchronized (onManagerRemovedHandlers) {
+            onManagerRemovedHandlers.remove(handler);
         }
     }
 

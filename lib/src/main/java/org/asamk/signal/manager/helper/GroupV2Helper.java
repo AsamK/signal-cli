@@ -480,15 +480,16 @@ class GroupV2Helper {
         }
 
         // We need to accept the invite with the ACI or PNI that was used for the invitation
-        final var selfAddress = context.getRecipientHelper().resolveSignalServiceAddress(selfRecipientId);
+        final var account = context.getAccount();
         final var selfServiceId = groupInfoV2.getPendingMemberAddresses()
                 .stream()
-                .filter(s -> s.matches(selfAddress))
+                .map(SignalServiceAddress::getServiceId)
+                .filter(s -> s.equals(account.getAci()) || s.equals(account.getPni()))
                 .findFirst();
         if (selfServiceId.isEmpty()) {
             throw new IOException("Cannot find service ID for self to accept invite");
         }
-        final var serviceId = selfServiceId.get().getServiceId();
+        final var serviceId = selfServiceId.get();
 
         final GroupChange.Actions.Builder change;
         if (serviceId instanceof ACI) {
@@ -497,7 +498,8 @@ class GroupV2Helper {
             change = groupOperations.createAcceptPniInviteChange(profileKeyCredential);
         }
 
-        change.sourceUserId(serviceId.toByteString());
+        // The change is made by the account's ACI, also when it promotes a PNI invitation
+        change.sourceUserId(account.getAci().toByteString());
 
         return commitChange(groupInfoV2, change);
     }
@@ -634,15 +636,17 @@ class GroupV2Helper {
         final DecryptedGroupChange decryptedChange;
         final DecryptedGroup decryptedGroupState;
 
+        var signedGroupChange = dependencies.getGroupsV2Api()
+                .patchGroup(changeActions, getGroupAuthForToday(groupSecretParams), Optional.empty());
+
+        final var groupId = groupSecretParams.getPublicParams().getGroupIdentifier();
         try {
-            decryptedChange = groupOperations.decryptChange(changeActions, getSelfAci());
+            decryptedChange = groupOperations.decryptChange(signedGroupChange.group_change,
+                    DecryptChangeVerificationMode.verify(groupId)).orElseThrow();
             decryptedGroupState = DecryptedGroupUtil.apply(previousGroupState, decryptedChange);
         } catch (VerificationFailedException | InvalidGroupStateException | NotAbleToApplyGroupV2ChangeException e) {
             throw new IOException(e);
         }
-
-        var signedGroupChange = dependencies.getGroupsV2Api()
-                .patchGroup(changeActions, getGroupAuthForToday(groupSecretParams), Optional.empty());
 
         groupInfoV2.setGroup(decryptedGroupState);
 
