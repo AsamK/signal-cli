@@ -174,6 +174,9 @@ public class ManagerImpl implements Manager {
     private boolean isReceivingSynchronous;
     private final Set<ReceiveMessageHandler> weakHandlers = new HashSet<>();
     private final Set<ReceiveMessageHandler> messageHandlers = new HashSet<>();
+    // The last handler while its removal stops the receive thread: it still gets the envelope the thread is
+    // handling, but doesn't keep the thread receiving.
+    private final Set<ReceiveMessageHandler> drainingHandlers = new HashSet<>();
     private final List<Runnable> closedListeners = new ArrayList<>();
     private final List<Runnable> addressChangedListeners = new ArrayList<>();
     private final CompositeDisposable disposable = new CompositeDisposable();
@@ -1541,7 +1544,7 @@ public class ManagerImpl implements Manager {
 
     private void passReceivedMessageToHandlers(MessageEnvelope envelope, Throwable e) {
         synchronized (messageHandlers) {
-            Stream.concat(messageHandlers.stream(), weakHandlers.stream()).forEach(h -> {
+            Stream.of(messageHandlers, weakHandlers, drainingHandlers).flatMap(Set::stream).forEach(h -> {
                 try {
                     h.handleMessage(envelope, e);
                 } catch (Throwable ex) {
@@ -1556,14 +1559,26 @@ public class ManagerImpl implements Manager {
         final Thread thread;
         synchronized (messageHandlers) {
             weakHandlers.remove(handler);
-            messageHandlers.remove(handler);
+            final var removed = messageHandlers.remove(handler);
             if (!messageHandlers.isEmpty() || receiveThread == null || isReceivingSynchronous) {
                 return;
             }
             thread = receiveThread;
+            // The receive thread may be handling an envelope that is already cached and acknowledged to the server,
+            // and the cache drops it once it's handled. So the last handler keeps getting envelopes until the thread
+            // has stopped, otherwise that envelope would reach no handler and be lost.
+            if (removed) {
+                drainingHandlers.add(handler);
+            }
         }
 
-        stopReceiveThread(thread);
+        try {
+            stopReceiveThread(thread);
+        } finally {
+            synchronized (messageHandlers) {
+                drainingHandlers.remove(handler);
+            }
+        }
     }
 
     private void stopReceiveThread(final Thread thread) {

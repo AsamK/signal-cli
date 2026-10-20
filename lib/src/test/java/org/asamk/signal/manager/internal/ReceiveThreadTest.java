@@ -23,8 +23,10 @@ import java.nio.file.Path;
 import java.security.Security;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Timeout(60)
@@ -142,6 +144,28 @@ class ReceiveThreadTest {
         assertTrue(receiveHelper.await(() -> receiveHelper.startedThreads == 2 && receiveHelper.maxRunningLoops == 1));
     }
 
+    @Test
+    void lastHandlerStillGetsTheMessageInHandWhenItIsRemoved() throws Exception {
+        final var received = new AtomicInteger();
+        final var handler = new Manager.ReceiveMessageHandler() {
+            @Override
+            public void handleMessage(final MessageEnvelope envelope, final Throwable e) {
+                received.incrementAndGet();
+            }
+        };
+
+        manager.addReceiveHandler(handler);
+        assertTrue(receiveHelper.await(() -> receiveHelper.runningLoops == 1));
+
+        // Like an envelope that is already cached and acknowledged, and still being handled when the last
+        // handler goes: the loop passes it on before it stops
+        receiveHelper.setPassOnOneWhenStopped(true);
+        manager.removeReceiveHandler(handler);
+
+        assertEquals(1, received.get());
+        assertTrue(receiveHelper.await(() -> receiveHelper.runningLoops == 0 && receiveHelper.startedThreads == 1));
+    }
+
     private static Manager.ReceiveMessageHandler newHandler() {
         // An anonymous class instead of a lambda, so every handler is a separate instance
         return new Manager.ReceiveMessageHandler() {
@@ -161,6 +185,7 @@ class ReceiveThreadTest {
         private final Object lock = new Object();
         private boolean stopRequested;
         private boolean holdStoppingLoops;
+        private boolean passOnOneWhenStopped;
         private int stopRequests;
         private int startedThreads;
         private int startedLoops;
@@ -213,6 +238,9 @@ class ReceiveThreadTest {
                 maxRunningLoops = Math.max(maxRunningLoops, runningLoops);
                 lock.notifyAll();
                 if (await(() -> stopRequested)) {
+                    if (passOnOneWhenStopped) {
+                        handler.handleMessage(null, null);
+                    }
                     stoppingLoops++;
                     lock.notifyAll();
                     await(() -> !holdStoppingLoops);
@@ -220,6 +248,12 @@ class ReceiveThreadTest {
                 }
                 runningLoops--;
                 lock.notifyAll();
+            }
+        }
+
+        void setPassOnOneWhenStopped(final boolean passOn) {
+            synchronized (lock) {
+                passOnOneWhenStopped = passOn;
             }
         }
 
