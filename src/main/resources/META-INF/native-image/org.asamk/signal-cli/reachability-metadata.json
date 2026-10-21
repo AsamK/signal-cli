@@ -2696,19 +2696,26 @@
           "name": "<init>",
           "parameterTypes": [
             "java.lang.Boolean",
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.lang.String",
             "java.lang.String"
           ]
         },
         {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.String",
-            "java.lang.Boolean"
-          ]
+          "name": "captcha",
+          "parameterTypes": []
         },
         {
-          "name": "captcha",
+          "name": "recoveryKey",
+          "parameterTypes": []
+        },
+        {
+          "name": "reregister",
+          "parameterTypes": []
+        },
+        {
+          "name": "totp",
           "parameterTypes": []
         },
         {
