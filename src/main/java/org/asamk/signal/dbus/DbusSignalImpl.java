@@ -100,6 +100,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     public void initObjects() {
         exportObjects();
+        m.addUnidentifiedKeepAlive("dbus");
         if (!noReceiveOnStart) {
             subscribeReceive();
         }
@@ -116,6 +117,7 @@ public class DbusSignalImpl implements Signal, AutoCloseable {
 
     @Override
     public void close() {
+        m.removeUnidentifiedKeepAlive("dbus");
         if (dbusMessageHandler != null) {
             m.removeReceiveHandler(dbusMessageHandler);
             dbusMessageHandler = null;

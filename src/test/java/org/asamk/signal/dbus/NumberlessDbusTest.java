@@ -379,6 +379,7 @@ class NumberlessDbusTest {
                             case "isContactBlocked" -> false;
                             case "getContactOrProfileName" -> "Test contact";
                             case "addAddressChangedListener" -> null;
+                            case "addUnidentifiedKeepAlive", "removeUnidentifiedKeepAlive" -> null;
                             case "addClosedListener" -> {
                                 closedListeners.add((Runnable) args[0]);
                                 yield null;
