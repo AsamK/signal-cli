@@ -7,12 +7,14 @@ import org.asamk.signal.manager.api.Profile;
 import org.asamk.signal.manager.api.StickerPackId;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
+import org.asamk.signal.manager.storage.notificationProfiles.NotificationProfile;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.stickers.StickerPack;
 import org.asamk.signal.manager.syncStorage.AccountRecordProcessor;
 import org.asamk.signal.manager.syncStorage.ContactRecordProcessor;
 import org.asamk.signal.manager.syncStorage.GroupV1RecordProcessor;
 import org.asamk.signal.manager.syncStorage.GroupV2RecordProcessor;
+import org.asamk.signal.manager.syncStorage.NotificationProfileRecordProcessor;
 import org.asamk.signal.manager.syncStorage.StickerPackRecordProcessor;
 import org.asamk.signal.manager.syncStorage.StorageSyncLoopDetector;
 import org.asamk.signal.manager.syncStorage.StorageSyncModels;
@@ -58,7 +60,8 @@ public class StorageHelper {
             ManifestRecord.Identifier.Type.GROUPV1.getValue(),
             ManifestRecord.Identifier.Type.GROUPV2.getValue(),
             ManifestRecord.Identifier.Type.ACCOUNT.getValue(),
-            ManifestRecord.Identifier.Type.STICKER_PACK.getValue());
+            ManifestRecord.Identifier.Type.STICKER_PACK.getValue(),
+            ManifestRecord.Identifier.Type.NOTIFICATION_PROFILE.getValue());
 
     private final SignalAccount account;
     private final SignalDependencies dependencies;
@@ -134,6 +137,7 @@ public class StorageHelper {
         account.getRecipientStore().setMissingStorageIds();
         account.getGroupStore().setMissingStorageIds();
         account.getStickerStore().setMissingStorageIds();
+        account.getNotificationProfileStore().setMissingStorageIds();
 
         var needsMultiDeviceSync = false;
 
@@ -245,12 +249,15 @@ public class StorageHelper {
                                     oldUnregisteredLocalOnlyIds);
                     final var updatedStickers = account.getStickerStore()
                             .removeStorageIdsFromLocalOnlyDeletedStickerPacks(connection, oldUnregisteredLocalOnlyIds);
+                    final var updatedNotificationProfiles = account.getNotificationProfileStore()
+                            .removeLocalOnlyDeletedNotificationProfiles(connection, oldUnregisteredLocalOnlyIds);
 
-                    if (updated > 0 || updatedStickers > 0) {
+                    if (updated > 0 || updatedStickers > 0 || updatedNotificationProfiles > 0) {
                         logger.warn(
-                                "Found {} recipients and {} sticker packs that were deleted remotely but only marked deleted locally. Removed those from local store.",
+                                "Found {} recipients, {} sticker packs and {} notification profiles that were deleted remotely but only marked deleted locally. Removed those from local store.",
                                 updated,
-                                updatedStickers);
+                                updatedStickers,
+                                updatedNotificationProfiles);
                     }
                 }
 
@@ -436,6 +443,7 @@ public class StorageHelper {
         final Map<GroupIdV1, StorageId> newGroupV1StorageIds;
         final Map<GroupIdV2, StorageId> newGroupV2StorageIds;
         final Map<StickerPackId, StorageId> newStickerPackStorageIds;
+        final Map<Long, StorageId> newNotificationProfileStorageIds;
 
         try (final var connection = account.getAccountDatabase().getConnection()) {
             connection.setAutoCommit(false);
@@ -495,6 +503,16 @@ public class StorageHelper {
                         new StorageRecord.Builder().stickerPack(record).build()));
             }
 
+            final var notificationProfiles = account.getNotificationProfileStore()
+                    .getNotificationProfiles(connection);
+            newNotificationProfileStorageIds = generateNotificationProfileStorageIds(notificationProfiles);
+            for (final var notificationProfile : notificationProfiles) {
+                final var storageId = newNotificationProfileStorageIds.get(notificationProfile.internalId());
+                final var record = StorageSyncModels.localToRemoteRecord(notificationProfile);
+                newStorageRecords.add(new SignalStorageRecord(storageId,
+                        new StorageRecord.Builder().notificationProfile(record).build()));
+            }
+
             connection.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to sync remote storage", e);
@@ -546,6 +564,7 @@ public class StorageHelper {
             account.getRecipientStore().updateStorageIds(connection, newContactStorageIds);
             account.getGroupStore().updateStorageIds(connection, newGroupV1StorageIds, newGroupV2StorageIds);
             account.getStickerStore().updateStorageIds(connection, newStickerPackStorageIds);
+            account.getNotificationProfileStore().updateStorageIds(connection, newNotificationProfileStorageIds);
 
             // delete all unknown storage ids
             account.getUnknownStorageIdStore().deleteAllUnknownStorageIds(connection);
@@ -584,6 +603,14 @@ public class StorageHelper {
         return stickerPacks.stream()
                 .collect(Collectors.toMap(stickerPack -> stickerPack.packId(),
                         _ -> StorageId.forStickerPack(KeyUtils.createRawStorageId())));
+    }
+
+    private Map<Long, StorageId> generateNotificationProfileStorageIds(
+            final List<NotificationProfile> notificationProfiles
+    ) {
+        return notificationProfiles.stream()
+                .collect(Collectors.toMap(NotificationProfile::internalId,
+                        _ -> StorageId.forNotificationProfile(KeyUtils.createRawStorageId())));
     }
 
     private void storeManifestLocally(
@@ -626,6 +653,7 @@ public class StorageHelper {
         storageIds.addAll(account.getGroupStore().getStorageIds(connection));
         storageIds.addAll(account.getRecipientStore().getStorageIds(connection));
         storageIds.addAll(account.getStickerStore().getStorageIds(connection));
+        storageIds.addAll(account.getNotificationProfileStore().getStorageIds(connection));
         storageIds.add(account.getRecipientStore().getSelfStorageId(connection));
         return storageIds;
     }
@@ -681,6 +709,16 @@ public class StorageHelper {
                 }
                 final var record = StorageSyncModels.localToRemoteRecord(stickerPack);
                 yield new SignalStorageRecord(storageId, new StorageRecord.Builder().stickerPack(record).build());
+            }
+            case ManifestRecord.Identifier.Type.NOTIFICATION_PROFILE -> {
+                final var notificationProfile = account.getNotificationProfileStore()
+                        .getNotificationProfile(connection, storageId);
+                if (notificationProfile == null) {
+                    throw new AssertionError("Missing local notification profile model for storage id: " + storageId);
+                }
+                final var record = StorageSyncModels.localToRemoteRecord(notificationProfile);
+                yield new SignalStorageRecord(storageId,
+                        new StorageRecord.Builder().notificationProfile(record).build());
             }
             case null, default -> {
                 throw new AssertionError("Got unknown local storage record type: " + storageId);
@@ -752,6 +790,7 @@ public class StorageHelper {
                 context.getJobExecutor(),
                 identityConflictsPendingRepair);
         final var stickerPackRecordProcessor = new StickerPackRecordProcessor(account, connection);
+        final var notificationProfileRecordProcessor = new NotificationProfileRecordProcessor(account, connection);
 
         final var contactRecords = records.stream()
                 .filter(record -> record.getProto().contact != null)
@@ -781,6 +820,11 @@ public class StorageHelper {
                 logger.debug("Reading record {} of type stickerPack", record.getId());
                 stickerPackRecordProcessor.process(StorageRecordConvertersKt.toSignalStickerPackRecord(record.getProto().stickerPack,
                         record.getId()));
+            } else if (record.getProto().notificationProfile != null) {
+                logger.debug("Reading record {} of type notificationProfile", record.getId());
+                notificationProfileRecordProcessor.process(StorageRecordConvertersKt.toSignalNotificationProfileRecord(
+                        record.getProto().notificationProfile,
+                        record.getId()));
             } else {
                 unknownRecords.add(record.getId());
             }
@@ -790,6 +834,7 @@ public class StorageHelper {
         processedRecords.addAll(groupV2RecordProcessor.getUpdatedStorageIds());
         processedRecords.addAll(contactRecordProcessor.getUpdatedStorageIds());
         processedRecords.addAll(stickerPackRecordProcessor.getUpdatedStorageIds());
+        processedRecords.addAll(notificationProfileRecordProcessor.getUpdatedStorageIds());
 
         return new Pair<>(unknownRecords, processedRecords);
     }

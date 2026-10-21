@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- Sync notification profiles via storage sync
+- New `listNotificationProfiles` command to show notification profiles and the current manual override
+- New `setNotificationProfile` command to manually turn a notification profile on for any duration or until any point in time, or off
+
 ## [0.14.9] - 2026-10-07
 
 ### Added
