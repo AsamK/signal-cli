@@ -17,14 +17,14 @@ import org.whispersystems.signalservice.api.storage.SignalAccountRecord;
 import org.whispersystems.signalservice.api.storage.SignalContactRecord;
 import org.whispersystems.signalservice.api.storage.SignalGroupV1Record;
 import org.whispersystems.signalservice.api.storage.SignalGroupV2Record;
-import org.whispersystems.signalservice.api.storage.SignalStickerPackRecord;
+import org.whispersystems.signalservice.api.storage.SignalInstalledStickerPackRecord;
 import org.whispersystems.signalservice.internal.storage.protos.AccountRecord;
 import org.whispersystems.signalservice.internal.storage.protos.AccountRecord.UsernameLink;
 import org.whispersystems.signalservice.internal.storage.protos.ContactRecord;
 import org.whispersystems.signalservice.internal.storage.protos.ContactRecord.IdentityState;
 import org.whispersystems.signalservice.internal.storage.protos.GroupV1Record;
 import org.whispersystems.signalservice.internal.storage.protos.GroupV2Record;
-import org.whispersystems.signalservice.internal.storage.protos.StickerPackRecord;
+import org.whispersystems.signalservice.internal.storage.protos.InstalledStickerPackRecord;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -168,8 +168,8 @@ public final class StorageSyncModels {
         return builder.build();
     }
 
-    public static StickerPackRecord localToRemoteRecord(StickerPack stickerPack) {
-        final var builder = SignalStickerPackRecord.Companion.newBuilder(stickerPack.storageRecord());
+    public static InstalledStickerPackRecord localToRemoteRecord(StickerPack stickerPack) {
+        final var builder = SignalInstalledStickerPackRecord.Companion.newBuilder(stickerPack.storageRecord());
         builder.packId(ByteString.of(stickerPack.packId().serialize()));
 
         if (stickerPack.deletedTimestamp() > 0) {

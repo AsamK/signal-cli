@@ -2455,11 +2455,11 @@
       "allDeclaredFields": true,
       "methods": [
         {
-          "name": "number",
+          "name": "aci",
           "parameterTypes": []
         },
         {
-          "name": "aci",
+          "name": "number",
           "parameterTypes": []
         }
       ]
@@ -10179,6 +10179,29 @@
       "type": "org.whispersystems.signalservice.internal.storage.protos.GroupV2Record$StorySendMode"
     },
     {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.InstalledStickerPackRecord",
+      "fields": [
+        {
+          "name": "deletedAtTimestamp"
+        },
+        {
+          "name": "packId"
+        },
+        {
+          "name": "packKey"
+        },
+        {
+          "name": "position"
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.InstalledStickerPackRecord$Builder"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.InstalledStickerPackRecord$Companion"
+    },
+    {
       "type": "org.whispersystems.signalservice.internal.storage.protos.ManifestRecord",
       "fields": [
         {
@@ -10217,29 +10240,6 @@
           "name": "readKey_"
         }
       ]
-    },
-    {
-      "type": "org.whispersystems.signalservice.internal.storage.protos.StickerPackRecord",
-      "fields": [
-        {
-          "name": "deletedAtTimestamp"
-        },
-        {
-          "name": "packId"
-        },
-        {
-          "name": "packKey"
-        },
-        {
-          "name": "position"
-        }
-      ]
-    },
-    {
-      "type": "org.whispersystems.signalservice.internal.storage.protos.StickerPackRecord$Builder"
-    },
-    {
-      "type": "org.whispersystems.signalservice.internal.storage.protos.StickerPackRecord$Companion"
     },
     {
       "type": "org.whispersystems.signalservice.internal.storage.protos.StorageItem",
