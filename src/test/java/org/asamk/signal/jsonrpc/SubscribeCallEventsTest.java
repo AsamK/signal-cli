@@ -69,6 +69,7 @@ class SubscribeCallEventsTest {
         final List<Consumer<Manager>> addedHandlers = new ArrayList<>();
         final List<Consumer<Manager>> removedHandlers = new ArrayList<>();
         int addedHandlerRegistrationCount;
+        int removedHandlerRegistrationCount;
 
         StubMultiAccountManager(List<Manager> managers) {
             this.managers = new ArrayList<>(managers);
@@ -92,6 +93,7 @@ class SubscribeCallEventsTest {
 
         @Override
         public void addOnManagerRemovedHandler(Consumer<Manager> handler) {
+            removedHandlerRegistrationCount++;
             removedHandlers.add(handler);
         }
 
@@ -237,9 +239,11 @@ class SubscribeCallEventsTest {
 
         assertEquals(1, manager1.state().addCallEventListenerCount.get(), "manager1 should have one listener");
         assertEquals(1, manager2.state().addCallEventListenerCount.get(), "manager2 should have one listener");
-        assertEquals(2, multi.addedHandlerRegistrationCount, "should register onManagerAdded handlers");
+        // Registers onManagerAdded handlers for receive subscriptions, call events, and keep-alive
+        assertEquals(3, multi.addedHandlerRegistrationCount, "should register onManagerAdded handlers");
         assertEquals(0, multi.addedHandlers.size(), "should remove onManagerAdded handlers after connection closes");
-        assertEquals(0, multi.removedHandlers.size(), "should not register onManagerRemoved handlers in manual mode");
+        assertEquals(1, multi.removedHandlerRegistrationCount, "should register keep-alive onManagerRemoved handler");
+        assertEquals(0, multi.removedHandlers.size(), "should remove onManagerRemoved handler after close");
     }
 
     @Test
@@ -287,8 +291,9 @@ class SubscribeCallEventsTest {
 
         handler.handleConnection(multi);
 
-        assertEquals(3, multi.addedHandlerRegistrationCount);
+        assertEquals(4, multi.addedHandlerRegistrationCount);
         assertEquals(0, multi.addedHandlers.size(), "should remove all onManagerAdded handlers after close");
-        assertEquals(0, multi.removedHandlers.size(), "should remove onManagerRemoved handler after close");
+        assertEquals(2, multi.removedHandlerRegistrationCount);
+        assertEquals(0, multi.removedHandlers.size(), "should remove onManagerRemoved handlers after close");
     }
 }
