@@ -15,6 +15,7 @@ import org.asamk.signal.manager.storage.groups.GroupInfo;
 import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.recipients.RecipientId;
 import org.asamk.signal.manager.storage.sendLog.MessageSendLogEntry;
+import org.signal.core.models.ServiceId;
 import org.signal.core.models.ServiceId.ACI;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.InvalidRegistrationIdException;
@@ -635,9 +636,13 @@ public class SendHelper {
         final var groupSendEndorsementsExpirationMs = groupSendEndorsementsResult == null
                 ? 0
                 : groupSendEndorsementsResult.first();
+        // Only current members may get our sender key. The recipients can include others, e.g. pending members
+        // for a group update, and sharing the key with them would make the next send rotate it again.
+        final var memberIds = groupInfo.getMemberRecipientIds();
         Set<RecipientId> senderKeyTargets = groupInfo.getDistributionId() == null || groupSendEndorsements == null
                 ? Set.of()
                 : targetRecipientIds.stream()
+                        .filter(memberIds::contains)
                         .filter(s -> this.isSenderKeyCapable(s,
                                 addressesMap.get(s),
                                 unidentifiedAccessesMap.get(s),
@@ -664,6 +669,7 @@ public class SendHelper {
                     groupSecretParams);
             final var results = sendGroupMessageInternalWithSenderKey(senderKeySender,
                     groupInfo.getDistributionId(),
+                    memberIds,
                     addresses,
                     senderKeyTargets.stream().map(unidentifiedAccessesMap::get).toList(),
                     requiredGroupSendEndorsements,
@@ -792,6 +798,7 @@ public class SendHelper {
     private List<SendMessageResult> sendGroupMessageInternalWithSenderKey(
             final SenderKeySenderHandler sender,
             final DistributionId distributionId,
+            final Set<RecipientId> memberIds,
             final List<SignalServiceAddress> addresses,
             final List<UnidentifiedAccess> unidentifiedAccesses,
             final GroupSendEndorsements groupSendEndorsements,
@@ -809,6 +816,7 @@ public class SendHelper {
                     TimeUnit.MILLISECONDS.toDays(keyAge));
             account.getSenderKeyStore().deleteOurKey(account.getAci(), distributionId);
         }
+        rotateSenderKeyIfSharedWithNonMembers(distributionId, memberIds);
 
         try {
             List<SendMessageResult> results = sender.send(distributionId,
@@ -849,6 +857,28 @@ public class SendHelper {
             } else {
                 throw e;
             }
+        }
+    }
+
+    /**
+     * Rotate our sender key, if it was shared with someone who is no longer a member of the group,
+     * so that former members can't decrypt messages sent after they left or were removed.
+     * The official Signal clients do the same.
+     */
+    void rotateSenderKeyIfSharedWithNonMembers(final DistributionId distributionId, final Set<RecipientId> memberIds) {
+        final var senderKeyStore = account.getSenderKeyStore();
+        final var recipientResolver = account.getRecipientResolver();
+        final var sharedWithNonMember = senderKeyStore.getSenderKeySharedWith(distributionId)
+                .stream()
+                .map(SignalProtocolAddress::getName)
+                .distinct()
+                .map(ServiceId::parseOrNull)
+                .anyMatch(serviceId -> serviceId == null
+                        || !memberIds.contains(recipientResolver.resolveRecipient(serviceId)));
+        if (sharedWithNonMember) {
+            logger.debug("DistributionId {} was shared with someone who is no longer a group member. Rotating.",
+                    distributionId);
+            senderKeyStore.deleteOurKey(account.getAci(), distributionId);
         }
     }
 

@@ -16,6 +16,7 @@ import org.asamk.signal.manager.storage.configuration.LegacyConfigurationStore;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.groups.LegacyGroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
@@ -487,6 +488,13 @@ public class SignalAccount implements Closeable {
     ) throws SQLException {
         getMessageCache().mergeRecipients(recipientId, toBeMergedRecipientId);
         getGroupStore().mergeRecipients(connection, recipientId, toBeMergedRecipientId);
+    }
+
+    private void rotateOurSenderKey(final Connection connection, final GroupInfoV2 group) throws SQLException {
+        // A full member is gone, so former members must not decrypt what we send next. The check before each sender key
+        // send misses them if their sender_key_shared entries were deleted, e.g. after a decryption error message.
+        logger.debug("A member was removed from group {}, rotating our sender key.", group.getGroupId().toBase64());
+        getSenderKeyStore().deleteOurKey(connection, getAci(), group.getDistributionId());
     }
 
     public void removeRecipient(final RecipientId recipientId) {
@@ -1333,7 +1341,8 @@ public class SignalAccount implements Closeable {
         return getOrCreate(() -> groupStore,
                 () -> groupStore = new GroupStore(getAccountDatabase(),
                         getRecipientResolver(),
-                        getRecipientIdCreator()));
+                        getRecipientIdCreator(),
+                        this::rotateOurSenderKey));
     }
 
     public ContactsStore getContactStore() {

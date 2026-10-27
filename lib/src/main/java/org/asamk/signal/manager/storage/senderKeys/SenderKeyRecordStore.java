@@ -93,20 +93,28 @@ public class SenderKeyRecordStore implements SenderKeyStore {
     }
 
     void deleteSenderKey(final ServiceId serviceId, final UUID distributionId) {
+        try (final var connection = database.getConnection()) {
+            deleteSenderKey(connection, serviceId, distributionId);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed update sender key store", e);
+        }
+    }
+
+    void deleteSenderKey(
+            final Connection connection,
+            final ServiceId serviceId,
+            final UUID distributionId
+    ) throws SQLException {
         final var sql = (
                 """
                 DELETE FROM %s AS s
                 WHERE s.address = ? AND s.distribution_id = ?
                 """
         ).formatted(TABLE_SENDER_KEY);
-        try (final var connection = database.getConnection()) {
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setString(1, serviceId.toString());
-                statement.setBytes(2, UuidUtil.toByteArray(distributionId));
-                statement.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed update sender key store", e);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, serviceId.toString());
+            statement.setBytes(2, UuidUtil.toByteArray(distributionId));
+            statement.executeUpdate();
         }
     }
 

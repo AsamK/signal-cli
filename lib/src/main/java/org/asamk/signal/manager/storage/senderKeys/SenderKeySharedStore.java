@@ -160,18 +160,22 @@ public class SenderKeySharedStore {
 
     public void deleteAllFor(final DistributionId distributionId) {
         try (final var connection = database.getConnection()) {
-            final var sql = (
-                    """
-                    DELETE FROM %s AS s
-                    WHERE distribution_id = ?
-                    """
-            ).formatted(TABLE_SENDER_KEY_SHARED);
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setBytes(1, UuidUtil.toByteArray(distributionId.asUuid()));
-                statement.executeUpdate();
-            }
+            deleteAllFor(connection, distributionId);
         } catch (SQLException e) {
             throw new RuntimeException("Failed update shared sender key store", e);
+        }
+    }
+
+    void deleteAllFor(final Connection connection, final DistributionId distributionId) throws SQLException {
+        final var sql = (
+                """
+                DELETE FROM %s AS s
+                WHERE distribution_id = ?
+                """
+        ).formatted(TABLE_SENDER_KEY_SHARED);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setBytes(1, UuidUtil.toByteArray(distributionId.asUuid()));
+            statement.executeUpdate();
         }
     }
 
