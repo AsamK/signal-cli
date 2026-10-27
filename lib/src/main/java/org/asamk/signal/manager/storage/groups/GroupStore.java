@@ -48,6 +48,7 @@ public class GroupStore {
     private final Database database;
     private final RecipientResolver recipientResolver;
     private final RecipientIdCreator recipientIdCreator;
+    private final MemberRemovedHandler memberRemovedHandler;
 
     public static void createSql(Connection connection) throws SQLException {
         // When modifying the CREATE statement here, also add a migration in AccountDatabase.java
@@ -100,11 +101,13 @@ public class GroupStore {
     public GroupStore(
             final Database database,
             final RecipientResolver recipientResolver,
-            final RecipientIdCreator recipientIdCreator
+            final RecipientIdCreator recipientIdCreator,
+            final MemberRemovedHandler memberRemovedHandler
     ) {
         this.database = database;
         this.recipientResolver = recipientResolver;
         this.recipientIdCreator = recipientIdCreator;
+        this.memberRemovedHandler = memberRemovedHandler;
     }
 
     public void updateGroup(GroupInfo group) {
@@ -130,7 +133,24 @@ public class GroupStore {
             statement.setBytes(1, group.getGroupId().serialize());
             internalId = Utils.executeQueryForOptional(statement, res -> res.getLong("_id")).orElse(null);
         }
+        final var memberRemoved = group instanceof GroupInfoV2 groupV2 && isFullMemberRemoved(connection, groupV2);
         insertOrReplaceGroup(connection, internalId, group);
+        if (memberRemoved) {
+            memberRemovedHandler.handleMemberRemoved(connection, (GroupInfoV2) group);
+        }
+    }
+
+    /**
+     * Whether someone who is a full member in the stored state of the group is no longer one in the new state,
+     * however they went: removed by anyone or left by themselves.
+     */
+    private boolean isFullMemberRemoved(final Connection connection, final GroupInfoV2 group) throws SQLException {
+        final var storedGroup = getGroup(connection, group.getGroupId());
+        if (storedGroup == null || storedGroup.getGroup() == null || group.getGroup() == null) {
+            return false;
+        }
+        final var members = group.getGroup().members.stream().map(m -> m.aciBytes).collect(Collectors.toSet());
+        return storedGroup.getGroup().members.stream().anyMatch(m -> !members.contains(m.aciBytes));
     }
 
     public void updateGroupEndorsements(
@@ -920,5 +940,10 @@ public class GroupStore {
             statement.setBytes(1, groupIdV2.serialize());
             return Utils.executeQueryForOptional(statement, this::getGroupInfoV1FromResultSet).orElse(null);
         }
+    }
+
+    public interface MemberRemovedHandler {
+
+        void handleMemberRemoved(final Connection connection, GroupInfoV2 group) throws SQLException;
     }
 }

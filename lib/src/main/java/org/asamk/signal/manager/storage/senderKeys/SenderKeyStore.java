@@ -8,6 +8,8 @@ import org.signal.libsignal.protocol.groups.state.SenderKeyRecord;
 import org.whispersystems.signalservice.api.SignalServiceSenderKeyStore;
 import org.whispersystems.signalservice.api.push.DistributionId;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +78,15 @@ public class SenderKeyStore implements SignalServiceSenderKeyStore {
     public void deleteOurKey(ServiceId selfServiceId, DistributionId distributionId) {
         senderKeySharedStore.deleteAllFor(distributionId);
         senderKeyRecordStore.deleteSenderKey(selfServiceId, distributionId.asUuid());
+    }
+
+    public void deleteOurKey(
+            final Connection connection,
+            final ServiceId selfServiceId,
+            final DistributionId distributionId
+    ) throws SQLException {
+        senderKeySharedStore.deleteAllFor(connection, distributionId);
+        senderKeyRecordStore.deleteSenderKey(connection, selfServiceId, distributionId.asUuid());
     }
 
     public long getCreateTimeForOurKey(ServiceId selfServiceId, int deviceId, DistributionId distributionId) {
