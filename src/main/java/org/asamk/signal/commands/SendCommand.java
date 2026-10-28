@@ -313,8 +313,15 @@ public class SendCommand implements JsonRpcLocalCommand {
                         + dimension
                         + ") expected 'WIDTHxHEIGHT'");
             }
-            dimensions.add(new Message.AttachmentDimensions(Integer.parseInt(matcher.group(1)),
-                    Integer.parseInt(matcher.group(2))));
+            try {
+                dimensions.add(new Message.AttachmentDimensions(Integer.parseInt(matcher.group(1)),
+                        Integer.parseInt(matcher.group(2))));
+            } catch (NumberFormatException e) {
+                throw new UserErrorException("Invalid attachment dimensions syntax ("
+                        + dimension
+                        + ") expected 'WIDTHxHEIGHT' with positive 32-bit integer values",
+                        e);
+            }
         }
         return dimensions;
     }

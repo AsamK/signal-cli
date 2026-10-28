@@ -106,6 +106,20 @@ class SendCommandParsingTest {
     }
 
     @Test
+    void rejectsAttachmentDimensionsOutsideIntegerRange() {
+        for (final var value : List.of("2147483648x1", "1x2147483648")) {
+            assertThrows(UserErrorException.class, () -> send(namespace(List.of(value))), value);
+        }
+    }
+
+    @Test
+    void acceptsMaximumPositiveAttachmentDimensions() throws Exception {
+        final var message = send(namespace(List.of("2147483647x2147483647")));
+        assertEquals(List.of(new Message.AttachmentDimensions(Integer.MAX_VALUE, Integer.MAX_VALUE)),
+                message.attachmentDimensions());
+    }
+
+    @Test
     void rejectsMalformedBlurHashesBeforeSending() {
         // Wrong length for its size digit, an unknown size digit, too short.
         for (final var value : List.of(BLUR_HASH + "0", "!" + BLUR_HASH.substring(1), "00000")) {
