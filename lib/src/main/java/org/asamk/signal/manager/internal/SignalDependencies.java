@@ -178,6 +178,15 @@ public class SignalDependencies {
     }
 
     private void setSignalNetworkProxy(Network libSignalNetwork) {
+        final var tlsProxy = serviceEnvironmentConfig.signalServiceConfiguration().getSignalProxy();
+        if (tlsProxy.isPresent()) {
+            try {
+                libSignalNetwork.setProxy(tlsProxy.get().getHost(), tlsProxy.get().getPort());
+            } catch (IOException e) {
+                logger.warn("Failed to set Signal TLS proxy", e);
+            }
+            return;
+        }
         final var proxy = Utils.getHttpsProxy();
         if (proxy.address() instanceof InetSocketAddress addr) {
             switch (proxy.type()) {
