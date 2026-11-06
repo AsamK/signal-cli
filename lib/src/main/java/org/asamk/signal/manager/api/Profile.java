@@ -3,6 +3,7 @@ package org.asamk.signal.manager.api;
 import org.whispersystems.signalservice.internal.util.Util;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -28,6 +29,8 @@ public class Profile {
 
     private final PhoneNumberSharingMode phoneNumberSharingMode;
 
+    private final List<Badge> badges;
+
     public Profile(
             final long lastUpdateTimestamp,
             final String givenName,
@@ -38,7 +41,8 @@ public class Profile {
             final byte[] mobileCoinAddress,
             final UnidentifiedAccessMode unidentifiedAccessMode,
             final Set<Capability> capabilities,
-            final PhoneNumberSharingMode phoneNumberSharingMode
+            final PhoneNumberSharingMode phoneNumberSharingMode,
+            final List<Badge> badges
     ) {
         this.lastUpdateTimestamp = lastUpdateTimestamp;
         this.givenName = givenName;
@@ -50,6 +54,7 @@ public class Profile {
         this.unidentifiedAccessMode = unidentifiedAccessMode;
         this.capabilities = capabilities;
         this.phoneNumberSharingMode = phoneNumberSharingMode;
+        this.badges = badges == null ? List.of() : List.copyOf(badges);
     }
 
     private Profile(final Builder builder) {
@@ -63,6 +68,7 @@ public class Profile {
         unidentifiedAccessMode = builder.unidentifiedAccessMode;
         capabilities = builder.capabilities;
         phoneNumberSharingMode = builder.phoneNumberSharingMode;
+        badges = builder.badges;
     }
 
     public static Builder newBuilder() {
@@ -80,6 +86,7 @@ public class Profile {
         builder.mobileCoinAddress = copy.getMobileCoinAddress();
         builder.unidentifiedAccessMode = copy.getUnidentifiedAccessMode();
         builder.capabilities = copy.getCapabilities();
+        builder.badges = copy.getBadges();
         return builder;
     }
 
@@ -145,6 +152,10 @@ public class Profile {
         return phoneNumberSharingMode;
     }
 
+    public List<Badge> getBadges() {
+        return badges;
+    }
+
     public enum UnidentifiedAccessMode {
         UNKNOWN,
         DISABLED,
@@ -173,6 +184,13 @@ public class Profile {
         }
     }
 
+    /**
+     * A badge displayed on a profile, e.g. a donor badge.
+     *
+     * @param expirationTimestamp the time in milliseconds when the badge expires, or null if it doesn't expire
+     */
+    public record Badge(String id, String category, Long expirationTimestamp, boolean visible) {}
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -185,7 +203,8 @@ public class Profile {
                 && Objects.equals(aboutEmoji, profile.aboutEmoji)
                 && Objects.equals(avatarUrlPath, profile.avatarUrlPath)
                 && unidentifiedAccessMode == profile.unidentifiedAccessMode
-                && Objects.equals(capabilities, profile.capabilities);
+                && Objects.equals(capabilities, profile.capabilities)
+                && Objects.equals(badges, profile.badges);
     }
 
     @Override
@@ -197,7 +216,8 @@ public class Profile {
                 aboutEmoji,
                 avatarUrlPath,
                 unidentifiedAccessMode,
-                capabilities);
+                capabilities,
+                badges);
     }
 
     public static final class Builder {
@@ -211,6 +231,7 @@ public class Profile {
         private UnidentifiedAccessMode unidentifiedAccessMode = UnidentifiedAccessMode.UNKNOWN;
         private Set<Capability> capabilities = Collections.emptySet();
         private PhoneNumberSharingMode phoneNumberSharingMode;
+        private List<Badge> badges = List.of();
         private long lastUpdateTimestamp = 0;
 
         private Builder() {
@@ -253,6 +274,11 @@ public class Profile {
 
         public Builder withPhoneNumberSharingMode(final PhoneNumberSharingMode val) {
             phoneNumberSharingMode = val;
+            return this;
+        }
+
+        public Builder withBadges(final List<Badge> val) {
+            badges = val == null ? List.of() : List.copyOf(val);
             return this;
         }
 

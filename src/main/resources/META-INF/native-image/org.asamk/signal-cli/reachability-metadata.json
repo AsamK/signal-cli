@@ -3105,6 +3105,28 @@
       ]
     },
     {
+      "type": "org.asamk.signal.json.JsonContact$JsonBadge",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "category",
+          "parameterTypes": []
+        },
+        {
+          "name": "expirationTimestamp",
+          "parameterTypes": []
+        },
+        {
+          "name": "id",
+          "parameterTypes": []
+        },
+        {
+          "name": "visible",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.asamk.signal.json.JsonContact$JsonInternal",
       "allDeclaredFields": true,
       "methods": [
@@ -3136,6 +3158,10 @@
         },
         {
           "name": "aboutEmoji",
+          "parameterTypes": []
+        },
+        {
+          "name": "badges",
           "parameterTypes": []
         },
         {
