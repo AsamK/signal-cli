@@ -4,6 +4,7 @@ import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.internal.SignalDependencies;
 import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.util.KeyUtils;
+import org.signal.libsignal.net.PreKeyCounts;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyIdException;
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord;
@@ -14,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.NetworkResultUtil;
 import org.whispersystems.signalservice.api.account.PreKeyUpload;
-import org.whispersystems.signalservice.api.keys.OneTimePreKeyCounts;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.exceptions.AuthorizationFailedException;
 
@@ -23,7 +23,7 @@ import java.util.List;
 
 import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_STALE_AGE;
 import static org.asamk.signal.manager.config.ServiceConfig.SIGNED_PREKEY_ROTATE_AGE;
-import static org.asamk.signal.manager.util.Utils.handleResponseException;
+import static org.asamk.signal.manager.util.Utils.handleResponseExceptionSuspend;
 
 public class PreKeyHelper {
 
@@ -72,7 +72,7 @@ public class PreKeyHelper {
             return;
         }
 
-        final var counts = new OneTimePreKeyCounts(0, 0);
+        final var counts = new PreKeyCounts(0, 0, 0, 0);
         if (refreshPreKeysIfNecessary(serviceIdType, identityKeyPair, counts, true)) {
             refreshPreKeysIfNecessary(serviceIdType, identityKeyPair, counts, true);
         }
@@ -82,13 +82,12 @@ public class PreKeyHelper {
             final ServiceIdType serviceIdType,
             final IdentityKeyPair identityKeyPair
     ) throws IOException {
-        OneTimePreKeyCounts preKeyCounts;
+        PreKeyCounts preKeyCounts;
         try {
-            preKeyCounts = handleResponseException(dependencies.getKeysApi()
-                    .getAvailablePreKeyCountsSync(serviceIdType));
+            preKeyCounts = handleResponseExceptionSuspend(cont -> dependencies.getKeysApiV2().getPreKeyCounts(cont));
         } catch (AuthorizationFailedException e) {
             logger.debug("Failed to get pre key count, ignoring: " + e.getClass().getSimpleName());
-            preKeyCounts = new OneTimePreKeyCounts(0, 0);
+            preKeyCounts = new PreKeyCounts(0, 0, 0, 0);
         }
 
         return refreshPreKeysIfNecessary(serviceIdType, identityKeyPair, preKeyCounts, false);
@@ -97,14 +96,15 @@ public class PreKeyHelper {
     private boolean refreshPreKeysIfNecessary(
             final ServiceIdType serviceIdType,
             final IdentityKeyPair identityKeyPair,
-            final OneTimePreKeyCounts preKeyCounts,
+            final PreKeyCounts preKeyCounts,
             final boolean force
     ) throws IOException {
         List<PreKeyRecord> preKeyRecords = null;
-        if (force || preKeyCounts.getEcCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+        final var ecCount = serviceIdType == ServiceIdType.ACI ? preKeyCounts.getAciEcPreKeyCount() : preKeyCounts.getPniEcPreKeyCount();
+        if (force || ecCount < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             logger.debug("Refreshing {} ec pre keys, because only {} of min {} pre keys remain",
                     serviceIdType,
-                    preKeyCounts.getEcCount(),
+                    ecCount,
                     ServiceConfig.PREKEY_MINIMUM_COUNT);
             preKeyRecords = generatePreKeys(serviceIdType);
         }
@@ -116,10 +116,11 @@ public class PreKeyHelper {
         }
 
         List<KyberPreKeyRecord> kyberPreKeyRecords = null;
-        if (force || preKeyCounts.getKyberCount() < ServiceConfig.PREKEY_MINIMUM_COUNT) {
+        final var kyberCount = serviceIdType == ServiceIdType.ACI ? preKeyCounts.getAciKemPreKeyCount() : preKeyCounts.getPniKemPreKeyCount();
+        if (force || kyberCount < ServiceConfig.PREKEY_MINIMUM_COUNT) {
             logger.debug("Refreshing {} kyber pre keys, because only {} of min {} pre keys remain",
                     serviceIdType,
-                    preKeyCounts.getKyberCount(),
+                    kyberCount,
                     ServiceConfig.PREKEY_MINIMUM_COUNT);
             kyberPreKeyRecords = generateKyberPreKeys(serviceIdType, identityKeyPair);
         }

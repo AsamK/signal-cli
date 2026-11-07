@@ -3,20 +3,23 @@ package org.asamk.signal.manager.util;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
 import org.asamk.signal.manager.api.Profile;
+import org.signal.core.util.crypto.InvalidCiphertextException;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.InvalidKeyException;
 import org.signal.libsignal.protocol.ecc.ECPublicKey;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
 import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
 import org.whispersystems.signalservice.internal.push.PaymentAddress;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ProfileUtils {
@@ -54,7 +57,8 @@ public class ProfileUtils {
                                     identityKey.getPublicKey()),
                     getUnidentifiedAccessMode(encryptedProfile, profileCipher),
                     getCapabilities(encryptedProfile),
-                    remotePhoneNumberSharing);
+                    remotePhoneNumberSharing,
+                    getBadges(encryptedProfile));
         } catch (InvalidCiphertextException e) {
             logger.debug("Failed to decrypt profile for {}", encryptedProfile.getServiceId(), e);
             return null;
@@ -77,6 +81,22 @@ public class ProfileUtils {
         }
 
         return Profile.UnidentifiedAccessMode.DISABLED;
+    }
+
+    static List<Profile.Badge> getBadges(final SignalServiceProfile encryptedProfile) {
+        if (encryptedProfile.getBadges() == null) {
+            return List.of();
+        }
+        return encryptedProfile.getBadges()
+                .stream()
+                .filter(Objects::nonNull)
+                .map(badge -> new Profile.Badge(badge.getId(),
+                        badge.getCategory(),
+                        badge.getExpiration() == null
+                                ? null
+                                : badge.getExpiration().multiply(BigDecimal.valueOf(1000)).longValue(),
+                        badge.getVisible()))
+                .toList();
     }
 
     public static HashSet<Profile.Capability> getCapabilities(final SignalServiceProfile encryptedProfile) {

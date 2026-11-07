@@ -5,7 +5,7 @@ plugins {
     application
     eclipse
     `check-lib-versions`
-    id("org.graalvm.buildtools.native") version "1.1.14"
+    id("org.graalvm.buildtools.native") version "1.1.18"
 }
 
 allprojects {
@@ -36,6 +36,10 @@ graalvmNative {
             buildArgs.add("-J-Dfile.encoding=UTF-8")
             buildArgs.add("-march=compatibility")
             buildArgs.add("--enable-native-access=ALL-UNNAMED")
+            // Java's TLS would offer the hybrid X25519MLKEM768 key exchange, e.g. to a Signal TLS proxy, and then look
+            // for a KEM implementation in all providers, including BouncyCastle, which is only registered at run time
+            // and is rejected by the native image. The groups can only be set at build time for the native image.
+            buildArgs.add("-J-Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,secp521r1,x448,ffdhe2048,ffdhe3072")
             resources.autodetect()
             if (System.getenv("GRAALVM_HOME") == null) {
                 toolchainDetection.set(true)

@@ -1,5 +1,7 @@
 package org.asamk.signal.manager.storage.recipients;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.asamk.signal.manager.api.Contact;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.PhoneNumberSharingMode;
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.storage.StorageId;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,6 +45,7 @@ import java.util.stream.Collectors;
 public class RecipientStore implements RecipientIdCreator, RecipientResolver, RecipientTrustedResolver, ContactsStore, ProfileStore {
 
     private static final Logger logger = LoggerFactory.getLogger(RecipientStore.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final String TABLE_RECIPIENT = "recipient";
     private static final String SQL_IS_CONTACT = "r.given_name IS NOT NULL OR r.family_name IS NOT NULL OR r.nick_name IS NOT NULL OR r.nick_name_given_name IS NOT NULL OR r.nick_name_family_name IS NOT NULL OR r.note IS NOT NULL OR r.expiration_time > 0 OR r.profile_sharing = TRUE OR r.color IS NOT NULL OR r.blocked = TRUE OR r.archived = TRUE";
 
@@ -111,7 +115,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                       profile_mobile_coin_address BLOB,
                                       profile_unidentified_access_mode TEXT,
                                       profile_capabilities TEXT,
-                                      profile_phone_number_sharing TEXT
+                                      profile_phone_number_sharing TEXT,
+                                      profile_badges TEXT
                                     ) STRICT;
                                     """);
         }
@@ -378,7 +383,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                        r.profile_key, r.profile_key_credential,
                        r.pni_signature_verified,
                        r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.blocked_at, r.archived, r.hidden, r.unregistered_timestamp,
-                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
+                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing, r.profile_badges,
                        r.discoverable,
                        r.storage_record
                 FROM %s r
@@ -399,7 +404,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                        r.profile_key, r.profile_key_credential,
                        r.pni_signature_verified,
                        r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.blocked_at, r.archived, r.hidden, r.unregistered_timestamp,
-                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
+                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing, r.profile_badges,
                        r.discoverable,
                        r.storage_record
                 FROM %s r
@@ -449,7 +454,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                        r.profile_key, r.profile_key_credential,
                        r.pni_signature_verified,
                        r.given_name, r.family_name, r.nick_name, r.nick_name_given_name, r.nick_name_family_name, r.note, r.expiration_time, r.expiration_time_version, r.mute_until, r.hide_story, r.profile_sharing, r.color, r.blocked, r.blocked_at, r.archived, r.hidden, r.unregistered_timestamp,
-                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing,
+                       r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing, r.profile_badges,
                        r.discoverable,
                        r.storage_record
                 FROM %s r
@@ -1226,7 +1231,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
         final var sql = (
                 """
                 UPDATE %s
-                SET profile_last_update_timestamp = ?, profile_given_name = ?, profile_family_name = ?, profile_about = ?, profile_about_emoji = ?, profile_avatar_url_path = ?, profile_mobile_coin_address = ?, profile_unidentified_access_mode = ?, profile_capabilities = ?, profile_phone_number_sharing = ?
+                SET profile_last_update_timestamp = ?, profile_given_name = ?, profile_family_name = ?, profile_about = ?, profile_about_emoji = ?, profile_avatar_url_path = ?, profile_mobile_coin_address = ?, profile_unidentified_access_mode = ?, profile_capabilities = ?, profile_phone_number_sharing = ?, profile_badges = ?
                 WHERE _id = ?
                 """
         ).formatted(TABLE_RECIPIENT);
@@ -1247,7 +1252,8 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                     profile == null || profile.getPhoneNumberSharingMode() == null
                             ? null
                             : profile.getPhoneNumberSharingMode().name());
-            statement.setLong(11, recipientId.id());
+            statement.setString(11, profile == null ? null : serializeBadges(profile.getBadges()));
+            statement.setLong(12, recipientId.id());
             statement.executeUpdate();
         }
         rotateStorageId(connection, recipientId);
@@ -1697,7 +1703,7 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
     public Profile getProfile(final Connection connection, final RecipientId recipientId) throws SQLException {
         final var sql = (
                 """
-                SELECT r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing
+                SELECT r.profile_last_update_timestamp, r.profile_given_name, r.profile_family_name, r.profile_about, r.profile_about_emoji, r.profile_avatar_url_path, r.profile_mobile_coin_address, r.profile_unidentified_access_mode, r.profile_capabilities, r.profile_phone_number_sharing, r.profile_badges
                 FROM %s r
                 WHERE r._id = ? AND r.profile_capabilities IS NOT NULL
                 """
@@ -1794,7 +1800,43 @@ public class RecipientStore implements RecipientIdCreator, RecipientResolver, Re
                                 .map(Profile.Capability::valueOfOrNull)
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toSet()),
-                PhoneNumberSharingMode.valueOfOrNull(resultSet.getString("profile_phone_number_sharing")));
+                PhoneNumberSharingMode.valueOfOrNull(resultSet.getString("profile_phone_number_sharing")),
+                deserializeBadges(resultSet.getString("profile_badges")));
+    }
+
+    static String serializeBadges(final List<Profile.Badge> badges) {
+        if (badges.isEmpty()) {
+            return null;
+        }
+        final var array = objectMapper.createArrayNode();
+        for (final var badge : badges) {
+            final var node = array.addObject();
+            node.put("id", badge.id());
+            node.put("category", badge.category());
+            node.put("expirationTimestamp", badge.expirationTimestamp());
+            node.put("visible", badge.visible());
+        }
+        return array.toString();
+    }
+
+    static List<Profile.Badge> deserializeBadges(final String badges) {
+        if (badges == null) {
+            return List.of();
+        }
+        try {
+            final var result = new ArrayList<Profile.Badge>();
+            for (final var node : objectMapper.readTree(badges)) {
+                final var expirationTimestamp = node.path("expirationTimestamp");
+                result.add(new Profile.Badge(node.path("id").asText(null),
+                        node.path("category").asText(null),
+                        expirationTimestamp.isNumber() ? expirationTimestamp.asLong() : null,
+                        node.path("visible").asBoolean(false)));
+            }
+            return result;
+        } catch (IOException e) {
+            logger.warn("Failed to parse stored profile badges, ignoring: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     private ProfileKey getProfileKeyFromResultSet(ResultSet resultSet) throws SQLException {
