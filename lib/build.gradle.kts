@@ -15,14 +15,25 @@ java {
 }
 
 val libsignalClientPath = project.findProperty("libsignal_client_path")?.toString()
+val libsignalClientVersion = "0.101.0"
+val androidClassifier = project.findProperty("androidClassifier")?.toString()
 
 dependencies {
+    implementation(libs.signalnetwork) {
+        exclude(group = "org.signal", module = "libsignal-client")
+    }
+
     if (libsignalClientPath == null) {
-        implementation(libs.signalnetwork)
-    } else {
-        implementation(libs.signalnetwork) {
-            exclude(group = "org.signal", module = "libsignal-client")
+        implementation("org.signal:libsignal-client:$libsignalClientVersion")
+        if (androidClassifier != null) {
+            implementation(
+                group = "org.signal",
+                name = "libsignal-client",
+                version = libsignalClientVersion,
+                classifier = androidClassifier,
+            )
         }
+    } else {
         implementation(files(libsignalClientPath))
     }
     implementation(libs.jackson.databind)
