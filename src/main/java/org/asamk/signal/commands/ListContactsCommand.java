@@ -82,7 +82,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                     if (detailed) {
                         writer.indentedWriter()
                                 .println(
-                                        "PNI: {} Given name: {} Family name: {}, Nick name: {} Nick given name: {} Nick family name {} Note: {} Archived: {} Hidden: {} Profile sharing: {} About: {} About Emoji: {} Unregistered: {}",
+                                        "PNI: {} Given name: {} Family name: {}, Nick name: {} Nick given name: {} Nick family name {} Note: {} Archived: {} Hidden: {} Profile sharing: {} About: {} About Emoji: {} Badges: {} Unregistered: {}",
                                         r.getAddress().pni().orElse(""),
                                         Optional.ofNullable(r.getContact().givenName()).orElse(""),
                                         Optional.ofNullable(r.getContact().familyName()).orElse(""),
@@ -95,6 +95,7 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                                         r.getContact().isProfileSharingEnabled(),
                                         Optional.ofNullable(r.getProfile().getAbout()).orElse(""),
                                         Optional.ofNullable(r.getProfile().getAboutEmoji()).orElse(""),
+                                        profile.getBadges().stream().map(Profile.Badge::id).toList(),
                                         r.getContact().unregisteredTimestamp() != null);
                     }
                     if (internal) {
@@ -161,7 +162,15 @@ public class ListContactsCommand implements JsonRpcLocalCommand {
                                             r.getProfile().getMobileCoinAddress() == null
                                                     ? null
                                                     : Base64.getEncoder()
-                                                            .encodeToString(r.getProfile().getMobileCoinAddress())),
+                                                            .encodeToString(r.getProfile().getMobileCoinAddress()),
+                                            r.getProfile()
+                                                    .getBadges()
+                                                    .stream()
+                                                    .map(b -> new JsonContact.JsonBadge(b.id(),
+                                                            b.category(),
+                                                            b.expirationTimestamp(),
+                                                            b.visible()))
+                                                    .toList()),
                             jsonInternal);
                 }).toList();
                 writer.write(jsonContacts);

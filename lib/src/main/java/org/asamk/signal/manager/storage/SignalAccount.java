@@ -1035,7 +1035,8 @@ public class SignalAccount implements Closeable {
                                             ? Profile.UnidentifiedAccessMode.ENABLED
                                             : Profile.UnidentifiedAccessMode.DISABLED,
                             capabilities,
-                            null);
+                            null,
+                            List.of());
                     getProfileStore().storeProfile(recipientId, newProfile);
                 }
             }

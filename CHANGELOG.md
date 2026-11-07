@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Include profile badges (e.g. donor badges) in `listContacts` output
+
 ## [0.14.9] - 2026-10-07
 
 ### Added
