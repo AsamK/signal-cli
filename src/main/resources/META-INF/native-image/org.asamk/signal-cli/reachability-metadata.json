@@ -3128,6 +3128,9 @@
       ]
     },
     {
+      "type": "org.asamk.signal.json.JsonContact$JsonBadge[]"
+    },
+    {
       "type": "org.asamk.signal.json.JsonContact$JsonInternal",
       "allDeclaredFields": true,
       "methods": [
@@ -6172,6 +6175,21 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.internal.BridgePreKeyCounts_ReturnConverter",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "fromNative",
+          "parameterTypes": [
+            "java.lang.Object",
+            "java.lang.Object",
+            "java.lang.Object",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.internal.CompletableFuture",
       "jniAccessible": true,
       "methods": [
@@ -6247,7 +6265,8 @@
       ]
     },
     {
-      "type": "org.signal.libsignal.net.AuthenticatedChatConnection"
+      "type": "org.signal.libsignal.net.AuthenticatedChatConnection",
+      "jniAccessible": true
     },
     {
       "type": "org.signal.libsignal.net.CdsiLookupResponse",

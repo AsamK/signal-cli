@@ -14,6 +14,7 @@ import org.signal.network.api.CallingApi;
 import org.signal.network.api.CdnApi;
 import org.signal.network.api.CdsApi;
 import org.signal.network.api.CertificateApi;
+import org.signal.network.api.KeysApiV2;
 import org.signal.network.api.LinkDeviceApi;
 import org.signal.network.api.RateLimitChallengeApi;
 import org.signal.network.api.UsernameApi;
@@ -88,6 +89,7 @@ public class SignalDependencies {
     private CallingApi callingApi;
     private MessageApi messageApi;
     private KeysApi keysApi;
+    private KeysApiV2 keysApiV2;
     private GroupsV2Operations groupsV2Operations;
     private ClientZkOperations clientZkOperations;
     private ProfileService profileService;
@@ -301,6 +303,11 @@ public class SignalDependencies {
     public KeysApi getKeysApi() {
         return getOrCreate(() -> keysApi,
                 () -> keysApi = new KeysApi(getAuthenticatedSignalWebSocket(), getUnauthenticatedSignalWebSocket()));
+    }
+
+    public KeysApiV2 getKeysApiV2() {
+        return getOrCreate(() -> keysApiV2,
+                () -> keysApiV2 = new KeysApiV2(getAuthenticatedSignalWebSocket(), getUnauthenticatedSignalWebSocket()));
     }
 
     public GroupsV2Operations getGroupsV2Operations() {
