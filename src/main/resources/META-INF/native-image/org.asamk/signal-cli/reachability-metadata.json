@@ -2341,6 +2341,7 @@
             "org.asamk.signal.ServiceEnvironmentCli",
             "org.asamk.signal.TrustNewIdentityCli",
             "java.lang.Boolean",
+            "java.lang.String",
             "java.lang.String"
           ]
         }
