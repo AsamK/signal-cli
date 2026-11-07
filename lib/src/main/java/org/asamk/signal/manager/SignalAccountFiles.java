@@ -46,26 +46,19 @@ public class SignalAccountFiles {
             final ServiceEnvironment serviceEnvironment,
             final String userAgent,
             final Settings settings
-    ) throws IOException {
-        this(settingsPath, serviceEnvironment, userAgent, settings, Optional.empty());
-    }
-
-    /**
-     * @param tlsProxy a Signal TLS proxy, as used by the official Signal apps, through which all connections to
-     *                 the Signal servers are made.
-     */
-    public SignalAccountFiles(
-            final File settingsPath,
-            final ServiceEnvironment serviceEnvironment,
-            final String userAgent,
-            final Settings settings,
-            final Optional<TlsProxy> tlsProxy
-    ) throws IOException {
+    ) throws IOException, TlsProxy.InvalidTlsProxyException {
         this.pathConfig = PathConfig.createDefault(settingsPath);
         this.serviceEnvironment = serviceEnvironment;
+        final Optional<SignalProxy> signalProxy;
+        if (settings.tlsProxy() == null) {
+            signalProxy = Optional.empty();
+        } else {
+            final var proxy = TlsProxy.parse(settings.tlsProxy());
+            signalProxy = Optional.of(new SignalProxy(proxy.host(), proxy.port()));
+        }
         this.serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(this.serviceEnvironment,
                 userAgent,
-                tlsProxy.map(proxy -> new SignalProxy(proxy.host(), proxy.port())));
+                signalProxy);
         this.userAgent = userAgent;
         this.settings = settings;
         this.accountsStore = new AccountsStore(pathConfig.dataPath(), serviceEnvironment, accountPath -> {

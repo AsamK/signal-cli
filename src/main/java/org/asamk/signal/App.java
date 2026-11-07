@@ -36,7 +36,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Optional;
 import java.util.Set;
 
 import static net.sourceforge.argparse4j.DefaultSettings.VERSION_0_9_0_DEFAULT_SETTINGS;
@@ -265,22 +264,15 @@ public class App {
 
         final var disableSendLog = Boolean.TRUE.equals(ns.getBoolean("disable-send-log"));
 
-        final var tlsProxyArgument = ns.getString("tls-proxy");
-        TlsProxy tlsProxy = null;
-        if (tlsProxyArgument != null) {
-            try {
-                tlsProxy = TlsProxy.parse(tlsProxyArgument);
-            } catch (TlsProxy.InvalidTlsProxyException e) {
-                throw new UserErrorException(e.getMessage(), e);
-            }
-        }
+        final var tlsProxy = ns.getString("tls-proxy");
 
         try {
             return new SignalAccountFiles(dataPath,
                     serviceEnvironment,
                     BaseConfig.USER_AGENT,
-                    new Settings(trustNewIdentity, disableSendLog),
-                    Optional.ofNullable(tlsProxy));
+                    new Settings(trustNewIdentity, disableSendLog, tlsProxy));
+        } catch (TlsProxy.InvalidTlsProxyException e) {
+            throw new UserErrorException(e.getMessage(), e);
         } catch (IOException e) {
             throw new IOErrorException("Failed to read local accounts list", e);
         }
