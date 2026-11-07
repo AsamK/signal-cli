@@ -103,6 +103,7 @@ dependencies {
     implementation(libs.slf4j.jul)
     implementation(libs.logback)
     implementation(libs.zxing)
+    implementation(libs.javax.inject)
     implementation(libs.micronaut.json.schema.annotations)
     if (gradle.startParameter.taskNames.any { it.contains("jsonSchemas") }) {
         implementation(libs.micronaut.json.schema.generator)

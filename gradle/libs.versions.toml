@@ -16,6 +16,7 @@ micronaut-json-schema-annotations = { module = "io.micronaut.jsonschema:micronau
 micronaut-json-schema-processor = { module = "io.micronaut.jsonschema:micronaut-json-schema-processor", version.ref = "micronaut-json-schema" }
 micronaut-json-schema-generator = { module = "io.micronaut.jsonschema:micronaut-json-schema-generator", version.ref = "micronaut-json-schema" }
 micronaut-inject-java = { module = "io.micronaut:micronaut-inject-java", version.ref = "micronaut-core" }
+javax-inject = "javax.inject:javax.inject:1"
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 logback = "ch.qos.logback:logback-classic:1.6.6"
