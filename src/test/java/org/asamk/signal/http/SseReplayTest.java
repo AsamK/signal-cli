@@ -1,5 +1,6 @@
 package org.asamk.signal.http;
 
+import org.asamk.signal.manager.internal.MultiAccountManagerImpl;
 import org.asamk.signal.testutil.ManagerMock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,13 +32,22 @@ class SseReplayTest {
     private int port;
 
     private void start(final Duration keepAliveInterval) throws Exception {
+        handler = new HttpServerHandler(freeAddress(), keepAliveInterval, ManagerMock.create("+10000000000", state));
+        handler.init();
+    }
+
+    private void startMultiAccount() throws Exception {
+        handler = new HttpServerHandler(freeAddress(),
+                Duration.ofSeconds(15),
+                new MultiAccountManagerImpl(List.of(ManagerMock.create("+10000000000", state)), null));
+        handler.init();
+    }
+
+    private InetSocketAddress freeAddress() throws IOException {
         try (var ss = new ServerSocket(0)) {
             port = ss.getLocalPort();
         }
-        handler = new HttpServerHandler(new InetSocketAddress("127.0.0.1", port),
-                keepAliveInterval,
-                ManagerMock.create("+10000000000", state));
-        handler.init();
+        return new InetSocketAddress("127.0.0.1", port);
     }
 
     @AfterEach
@@ -92,6 +103,28 @@ class SseReplayTest {
         try (var client = connect("0-1", 3)) {
             assertTrue(client.next().data().contains("\"one\""));
             assertTrue(client.next().data().contains("\"two\""));
+        }
+    }
+
+    @Test
+    void eventsReceivedBeforeTheFirstClientConnectsAreKept() throws Exception {
+        start(Duration.ofSeconds(15));
+        // With --receive-mode on-start the account is already receiving before any client connects,
+        // e.g. the messages that were queued on the server while signal-cli was restarted
+        receive("one");
+
+        try (var client = connect("0-1", 2)) {
+            assertTrue(client.next().data().contains("\"one\""));
+        }
+    }
+
+    @Test
+    void multiAccountEventsReceivedBeforeTheFirstClientConnectsAreKept() throws Exception {
+        startMultiAccount();
+        receive("one");
+
+        try (var client = connect("0-1", 2)) {
+            assertTrue(client.next().data().contains("\"one\""));
         }
     }
 
