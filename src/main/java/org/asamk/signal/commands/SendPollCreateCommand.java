@@ -26,6 +26,7 @@ public class SendPollCreateCommand implements JsonRpcLocalCommand {
     private static final Logger logger = LoggerFactory.getLogger(SendPollCreateCommand.class);
     private static final int MAX_POLL_OPTIONS = 10;
     private static final int MAX_POLL_OPTION_LENGTH = 100;
+    private static final int MAX_POLL_QUESTION_LENGTH = 200;
 
     @Override
     public String getName() {
@@ -69,6 +70,14 @@ public class SendPollCreateCommand implements JsonRpcLocalCommand {
                 usernameStrings);
 
         final var question = ns.getString("question");
+        if (question == null || question.isBlank()) {
+            throw new UserErrorException("Poll question must not be empty");
+        }
+        if (question.length() > MAX_POLL_QUESTION_LENGTH) {
+            throw new UserErrorException("Poll question exceeds the maximum length of "
+                    + MAX_POLL_QUESTION_LENGTH
+                    + " characters");
+        }
         final var noMulti = Boolean.TRUE.equals(ns.getBoolean("no-multi"));
         final var options = ns.<String>getList("option");
         if (options.size() < 2) {
