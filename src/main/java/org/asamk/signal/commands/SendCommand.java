@@ -216,6 +216,7 @@ public class SendCommand implements JsonRpcLocalCommand {
 
         final var textStyleStrings = ns.<String>getList("text-style");
         final var textStyles = textStyleStrings == null ? List.<TextStyle>of() : parseTextStyles(textStyleStrings);
+        checkRangesInMessageText(messageText, mentions, textStyles);
 
         final Message.Quote quote;
         final var quoteTimestamp = ns.getLong("quote-timestamp");
@@ -376,6 +377,40 @@ public class SendCommand implements JsonRpcLocalCommand {
             throw new UserErrorException("Timestamp must be in the past");
         }
         return Optional.of(timestamp);
+    }
+
+    /**
+     * Signal clients drop a message with a body range that ends after its text, without any error for the sender.
+     * Like the clients, the length is counted in UTF-16 code units.
+     */
+    private static void checkRangesInMessageText(
+            final String messageText,
+            final List<Message.Mention> mentions,
+            final List<TextStyle> textStyles
+    ) throws UserErrorException {
+        final var length = messageText.length();
+        for (final var mention : mentions) {
+            if ((long) mention.start() + mention.length() > length) {
+                throw new UserErrorException("Mention "
+                        + mention.start()
+                        + ":"
+                        + mention.length()
+                        + " is outside of the message text (length "
+                        + length
+                        + ")");
+            }
+        }
+        for (final var textStyle : textStyles) {
+            if ((long) textStyle.start() + textStyle.length() > length) {
+                throw new UserErrorException("Text style "
+                        + textStyle.start()
+                        + ":"
+                        + textStyle.length()
+                        + " is outside of the message text (length "
+                        + length
+                        + ")");
+            }
+        }
     }
 
     private List<Message.Mention> parseMentions(
