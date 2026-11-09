@@ -16,6 +16,7 @@ import org.asamk.signal.manager.storage.configuration.LegacyConfigurationStore;
 import org.asamk.signal.manager.storage.contacts.ContactsStore;
 import org.asamk.signal.manager.storage.contacts.LegacyJsonContactsStore;
 import org.asamk.signal.manager.storage.groups.GroupInfoV1;
+import org.asamk.signal.manager.storage.groups.GroupInfoV2;
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.groups.LegacyGroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
@@ -72,13 +73,13 @@ import org.signal.libsignal.protocol.util.KeyHelper;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.signal.network.api.RegistrationApiV2;
+import org.signal.network.crypto.UnidentifiedAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.SignalServiceAccountDataStore;
 import org.whispersystems.signalservice.api.SignalServiceDataStore;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
 import org.whispersystems.signalservice.api.account.PreKeyCollection;
-import org.whispersystems.signalservice.api.crypto.UnidentifiedAccess;
 import org.whispersystems.signalservice.api.push.ServiceIdType;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.UsernameLinkComponents;
@@ -487,6 +488,13 @@ public class SignalAccount implements Closeable {
     ) throws SQLException {
         getMessageCache().mergeRecipients(recipientId, toBeMergedRecipientId);
         getGroupStore().mergeRecipients(connection, recipientId, toBeMergedRecipientId);
+    }
+
+    private void rotateOurSenderKey(final Connection connection, final GroupInfoV2 group) throws SQLException {
+        // A full member is gone, so former members must not decrypt what we send next. The check before each sender key
+        // send misses them if their sender_key_shared entries were deleted, e.g. after a decryption error message.
+        logger.debug("A member was removed from group {}, rotating our sender key.", group.getGroupId().toBase64());
+        getSenderKeyStore().deleteOurKey(connection, getAci(), group.getDistributionId());
     }
 
     public void removeRecipient(final RecipientId recipientId) {
@@ -1035,7 +1043,8 @@ public class SignalAccount implements Closeable {
                                             ? Profile.UnidentifiedAccessMode.ENABLED
                                             : Profile.UnidentifiedAccessMode.DISABLED,
                             capabilities,
-                            null);
+                            null,
+                            List.of());
                     getProfileStore().storeProfile(recipientId, newProfile);
                 }
             }
@@ -1333,7 +1342,8 @@ public class SignalAccount implements Closeable {
         return getOrCreate(() -> groupStore,
                 () -> groupStore = new GroupStore(getAccountDatabase(),
                         getRecipientResolver(),
-                        getRecipientIdCreator()));
+                        getRecipientIdCreator(),
+                        this::rotateOurSenderKey));
     }
 
     public ContactsStore getContactStore() {

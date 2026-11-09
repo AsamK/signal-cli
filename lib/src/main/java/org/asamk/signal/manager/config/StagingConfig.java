@@ -42,7 +42,6 @@ class StagingConfig {
     private static final TrustStore TRUST_STORE = new WhisperTrustStore();
 
     private static final Optional<Dns> dns = Optional.empty();
-    private static final Optional<SignalProxy> proxy = Optional.empty();
 
     private static final byte[] zkGroupServerPublicParams = Base64.getDecoder()
             .decode("ABSY21VckQcbSXVNCGRYJcfWHiAMZmpTtTELcDmxgdFbtp/bWsSxZdMKzfCp8rvIs8ocCU3B37fT3r4Mi5qAemeGeR2X+/YmOGR5ofui7tD5mDQfstAI9i+4WpMtIe8KC3wU5w3Inq3uNWVmoGtpKndsNfwJrCg0Hd9zmObhypUnSkfYn2ooMOOnBpfdanRtrvetZUayDMSC5iSRcXKpdlukrpzzsCIvEwjwQlJYVPOQPj4V0F4UXXBdHSLK05uoPBCQG8G9rYIGedYsClJXnbrgGYG3eMTG5hnx4X4ntARBgELuMWWUEEfSK0mjXg+/2lPmWcTZWR9nkqgQQP0tbzuiPm74H2wMO4u1Wafe+UwyIlIT9L7KLS19Aw8r4sPrXZSSsOZ6s7M1+rTJN0bI5CKY2PX29y5Ok3jSWufIKcgKOnWoP67d5b2du2ZVJjpjfibNIHbT/cegy/sBLoFwtHogVYUewANUAXIaMPyCLRArsKhfJ5wBtTminG/PAvuBdJ70Z/bXVPf8TVsR292zQ65xwvWTejROW6AZX6aqucUjlENAErBme1YHmOSpU6tr6doJ66dPzVAWIanmO/5mgjNEDeK7DDqQdB1xd03HT2Qs2TxY3kCK8aAb/0iM0HQiXjxZ9HIgYhbtvGEnDKW5ILSUydqH/KBhW4Pb0jZWnqN/YgbWDKeJxnDbYcUob5ZY5Lt5ZCMKuaGUvCJRrCtuugSMaqjowCGRempsDdJEt+cMaalhZ6gczklJB/IbdwENW9KeVFPoFNFzhxWUIS5ML9riVYhAtE6JE5jX0xiHNVIIPthb458cfA8daR0nYfYAUKogQArm0iBezOO+mPk5vCNWI+wwkyFCqNDXz/qxl1gAntuCJtSfq9OC3NkdhQlgYQ==");
@@ -55,7 +54,8 @@ class StagingConfig {
     private static final Network.Environment LIBSIGNAL_NET_ENV = Network.Environment.STAGING;
 
     static SignalServiceConfiguration createDefaultServiceConfiguration(
-            final List<Interceptor> interceptors
+            final List<Interceptor> interceptors,
+            final Optional<SignalProxy> proxy
     ) {
         return new SignalServiceConfiguration(new SignalServiceUrl[]{new SignalServiceUrl(URL, TRUST_STORE)},
                 Map.of(0,
@@ -68,7 +68,7 @@ class StagingConfig {
                 new SignalCdsiUrl[]{new SignalCdsiUrl(SIGNAL_CDSI_URL, TRUST_STORE)},
                 new SignalSvr2Url[]{new SignalSvr2Url(SIGNAL_SVR2_URL, TRUST_STORE, null, null)},
                 interceptors,
-                dns,
+                proxy.map(ServiceConfig::dnsBehindTlsProxy).or(() -> dns),
                 proxy,
                 zkGroupServerPublicParams,
                 genericServerPublicParams,
@@ -85,10 +85,13 @@ class StagingConfig {
         }
     }
 
-    static ServiceEnvironmentConfig getServiceEnvironmentConfig(List<Interceptor> interceptors) {
+    static ServiceEnvironmentConfig getServiceEnvironmentConfig(
+            List<Interceptor> interceptors,
+            Optional<SignalProxy> proxy
+    ) {
         return new ServiceEnvironmentConfig(STAGING,
                 LIBSIGNAL_NET_ENV,
-                createDefaultServiceConfiguration(interceptors),
+                createDefaultServiceConfiguration(interceptors, proxy),
                 getUnidentifiedSenderTrustRoots(),
                 CDSI_MRENCLAVE,
                 List.of(SVR2_MRENCLAVE, SVR2_MRENCLAVE_LEGACY));

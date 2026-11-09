@@ -14,6 +14,7 @@ public record GlobalConfig(
         @JsonProperty("serviceEnvironment") ServiceEnvironmentCli serviceEnvironment,
         @JsonProperty("trustNewIdentities") TrustNewIdentityCli trustNewIdentities,
         @JsonProperty("disableSendLog") Boolean disableSendLog,
+        @JsonProperty("tlsProxy") String tlsProxy,
         @JsonProperty("account") String account
 ) {
 
@@ -28,9 +29,10 @@ public record GlobalConfig(
             ServiceEnvironmentCli.LIVE,
             TrustNewIdentityCli.ON_FIRST_USE,
             null,
+            null,
             null);
 
     public static GlobalConfig empty() {
-        return new GlobalConfig(null, null, null, null, null, null, null, null, null, null, null, null);
+        return new GlobalConfig(null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 }

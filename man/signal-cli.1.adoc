@@ -101,6 +101,11 @@ Choose when to trust new identities:
 *--disable-send-log*::
 Disable message send log (for resending messages that recipient couldn't decrypt).
 
+*--tls-proxy* PROXY::
+Connect to the Signal servers through a Signal TLS proxy, like the proxy setting of the official Signal apps.
+PROXY is the proxy host, optionally with a port (`HOST:PORT`, default 443), or a proxy link like `https://signal.tube/#HOST`.
+All connections then go to the proxy and only its host name is resolved via DNS.
+
 == Commands
 
 === register
@@ -439,6 +444,11 @@ Clear session state and send end session message.
 
 *--edit-timestamp*::
 Specify the timestamp of a previous message with the recipient or group to send an edited message.
+
+*--timestamp*::
+Specify the timestamp of the message in milliseconds since the epoch, instead of using the current time.
+Must be positive and in the past.
+Cannot be combined with *--edit-timestamp* or *--end-session*.
 
 *--no-urgent*::
 Send the message without the urgent flag, so no push notification is triggered for the recipient.
@@ -1237,7 +1247,7 @@ The password and cryptographic keys are created when registering and stored in t
 === Configuration file
 
 signal-cli supports a JSON-based global configuration file that provides defaults for CLI options.
-Keys use camelCase and generally match the long CLI parameter names (for example `dataDir`, `verbose`, `logFile`, `serviceEnvironment`, `trustNewIdentities`, `output`, `disableSendLog`, `account`).
+Keys use camelCase and generally match the long CLI parameter names (for example `dataDir`, `verbose`, `logFile`, `serviceEnvironment`, `trustNewIdentities`, `output`, `disableSendLog`, `tlsProxy`, `account`).
 
 Configuration files are read and merged in this order; later files override earlier ones:
 

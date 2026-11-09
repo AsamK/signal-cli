@@ -1,10 +1,14 @@
 package org.asamk.signal.manager.storage.recipients;
 
 import org.asamk.signal.manager.api.Contact;
+import org.asamk.signal.manager.api.Profile;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RecipientStoreTest {
@@ -89,5 +93,24 @@ class RecipientStoreTest {
         assertEquals(4, merged.messageExpirationTimeVersion());
         assertEquals(100, merged.muteUntil());
         assertTrue(merged.isHidden());
+    }
+
+    @Test
+    void profileBadgesRoundTrip() {
+        final var badges = List.of(new Profile.Badge("BOOST", "donor", 1767225600000L, true),
+                new Profile.Badge("TEST", "other", null, false));
+
+        assertEquals(badges, RecipientStore.deserializeBadges(RecipientStore.serializeBadges(badges)));
+    }
+
+    @Test
+    void emptyProfileBadgesAreStoredAsNull() {
+        assertNull(RecipientStore.serializeBadges(List.of()));
+        assertEquals(List.of(), RecipientStore.deserializeBadges(null));
+    }
+
+    @Test
+    void invalidStoredProfileBadgesAreIgnored() {
+        assertEquals(List.of(), RecipientStore.deserializeBadges("not json"));
     }
 }

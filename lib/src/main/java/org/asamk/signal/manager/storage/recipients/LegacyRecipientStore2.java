@@ -90,7 +90,8 @@ public class LegacyRecipientStore2 {
                                     .map(Profile.Capability::valueOfOrNull)
                                     .filter(Objects::nonNull)
                                     .collect(Collectors.toSet()),
-                            null);
+                            null,
+                            List.of());
                 }
 
                 return new Recipient(recipientId,

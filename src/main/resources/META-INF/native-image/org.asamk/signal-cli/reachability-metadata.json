@@ -2341,6 +2341,7 @@
             "org.asamk.signal.ServiceEnvironmentCli",
             "org.asamk.signal.TrustNewIdentityCli",
             "java.lang.Boolean",
+            "java.lang.String",
             "java.lang.String"
           ]
         }
@@ -2454,6 +2455,10 @@
       "type": "org.asamk.signal.commands.FinishLinkCommand$JsonFinishLink",
       "allDeclaredFields": true,
       "methods": [
+        {
+          "name": "aci",
+          "parameterTypes": []
+        },
         {
           "name": "number",
           "parameterTypes": []
@@ -2692,19 +2697,26 @@
           "name": "<init>",
           "parameterTypes": [
             "java.lang.Boolean",
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.lang.String",
             "java.lang.String"
           ]
         },
         {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.String",
-            "java.lang.Boolean"
-          ]
+          "name": "captcha",
+          "parameterTypes": []
         },
         {
-          "name": "captcha",
+          "name": "recoveryKey",
+          "parameterTypes": []
+        },
+        {
+          "name": "reregister",
+          "parameterTypes": []
+        },
+        {
+          "name": "totp",
           "parameterTypes": []
         },
         {
@@ -3094,6 +3106,31 @@
       ]
     },
     {
+      "type": "org.asamk.signal.json.JsonContact$JsonBadge",
+      "allDeclaredFields": true,
+      "methods": [
+        {
+          "name": "category",
+          "parameterTypes": []
+        },
+        {
+          "name": "expirationTimestamp",
+          "parameterTypes": []
+        },
+        {
+          "name": "id",
+          "parameterTypes": []
+        },
+        {
+          "name": "visible",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.asamk.signal.json.JsonContact$JsonBadge[]"
+    },
+    {
       "type": "org.asamk.signal.json.JsonContact$JsonInternal",
       "allDeclaredFields": true,
       "methods": [
@@ -3125,6 +3162,10 @@
         },
         {
           "name": "aboutEmoji",
+          "parameterTypes": []
+        },
+        {
+          "name": "badges",
           "parameterTypes": []
         },
         {
@@ -6134,6 +6175,21 @@
       ]
     },
     {
+      "type": "org.signal.libsignal.internal.BridgePreKeyCounts_ReturnConverter",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "fromNative",
+          "parameterTypes": [
+            "java.lang.Object",
+            "java.lang.Object",
+            "java.lang.Object",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.signal.libsignal.internal.CompletableFuture",
       "jniAccessible": true,
       "methods": [
@@ -6209,7 +6265,8 @@
       ]
     },
     {
-      "type": "org.signal.libsignal.net.AuthenticatedChatConnection"
+      "type": "org.signal.libsignal.net.AuthenticatedChatConnection",
+      "jniAccessible": true
     },
     {
       "type": "org.signal.libsignal.net.CdsiLookupResponse",
@@ -10168,6 +10225,29 @@
       "type": "org.whispersystems.signalservice.internal.storage.protos.GroupV2Record$StorySendMode"
     },
     {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.InstalledStickerPackRecord",
+      "fields": [
+        {
+          "name": "deletedAtTimestamp"
+        },
+        {
+          "name": "packId"
+        },
+        {
+          "name": "packKey"
+        },
+        {
+          "name": "position"
+        }
+      ]
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.InstalledStickerPackRecord$Builder"
+    },
+    {
+      "type": "org.whispersystems.signalservice.internal.storage.protos.InstalledStickerPackRecord$Companion"
+    },
+    {
       "type": "org.whispersystems.signalservice.internal.storage.protos.ManifestRecord",
       "fields": [
         {
@@ -10206,29 +10286,6 @@
           "name": "readKey_"
         }
       ]
-    },
-    {
-      "type": "org.whispersystems.signalservice.internal.storage.protos.StickerPackRecord",
-      "fields": [
-        {
-          "name": "deletedAtTimestamp"
-        },
-        {
-          "name": "packId"
-        },
-        {
-          "name": "packKey"
-        },
-        {
-          "name": "position"
-        }
-      ]
-    },
-    {
-      "type": "org.whispersystems.signalservice.internal.storage.protos.StickerPackRecord$Builder"
-    },
-    {
-      "type": "org.whispersystems.signalservice.internal.storage.protos.StickerPackRecord$Companion"
     },
     {
       "type": "org.whispersystems.signalservice.internal.storage.protos.StorageItem",
@@ -10688,6 +10745,24 @@
     },
     {
       "type": "sun.net.www.protocol.http.Handler",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.net.www.protocol.https.Handler",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.net.www.protocol.jar.Handler",
       "methods": [
         {
           "name": "<init>",
