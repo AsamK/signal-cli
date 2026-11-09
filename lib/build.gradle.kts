@@ -15,7 +15,7 @@ java {
 }
 
 val libsignalClientPath = project.findProperty("libsignal_client_path")?.toString()
-val libsignalClientVersion = "0.101.0"
+val libsignalClientVersion = "0.102.0"
 val androidClassifier = project.findProperty("androidClassifier")?.toString()
 
 dependencies {
