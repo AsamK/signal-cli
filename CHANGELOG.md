@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.14.10] - 2026-11-07
+
+### Added
+
+- Add `--tls-proxy` to connect through a Signal TLS proxy
+- Include profile badges (e.g. donor badges) in `listContacts` output
+- `send --timestamp` to set the timestamp of the sent message instead of using the current time
+
+### Fixed
+
+- Fix accepting group invitations addressed to a phone number identifier (PNI)
+- Fix attachment downloads for message edits received from linked devices
+
 ## [0.14.9] - 2026-10-07
 
 ### Added

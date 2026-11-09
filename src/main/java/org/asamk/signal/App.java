@@ -23,6 +23,7 @@ import org.asamk.signal.manager.SignalAccountFiles;
 import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
 import org.asamk.signal.manager.api.ServiceEnvironment;
+import org.asamk.signal.manager.api.TlsProxy;
 import org.asamk.signal.manager.api.TrustNewIdentity;
 import org.asamk.signal.output.JsonWriterImpl;
 import org.asamk.signal.output.OutputWriter;
@@ -113,6 +114,10 @@ public class App {
                 .help("Disable message send log (for resending messages that recipient couldn't decrypt)")
                 .action(Arguments.storeTrue())
                 .setDefault(cfg.disableSendLog() != null ? cfg.disableSendLog() : false);
+
+        parser.addArgument("--tls-proxy")
+                .help("Connect to the Signal servers through a Signal TLS proxy (HOST, HOST:PORT or a https://signal.tube/#HOST link).")
+                .setDefault(cfg.tlsProxy());
 
         parser.epilog(
                 "The global arguments are shown with 'signal-cli -h' and need to come before the subcommand, while the subcommand-specific arguments (shown with 'signal-cli SUBCOMMAND -h') need to be given after the subcommand.");
@@ -238,7 +243,7 @@ public class App {
         return outputWriter;
     }
 
-    private SignalAccountFiles loadSignalAccountFiles() throws IOErrorException {
+    private SignalAccountFiles loadSignalAccountFiles() throws IOErrorException, UserErrorException {
         final File dataPath;
         final var dataDir = ns.getString("data-dir");
         if (dataDir != null) {
@@ -259,11 +264,15 @@ public class App {
 
         final var disableSendLog = Boolean.TRUE.equals(ns.getBoolean("disable-send-log"));
 
+        final var tlsProxy = ns.getString("tls-proxy");
+
         try {
             return new SignalAccountFiles(dataPath,
                     serviceEnvironment,
                     BaseConfig.USER_AGENT,
-                    new Settings(trustNewIdentity, disableSendLog));
+                    new Settings(trustNewIdentity, disableSendLog, tlsProxy));
+        } catch (TlsProxy.InvalidTlsProxyException e) {
+            throw new UserErrorException(e.getMessage(), e);
         } catch (IOException e) {
             throw new IOErrorException("Failed to read local accounts list", e);
         }

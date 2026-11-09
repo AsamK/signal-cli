@@ -6,7 +6,7 @@ import org.asamk.signal.manager.storage.Utils;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.signalservice.api.storage.SignalStickerPackRecord;
+import org.whispersystems.signalservice.api.storage.SignalInstalledStickerPackRecord;
 import org.whispersystems.signalservice.api.storage.StorageId;
 
 import java.sql.Connection;
@@ -351,7 +351,7 @@ public class StickerStore {
 
     public void upsertFromStorageSync(
             final Connection connection,
-            final SignalStickerPackRecord record
+            final SignalInstalledStickerPackRecord record
     ) throws SQLException {
         final var remote = record.getProto();
         final var packId = StickerPackId.deserialize(remote.packId.toByteArray());

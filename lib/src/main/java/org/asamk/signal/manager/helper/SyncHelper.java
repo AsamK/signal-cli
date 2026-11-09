@@ -24,11 +24,11 @@ import org.whispersystems.signalservice.api.messages.multidevice.ConfigurationMe
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContact;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactAvatar;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsInputStream;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsOutputStream;
+import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsReader;
+import org.whispersystems.signalservice.api.messages.multidevice.DeviceContactsWriter;
 import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroup;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsInputStream;
-import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsOutputStream;
+import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsReader;
+import org.whispersystems.signalservice.api.messages.multidevice.DeviceGroupsWriter;
 import org.whispersystems.signalservice.api.messages.multidevice.KeysMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.MessageRequestResponseMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
@@ -53,6 +53,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import kotlin.sequences.SequencesKt;
 import okio.ByteString;
 
 public class SyncHelper {
@@ -110,7 +111,7 @@ public class SyncHelper {
 
         try {
             try (OutputStream fos = new FileOutputStream(groupsFile)) {
-                var out = new DeviceGroupsOutputStream(fos);
+                var out = new DeviceGroupsWriter(fos);
                 for (var record : account.getGroupStore().getGroups()) {
                     if (record instanceof GroupInfoV1 groupInfo) {
                         out.write(new DeviceGroup(groupInfo.getGroupId().serialize(),
@@ -160,7 +161,7 @@ public class SyncHelper {
 
         try {
             try (OutputStream fos = new FileOutputStream(contactsFile)) {
-                var out = new DeviceContactsOutputStream(fos);
+                var out = new DeviceContactsWriter(fos);
                 for (var contactPair : account.getContactStore().getContacts()) {
                     final var recipientId = contactPair.first();
                     final var contact = contactPair.second();
@@ -168,12 +169,12 @@ public class SyncHelper {
 
                     final var deviceContact = getDeviceContact(address, contact);
                     out.write(deviceContact);
-                    deviceContact.getAvatar().ifPresent(a -> {
+                    if (deviceContact.getAvatar() != null) {
                         try {
-                            a.getInputStream().close();
+                            deviceContact.getAvatar().getInputStream().close();
                         } catch (IOException ignored) {
                         }
-                    });
+                    }
                 }
 
                 if (account.getProfileKey() != null) {
@@ -183,12 +184,12 @@ public class SyncHelper {
                     final var contact = account.getContactStore().getContact(recipientId);
                     final var deviceContact = getDeviceContact(address, contact);
                     out.write(deviceContact);
-                    deviceContact.getAvatar().ifPresent(a -> {
+                    if (deviceContact.getAvatar() != null) {
                         try {
-                            a.getInputStream().close();
+                            deviceContact.getAvatar().getInputStream().close();
                         } catch (IOException ignored) {
                         }
-                    });
+                    }
                 }
             }
 
@@ -221,13 +222,13 @@ public class SyncHelper {
 
     @NotNull
     private DeviceContact getDeviceContact(final RecipientAddress address, final Contact contact) throws IOException {
-        return new DeviceContact(address.aci(),
-                address.number(),
-                Optional.ofNullable(contact == null ? null : contact.getName()),
+        return new DeviceContact(address.aci().orElse(null),
+                address.number().orElse(null),
+                contact == null ? null : contact.getName(),
                 createContactAvatarAttachment(address),
-                Optional.ofNullable(contact == null ? null : contact.messageExpirationTime()),
-                Optional.ofNullable(contact == null ? null : contact.messageExpirationTimeVersion()),
-                Optional.empty());
+                contact == null ? null : contact.messageExpirationTime(),
+                contact == null ? null : contact.messageExpirationTimeVersion(),
+                null);
     }
 
     public SendMessageResult sendBlockedList() {
@@ -301,18 +302,8 @@ public class SyncHelper {
     }
 
     public void handleSyncDeviceGroups(final InputStream input, final boolean ignoreAvatars) {
-        final var s = new DeviceGroupsInputStream(input);
-        DeviceGroup g;
-        while (true) {
-            try {
-                g = s.read();
-            } catch (IOException e) {
-                logger.warn("Sync groups contained invalid group, ignoring: {}", e.getMessage());
-                continue;
-            }
-            if (g == null) {
-                break;
-            }
+        final var reader = new DeviceGroupsReader(input);
+        for (final var g : SequencesKt.asIterable(reader.groups())) {
             var syncGroup = account.getGroupStore().getOrCreateGroupV1(GroupId.v1(g.getId()));
             if (syncGroup != null) {
                 if (g.getName().isPresent()) {
@@ -340,61 +331,55 @@ public class SyncHelper {
                 account.getGroupStore().updateGroup(syncGroup);
             }
         }
+        if (reader.getSkippedRecords() > 0) {
+            logger.warn("Skipped {} invalid groups from group sync, ignoring", reader.getSkippedRecords());
+        }
     }
 
     public void handleSyncDeviceContacts(final InputStream input, final boolean ignoreAvatars) throws IOException {
-        final var s = new DeviceContactsInputStream(input);
-        DeviceContact c;
-        while (true) {
-            try {
-                c = s.read();
-            } catch (IOException e) {
-                if (e.getMessage() != null && e.getMessage().contains("Missing contact address!")) {
-                    logger.debug("Sync contacts contained invalid contact, ignoring: {}", e.getMessage());
-                    continue;
-                } else {
-                    throw e;
-                }
-            }
-            if (c == null || (c.getAci().isEmpty() && c.getE164().isEmpty())) {
+        final var s = new DeviceContactsReader(input);
+        for (final var c : SequencesKt.asIterable(s.contacts())) {
+            if (c == null || (c.getAci() == null && c.getE164() == null)) {
                 break;
             }
-            final var address = new RecipientAddress(c.getAci(), Optional.empty(), c.getE164(), Optional.empty());
+            final var address = new RecipientAddress(c.getAci(), null, c.getE164(), null);
             final var recipientId = account.getRecipientTrustedResolver().resolveRecipientTrusted(address);
             var contact = account.getContactStore().getContact(recipientId);
             final var builder = contact == null ? Contact.newBuilder() : Contact.newBuilder(contact);
-            if (c.getName().isPresent() && (
+            if (c.getName() != null && (
                     contact == null || (
                             contact.givenName() == null && contact.familyName() == null
                     )
             )) {
-                builder.withGivenName(c.getName().get());
+                builder.withGivenName(c.getName());
                 builder.withFamilyName(null);
             }
-            if (c.getExpirationTimer().isPresent()) {
-                if (c.getExpirationTimerVersion().isPresent() && (
-                        contact == null || c.getExpirationTimerVersion().get() > contact.messageExpirationTimeVersion()
+            if (c.getExpireTimer() != null) {
+                if (c.getExpireTimerVersion() != null && (
+                        contact == null
+                                || c.getExpireTimerVersion() > contact.messageExpirationTimeVersion()
                 )) {
-                    builder.withMessageExpirationTime(c.getExpirationTimer().get());
-                    builder.withMessageExpirationTimeVersion(c.getExpirationTimerVersion().get());
+                    builder.withMessageExpirationTime(c.getExpireTimer());
+                    builder.withMessageExpirationTimeVersion(c.getExpireTimerVersion());
                 } else {
                     logger.debug(
                             "[ContactSync] {} was synced with an old expiration timer. Ignoring. Received: {} Current: {}",
                             recipientId,
-                            c.getExpirationTimerVersion(),
+                            c.getExpireTimerVersion(),
                             contact == null ? 1 : contact.messageExpirationTimeVersion());
                 }
             }
             account.getContactStore().storeContact(recipientId, builder.build());
 
-            if (c.getAvatar().isPresent()) {
+            if (c.getAvatar() != null) {
                 if (!ignoreAvatars) {
-                    storeContactAvatar(c.getAvatar().get(), address);
+                    storeContactAvatar(c.getAvatar(), address);
                 } else {
-                    IOUtils.discardStream(c.getAvatar().get().getInputStream());
+                    IOUtils.discardStream(c.getAvatar().getInputStream());
                 }
             }
         }
+        logger.debug("Skipped {} invalid contacts without address from contact sync, ignoring", s.getSkippedRecords());
     }
 
     public SendMessageResult sendMessageRequestResponse(final MessageRequestResponse.Type type, final GroupId groupId) {
@@ -430,15 +415,15 @@ public class SyncHelper {
         return context.getSendHelper().sendSyncMessage(message);
     }
 
-    private Optional<DeviceContactAvatar> createContactAvatarAttachment(RecipientAddress address) throws IOException {
+    private DeviceContactAvatar createContactAvatarAttachment(RecipientAddress address) throws IOException {
         final var streamDetails = context.getAvatarStore().retrieveContactAvatar(address);
         if (streamDetails == null) {
-            return Optional.empty();
+            return null;
         }
 
-        return Optional.of(new DeviceContactAvatar(streamDetails.getStream(),
+        return new DeviceContactAvatar(streamDetails.getStream(),
                 streamDetails.getLength(),
-                streamDetails.getContentType()));
+                streamDetails.getContentType());
     }
 
     private void storeContactAvatar(DeviceContactAvatar avatar, RecipientAddress address) {

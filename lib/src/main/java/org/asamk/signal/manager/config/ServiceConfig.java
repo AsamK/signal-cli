@@ -2,11 +2,15 @@ package org.asamk.signal.manager.config;
 
 import org.asamk.signal.manager.api.ServiceEnvironment;
 import org.signal.libsignal.protocol.util.Medium;
+import org.signal.network.config.SignalProxy;
 import org.whispersystems.signalservice.api.account.AccountAttributes;
 
+import java.net.InetAddress;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Dns;
 import okhttp3.Interceptor;
 
 public class ServiceConfig {
@@ -48,6 +52,14 @@ public class ServiceConfig {
             ServiceEnvironment serviceEnvironment,
             String userAgent
     ) {
+        return getServiceEnvironmentConfig(serviceEnvironment, userAgent, Optional.empty());
+    }
+
+    public static ServiceEnvironmentConfig getServiceEnvironmentConfig(
+            ServiceEnvironment serviceEnvironment,
+            String userAgent,
+            Optional<SignalProxy> tlsProxy
+    ) {
         final Interceptor userAgentInterceptor = chain -> chain.proceed(chain.request()
                 .newBuilder()
                 .header("User-Agent", userAgent)
@@ -56,8 +68,22 @@ public class ServiceConfig {
         final var interceptors = List.of(userAgentInterceptor);
 
         return switch (serviceEnvironment) {
-            case LIVE -> LiveConfig.getServiceEnvironmentConfig(interceptors);
-            case STAGING -> StagingConfig.getServiceEnvironmentConfig(interceptors);
+            case LIVE -> LiveConfig.getServiceEnvironmentConfig(interceptors, tlsProxy);
+            case STAGING -> StagingConfig.getServiceEnvironmentConfig(interceptors, tlsProxy);
+        };
+    }
+
+    /**
+     * Behind a Signal TLS proxy every connection goes to the proxy, regardless of the address resolved for the
+     * target host. Only the proxy host is looked up, so that the Signal host names don't reach the local resolver,
+     * which might block or log them.
+     */
+    static Dns dnsBehindTlsProxy(SignalProxy proxy) {
+        return hostname -> {
+            if (hostname.equalsIgnoreCase(proxy.getHost())) {
+                return Dns.SYSTEM.lookup(hostname);
+            }
+            return List.of(InetAddress.getByAddress(hostname, new byte[]{127, 0, 0, 1}));
         };
     }
 }

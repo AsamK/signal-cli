@@ -492,7 +492,7 @@ public class StorageHelper {
                 final var storageId = newStickerPackStorageIds.get(stickerPack.packId());
                 final var record = StorageSyncModels.localToRemoteRecord(stickerPack);
                 newStorageRecords.add(new SignalStorageRecord(storageId,
-                        new StorageRecord.Builder().stickerPack(record).build()));
+                        new StorageRecord.Builder().installedStickerPack(record).build()));
             }
 
             connection.commit();
@@ -680,7 +680,8 @@ public class StorageHelper {
                     throw new AssertionError("Missing local sticker pack model for storage id: " + storageId);
                 }
                 final var record = StorageSyncModels.localToRemoteRecord(stickerPack);
-                yield new SignalStorageRecord(storageId, new StorageRecord.Builder().stickerPack(record).build());
+                yield new SignalStorageRecord(storageId,
+                        new StorageRecord.Builder().installedStickerPack(record).build());
             }
             case null, default -> {
                 throw new AssertionError("Got unknown local storage record type: " + storageId);
@@ -777,9 +778,9 @@ public class StorageHelper {
                 logger.debug("Reading record {} of type contact", record.getId());
                 contactRecordProcessor.process(StorageRecordConvertersKt.toSignalContactRecord(record.getProto().contact,
                         record.getId()));
-            } else if (record.getProto().stickerPack != null) {
+            } else if (record.getProto().installedStickerPack != null) {
                 logger.debug("Reading record {} of type stickerPack", record.getId());
-                stickerPackRecordProcessor.process(StorageRecordConvertersKt.toSignalStickerPackRecord(record.getProto().stickerPack,
+                stickerPackRecordProcessor.process(StorageRecordConvertersKt.toSignalInstalledStickerPackRecord(record.getProto().installedStickerPack,
                         record.getId()));
             } else {
                 unknownRecords.add(record.getId());

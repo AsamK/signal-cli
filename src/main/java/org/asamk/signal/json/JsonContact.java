@@ -37,8 +37,12 @@ public record JsonContact(
             String about,
             String aboutEmoji,
             boolean hasAvatar,
-            String mobileCoinAddress
+            String mobileCoinAddress,
+            List<JsonBadge> badges
     ) {}
+
+    @JsonSchema(title = "Badge")
+    public record JsonBadge(String id, String category, Long expirationTimestamp, boolean visible) {}
 
     @JsonSchema(title = "Internal")
     public record JsonInternal(

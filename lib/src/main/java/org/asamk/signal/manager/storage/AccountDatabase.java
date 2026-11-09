@@ -33,7 +33,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 31;
+    private static final long DATABASE_VERSION = 32;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -650,6 +650,14 @@ public class AccountDatabase extends Database {
                                         ALTER TABLE recipient ADD blocked_at INTEGER NOT NULL DEFAULT 0;
                                         ALTER TABLE group_v1 ADD blocked_at INTEGER NOT NULL DEFAULT 0;
                                         ALTER TABLE group_v2 ADD blocked_at INTEGER NOT NULL DEFAULT 0;
+                                        """);
+            }
+        }
+        if (oldVersion < 32) {
+            logger.debug("Updating database: Create profile_badges column");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        ALTER TABLE recipient ADD profile_badges TEXT;
                                         """);
             }
         }

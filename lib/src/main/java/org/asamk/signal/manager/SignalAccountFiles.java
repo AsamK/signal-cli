@@ -4,6 +4,7 @@ import org.asamk.signal.manager.api.AccountCheckException;
 import org.asamk.signal.manager.api.NotRegisteredException;
 import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.api.ServiceEnvironment;
+import org.asamk.signal.manager.api.TlsProxy;
 import org.asamk.signal.manager.config.ServiceConfig;
 import org.asamk.signal.manager.config.ServiceEnvironmentConfig;
 import org.asamk.signal.manager.internal.AccountFileUpdaterImpl;
@@ -16,6 +17,7 @@ import org.asamk.signal.manager.storage.SignalAccount;
 import org.asamk.signal.manager.storage.accounts.AccountsStore;
 import org.asamk.signal.manager.util.KeyUtils;
 import org.signal.core.models.ServiceId.ACI;
+import org.signal.network.config.SignalProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionException;
@@ -23,6 +25,7 @@ import org.whispersystems.signalservice.api.push.exceptions.DeprecatedVersionExc
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -43,10 +46,19 @@ public class SignalAccountFiles {
             final ServiceEnvironment serviceEnvironment,
             final String userAgent,
             final Settings settings
-    ) throws IOException {
+    ) throws IOException, TlsProxy.InvalidTlsProxyException {
         this.pathConfig = PathConfig.createDefault(settingsPath);
         this.serviceEnvironment = serviceEnvironment;
-        this.serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(this.serviceEnvironment, userAgent);
+        final Optional<SignalProxy> signalProxy;
+        if (settings.tlsProxy() == null) {
+            signalProxy = Optional.empty();
+        } else {
+            final var proxy = TlsProxy.parse(settings.tlsProxy());
+            signalProxy = Optional.of(new SignalProxy(proxy.host(), proxy.port()));
+        }
+        this.serviceEnvironmentConfig = ServiceConfig.getServiceEnvironmentConfig(this.serviceEnvironment,
+                userAgent,
+                signalProxy);
         this.userAgent = userAgent;
         this.settings = settings;
         this.accountsStore = new AccountsStore(pathConfig.dataPath(), serviceEnvironment, accountPath -> {
