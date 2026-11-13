@@ -216,6 +216,7 @@ public class SendCommand implements JsonRpcLocalCommand {
 
         final var textStyleStrings = ns.<String>getList("text-style");
         final var textStyles = textStyleStrings == null ? List.<TextStyle>of() : parseTextStyles(textStyleStrings);
+        checkRangesInMessageText(messageText, mentions, textStyles);
 
         final Message.Quote quote;
         final var quoteTimestamp = ns.getLong("quote-timestamp");
@@ -378,6 +379,40 @@ public class SendCommand implements JsonRpcLocalCommand {
         return Optional.of(timestamp);
     }
 
+    /**
+     * Signal clients drop a message with a body range that ends after its text, without any error for the sender.
+     * Like the clients, the length is counted in UTF-16 code units.
+     */
+    private static void checkRangesInMessageText(
+            final String messageText,
+            final List<Message.Mention> mentions,
+            final List<TextStyle> textStyles
+    ) throws UserErrorException {
+        final var length = messageText.length();
+        for (final var mention : mentions) {
+            if ((long) mention.start() + mention.length() > length) {
+                throw new UserErrorException("Mention "
+                        + mention.start()
+                        + ":"
+                        + mention.length()
+                        + " is outside of the message text (length "
+                        + length
+                        + ")");
+            }
+        }
+        for (final var textStyle : textStyles) {
+            if ((long) textStyle.start() + textStyle.length() > length) {
+                throw new UserErrorException("Text style "
+                        + textStyle.start()
+                        + ":"
+                        + textStyle.length()
+                        + " is outside of the message text (length "
+                        + length
+                        + ")");
+            }
+        }
+    }
+
     private List<Message.Mention> parseMentions(
             final String selfNumber,
             final List<String> mentionStrings
@@ -391,9 +426,15 @@ public class SendCommand implements JsonRpcLocalCommand {
                         + mention
                         + ") expected 'start:length:recipientNumber'");
             }
-            mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3), selfNumber),
-                    Integer.parseInt(matcher.group(1)),
-                    Integer.parseInt(matcher.group(2))));
+            try {
+                mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3), selfNumber),
+                        Integer.parseInt(matcher.group(1)),
+                        Integer.parseInt(matcher.group(2))));
+            } catch (NumberFormatException e) {
+                throw new UserErrorException("Invalid mention syntax ("
+                        + mention
+                        + ") expected 'start:length:recipientNumber' with 32-bit integer values", e);
+            }
         }
         return mentions;
     }
@@ -414,9 +455,15 @@ public class SendCommand implements JsonRpcLocalCommand {
             if (style == null) {
                 throw new UserErrorException("Invalid style: " + matcher.group(3));
             }
-            textStyles.add(new TextStyle(style,
-                    Integer.parseInt(matcher.group(1)),
-                    Integer.parseInt(matcher.group(2))));
+            try {
+                textStyles.add(new TextStyle(style,
+                        Integer.parseInt(matcher.group(1)),
+                        Integer.parseInt(matcher.group(2))));
+            } catch (NumberFormatException e) {
+                throw new UserErrorException("Invalid textStyle syntax ("
+                        + textStyle
+                        + ") expected 'start:length:STYLE' with 32-bit integer values", e);
+            }
         }
         return textStyles;
     }
@@ -429,7 +476,13 @@ public class SendCommand implements JsonRpcLocalCommand {
                     + stickerString
                     + ") expected 'stickerPackId:stickerId'");
         }
-        return new Message.Sticker(Hex.toByteArray(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+        try {
+            return new Message.Sticker(Hex.toByteArray(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+        } catch (NumberFormatException e) {
+            throw new UserErrorException("Invalid sticker syntax ("
+                    + stickerString
+                    + ") expected 'stickerPackId:stickerId' with a 32-bit integer stickerId", e);
+        }
     }
 
     private List<Message.Quote.Attachment> parseQuoteAttachments(

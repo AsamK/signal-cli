@@ -748,6 +748,9 @@ public class ManagerImpl implements Manager {
     ) throws IOException, NotAGroupMemberException, GroupNotFoundException, GroupSendingNotAllowedException {
         var results = new HashMap<RecipientIdentifier, List<SendMessageResult>>();
         final var timestamp = getNextMessageTimestamp();
+        if (Boolean.FALSE.equals(account.getConfigurationStore().getTypingIndicators())) {
+            return new SendMessageResults(timestamp, results);
+        }
         for (var recipient : recipients) {
             if (recipient instanceof RecipientIdentifier.Single single) {
                 final var message = new SignalServiceTypingMessage(action, timestamp, Optional.empty());

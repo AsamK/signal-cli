@@ -31,12 +31,22 @@ public class MessageCache {
             return Collections.emptyList();
         }
 
-        return Arrays.stream(Objects.requireNonNull(messageCachePath.listFiles())).flatMap(dir -> {
+        final var cacheFiles = messageCachePath.listFiles();
+        if (cacheFiles == null) {
+            logger.warn("Failed to read message cache directory “{}”; skipping cached message retries", messageCachePath);
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(cacheFiles).flatMap(dir -> {
             if (dir.isFile()) {
                 return Stream.of(dir);
             }
 
-            final var files = Objects.requireNonNull(dir.listFiles());
+            final var files = dir.listFiles();
+            if (files == null) {
+                logger.warn("Failed to read message cache directory “{}”; skipping cached message retries", dir);
+                return Stream.empty();
+            }
             if (files.length == 0) {
                 try {
                     Files.delete(dir.toPath());
@@ -86,7 +96,13 @@ public class MessageCache {
             return;
         }
 
-        for (var file : Objects.requireNonNull(recipientMessageCachePath.listFiles())) {
+        final var files = recipientMessageCachePath.listFiles();
+        if (files == null) {
+            logger.warn("Failed to read message cache directory “{}”; skipping message deletion", recipientMessageCachePath);
+            return;
+        }
+
+        for (var file : files) {
             if (!file.isFile()) {
                 continue;
             }
@@ -126,7 +142,13 @@ public class MessageCache {
             return;
         }
 
-        for (var file : Objects.requireNonNull(toBeMergedMessageCachePath.listFiles())) {
+        final var files = toBeMergedMessageCachePath.listFiles();
+        if (files == null) {
+            logger.warn("Failed to read message cache directory “{}”; skipping recipient merge", toBeMergedMessageCachePath);
+            return;
+        }
+
+        for (var file : files) {
             if (!file.isFile()) {
                 continue;
             }
