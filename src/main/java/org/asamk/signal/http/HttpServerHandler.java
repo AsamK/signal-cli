@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class HttpServerHandler implements AutoCloseable {
 
@@ -45,6 +46,7 @@ public class HttpServerHandler implements AutoCloseable {
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private final Set<String> allowedHosts;
     private final SseEventBuffer eventBuffer = new SseEventBuffer(objectMapper);
+    private final Consumer<Manager> recordManager = eventBuffer::record;
 
     public HttpServerHandler(final InetSocketAddress address, final Duration keepAliveInterval, final Manager m) {
         this.address = address;
@@ -81,6 +83,16 @@ public class HttpServerHandler implements AutoCloseable {
         server.createContext("/api/v1/events", this::handleEventsEndpoint);
         server.createContext("/api/v1/check", this::handleCheckEndpoint);
 
+        // Keep events from the start, not only from the first client connection.
+        // With --receive-mode on-start the accounts are already receiving, so a client that
+        // connects after a restart would otherwise miss the messages received in the meantime.
+        if (m != null) {
+            eventBuffer.record(m);
+        } else {
+            c.getManagers().forEach(eventBuffer::record);
+            c.addOnManagerAddedHandler(recordManager);
+        }
+
         server.start();
         logger.info("Started HTTP server on {}", address);
         // If we're listening on any local address (0.0.0.0 or ::), skip Host header validation
@@ -103,6 +115,9 @@ public class HttpServerHandler implements AutoCloseable {
             // Increase this delay when https://bugs.openjdk.org/browse/JDK-8304065 is fixed
             server.stop(2);
             server = null;
+            if (c != null) {
+                c.removeOnManagerAddedHandler(recordManager);
+            }
             eventBuffer.close();
             shutdown.set(false);
         }
