@@ -22,6 +22,7 @@ import static org.asamk.signal.manager.config.ServiceConfig.PREKEY_ARCHIVE_AGE;
 public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
 
     private static final String TABLE_KYBER_PRE_KEY = "kyber_pre_key";
+    private static final String TABLE_KYBER_PRE_KEY_USED = "kyber_pre_key_used";
     private static final Logger logger = LoggerFactory.getLogger(KyberPreKeyStore.class);
 
     private final Database database;
@@ -40,6 +41,17 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
                                       stale_timestamp INTEGER,
                                       timestamp INTEGER DEFAULT 0,
                                       UNIQUE(account_id_type, key_id)
+                                    ) STRICT;
+                                    """);
+            statement.executeUpdate("""
+                                    CREATE TABLE kyber_pre_key_used (
+                                      _id INTEGER PRIMARY KEY,
+                                      account_id_type INTEGER NOT NULL,
+                                      key_id INTEGER NOT NULL,
+                                      signed_pre_key_id INTEGER NOT NULL,
+                                      base_key BLOB NOT NULL,
+                                      UNIQUE(account_id_type, key_id, signed_pre_key_id, base_key),
+                                      FOREIGN KEY (account_id_type, key_id) REFERENCES kyber_pre_key (account_id_type, key_id) ON DELETE CASCADE
                                     ) STRICT;
                                     """);
         }
@@ -137,6 +149,7 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
      * When we mark Kyber pre-keys used, we want to keep a record of last resort tuples, which are deleted when the key
      * itself is deleted from this table via a cascading delete.
      * For non-last-resort keys, this method just deletes them like normal.
+     * An unknown key id is left unchanged.
      */
     @Override
     public void markKyberPreKeyUsed(
@@ -144,24 +157,29 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
             final int signedPreKeyId,
             final ECPublicKey baseKey
     ) throws ReusedBaseKeyException {
-        // TODO implement correct handling for last resort keys:
-        //  If it's a last-resort pre-key, check whether this specific
-        //  (kyberPreKeyId, signedPreKeyId, baseKey) tuple has been seen before, and throw an
-        //  exception if so. If not, record it for later. Entries can be removed when either the Kyber key
-        //  or the last-resort key is deleted (not just rotated).
-        final var sql = (
-                """
-                DELETE FROM %s AS p
-                WHERE p.account_id_type = ? AND p.key_id = ? AND p.is_last_resort = FALSE
-                """
-        ).formatted(TABLE_KYBER_PRE_KEY);
         try (final var connection = database.getConnection()) {
-            try (final var statement = connection.prepareStatement(sql)) {
-                statement.setInt(1, accountIdType);
-                statement.setInt(2, kyberPreKeyId);
-                statement.executeUpdate();
+            connection.setAutoCommit(false);
+            try {
+                if (deleteOneTimeKyberPreKey(connection, kyberPreKeyId)) {
+                    connection.commit();
+                    return;
+                }
+                if (!isLastResortKyberPreKey(connection, kyberPreKeyId)) {
+                    connection.commit();
+                    return;
+                }
+                if (!insertUsedTuple(connection, kyberPreKeyId, signedPreKeyId, baseKey.serialize())) {
+                    throw new ReusedBaseKeyException();
+                }
+                connection.commit();
+            } catch (final ReusedBaseKeyException e) {
+                rollback(connection);
+                throw e;
+            } catch (final SQLException e) {
+                rollback(connection);
+                throw new RuntimeException("Failed update kyber_pre_key store", e);
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new RuntimeException("Failed update kyber_pre_key store", e);
         }
     }
@@ -199,6 +217,65 @@ public class KyberPreKeyStore implements SignalServiceKyberPreKeyStore {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed update kyber_pre_key store", e);
+        }
+    }
+
+    private boolean deleteOneTimeKyberPreKey(final Connection connection, final int keyId) throws SQLException {
+        final var sql = (
+                """
+                DELETE FROM %s AS p
+                WHERE p.account_id_type = ? AND p.key_id = ? AND p.is_last_resort = FALSE
+                """
+        ).formatted(TABLE_KYBER_PRE_KEY);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, accountIdType);
+            statement.setInt(2, keyId);
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    private boolean isLastResortKyberPreKey(final Connection connection, final int keyId) throws SQLException {
+        final var sql = (
+                """
+                SELECT p.is_last_resort
+                FROM %s p
+                WHERE p.account_id_type = ? AND p.key_id = ? AND p.is_last_resort = TRUE
+                """
+        ).formatted(TABLE_KYBER_PRE_KEY);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, accountIdType);
+            statement.setInt(2, keyId);
+            return Utils.executeQueryForOptional(statement, resultSet -> Boolean.TRUE).isPresent();
+        }
+    }
+
+    private boolean insertUsedTuple(
+            final Connection connection,
+            final int kyberPreKeyId,
+            final int signedPreKeyId,
+            final byte[] baseKey
+    ) throws SQLException {
+        final var sql = (
+                """
+                INSERT INTO %s (account_id_type, key_id, signed_pre_key_id, base_key)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (account_id_type, key_id, signed_pre_key_id, base_key) DO NOTHING
+                """
+        ).formatted(TABLE_KYBER_PRE_KEY_USED);
+        try (final var statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, accountIdType);
+            statement.setInt(2, kyberPreKeyId);
+            statement.setInt(3, signedPreKeyId);
+            statement.setBytes(4, baseKey);
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    private static void rollback(final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (final SQLException e) {
+            logger.debug("Failed to roll back kyber_pre_key store transaction", e);
         }
     }
 

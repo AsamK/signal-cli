@@ -33,7 +33,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 32;
+    private static final long DATABASE_VERSION = 33;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -658,6 +658,22 @@ public class AccountDatabase extends Database {
             try (final var statement = connection.createStatement()) {
                 statement.executeUpdate("""
                                         ALTER TABLE recipient ADD profile_badges TEXT;
+                                        """);
+            }
+        }
+        if (oldVersion < 33) {
+            logger.debug("Updating database: Creating kyber_pre_key_used table");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE kyber_pre_key_used (
+                                          _id INTEGER PRIMARY KEY,
+                                          account_id_type INTEGER NOT NULL,
+                                          key_id INTEGER NOT NULL,
+                                          signed_pre_key_id INTEGER NOT NULL,
+                                          base_key BLOB NOT NULL,
+                                          UNIQUE(account_id_type, key_id, signed_pre_key_id, base_key),
+                                          FOREIGN KEY (account_id_type, key_id) REFERENCES kyber_pre_key (account_id_type, key_id) ON DELETE CASCADE
+                                        ) STRICT;
                                         """);
             }
         }
