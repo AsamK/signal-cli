@@ -28,6 +28,12 @@ public sealed interface RecipientIdentifier {
                 return new Uuid(UUID.fromString(identifier));
             }
 
+            // An ACI without dashes, otherwise its digits would be used as a phone number
+            if (identifier.matches("[0-9a-fA-F]{32}")) {
+                return new Uuid(new UUID(Long.parseUnsignedLong(identifier.substring(0, 16), 16),
+                        Long.parseUnsignedLong(identifier.substring(16), 16)));
+            }
+
             if (identifier.startsWith("PNI:")) {
                 final var pni = identifier.substring(4);
                 if (!UuidUtil.INSTANCE.isUuid(pni)) {
