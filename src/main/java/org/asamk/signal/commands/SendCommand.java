@@ -391,9 +391,15 @@ public class SendCommand implements JsonRpcLocalCommand {
                         + mention
                         + ") expected 'start:length:recipientNumber'");
             }
-            mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3), selfNumber),
-                    Integer.parseInt(matcher.group(1)),
-                    Integer.parseInt(matcher.group(2))));
+            try {
+                mentions.add(new Message.Mention(CommandUtil.getSingleRecipientIdentifier(matcher.group(3), selfNumber),
+                        Integer.parseInt(matcher.group(1)),
+                        Integer.parseInt(matcher.group(2))));
+            } catch (NumberFormatException e) {
+                throw new UserErrorException("Invalid mention syntax ("
+                        + mention
+                        + ") expected 'start:length:recipientNumber' with 32-bit integer values", e);
+            }
         }
         return mentions;
     }
@@ -414,9 +420,15 @@ public class SendCommand implements JsonRpcLocalCommand {
             if (style == null) {
                 throw new UserErrorException("Invalid style: " + matcher.group(3));
             }
-            textStyles.add(new TextStyle(style,
-                    Integer.parseInt(matcher.group(1)),
-                    Integer.parseInt(matcher.group(2))));
+            try {
+                textStyles.add(new TextStyle(style,
+                        Integer.parseInt(matcher.group(1)),
+                        Integer.parseInt(matcher.group(2))));
+            } catch (NumberFormatException e) {
+                throw new UserErrorException("Invalid textStyle syntax ("
+                        + textStyle
+                        + ") expected 'start:length:STYLE' with 32-bit integer values", e);
+            }
         }
         return textStyles;
     }
@@ -429,7 +441,13 @@ public class SendCommand implements JsonRpcLocalCommand {
                     + stickerString
                     + ") expected 'stickerPackId:stickerId'");
         }
-        return new Message.Sticker(Hex.toByteArray(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+        try {
+            return new Message.Sticker(Hex.toByteArray(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+        } catch (NumberFormatException e) {
+            throw new UserErrorException("Invalid sticker syntax ("
+                    + stickerString
+                    + ") expected 'stickerPackId:stickerId' with a 32-bit integer stickerId", e);
+        }
     }
 
     private List<Message.Quote.Attachment> parseQuoteAttachments(

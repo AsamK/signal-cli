@@ -116,6 +116,34 @@ class SendCommandParsingTest {
     }
 
     @Test
+    void rejectsMentionAndTextStyleNumbersOutsideIntegerRange() {
+        for (final var range : List.of("2147483648:1", "0:2147483648")) {
+            assertThrows(UserErrorException.class,
+                    () -> send(new JsonRpcNamespace(Map.of("noteToSelf",
+                            true,
+                            "message",
+                            "hello",
+                            "textStyle",
+                            List.of(range + ":BOLD")))),
+                    range);
+            assertThrows(UserErrorException.class,
+                    () -> send(new JsonRpcNamespace(Map.of("noteToSelf",
+                            true,
+                            "message",
+                            "hello",
+                            "mention",
+                            List.of(range + ":+15550000000")))),
+                    range);
+        }
+    }
+
+    @Test
+    void rejectsStickerIdOutsideIntegerRange() {
+        assertThrows(UserErrorException.class,
+                () -> send(new JsonRpcNamespace(Map.of("noteToSelf", true, "sticker", "00ff:2147483648"))));
+    }
+
+    @Test
     void acceptsMaximumPositiveAttachmentDimensions() throws Exception {
         final var message = send(namespace(List.of("2147483647x2147483647")));
         assertEquals(List.of(new Message.AttachmentDimensions(Integer.MAX_VALUE, Integer.MAX_VALUE)),
