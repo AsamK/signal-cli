@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
+import org.asamk.signal.AccountIdentifier;
 import org.asamk.signal.commands.Commands;
 import org.asamk.signal.jsonrpc.JsonRpcReader;
 import org.asamk.signal.jsonrpc.JsonRpcResponse;
@@ -279,7 +280,7 @@ public class HttpServerHandler implements AutoCloseable {
             if (account == null || account.isEmpty()) {
                 return c.getManagers();
             } else {
-                final var manager = c.getManager(account);
+                final var manager = c.getManager(AccountIdentifier.normalize(account));
                 if (manager == null) {
                     // Account not found by the given identifier (number or ACI/UUID)
                     // Log the available accounts to help debug
