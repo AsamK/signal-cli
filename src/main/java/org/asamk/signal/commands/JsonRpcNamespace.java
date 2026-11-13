@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Namespace implementation, that has plural handling for list arguments and converts camel case keys to dashed strings
+ * Namespace implementation, that has plural handling for list arguments and converts camel case keys to dashed strings.
+ * A list with a single entry is also accepted for a single value argument.
  */
 final class JsonRpcNamespace extends Namespace {
 
@@ -25,6 +26,16 @@ final class JsonRpcNamespace extends Namespace {
 
         final var camelCaseString = Util.dashSeparatedToCamelCaseString(dest);
         return super.get(camelCaseString);
+    }
+
+    @Override
+    public String getString(final String dest) {
+        final Object value = get(dest);
+        if (value instanceof List<?> list && list.size() == 1) {
+            final var entry = list.getFirst();
+            return entry == null ? null : entry.toString();
+        }
+        return value == null ? null : value.toString();
     }
 
     @Override
