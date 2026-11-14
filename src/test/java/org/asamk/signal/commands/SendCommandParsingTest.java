@@ -8,6 +8,7 @@ import org.asamk.signal.commands.exceptions.UserErrorException;
 import org.asamk.signal.manager.Manager;
 import org.asamk.signal.manager.api.Message;
 import org.asamk.signal.manager.api.SendMessageResults;
+import org.asamk.signal.manager.api.TextStyle;
 import org.asamk.signal.output.JsonWriter;
 import org.asamk.signal.testutil.ManagerMock;
 import org.junit.jupiter.api.Test;
@@ -116,6 +117,34 @@ class SendCommandParsingTest {
     }
 
     @Test
+    void rejectsMentionAndTextStyleNumbersOutsideIntegerRange() {
+        for (final var range : List.of("2147483648:1", "0:2147483648")) {
+            assertThrows(UserErrorException.class,
+                    () -> send(new JsonRpcNamespace(Map.of("noteToSelf",
+                            true,
+                            "message",
+                            "hello",
+                            "textStyle",
+                            List.of(range + ":BOLD")))),
+                    range);
+            assertThrows(UserErrorException.class,
+                    () -> send(new JsonRpcNamespace(Map.of("noteToSelf",
+                            true,
+                            "message",
+                            "hello",
+                            "mention",
+                            List.of(range + ":+15550000000")))),
+                    range);
+        }
+    }
+
+    @Test
+    void rejectsStickerIdOutsideIntegerRange() {
+        assertThrows(UserErrorException.class,
+                () -> send(new JsonRpcNamespace(Map.of("noteToSelf", true, "sticker", "00ff:2147483648"))));
+    }
+
+    @Test
     void acceptsMaximumPositiveAttachmentDimensions() throws Exception {
         final var message = send(namespace(List.of("2147483647x2147483647")));
         assertEquals(List.of(new Message.AttachmentDimensions(Integer.MAX_VALUE, Integer.MAX_VALUE)),
@@ -203,6 +232,34 @@ class SendCommandParsingTest {
         assertTrue(e.getMessage().contains("--end-session"));
     }
 
+    @Test
+    void rejectsTextStylesOutsideTheMessageText() {
+        // Signal clients drop a message with a body range past the end of its text
+        for (final var style : List.of("0:6:BOLD", "5:1:BOLD", "6:0:BOLD")) {
+            assertThrows(UserErrorException.class, () -> send(textStyleNamespace("hello", style)), style);
+        }
+    }
+
+    @Test
+    void acceptsTextStylesUpToTheEndOfTheMessageText() throws Exception {
+        final var message = send(textStyleNamespace("hello", "0:5:BOLD"));
+        assertEquals(List.of(new TextStyle(TextStyle.Style.BOLD, 0, 5)), message.textStyles());
+    }
+
+    @Test
+    void textStyleBoundsCountUtf16CodeUnits() throws Exception {
+        // One code point, but two UTF-16 code units, which is how Signal clients count
+        final var text = "\uD83D\uDE00a";
+        send(textStyleNamespace(text, "0:3:BOLD"));
+        assertThrows(UserErrorException.class, () -> send(textStyleNamespace(text, "0:4:BOLD")));
+    }
+
+    @Test
+    void rejectsMentionsOutsideTheMessageText() throws Exception {
+        send(mentionNamespace("hi \uFFFC", "3:1:+15550000000"));
+        assertThrows(UserErrorException.class, () -> send(mentionNamespace("hi \uFFFC", "3:2:+15550000000")));
+    }
+
     // parseMessageTimestamp takes the current time as a parameter, so the bounds can be tested deterministically.
 
     @Test
@@ -241,6 +298,14 @@ class SendCommandParsingTest {
                     () -> SendCommand.parseMessageTimestamp(value, 1000000L));
             assertTrue(e.getMessage().contains("integer"), String.valueOf(value));
         }
+    }
+
+    private JsonRpcNamespace textStyleNamespace(String message, String textStyle) {
+        return new JsonRpcNamespace(Map.of("noteToSelf", true, "message", message, "textStyle", List.of(textStyle)));
+    }
+
+    private JsonRpcNamespace mentionNamespace(String message, String mention) {
+        return new JsonRpcNamespace(Map.of("noteToSelf", true, "message", message, "mention", List.of(mention)));
     }
 
     private JsonRpcNamespace timestampNamespace(Object timestamp) {

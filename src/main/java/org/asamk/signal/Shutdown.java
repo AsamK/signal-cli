@@ -1,6 +1,7 @@
 package org.asamk.signal;
 
 import org.asamk.signal.commands.exceptions.CommandException;
+import org.asamk.signal.commands.exceptions.UnexpectedErrorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +22,11 @@ public class Shutdown {
             return;
         }
         initialized = true;
+        Thread.setDefaultUncaughtExceptionHandler((thread, exception) -> {
+            logger.error("Uncaught exception in thread {}; shutting down", thread.getName(), exception);
+            triggerShutdown(new UnexpectedErrorException(
+                    "Uncaught exception in background thread " + thread.getName(), exception));
+        });
         Signal.handle(new Signal("INT"), Shutdown::handleSignal);
         Signal.handle(new Signal("TERM"), Shutdown::handleSignal);
         Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().unstarted(() -> {
