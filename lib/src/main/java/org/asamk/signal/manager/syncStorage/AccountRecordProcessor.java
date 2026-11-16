@@ -55,6 +55,7 @@ public class AccountRecordProcessor extends DefaultStorageRecordProcessor<Signal
                 StorageSyncModels.localToRemoteRecord(connection,
                         account.getConfigurationStore(),
                         recipient,
+                        account.getUsername(),
                         account.getUsernameLink()));
     }
 

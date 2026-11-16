@@ -449,6 +449,7 @@ public class StorageHelper {
                     final var accountRecord = StorageSyncModels.localToRemoteRecord(connection,
                             account.getConfigurationStore(),
                             recipient,
+                            account.getUsername(),
                             account.getUsernameLink());
                     newStorageRecords.add(new SignalStorageRecord(storageId,
                             new StorageRecord.Builder().account(accountRecord).build()));
@@ -671,6 +672,7 @@ public class StorageHelper {
                 final var record = StorageSyncModels.localToRemoteRecord(connection,
                         account.getConfigurationStore(),
                         selfRecipient,
+                        account.getUsername(),
                         account.getUsernameLink());
                 yield new SignalStorageRecord(storageId, new StorageRecord.Builder().account(record).build());
             }
