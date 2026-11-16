@@ -271,7 +271,7 @@ class KyberPreKeyStoreTest {
                  var statement = connection.createStatement();
                  var version = statement.executeQuery("PRAGMA user_version")) {
                 assertTrue(version.next());
-                assertEquals(33L, version.getLong(1));
+                assertEquals(34L, version.getLong(1));
             }
             try (var connection = database.getConnection();
                  var statement = connection.createStatement();

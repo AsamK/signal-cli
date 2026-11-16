@@ -33,6 +33,7 @@ public class Commands {
         addCommand(new ListGroupsCommand());
         addCommand(new ListIdentitiesCommand());
         addCommand(new ListStickerPacksCommand());
+        addCommand(new ListNotificationProfilesCommand());
         addCommand(new QuitGroupCommand());
         addCommand(new ReceiveCommand());
         addCommand(new RejectCallCommand());
@@ -67,6 +68,7 @@ public class Commands {
         addCommand(new UnregisterCommand());
         addCommand(new UpdateAccountCommand());
         addCommand(new UpdateConfigurationCommand());
+        addCommand(new SetNotificationProfileCommand());
         addCommand(new UpdateContactCommand());
         addCommand(new UpdateDeviceCommand());
         addCommand(new UpdateGroupCommand());

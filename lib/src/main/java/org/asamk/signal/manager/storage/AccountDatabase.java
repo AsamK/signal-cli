@@ -6,6 +6,7 @@ import org.asamk.signal.manager.api.Pair;
 import org.asamk.signal.manager.storage.groups.GroupStore;
 import org.asamk.signal.manager.storage.identities.IdentityKeyStore;
 import org.asamk.signal.manager.storage.keyValue.KeyValueStore;
+import org.asamk.signal.manager.storage.notificationProfiles.NotificationProfileStore;
 import org.asamk.signal.manager.storage.prekeys.KyberPreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.PreKeyStore;
 import org.asamk.signal.manager.storage.prekeys.SignedPreKeyStore;
@@ -33,7 +34,7 @@ import java.util.UUID;
 public class AccountDatabase extends Database {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountDatabase.class);
-    private static final long DATABASE_VERSION = 33;
+    private static final long DATABASE_VERSION = 34;
 
     private AccountDatabase(final HikariDataSource dataSource) {
         super(logger, DATABASE_VERSION, dataSource);
@@ -59,6 +60,7 @@ public class AccountDatabase extends Database {
         KeyValueStore.createSql(connection);
         CdsiStore.createSql(connection);
         UnknownStorageIdStore.createSql(connection);
+        NotificationProfileStore.createSql(connection);
     }
 
     @Override
@@ -673,6 +675,21 @@ public class AccountDatabase extends Database {
                                           base_key BLOB NOT NULL,
                                           UNIQUE(account_id_type, key_id, signed_pre_key_id, base_key),
                                           FOREIGN KEY (account_id_type, key_id) REFERENCES kyber_pre_key (account_id_type, key_id) ON DELETE CASCADE
+                                        ) STRICT;
+                                        """);
+            }
+        }
+        if (oldVersion < 34) {
+            logger.debug("Updating database: Creating notification profile table");
+            try (final var statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                                        CREATE TABLE notification_profile (
+                                          _id INTEGER PRIMARY KEY,
+                                          profile_id BLOB UNIQUE NOT NULL,
+                                          name TEXT NOT NULL,
+                                          deleted_timestamp INTEGER NOT NULL DEFAULT 0,
+                                          storage_id BLOB UNIQUE,
+                                          storage_record BLOB
                                         ) STRICT;
                                         """);
             }

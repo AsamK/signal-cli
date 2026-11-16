@@ -50,6 +50,7 @@ import org.asamk.signal.manager.storage.senderKeys.SenderKeyStore;
 import org.asamk.signal.manager.storage.sessions.LegacySessionStore;
 import org.asamk.signal.manager.storage.sessions.SessionStore;
 import org.asamk.signal.manager.storage.stickers.LegacyStickerStore;
+import org.asamk.signal.manager.storage.notificationProfiles.NotificationProfileStore;
 import org.asamk.signal.manager.storage.stickers.StickerStore;
 import org.asamk.signal.manager.storage.threads.LegacyJsonThreadStore;
 import org.asamk.signal.manager.util.IOUtils;
@@ -183,6 +184,7 @@ public class SignalAccount implements Closeable {
     private GroupStore groupStore;
     private RecipientStore recipientStore;
     private StickerStore stickerStore;
+    private NotificationProfileStore notificationProfileStore;
     private UnknownStorageIdStore unknownStorageIdStore;
     private ConfigurationStore configurationStore;
     private KeyValueStore keyValueStore;
@@ -1384,6 +1386,11 @@ public class SignalAccount implements Closeable {
 
     public StickerStore getStickerStore() {
         return getOrCreate(() -> stickerStore, () -> stickerStore = new StickerStore(getAccountDatabase()));
+    }
+
+    public NotificationProfileStore getNotificationProfileStore() {
+        return getOrCreate(() -> notificationProfileStore,
+                () -> notificationProfileStore = new NotificationProfileStore(getAccountDatabase()));
     }
 
     public SenderKeyStore getSenderKeyStore() {
