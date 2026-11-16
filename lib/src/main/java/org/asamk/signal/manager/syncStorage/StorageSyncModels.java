@@ -61,6 +61,7 @@ public final class StorageSyncModels {
             final Connection connection,
             ConfigurationStore configStore,
             Recipient self,
+            String username,
             UsernameLinkComponents usernameLinkComponents
     ) throws SQLException {
         final var builder = SignalAccountRecord.Companion.newBuilder(self.getStorageRecord());
@@ -81,7 +82,7 @@ public final class StorageSyncModels {
                 .phoneNumberSharingMode(Optional.ofNullable(configStore.getPhoneNumberSharingMode(connection))
                         .map(StorageSyncModels::localToRemote)
                         .orElse(AccountRecord.PhoneNumberSharingMode.UNKNOWN))
-                .username(self.getAddress().username().orElse(""));
+                .username(emptyIfNull(username));
         if (usernameLinkComponents != null) {
             final var linkColor = configStore.getUsernameLinkColor(connection);
             builder.usernameLink(new UsernameLink.Builder().entropy(ByteString.of(usernameLinkComponents.getEntropy()))
